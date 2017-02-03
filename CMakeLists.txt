@@ -8,12 +8,92 @@ endif()
 
 if(ITKPythonPackage_SUPERBUILD)
 
+  #-----------------------------------------------------------------------------
+  # Options
 
+  # When building different "flavor" of ITK python packages on a given platform,
+  # explicitly setting the following options allow to speed up package generation by
+  # re-using existing resources.
+  #
+  #  ITK_SOURCE_DIR: Path to an existing source directory
+  #
+
+  option ( ITKPythonPackage_BUILD_PYTHON "Build ITK python module" ON )
+  mark_as_advanced( ITKPythonPackage_BUILD_PYTHON )
+
+  #-----------------------------------------------------------------------------
   # compile with multiple processors
   include(ProcessorCount)
   ProcessorCount(NPROC)
   if(NOT NPROC EQUAL 0)
     set( ENV{MAKEFLAGS} "-j${NPROC}" )
+  endif()
+
+  #-----------------------------------------------------------------------------
+  include(ExternalProject)
+
+  set(ITK_REPOSITORY "git://github.com/InsightSoftwareConsortium/ITK.git")
+  set(ITK_GIT_TAG "origin/master")
+
+  # Add an empty external project
+  function(itk_ExternalProject_Add_Empty proj depends)
+    set(depends_args)
+    if(NOT depends STREQUAL "")
+      set(depends_args DEPENDS ${depends})
+    endif()
+    ExternalProject_add(${proj}
+      SOURCE_DIR ${CMAKE_BINARY_DIR}/${proj}
+      DOWNLOAD_COMMAND ""
+      UPDATE_COMMAND ""
+      CONFIGURE_COMMAND ""
+      BUILD_COMMAND ""
+      BUILD_IN_SOURCE 1
+      BUILD_ALWAYS 1
+      INSTALL_COMMAND ""
+      ${depends_args}
+      )
+  endfunction()
+
+  #-----------------------------------------------------------------------------
+  # A separate project is used to download ITK, so that it can reused
+  # when building different "flavor" of ITK python packages
+
+  message(STATUS "SuperBuild - ITK-source-download")
+
+  # Sanity checks
+  if(DEFINED ITK_SOURCE_DIR AND NOT EXISTS ${ITK_SOURCE_DIR})
+    message(FATAL_ERROR "ITK_SOURCE_DIR variable is defined but corresponds to nonexistent directory")
+  endif()
+
+  if(NOT DEFINED ITK_SOURCE_DIR)
+
+    set(ITK_SOURCE_DIR ${CMAKE_BINARY_DIR}/ITK-source)
+
+    ExternalProject_add(ITK-source-download
+      SOURCE_DIR ${ITK_SOURCE_DIR}
+      GIT_REPOSITORY ${ITK_REPOSITORY}
+      GIT_TAG ${ITK_GIT_TAG}
+      USES_TERMINAL_DOWNLOAD 1
+      CONFIGURE_COMMAND ""
+      BUILD_COMMAND ""
+      INSTALL_COMMAND ""
+      )
+
+  else()
+
+    itk_ExternalProject_Add_Empty(
+      ITK-source-download
+      ""
+      )
+
+  endif()
+
+  message(STATUS "SuperBuild -   ITK_SOURCE_DIR: ${ITK_SOURCE_DIR}")
+  message(STATUS "SuperBuild - ITK-source-download[OK]")
+
+  #-----------------------------------------------------------------------------
+  if(NOT ITKPythonPackage_BUILD_PYTHON)
+    return()
   endif()
 
   #-----------------------------------------------------------------------------
@@ -48,21 +128,14 @@ if(ITKPythonPackage_SUPERBUILD)
 
   #-----------------------------------------------------------------------------
   # ITK: This project builds ITK and associated Python modules
-  include(ExternalProject)
 
-  set(ITK_REPOSITORY "git://github.com/InsightSoftwareConsortium/ITK.git")
-  set(ITK_GIT_TAG "origin/master")
-
-  set(ITK_SOURCE_DIR ${CMAKE_BINARY_DIR}/ITK)
   set(ITK_BINARY_DIR ${CMAKE_BINARY_DIR}/ITK-build)
 
-  message(STATUS "SuperBuild - ITK")
-  message(STATUS "SuperBuild -   ITK_SOURCE_DIR: ${ITK_SOURCE_DIR}")
+  message(STATUS "SuperBuild - ITK => Requires ITK-source-download")
   message(STATUS "SuperBuild -   ITK_BINARY_DIR: ${ITK_BINARY_DIR}")
 
   ExternalProject_add(ITK
-    GIT_REPOSITORY ${ITK_REPOSITORY}
-    GIT_TAG ${ITK_GIT_TAG}
+    DOWNLOAD_COMMAND ""
     SOURCE_DIR ${ITK_SOURCE_DIR}
     BINARY_DIR ${ITK_BINARY_DIR}
     CMAKE_CACHE_ARGS
@@ -79,6 +152,8 @@ if(ITKPythonPackage_SUPERBUILD)
     USES_TERMINAL_BUILD 1
     INSTALL_COMMAND ""
     )
+  ExternalProject_Add_StepDependencies(ITK download ITK-source-download)
+
   set(ITK_DIR ${CMAKE_BINARY_DIR}/ITK-build)
 
   message(STATUS "SuperBuild -   ITK_DIR: ${ITK_DIR}")

@@ -19,12 +19,9 @@ echo "Building wheels for $arch"
 # Build standalone project and populate archive cache
 mkdir -p /work/standalone-${arch}-build
 pushd /work/standalone-${arch}-build > /dev/null 2>&1
-  # TODO
-  # * Add support for building project setting option ITKPythonPackage_BUILD_PYTHON
-  # * Build here project with -DITKPythonPackage_BUILD_PYTHON:PATH=0
-  # * Update list of option passed to "setup.py bdist_wheel" in the loop below
+  cmake -DITKPythonPackage_BUILD_PYTHON:PATH=0 -G Ninja ../
+  ninja
 popd > /dev/null 2>&1
-
 
 # Since the python interpreter exports its symbol (see [1]), python
 # modules should not link against any python libraries.
@@ -59,6 +56,7 @@ for PYBIN in /opt/python/*/bin; do
 
     ${PYBIN}/pip install -r /work/requirements-dev.txt
     ${PYBIN}/python setup.py bdist_wheel -G Ninja -- \
+      -DITK_SOURCE_DIR:PATH=/work/standalone-${arch}-build/ITK-source \
       -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
       -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
       -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
