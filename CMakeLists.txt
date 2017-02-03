@@ -141,6 +141,8 @@ if(ITKPythonPackage_SUPERBUILD)
     CMAKE_CACHE_ARGS
       -DBUILD_TESTING:BOOL=OFF
       -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
+      -DPY_SITE_PACKAGES_PATH:PATH=${CMAKE_INSTALL_PREFIX}
+      -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel
       -DITK_LEGACY_SILENT:BOOL=ON
       -DITK_WRAP_PYTHON:BOOL=ON
       -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR}
@@ -184,5 +186,14 @@ if(ITKPythonPackage_SUPERBUILD)
   message(STATUS "SuperBuild - ${PROJECT_NAME}[OK]")
 
 else()
-  message(STATUS "Package here")
+
+  #-----------------------------------------------------------------------------
+  # Install ITK "PythonWheelRuntimeLibraries" components
+  install(CODE "
+unset(CMAKE_INSTALL_COMPONENT)
+set(COMPONENT \"PythonWheelRuntimeLibraries\")
+include\(\"${ITK_DIR}/cmake_install.cmake\")
+unset(CMAKE_INSTALL_COMPONENT)
+")
+
 endif()
