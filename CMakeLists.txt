@@ -134,6 +134,12 @@ if(ITKPythonPackage_SUPERBUILD)
   message(STATUS "SuperBuild - ITK => Requires ITK-source-download")
   message(STATUS "SuperBuild -   ITK_BINARY_DIR: ${ITK_BINARY_DIR}")
 
+  set(_stamp "${CMAKE_BINARY_DIR}/ITK-prefix/src/ITK-stamp/ITK-configure")
+  if(EXISTS ${_stamp})
+    execute_process(COMMAND ${CMAKE_COMMAND} -E remove ${_stamp})
+    message(STATUS "SuperBuild -   Force re-configure removing ${_stamp}")
+  endif()
+
   ExternalProject_add(ITK
     DOWNLOAD_COMMAND ""
     SOURCE_DIR ${ITK_SOURCE_DIR}
