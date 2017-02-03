@@ -32,8 +32,8 @@ if(ITKPythonPackage_SUPERBUILD)
   #-----------------------------------------------------------------------------
   include(ExternalProject)
 
-  set(ITK_REPOSITORY "git://github.com/InsightSoftwareConsortium/ITK.git")
-  set(ITK_GIT_TAG "origin/master")
+  set(ITK_REPOSITORY "git://github.com/jcfr/ITK.git")
+  set(ITK_GIT_TAG "origin/add-itk-wrap-python-legacy-option-and-skip-mdx-install")
 
   # Add an empty external project
   function(itk_ExternalProject_Add_Empty proj depends)
@@ -151,6 +151,7 @@ if(ITKPythonPackage_SUPERBUILD)
       -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel
       -DITK_LEGACY_SILENT:BOOL=ON
       -DITK_WRAP_PYTHON:BOOL=ON
+      -DITK_WRAP_PYTHON_LEGACY:BOOL=OFF
       -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR}
       -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
       -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE}
