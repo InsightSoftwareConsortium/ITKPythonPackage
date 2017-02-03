@@ -1,31 +1,38 @@
 from skbuild import setup
 
 setup(
-    name='ITK',
-    version='0.11.0',
+    name='itk',
+    version='4.12.0-dev',
     author='Insight Software Consortium',
-    author_email='insight-users@itk.org',
+    author_email='community@itk.org',
     packages=['itk'],
     package_dir={'itk':'itk'},
     download_url=r'https://itk.org/ITK/resources/software.html',
-    description=r'TK is an open-source software toolkit for performing '
-                r'registration and segmentation.',
-    long_description='ITK is an open-source, cross-platform system that '
+    description=r'ITK is an open-source toolkit for multidimensional image '
+                r'analysis.',
+    long_description='ITK is an open-source, cross-platform library that '
                      'provides developers with an extensive suite of software '
                      'tools for image analysis. Developed through extreme '
                      'programming methodologies, ITK employs leading-edge '
                      'algorithms for registering and segmenting '
-                     'multidimensional data..',
+                     'multidimensional scientific images.',
     classifiers=[
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python",
+        "Programming Language :: C++",
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
-        "Topic :: Scientific/Engineering"
+        "Intended Audience :: Education",
+        "Intended Audience :: Healthcare Industry",
+        "Intended Audience :: Science/Research",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Scientific/Engineering :: Medical Science Apps.",
+        "Topic :: Scientific/Engineering :: Information Analysis",
+        "Topic :: Software Development :: Libraries"
         ],
     license='Apache',
-    keywords='ITK InsightToolkit segmentation registration image',
-    url=r'http://itk.org/',
+    keywords='ITK Insight Toolkit segmentation registration image',
+    url=r'https://itk.org/',
     install_requires=[
     ]
     )
