@@ -41,7 +41,7 @@ touch ${PYTHON_LIBRARY}
 
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in /opt/python/*/bin; do
-    if [[ ${PYBIN} == *"cp26"* ]]; then
+    if [[ ${PYBIN} == *"cp26"* || ${PYBIN} == *"cp33"* ]]; then
         echo "Skipping ${PYBIN}"
         continue
     fi
@@ -72,7 +72,7 @@ done
 
 # Install packages and test
 for PYBIN in /opt/python/*/bin/; do
-    if [[ ${PYBIN} == *"cp26"* ]]; then
+    if [[ ${PYBIN} == *"cp26"* || ${PYBIN} == *"cp33"* ]]; then
         echo "Skipping ${PYBIN}"
         continue
     fi
