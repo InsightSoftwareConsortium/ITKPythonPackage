@@ -76,6 +76,6 @@ for PYBIN in /opt/python/*/bin/; do
         echo "Skipping ${PYBIN}"
         continue
     fi
-    ${PYBIN}/pip install ITK --user --no-cache-dir --no-index -f /work/dist
+    ${PYBIN}/pip install itk --user --no-cache-dir --no-index -f /work/dist
     (cd $HOME; ${PYBIN}/python -c 'import itk;')
 done
