@@ -89,5 +89,6 @@ for PYBIN in "${PYBINARIES[@]}"; do
         continue
     fi
     ${PYBIN}/pip install itk --user --no-cache-dir --no-index -f /work/dist
-    (cd $HOME; ${PYBIN}/python -c 'import itk;')
+    (cd $HOME; ${PYBIN}/python -c 'from itk import ITKCommon;')
+    (cd $HOME; ${PYBIN}/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
 done
