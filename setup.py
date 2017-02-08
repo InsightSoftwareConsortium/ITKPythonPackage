@@ -6,7 +6,16 @@ setup(
     author='Insight Software Consortium',
     author_email='community@itk.org',
     packages=['itk'],
-    package_dir={'itk':'itk'},
+    package_dir={'itk': 'itk'},
+    py_modules=[
+        'itkBase',
+        'itkConfig',
+        'itkExtras',
+        'itkLazy',
+        'itkTemplate',
+        'itkTypes',
+        'WrapITKBuildOptionsPython'
+    ],
     download_url=r'https://itk.org/ITK/resources/software.html',
     description=r'ITK is an open-source toolkit for multidimensional image '
                 r'analysis.',
