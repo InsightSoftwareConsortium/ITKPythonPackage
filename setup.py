@@ -1,8 +1,13 @@
+from os import sys, path
+
 from skbuild import setup
+
+sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+from itkVersion import VERSION
 
 setup(
     name='itk',
-    version='4.12.0.dev0',
+    version=VERSION,
     author='Insight Software Consortium',
     author_email='community@itk.org',
     packages=['itk'],
