@@ -7,6 +7,7 @@ import argparse
 import sys
 import os
 import subprocess
+from datetime import datetime
 
 argparser = argparse.ArgumentParser(description=__doc__)
 argparser.add_argument('itkSourceDir')
@@ -21,11 +22,17 @@ itkPythonPackageDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))
 
 
 os.chdir(itkSourceDir)
-# "2017-02-08 15:21:09 -0500"
+# "Wed Feb 8 15:21:09 2017"\n
 commitDate = subprocess.check_output(['git',
-    'show', '-s', '--date=local', '--format="%ci"'])
+    'show', '-s', '--date=local', '--format="%cd"'])
+# Wed Feb 8 15:21:09 2017
+commitDate = commitDate.strip()[1:-1]
+# Wed Feb 08 15:21:09 2017
+commitDate = commitDate.split(' ')
+commitDate[2] = '{:02d}'.format(int(commitDate[2]))
+commitDate = ' '.join(commitDate)
 # 2017-02-08
-commitDateDashes = commitDate.split()[0][1:]
+commitDateDashes = datetime.strptime(commitDate, "%a %b %d %H:%M:%S %Y").strftime("%Y-%m-%d")
 # 20170208
 commitDate = commitDateDashes.replace('-', '')
 
