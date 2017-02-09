@@ -1,5 +1,17 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e -x
+
+# Versions can be restricted by passing them in as arguments to the script
+# For example,
+# manylinux-build-wheels.sh cp27mu cp35
+if [[ $# -eq 0 ]]; then
+  PYBINARIES=(/opt/python/*/bin)
+else
+  PYBINARIES=()
+  for version in "$@"; do
+    PYBINARIES+=(/opt/python/*${version}*/bin)
+  done
+fi
 
 # i686 or x86_64 ?
 case $(uname -p) in
@@ -40,7 +52,7 @@ PYTHON_LIBRARY=/work/scripts/internal/manylinux-libpython-not-needed-symbols-exp
 touch ${PYTHON_LIBRARY}
 
 # Compile wheels re-using standalone project and archive cache
-for PYBIN in /opt/python/*/bin; do
+for PYBIN in "${PYBINARIES[@]}"; do
     if [[ ${PYBIN} == *"cp26"* || ${PYBIN} == *"cp33"* ]]; then
         echo "Skipping ${PYBIN}"
         continue
@@ -71,7 +83,7 @@ for whl in dist/*linux_$(uname -p).whl; do
 done
 
 # Install packages and test
-for PYBIN in /opt/python/*/bin/; do
+for PYBIN in "${PYBINARIES[@]}"; do
     if [[ ${PYBIN} == *"cp26"* || ${PYBIN} == *"cp33"* ]]; then
         echo "Skipping ${PYBIN}"
         continue
