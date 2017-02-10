@@ -50,9 +50,9 @@ gHash = gHash.strip()
 pythonRevision = version
 if int(numberOfCommits) > 0:
     pythonRevision += '.dev'
-    pythonRevision += numberOfCommits
-    pythonRevision += '+'
     pythonRevision += commitDate
+    pythonRevision += '+'
+    pythonRevision += numberOfCommits
     pythonRevision += '.'
     pythonRevision += gHash
 
@@ -61,10 +61,16 @@ itkVersionPath = os.path.join(itkPythonPackageDir, 'itkVersion.py')
 if not os.path.exists(itkVersionPath):
     print('Expected file ' + itkVersionPath + ' not found!')
     sys.exit(1)
+with open(itkVersionPath, 'r') as fp:
+    lines = fp.readlines()
 with open(itkVersionPath, 'w') as fp:
-    fp.write("VERSION = '")
-    fp.write(pythonRevision)
-    fp.write("'\n")
+    for line in lines:
+        if line.startswith('VERSION = '):
+            fp.write("VERSION = '")
+            fp.write(pythonRevision)
+            fp.write("'\n")
+        else:
+            fp.write(line)
 
 
 with open('CMakeLists.txt', 'r') as fp:
