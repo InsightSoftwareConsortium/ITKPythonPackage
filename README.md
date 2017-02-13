@@ -20,7 +20,7 @@ python 2.x and python 3.x in the `dist` directory.
 For example:
 
 ```bash
-$ git clone git://github.com/InsightSoftwareConsortium/ITKPythonPackage.git
+$ git clone https://github.com/InsightSoftwareConsortium/ITKPythonPackage.git
 [...]
 
 $ ./scripts/dockcross-manylinux-build-wheels.sh
