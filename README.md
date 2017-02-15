@@ -37,6 +37,12 @@ ITK-0.11.0-cp36-cp36m-manylinux1_x86_64.whl
 
 ### MacOSX
 
+First install the Python.org MacOSX Python's. This step requires `sudo`:
+
+```bash
+./scripts/macpython-install-python.sh
+```
+
 *To be documented*
 
 ### Windows

@@ -5,6 +5,8 @@ skbuild
 standalone-build
 standalone-x86-build
 standalone-x64-build
+downloads
+venvs
 
 # Python
 *.py[cod]
