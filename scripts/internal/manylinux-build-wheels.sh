@@ -67,7 +67,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
     echo "PYTHON_LIBRARY:${PYTHON_LIBRARY}"
 
     ${PYBIN}/pip install -r /work/requirements-dev.txt
-    ${PYBIN}/python setup.py bdist_wheel -G Ninja -- \
+    ${PYBIN}/python setup.py bdist_wheel --build-type MinSizeRel -G Ninja -- \
       -DITK_SOURCE_DIR:PATH=/work/standalone-${arch}-build/ITK-source \
       -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
       -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
