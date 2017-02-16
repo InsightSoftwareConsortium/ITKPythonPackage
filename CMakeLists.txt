@@ -8,6 +8,12 @@ endif()
 
 if(ITKPythonPackage_SUPERBUILD)
 
+  set(ep_common_cmake_cache_args)
+  if(NOT CMAKE_CONFIGURATION_TYPES)
+    list(APPEND ep_common_cmake_cache_args
+      -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+      )
+  endif()
   #-----------------------------------------------------------------------------
   # Options
 
