@@ -1,10 +1,17 @@
 # ITKPythonPackage
 
 This project provides a `setup.py` script that build ITK Python
-[wheels](https://www.python.org/dev/peps/pep-0427/). 
-[ITK](http://www.itk.org) is an open-source,
+[wheels](https://www.python.org/dev/peps/pep-0427/).
+[ITK](https://itk.org) is an open-source,
 cross-platform system that provides developers with an extensive suite
 of software tools for image analysis.
+
+The Python packages are build nightly. To install the ITK Python package:
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install itk -f https://github.com/InsightSoftwareConsortium/ITKPythonPackage/releases/tag/nightly
+```
 
 ## Automated wheels building with scripts
 
@@ -37,11 +44,45 @@ ITK-0.11.0-cp36-cp36m-manylinux1_x86_64.whl
 
 ### MacOSX
 
-*To be documented*
+First install the Python.org MacOSX Python's. This step requires `sudo`:
+
+```bash
+./scripts/macpython-install-python.sh
+```
+
+Then, build the wheels:
+
+```
+$ ./scripts/macpython-build-wheels.sh
+[...]
+
+$ ls -1 dist/
+itk-4.11.0.dev20170213-cp27-cp27m-macosx_10_6_x86_64.whl
+itk-4.11.0.dev20170213-cp34-cp34m-macosx_10_6_x86_64.whl
+itk-4.11.0.dev20170213-cp35-cp35m-macosx_10_6_x86_64.whl
+itk-4.11.0.dev20170213-cp36-cp36m-macosx_10_6_x86_64.whl
+```
 
 ### Windows
 
 *To be documented*
+
+### sdist
+
+To create source distributions,
+[sdist](https://docs.python.org/3.6/distutils/sourcedist.html)'s,  that will
+be used by pip to compile a wheel for installation if a binary wheel is not
+available for the current Python version or platform:
+
+```bash
+$ python setup.py sdist --formats=gztar,zip
+[...]
+
+$ ls -1 dist/
+itk-4.11.0.dev20170216.tar.gz
+itk-4.11.0.dev20170216.zip
+```
+
 
 ## Prerequisites
 

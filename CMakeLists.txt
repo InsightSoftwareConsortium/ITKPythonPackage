@@ -27,6 +27,15 @@ if(ITKPythonPackage_SUPERBUILD)
   option ( ITKPythonPackage_BUILD_PYTHON "Build ITK python module" ON )
   mark_as_advanced( ITKPythonPackage_BUILD_PYTHON )
 
+  if(CMAKE_OSX_DEPLOYMENT_TARGET)
+    list(APPEND ep_common_cmake_cache_args
+      -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${CMAKE_OSX_DEPLOYMENT_TARGET})
+  endif()
+  if(CMAKE_OSX_ARCHITECTURES)
+    list(APPEND ep_common_cmake_cache_args
+      -DCMAKE_OSX_ARCHITECTURES:STRING=${CMAKE_OSX_ARCHITECTURES})
+  endif()
+
   #-----------------------------------------------------------------------------
   # compile with multiple processors
   include(ProcessorCount)
