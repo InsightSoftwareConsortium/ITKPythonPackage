@@ -78,10 +78,11 @@ for VENV in "${VENVS[@]}"; do
     echo "PYTHON_LIBRARY:${PYTHON_LIBRARY}"
 
     $PYTHON_EXECUTABLE -m pip install -r ${SCRIPT_DIR}/../requirements-dev.txt
-    $PYTHON_EXECUTABLE setup.py bdist_wheel -G Ninja -- \
+    $PYTHON_EXECUTABLE setup.py bdist_wheel --build-type MinSizeRel --plat-name macosx-10.6-x86_64 -G Ninja -- \
       -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
       -DITK_SOURCE_DIR:PATH=${SCRIPT_DIR}/../standalone-build/ITK-source \
       -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=10.6 \
+      -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
       -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
       -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
       -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
@@ -93,7 +94,7 @@ $DELOCATE_WHEEL ${SCRIPT_DIR}/../dist/*.whl # copies library dependencies into w
 
 # Install packages and test
 for VENV in "${VENVS[@]}"; do
-    ${VENV}/bin/pip install itk --user --no-cache-dir --no-index -f ${SCRIPT_DIR}/..//dist
+    ${VENV}/bin/pip install itk --no-cache-dir --no-index -f ${SCRIPT_DIR}/../dist
     (cd $HOME; ${VENV}/bin/python -c 'import itk;')
     (cd $HOME; ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
 done

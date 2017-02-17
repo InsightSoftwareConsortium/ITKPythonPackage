@@ -153,7 +153,8 @@ function install_macpython {
     fi
     sudo installer -pkg $inst_path -target /
     local py_mm=${py_version:0:3}
-    PYTHON_EXE=$MACPYTHON_PY_PREFIX/$py_mm/bin/python$py_mm
+    local py_m=${py_version:0:1}
+    PYTHON_EXE=$MACPYTHON_PY_PREFIX/$py_mm/bin/python$py_m
 }
 
 function install_pip {
@@ -178,7 +179,7 @@ function install_virtualenv {
     check_pip
     # Travis VMS install virtualenv for system python by default - force
     # install even if installed already
-    $PIP_CMD install virtualenv --ignore-installed
+    $PYTHON_EXE -m pip install virtualenv --ignore-installed
     check_python
     VIRTUALENV_CMD="$(dirname $PYTHON_EXE)/virtualenv"
 }
@@ -187,7 +188,12 @@ function install_virtualenv {
 # Remove previous versions
 sudo rm -rf ${MACPYTHON_FRAMEWORK}
 
-for pyversion in 2.7.13 3.4.6 3.5.3 3.6.0; do
+LATEST_27=2.7.13
+LATEST_34=3.4.4
+LATEST_35=3.5.3
+LATEST_36=3.6.0
+
+for pyversion in $LATEST_27 $LATEST_34 $LATEST_35 $LATEST_36; do
   install_macpython $pyversion
   install_pip
   install_virtualenv

@@ -31,6 +31,10 @@ if(ITKPythonPackage_SUPERBUILD)
     list(APPEND ep_common_cmake_cache_args
       -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${CMAKE_OSX_DEPLOYMENT_TARGET})
   endif()
+  if(CMAKE_OSX_ARCHITECTURES)
+    list(APPEND ep_common_cmake_cache_args
+      -DCMAKE_OSX_ARCHITECTURES:STRING=${CMAKE_OSX_ARCHITECTURES})
+  endif()
 
   #-----------------------------------------------------------------------------
   # compile with multiple processors
