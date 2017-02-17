@@ -1,10 +1,17 @@
 # ITKPythonPackage
 
 This project provides a `setup.py` script that build ITK Python
-[wheels](https://www.python.org/dev/peps/pep-0427/). 
-[ITK](http://www.itk.org) is an open-source,
+[wheels](https://www.python.org/dev/peps/pep-0427/).
+[ITK](https://itk.org) is an open-source,
 cross-platform system that provides developers with an extensive suite
 of software tools for image analysis.
+
+The Python packages are build nightly. To install the ITK Python package:
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install itk -f https://github.com/InsightSoftwareConsortium/ITKPythonPackage/releases/tag/nightly
+```
 
 ## Automated wheels building with scripts
 
