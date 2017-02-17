@@ -67,6 +67,23 @@ itk-4.11.0.dev20170213-cp36-cp36m-macosx_10_6_x86_64.whl
 
 *To be documented*
 
+### sdist
+
+To create source distributions,
+[sdist](https://docs.python.org/3.6/distutils/sourcedist.html)'s,  that will
+be used by pip to compile a wheel for installation if a binary wheel is not
+available for the current Python version or platform:
+
+```bash
+$ python setup.py sdist --formats=gztar,zip
+[...]
+
+$ ls -1 dist/
+itk-4.11.0.dev20170216.tar.gz
+itk-4.11.0.dev20170216.zip
+```
+
+
 ## Prerequisites
 
 Building wheels requires:
