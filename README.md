@@ -50,7 +50,18 @@ First install the Python.org MacOSX Python's. This step requires `sudo`:
 ./scripts/macpython-install-python.sh
 ```
 
-*To be documented*
+Then, build the wheels:
+
+```
+$ ./scripts/macpython-build-wheels.sh
+[...]
+
+$ ls -1 dist/
+itk-4.11.0.dev20170213-cp27-cp27m-macosx_10_6_x86_64.whl
+itk-4.11.0.dev20170213-cp34-cp34m-macosx_10_6_x86_64.whl
+itk-4.11.0.dev20170213-cp35-cp35m-macosx_10_6_x86_64.whl
+itk-4.11.0.dev20170213-cp36-cp36m-macosx_10_6_x86_64.whl
+```
 
 ### Windows
 
