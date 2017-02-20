@@ -51,10 +51,15 @@ setup(
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Medical Science Apps.",
         "Topic :: Scientific/Engineering :: Information Analysis",
-        "Topic :: Software Development :: Libraries"
+        "Topic :: Software Development :: Libraries",
+        "Operating System :: Android:",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: POSIX",
+        "Operating System :: Unix",
+        "Operating System :: MacOS"
         ],
     license='Apache',
-    keywords='ITK Insight Toolkit segmentation registration image',
+    keywords='ITK InsightToolkit segmentation registration image imaging',
     url=r'https://itk.org/',
     install_requires=[
     ]
