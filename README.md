@@ -34,12 +34,11 @@ $ ./scripts/dockcross-manylinux-build-wheels.sh
 [...]
 
 $ ls -1 dist/
-ITK-0.11.0-cp27-cp27m-manylinux1_x86_64.whl
-ITK-0.11.0-cp27-cp27mu-manylinux1_x86_64.whl
-ITK-0.11.0-cp33-cp33m-manylinux1_x86_64.whl
-ITK-0.11.0-cp34-cp34m-manylinux1_x86_64.whl
-ITK-0.11.0-cp35-cp35m-manylinux1_x86_64.whl
-ITK-0.11.0-cp36-cp36m-manylinux1_x86_64.whl
+itk-4.11.0.dev20170218-cp27-cp27m-manylinux1_x86_64.whl
+itk-4.11.0.dev20170218-cp27-cp27mu-manylinux1_x86_64.whl
+itk-4.11.0.dev20170218-cp34-cp34m-manylinux1_x86_64.whl
+itk-4.11.0.dev20170218-cp35-cp35m-manylinux1_x86_64.whl
+itk-4.11.0.dev20170218-cp36-cp36m-manylinux1_x86_64.whl
 ```
 
 ### MacOSX
