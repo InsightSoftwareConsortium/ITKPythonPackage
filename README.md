@@ -73,7 +73,7 @@ Open a PowerShell terminal as Administrator, and install Python:
 
 ```powershell
 PS C:\> Set-ExecutionPolicy Unrestricted
-iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/scikit-build/scikit-ci-addons/master/windows/install-python.ps1'))
+PS C:\> iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/scikit-build/scikit-ci-addons/master/windows/install-python.ps1'))
 ```
 
 
