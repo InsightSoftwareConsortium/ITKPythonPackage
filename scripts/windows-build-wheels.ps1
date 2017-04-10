@@ -1,6 +1,11 @@
 
 $scriptDir = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition
 $rootDir = Resolve-Path "$scriptDir\\.."
+$standaloneDir = Join-Path $rootDir "standalone-build"
+if (![System.IO.Directory]::Exists($standaloneDir)) {
+  [System.IO.Directory]::CreateDirectory($standaloneDir)
+}
+
 
 function Pip-Install {
 param (
@@ -30,8 +35,6 @@ param (
     Start-Process $venv -ArgumentList "$venvDir" -NoNewWindow -Wait
   }
 
-  Pip-Install "$venvDir" "cmake"
-  Pip-Install "$venvDir" "ninja"
   Pip-Install "$venvDir" "scikit-build"
 }
 
@@ -62,7 +65,7 @@ param (
 
   Start-Process $pip -ArgumentList "install -r $rootDir\\requirements-dev.txt" -NoNewWindow -Wait
 
-  Start-Process $PYTHON_EXECUTABLE -ArgumentList "setup.py bdist_wheel --build-type MinSizeRel -G Ninja -- -DCMAKE_MAKE_PROGRAM:FILEPATH=$NINJA_EXECUTABLE -DITK_SOURCE_DIR:PATH=$standaloneDir\\ITK-source -DPYTHON_EXECUTABLE:FILEPATH=$PYTHON_EXECUTABLE -DPYTHON_INCLUDE_DIR:PATH=$PYTHON_INCLUDE_DIR -DPYTHON_LIBRARY:FILEPATH=$PYTHON_LIBRARY" -NoNewWindow -Wait
+  Start-Process $PYTHON_EXECUTABLE -ArgumentList "setup.py bdist_wheel --build-type Release -G Ninja -- -DCMAKE_MAKE_PROGRAM:FILEPATH=$NINJA_EXECUTABLE -DITK_SOURCE_DIR:PATH=$standaloneDir\\ITK-source -DPYTHON_EXECUTABLE:FILEPATH=$PYTHON_EXECUTABLE -DPYTHON_INCLUDE_DIR:PATH=$PYTHON_INCLUDE_DIR -DPYTHON_LIBRARY:FILEPATH=$PYTHON_LIBRARY" -NoNewWindow -Wait
 
   Start-Process $PYTHON_EXECUTABLE -ArgumentList "setup.py clean" -NoNewWindow -Wait
 
@@ -72,11 +75,8 @@ param (
 
 Prepare-Build-Env "27-x64"
 Prepare-Build-Env "35-x64"
+Prepare-Build-Env "36-x64"
 
-$standaloneDir = Join-Path $rootDir "standalone-build"
-if (![System.IO.Directory]::Exists($standaloneDir)) {
-  [System.IO.Directory]::CreateDirectory($standaloneDir)
-}
 Pushd $standaloneDir
   $CMAKE_EXECUTABLE = Join-Path $rootDir "venv-27-x64\Scripts\cmake.exe"
   $NINJA_EXECUTABLE = Join-Path $rootDir "venv-27-x64\Scripts\ninja.exe"
@@ -92,4 +92,4 @@ Popd
 # Compile wheels re-using standalone project and archive cache
 Build-Wheel "27-x64"
 Build-Wheel "35-x64"
-
+Build-Wheel "36-x64"
