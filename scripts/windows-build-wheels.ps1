@@ -78,8 +78,10 @@ Prepare-Build-Env "35-x64"
 Prepare-Build-Env "36-x64"
 
 Pushd $standaloneDir
-  $CMAKE_EXECUTABLE = Join-Path $rootDir "venv-27-x64\Scripts\cmake.exe"
-  $NINJA_EXECUTABLE = Join-Path $rootDir "venv-27-x64\Scripts\ninja.exe"
+  $CMAKE_EXECUTABLE = "cmake.exe"
+  $toolsVenv = Join-Path  $rootDir "venv-27-x64"
+  Pip-Install $toolsVenv "ninja"
+  $NINJA_EXECUTABLE = Join-Path $toolsVenv "Scripts\ninja.exe"
   Start-Process $CMAKE_EXECUTABLE -ArgumentList `
     "-DITKPythonPackage_BUILD_PYTHON:PATH=0 `
 	-G Ninja `
