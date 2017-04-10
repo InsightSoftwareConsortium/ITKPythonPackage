@@ -35,8 +35,6 @@ param (
     Start-Process $venv -ArgumentList "$venvDir" -NoNewWindow -Wait
   }
 
-  Pip-Install "$venvDir" "cmake"
-  Pip-Install "$venvDir" "ninja"
   Pip-Install "$venvDir" "scikit-build"
 }
 
@@ -60,7 +58,6 @@ param (
   Write-Host "PYTHON_LIBRARY:${PYTHON_LIBRARY}"
 
   $pip = Join-Path $venvDir "Scripts\\pip.exe"
-  $NINJA_EXECUTABLE = Join-Path $venvDir "Scripts\\ninja.exe"
 
   # Update PATH
   $old_path = $env:PATH
@@ -78,6 +75,7 @@ param (
 
 Prepare-Build-Env "27-x64"
 Prepare-Build-Env "35-x64"
+Prepare-Build-Env "36-x64"
 
 Pushd $standaloneDir
   $CMAKE_EXECUTABLE = Join-Path $rootDir "venv-27-x64\Scripts\cmake.exe"
@@ -94,4 +92,4 @@ Popd
 # Compile wheels re-using standalone project and archive cache
 Build-Wheel "27-x64"
 Build-Wheel "35-x64"
-
+Build-Wheel "36-x64"

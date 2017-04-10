@@ -66,8 +66,8 @@ itk-4.11.0.dev20170213-cp36-cp36m-macosx_10_6_x86_64.whl
 
 First, install [Microsoft Visual C++ Compiler for Python
 2.7](http://aka.ms/vcpython27), [Visual Studio
-2015](https://www.visualstudio.com/downloads/), and
-[Git](https://git-scm.com/download/win).
+2015](https://www.visualstudio.com/downloads/),
+[Git](https://git-scm.com/download/win), and [CMake](https://cmake.org/download/), which should be added to the system `PATH` environmental variable.
 
 Open a PowerShell terminal as Administrator, and install Python:
 
