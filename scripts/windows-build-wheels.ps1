@@ -58,6 +58,8 @@ param (
   Write-Host "PYTHON_LIBRARY:${PYTHON_LIBRARY}"
 
   $pip = Join-Path $venvDir "Scripts\\pip.exe"
+  $NINJA_EXECUTABLE = Join-Path $rootDir "venv-27-x64\Scripts\ninja.exe"
+  Write-Host "NINJA_EXECUTABLE:${NINJA_EXECUTABLE}"
 
   # Update PATH
   $old_path = $env:PATH

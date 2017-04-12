@@ -36,6 +36,11 @@ if(ITKPythonPackage_SUPERBUILD)
       -DCMAKE_OSX_ARCHITECTURES:STRING=${CMAKE_OSX_ARCHITECTURES})
   endif()
 
+  if(CMAKE_MAKE_PROGRAM)
+    list(APPEND ep_common_cmake_cache_args
+      -DCMAKE_MAKE_PROGRAM:FILEPATH=${CMAKE_MAKE_PROGRAM})
+  endif()
+
   #-----------------------------------------------------------------------------
   # compile with multiple processors
   include(ProcessorCount)
@@ -200,6 +205,7 @@ if(ITKPythonPackage_SUPERBUILD)
       -DITKPythonPackage_SUPERBUILD:BOOL=0
       -DITK_DIR:PATH=${ITK_DIR}
       -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
+      ${ep_common_cmake_cache_args}
     USES_TERMINAL_CONFIGURE 1
     INSTALL_COMMAND ""
     DEPENDS ITK
