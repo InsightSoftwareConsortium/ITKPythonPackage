@@ -6,11 +6,11 @@ This project provides a `setup.py` script that build ITK Python
 cross-platform system that provides developers with an extensive suite
 of software tools for image analysis.
 
-The Python packages are build nightly. To install the ITK Python package:
+The Python packages are built daily. To install the ITK Python package:
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install itk -f https://github.com/InsightSoftwareConsortium/ITKPythonPackage/releases/tag/nightly
+python -m pip install itk -f https://github.com/InsightSoftwareConsortium/ITKPythonPackage/releases/tag/latest
 ```
 
 ## Automated wheels building with scripts
