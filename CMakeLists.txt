@@ -53,8 +53,8 @@ if(ITKPythonPackage_SUPERBUILD)
   include(ExternalProject)
 
   set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
-  # ITK nightly-master 2017-04-13
-  set(ITK_GIT_TAG "2dc88c9")
+  # ITK nightly-master 2017-04-14
+  set(ITK_GIT_TAG "7e810ed")
 
   # Add an empty external project
   function(itk_ExternalProject_Add_Empty proj depends)
