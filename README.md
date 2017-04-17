@@ -13,6 +13,12 @@ python -m pip install --upgrade pip
 python -m pip install itk -f https://github.com/InsightSoftwareConsortium/ITKPythonPackage/releases/tag/latest
 ```
 
+For more information on ITK's Python wrapping, see an [introduction in the ITK
+Software
+Guide](https://itk.org/ITKSoftwareGuide/html/Book1/ITKSoftwareGuide-Book1ch3.html#x32-420003.7).
+There are also many [downloadable
+examples](https://itk.org/ITKExamples/search.html?q=Python) documented in Sphinx.
+
 ## Automated wheels building with scripts
 
 Steps required to build wheels on Linux, MacOSX and Windows have been automated. The
