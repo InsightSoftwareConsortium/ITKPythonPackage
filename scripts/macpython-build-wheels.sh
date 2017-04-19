@@ -95,6 +95,8 @@ $DELOCATE_WHEEL ${SCRIPT_DIR}/../dist/*.whl # copies library dependencies into w
 # Install packages and test
 for VENV in "${VENVS[@]}"; do
     ${VENV}/bin/pip install itk --no-cache-dir --no-index -f ${SCRIPT_DIR}/../dist
+    ${VENV}/bin/pip install numpy
     (cd $HOME; ${VENV}/bin/python -c 'import itk;')
     (cd $HOME; ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
+    (cd $HOME; ${VENV}/bin/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
 done
