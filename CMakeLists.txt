@@ -222,6 +222,7 @@ else()
   install(CODE "
 unset(CMAKE_INSTALL_COMPONENT)
 set(COMPONENT \"PythonWheelRuntimeLibraries\")
+set(CMAKE_INSTALL_DO_STRIP 1)
 include\(\"${ITK_DIR}/cmake_install.cmake\")
 unset(CMAKE_INSTALL_COMPONENT)
 ")
