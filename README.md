@@ -20,6 +20,23 @@ Guide](https://itk.org/ITKSoftwareGuide/html/Book1/ITKSoftwareGuide-Book1ch3.htm
 There are also many [downloadable
 examples](https://itk.org/ITKExamples/search.html?q=Python) documented in Sphinx.
 
+# Table of Contents
+
+  * [Automated wheels building with scripts](#automated-wheels-building-with-scripts)
+     * [Linux](#linux)
+     * [MacOSX](#macosx)
+     * [Windows](#windows)
+     * [sdist](#sdist)
+  * [Prerequisites](#prerequisites)
+  * [Detailed build instructions](#detailed-build-instructions)
+     * [Building ITK Python wheels](#building-itk-python-wheels)
+     * [Efficiently building wheels for different version of python](#efficiently-building-wheels-for-different-version-of-python)
+  * [Miscellaneous](#miscellaneous)
+
+<!--
+Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
+-->
+
 ## Automated wheels building with scripts
 
 Steps required to build wheels on Linux, MacOSX and Windows have been automated. The
