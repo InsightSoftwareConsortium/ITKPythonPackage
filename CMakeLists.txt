@@ -150,7 +150,7 @@ if(ITKPythonPackage_SUPERBUILD)
   #-----------------------------------------------------------------------------
   # ITK: This project builds ITK and associated Python modules
 
-  set(ITK_BINARY_DIR ${CMAKE_BINARY_DIR}/ITK-build)
+  set(ITK_BINARY_DIR "${CMAKE_BINARY_DIR}/ITK-build" CACHE PATH "ITK build directory")
 
   message(STATUS "SuperBuild - ITK => Requires ITK-source-download")
   message(STATUS "SuperBuild -   ITK_BINARY_DIR: ${ITK_BINARY_DIR}")
@@ -185,7 +185,7 @@ if(ITKPythonPackage_SUPERBUILD)
     )
   ExternalProject_Add_StepDependencies(ITK download ITK-source-download)
 
-  set(ITK_DIR ${CMAKE_BINARY_DIR}/ITK-build)
+  set(ITK_DIR "${ITK_BINARY_DIR}")
 
   message(STATUS "SuperBuild -   ITK_DIR: ${ITK_DIR}")
   message(STATUS "SuperBuild - ITK[OK]")
