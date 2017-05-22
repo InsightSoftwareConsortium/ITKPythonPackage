@@ -67,12 +67,20 @@ for PYBIN in "${PYBINARIES[@]}"; do
     echo "PYTHON_LIBRARY:${PYTHON_LIBRARY}"
 
     ${PYBIN}/pip install -r /work/requirements-dev.txt
+    build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${arch}
+    # Clean up previous invocations
+    rm -rf $build_path
     ${PYBIN}/python setup.py bdist_wheel --build-type MinSizeRel -G Ninja -- \
       -DITK_SOURCE_DIR:PATH=/work/standalone-${arch}-build/ITK-source \
+      -DITK_BINARY_DIR:PATH=${build_path} \
       -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
       -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
       -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
     ${PYBIN}/python setup.py clean
+    # Remove unecessary files for building against ITK
+    find $build_path -name '*.cpp' -delete -o -name '*.xml' -delete
+    rm -rf $build_path/Wrapping/Generators/castxml*
+    find $build_path -name '*.o' -delete
 done
 
 # Since there are no external shared libraries to bundle into the wheels
@@ -88,8 +96,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
         echo "Skipping ${PYBIN}"
         continue
     fi
-    ${PYBIN}/pip install itk --user --no-cache-dir --no-index -f /work/dist
-    ${PYBIN}/pip install --user numpy
+    sudo ${PYBIN}/pip install itk --no-cache-dir --no-index -f /work/dist
+    sudo ${PYBIN}/pip install numpy
     (cd $HOME; ${PYBIN}/python -c 'from itk import ITKCommon;')
     (cd $HOME; ${PYBIN}/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
     (cd $HOME; ${PYBIN}/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
