@@ -28,7 +28,7 @@ setup(
         'itkTemplate',
         'itkTypes',
         'itkVersion',
-        'WrapITKBuildOptionsPython'
+        'itkBuildOptions'
     ],
     download_url=r'https://itk.org/ITK/resources/software.html',
     description=r'ITK is an open-source toolkit for multidimensional image '
