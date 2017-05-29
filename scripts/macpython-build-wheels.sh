@@ -78,15 +78,23 @@ for VENV in "${VENVS[@]}"; do
     echo "PYTHON_LIBRARY:${PYTHON_LIBRARY}"
 
     $PYTHON_EXECUTABLE -m pip install -r ${SCRIPT_DIR}/../requirements-dev.txt
+    build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
+    # Clean up previous invocations
+    rm -rf $build_path
     $PYTHON_EXECUTABLE setup.py bdist_wheel --build-type MinSizeRel --plat-name macosx-10.6-x86_64 -G Ninja -- \
       -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
       -DITK_SOURCE_DIR:PATH=${SCRIPT_DIR}/../standalone-build/ITK-source \
+      -DITK_BINARY_DIR:PATH=${build_path} \
       -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=10.6 \
       -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
       -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
       -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
       -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
     $PYTHON_EXECUTABLE setup.py clean
+    # Remove unecessary files for building against ITK
+    find $build_path -name '*.cpp' -delete -o -name '*.xml' -delete
+    rm -rf $build_path/Wrapping/Generators/castxml*
+    find $build_path -name '*.o' -delete
 done
 
 $DELOCATE_LISTDEPS ${SCRIPT_DIR}/../dist/*.whl # lists library dependencies
