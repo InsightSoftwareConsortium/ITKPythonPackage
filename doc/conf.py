@@ -1,3 +1,4 @@
+import os
 # -*- coding: utf-8 -*-
 #
 # ITKPythonPackage documentation build configuration file, created by
