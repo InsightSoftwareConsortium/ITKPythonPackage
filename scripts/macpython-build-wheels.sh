@@ -21,6 +21,9 @@ rm -rf ${SCRIPT_DIR}/../venvs
 VENVS=()
 mkdir -p ${SCRIPT_DIR}/../venvs
 for PYBIN in "${PYBINARIES[@]}"; do
+    if [[ $(basename $PYBIN) = "Current" ]]; then
+      continue
+    fi
     py_mm=$(basename ${PYBIN})
     VENV=${SCRIPT_DIR}/../venvs/${py_mm}
     VIRTUALENV_EXECUTABLE=${PYBIN}/bin/virtualenv
