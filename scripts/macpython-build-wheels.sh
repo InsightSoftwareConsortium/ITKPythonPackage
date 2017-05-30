@@ -1,19 +1,14 @@
 #!/usr/bin/env bash
-set -e -x
-MACPYTHON_PY_PREFIX=/Library/Frameworks/Python.framework/Versions
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
+# Run this script to build the ITK Python wheel packages for macOS.
+#
 # Versions can be restricted by passing them in as arguments to the script
 # For example,
-# macpython-build-wheels.sh 2.7 3.5
-if [[ $# -eq 0 ]]; then
-  PYBINARIES=(${MACPYTHON_PY_PREFIX}/*)
-else
-  PYBINARIES=()
-  for version in "$@"; do
-    PYBINARIES+=(${MACPYTHON_PY_PREFIX}/*${version}*)
-  done
-fi
+#
+#   scripts/macpython-build-wheels.sh 2.7 3.5
+
+script_dir="`cd $(dirname $0); pwd`"
+source "${script_dir}/macpython-build-common.sh"
 
 # Remove previous virtualenv's
 rm -rf ${SCRIPT_DIR}/../venvs
@@ -31,18 +26,6 @@ for PYBIN in "${PYBINARIES[@]}"; do
     VENVS+=(${VENV})
 done
 
-# Install CMake, Ninja
-VENV="${VENVS[0]}"
-PYTHON_EXECUTABLE=${VENV}/bin/python
-$PYTHON_EXECUTABLE -m pip install cmake
-CMAKE_EXECUTABLE=${VENV}/bin/cmake
-$PYTHON_EXECUTABLE -m pip install ninja
-NINJA_EXECUTABLE=${VENV}/bin/ninja
-$PYTHON_EXECUTABLE -m pip install delocate
-DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
-DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
-
-
 # Build standalone project and populate archive cache
 mkdir -p standalone-build
 pushd standalone-build > /dev/null 2>&1
@@ -52,22 +35,6 @@ pushd standalone-build > /dev/null 2>&1
       ${SCRIPT_DIR}/../
   $NINJA_EXECUTABLE
 popd > /dev/null 2>&1
-
-# Since the python interpreter exports its symbol (see [1]), python
-# modules should not link against any python libraries.
-# To ensure it is not the case, we configure the project using an empty
-# file as python library.
-#
-# [1] "Note that libpythonX.Y.so.1 is not on the list of libraries that
-# a manylinux1 extension is allowed to link to. Explicitly linking to
-# libpythonX.Y.so.1 is unnecessary in almost all cases: the way ELF linking
-# works, extension modules that are loaded into the interpreter automatically
-# get access to all of the interpreter's symbols, regardless of whether or
-# not the extension itself is explicitly linked against libpython. [...]"
-#
-# Source: https://www.python.org/dev/peps/pep-0513/#libpythonx-y-so-1
-PYTHON_LIBRARY=${SCRIPT_DIR}/internal/manylinux-libpython-not-needed-symbols-exported-by-interpreter
-touch ${PYTHON_LIBRARY}
 
 # Compile wheels re-using standalone project and archive cache
 for VENV in "${VENVS[@]}"; do

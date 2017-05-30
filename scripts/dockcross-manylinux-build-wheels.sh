@@ -4,7 +4,8 @@
 #
 # Versions can be restricted by passing them in as arguments to the script
 # For example,
-# scripts/dockcross-manylinux-build-wheels.sh cp27mu cp35
+#
+#   scripts/dockcross-manylinux-build-wheels.sh cp27mu cp35
 
 # Pull dockcross manylinux images
 docker pull dockcross/manylinux-x64
