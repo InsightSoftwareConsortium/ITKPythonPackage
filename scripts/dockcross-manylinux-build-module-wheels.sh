@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Run this script to build the Python wheel packages for Linux for an ITK
+# external module.
+#
+# Versions can be restricted by passing them in as arguments to the script
+# For example,
+# scripts/dockcross-manylinux-build-module-wheels.sh cp27mu cp35
+
 # Pull dockcross manylinux images
 docker pull dockcross/manylinux-x64
 #docker pull dockcross/manylinux-x86
