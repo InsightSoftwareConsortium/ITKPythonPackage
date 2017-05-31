@@ -28,17 +28,6 @@ for PYBIN in "${PYBINARIES[@]}"; do
     VENVS+=(${VENV})
 done
 
-VENV="${VENVS[0]}"
-PYTHON_EXECUTABLE=${VENV}/bin/python
-$PYTHON_EXECUTABLE -m pip install --no-cache cmake
-CMAKE_EXECUTABLE=${VENV}/bin/cmake
-$PYTHON_EXECUTABLE -m pip install --no-cache ninja
-NINJA_EXECUTABLE=${VENV}/bin/ninja
-$PYTHON_EXECUTABLE -m pip install --no-cache delocate
-DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
-DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
-
-
 # Since the python interpreter exports its symbol (see [1]), python
 # modules should not link against any python libraries.
 # To ensure it is not the case, we configure the project using an empty

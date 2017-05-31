@@ -11,6 +11,16 @@
 script_dir="`cd $(dirname $0); pwd`"
 source "${script_dir}/macpython-build-common.sh"
 
+VENV="${VENVS[0]}"
+PYTHON_EXECUTABLE=${VENV}/bin/python
+$PYTHON_EXECUTABLE -m pip install --no-cache cmake
+CMAKE_EXECUTABLE=${VENV}/bin/cmake
+$PYTHON_EXECUTABLE -m pip install --no-cache ninja
+NINJA_EXECUTABLE=${VENV}/bin/ninja
+$PYTHON_EXECUTABLE -m pip install --no-cache delocate
+DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
+DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
+
 # Compile wheels re-using standalone project and archive cache
 for VENV in "${VENVS[@]}"; do
     py_mm=$(basename ${VENV})
