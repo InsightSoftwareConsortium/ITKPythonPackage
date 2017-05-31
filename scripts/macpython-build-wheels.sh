@@ -7,8 +7,12 @@
 #
 #   scripts/macpython-build-wheels.sh 2.7 3.5
 
-script_dir="`cd $(dirname $0); pwd`"
+script_dir=$(cd $(dirname $(readlink -f "$0")) || exit 1; pwd)
 source "${script_dir}/macpython-build-common.sh"
+
+# -----------------------------------------------------------------------
+# SCRIPT_DIR, PYBINARIES variables are set in common script
+# -----------------------------------------------------------------------
 
 # Remove previous virtualenv's
 rm -rf ${SCRIPT_DIR}/../venvs
@@ -74,7 +78,7 @@ $DELOCATE_WHEEL ${SCRIPT_DIR}/../dist/*.whl # copies library dependencies into w
 for VENV in "${VENVS[@]}"; do
     ${VENV}/bin/pip install itk --no-cache-dir --no-index -f ${SCRIPT_DIR}/../dist
     ${VENV}/bin/pip install numpy
-    (cd $HOME; ${VENV}/bin/python -c 'import itk;')
-    (cd $HOME; ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
-    (cd $HOME; ${VENV}/bin/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
+    (cd $HOME && ${VENV}/bin/python -c 'import itk;')
+    (cd $HOME && ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
+    (cd $HOME && ${VENV}/bin/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
 done

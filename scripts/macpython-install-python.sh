@@ -70,7 +70,7 @@ function unlex_ver {
 }
 
 function strip_ver_suffix {
-    echo $(unlex_ver $(lex_ver $1))
+    unlex_ver $(lex_ver $1)
 }
 
 function check_var {
@@ -84,25 +84,21 @@ function fill_pyver {
     # Convert major or major.minor format to major.minor.micro
     #
     # Hence:
-    # 2 -> 2.7.11  (depending on LATEST_2p7 value)
-    # 2.7 -> 2.7.11  (depending on LATEST_2p7 value)
+    # 2 -> 2.7.11  (depending on LATEST_27 value)
+    # 2.7 -> 2.7.11  (depending on LATEST_27 value)
     local ver=$1
     check_var $ver
     if [[ $ver =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
         # Major.minor.micro format already
         echo $ver
     elif [ $ver == 2 ] || [ $ver == "2.7" ]; then
-        echo $LATEST_2p7
-    elif [ $ver == "2.6" ]; then
-        echo $LATEST_2p6
-    elif [ $ver == 3 ] || [ $ver == "3.5" ]; then
-        echo $LATEST_3p5
+        echo $LATEST_27
+    elif [ $ver == 3 ] || [ $ver == "3.6" ]; then
+        echo $LATEST_36
+    elif [ $ver == "3.5" ]; then
+        echo $LATEST_35
     elif [ $ver == "3.4" ]; then
-        echo $LATEST_3p4
-    elif [ $ver == "3.3" ]; then
-        echo $LATEST_3p3
-    elif [ $ver == "3.2" ]; then
-        echo $LATEST_3p2
+        echo $LATEST_34
     else
         echo "Can't fill version $ver"
         exit 1
@@ -155,6 +151,7 @@ function install_macpython {
     local py_mm=${py_version:0:3}
     local py_m=${py_version:0:1}
     PYTHON_EXE=$MACPYTHON_PY_PREFIX/$py_mm/bin/python$py_m
+    export PYTHON_EXE
 }
 
 function install_pip {
@@ -168,8 +165,9 @@ function install_pip {
     # Travis VMS now install pip for system python by default - force install
     # even if installed already
     sudo $PYTHON_EXE $DOWNLOADS_SDIR/get-pip.py --ignore-installed
-    local py_mm=`get_py_mm`
-    PIP_CMD="sudo `dirname $PYTHON_EXE`/pip$py_mm"
+    local py_mm=$(get_py_mm)
+    PIP_CMD="sudo $(dirname $PYTHON_EXE)/pip$py_mm"
+    export PIP_CMD
 }
 
 function install_virtualenv {
@@ -182,6 +180,7 @@ function install_virtualenv {
     $PYTHON_EXE -m pip install virtualenv --ignore-installed
     check_python
     VIRTUALENV_CMD="$(dirname $PYTHON_EXE)/virtualenv"
+    export VIRTUALENV_CMD
 }
 
 

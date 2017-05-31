@@ -8,8 +8,12 @@
 #
 #   scripts/macpython-build-module-wheels.sh 2.7 3.5
 
-script_dir="`cd $(dirname $0); pwd`"
+script_dir=$(cd $(dirname $(readlink -f "$0")) || exit 1; pwd)
 source "${script_dir}/macpython-build-common.sh"
+
+# -----------------------------------------------------------------------
+# SCRIPT_DIR, VENVS variables are set in common script
+# -----------------------------------------------------------------------
 
 # Compile wheels re-using standalone project and archive cache
 for VENV in "${VENVS[@]}"; do

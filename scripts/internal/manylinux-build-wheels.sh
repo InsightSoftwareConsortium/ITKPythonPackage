@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 
-script_dir="`cd $(dirname $0); pwd`"
+script_dir=$(cd $(dirname $(readlink -f "$0")) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
 
+# -----------------------------------------------------------------------
+# ARCH, PYBINARIES variables are set in common script
+# -----------------------------------------------------------------------
+
 # Build standalone project and populate archive cache
-mkdir -p /work/standalone-${arch}-build
-pushd /work/standalone-${arch}-build > /dev/null 2>&1
+mkdir -p /work/standalone-${ARCH}-build
+pushd /work/standalone-${ARCH}-build > /dev/null 2>&1
   cmake -DITKPythonPackage_BUILD_PYTHON:PATH=0 -G Ninja ../
   ninja
 popd > /dev/null 2>&1
@@ -26,11 +30,11 @@ for PYBIN in "${PYBINARIES[@]}"; do
     echo "PYTHON_LIBRARY:${PYTHON_LIBRARY}"
 
     ${PYBIN}/pip install -r /work/requirements-dev.txt
-    build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${arch}
+    build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${ARCH}
     # Clean up previous invocations
     rm -rf $build_path
     ${PYBIN}/python setup.py bdist_wheel --build-type MinSizeRel -G Ninja -- \
-      -DITK_SOURCE_DIR:PATH=/work/standalone-${arch}-build/ITK-source \
+      -DITK_SOURCE_DIR:PATH=/work/standalone-${ARCH}-build/ITK-source \
       -DITK_BINARY_DIR:PATH=${build_path} \
       -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
       -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
@@ -57,7 +61,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
     fi
     sudo ${PYBIN}/pip install itk --no-cache-dir --no-index -f /work/dist
     sudo ${PYBIN}/pip install numpy
-    (cd $HOME; ${PYBIN}/python -c 'from itk import ITKCommon;')
-    (cd $HOME; ${PYBIN}/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
-    (cd $HOME; ${PYBIN}/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
+    (cd $HOME && ${PYBIN}/python -c 'from itk import ITKCommon;')
+    (cd $HOME && ${PYBIN}/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
+    (cd $HOME && ${PYBIN}/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
 done
