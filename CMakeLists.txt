@@ -50,30 +50,13 @@ if(ITKPythonPackage_SUPERBUILD)
   endif()
 
   #-----------------------------------------------------------------------------
+  set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
   include(ExternalProject)
+  include(ITKPythonPackage)
 
   set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
   # ITK nightly-master 2017-06-07
   set(ITK_GIT_TAG "a6ec54b")
-
-  # Add an empty external project
-  function(itk_ExternalProject_Add_Empty proj depends)
-    set(depends_args)
-    if(NOT depends STREQUAL "")
-      set(depends_args DEPENDS ${depends})
-    endif()
-    ExternalProject_add(${proj}
-      SOURCE_DIR ${CMAKE_BINARY_DIR}/${proj}
-      DOWNLOAD_COMMAND ""
-      UPDATE_COMMAND ""
-      CONFIGURE_COMMAND ""
-      BUILD_COMMAND ""
-      BUILD_IN_SOURCE 1
-      BUILD_ALWAYS 1
-      INSTALL_COMMAND ""
-      ${depends_args}
-      )
-  endfunction()
 
   #-----------------------------------------------------------------------------
   # A separate project is used to download ITK, so that it can reused
@@ -102,7 +85,7 @@ if(ITKPythonPackage_SUPERBUILD)
 
   else()
 
-    itk_ExternalProject_Add_Empty(
+    ipp_ExternalProject_Add_Empty(
       ITK-source-download
       ""
       )
