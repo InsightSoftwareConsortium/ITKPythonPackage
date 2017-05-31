@@ -185,9 +185,6 @@ if(ITKPythonPackage_SUPERBUILD)
     )
   ExternalProject_Add_StepDependencies(ITK download ITK-source-download)
 
-  set(ITK_DIR "${ITK_BINARY_DIR}")
-
-  message(STATUS "SuperBuild -   ITK_DIR: ${ITK_DIR}")
   message(STATUS "SuperBuild - ITK[OK]")
 
   #-----------------------------------------------------------------------------
@@ -203,7 +200,7 @@ if(ITKPythonPackage_SUPERBUILD)
     UPDATE_COMMAND ""
     CMAKE_CACHE_ARGS
       -DITKPythonPackage_SUPERBUILD:BOOL=0
-      -DITK_DIR:PATH=${ITK_DIR}
+      -DITK_BINARY_DIR:PATH=${ITK_BINARY_DIR}
       -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
       ${ep_common_cmake_cache_args}
     USES_TERMINAL_CONFIGURE 1
@@ -223,7 +220,7 @@ else()
 unset(CMAKE_INSTALL_COMPONENT)
 set(COMPONENT \"PythonWheelRuntimeLibraries\")
 set(CMAKE_INSTALL_DO_STRIP 1)
-include\(\"${ITK_DIR}/cmake_install.cmake\")
+include\(\"${ITK_BINARY_DIR}/cmake_install.cmake\")
 unset(CMAKE_INSTALL_COMPONENT)
 ")
 
