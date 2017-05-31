@@ -2,8 +2,10 @@
 # macpython-build-module-wheels.sh
 
 set -e -x
+
+SCRIPT_DIR=$(cd $(dirname $(readlink -f "$0")) || exit 1; pwd)
+
 MACPYTHON_PY_PREFIX=/Library/Frameworks/Python.framework/Versions
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 # Versions can be restricted by passing them in as arguments to the script
 # For example,

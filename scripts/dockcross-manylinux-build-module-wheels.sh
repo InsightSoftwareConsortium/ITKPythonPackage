@@ -18,7 +18,7 @@ chmod u+x /tmp/dockcross-manylinux-x64
 #docker run dockcross/manylinux-x86 > /tmp/dockcross-manylinux-x86
 #chmod u+x /tmp/dockcross-manylinux-x86
 
-script_dir="`cd $(dirname $0); pwd`"
+script_dir=$(cd $(dirname $(readlink -f "$0")) || exit 1; pwd)
 
 # Build wheels
 mkdir -p dist

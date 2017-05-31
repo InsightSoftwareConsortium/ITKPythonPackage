@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 
-script_dir="`cd $(dirname $0); pwd`"
+script_dir=$(cd $(dirname $(readlink -f "$0")) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
+
+# -----------------------------------------------------------------------
+# ARCH, PYBINARIES variables are set in common script
+# -----------------------------------------------------------------------
 
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
@@ -21,14 +25,14 @@ for PYBIN in "${PYBINARIES[@]}"; do
     if [[ -e /work/requirements-dev.txt ]]; then
       ${PYBIN}/pip install -r /work/requirements-dev.txt
     fi
-    itk_build_dir=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${arch}
-    ln -fs /ITKPythonPackage/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${arch} $itk_build_dir
+    itk_build_dir=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${ARCH}
+    ln -fs /ITKPythonPackage/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${ARCH} $itk_build_dir
     if [[ ! -d $itk_build_dir ]]; then
       echo 'ITK build tree not available!' 1>&2
       exit 1
     fi
-    itk_source_dir=/work/standalone-${arch}-build/ITK-source
-    ln -fs /ITKPythonPackage/standalone-${arch}-build/ /work/standalone-${arch}-build
+    itk_source_dir=/work/standalone-${ARCH}-build/ITK-source
+    ln -fs /ITKPythonPackage/standalone-${ARCH}-build/ /work/standalone-${ARCH}-build
     if [[ ! -d $itk_source_dir ]]; then
       echo 'ITK source tree not available!' 1>&2
       exit 1
