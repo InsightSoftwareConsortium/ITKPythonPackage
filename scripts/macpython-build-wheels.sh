@@ -57,20 +57,89 @@ for VENV in "${VENVS[@]}"; do
     echo "PYTHON_INCLUDE_DIR:${PYTHON_INCLUDE_DIR}"
     echo "PYTHON_LIBRARY:${PYTHON_LIBRARY}"
 
+    # Install dependencies
     $PYTHON_EXECUTABLE -m pip install -r ${SCRIPT_DIR}/../requirements-dev.txt
+
+    build_type="MinSizeRel"
+    plat_name="macosx-10.6-x86_64"
+    osx_target="10.6"
+    source_path=${SCRIPT_DIR}/../standalone-build/ITK-source
     build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
+    SETUP_PY_CONFIGURE="${script_dir}/setup_py_configure.py"
+
     # Clean up previous invocations
-    rm -rf $build_path
-    $PYTHON_EXECUTABLE setup.py bdist_wheel --build-type MinSizeRel --plat-name macosx-10.6-x86_64 -G Ninja -- \
-      -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
-      -DITK_SOURCE_DIR:PATH=${SCRIPT_DIR}/../standalone-build/ITK-source \
-      -DITK_BINARY_DIR:PATH=${build_path} \
-      -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=10.6 \
-      -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
-      -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
-      -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
-      -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
-    $PYTHON_EXECUTABLE setup.py clean
+    rm -rf ${build_path}
+
+    single_wheel=0
+
+    if [[ ${single_wheel} == 1 ]]; then
+
+      echo "#"
+      echo "# Build single ITK wheel"
+      echo "#"
+
+      # Configure setup.py
+      ${PYBIN}/python ${SETUP_PY_CONFIGURE} "itk"
+      # Generate wheel
+      $PYTHON_EXECUTABLE setup.py bdist_wheel --build-type ${build_type} --plat-name ${plat_name} -G Ninja -- \
+        -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
+        -DITK_SOURCE_DIR:PATH= ${source_path} \
+        -DITK_BINARY_DIR:PATH=${build_path} \
+        -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+        -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
+        -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
+        -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
+        -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
+      # Cleanup
+      $PYTHON_EXECUTABLE setup.py clean
+
+    else
+
+      echo "#"
+      echo "# Build multiple ITK wheels"
+      echo "#"
+
+      # Build ITK python
+      (
+        mkdir -p ${build_path} \
+        && cd ${build_path} \
+        && cmake \
+          -DCMAKE_BUILD_TYPE:STRING=${build_type} \
+          -DITK_SOURCE_DIR:PATH=${source_path} \
+          -DITK_BINARY_DIR:PATH=${build_path} \
+          -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+          -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
+          -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
+          -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
+          -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+          -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
+          -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
+          -G Ninja \
+          ${source_path} \
+        && ninja
+      )
+
+      wheel_names=$(cat ${SCRIPT_DIR}/WHEEL_NAMES.txt)
+      for wheel_name in ${wheel_names}; do
+        # Configure setup.py
+        ${PYBIN}/python ${SETUP_PY_CONFIGURE} ${wheel_name}
+        # Generate wheel
+        ${PYBIN}/python setup.py bdist_wheel --build-type ${build_type} --plat-name ${plat_name} -G Ninja -- \
+          -DITK_SOURCE_DIR:PATH=${source_path} \
+          -DITK_BINARY_DIR:PATH=${build_path} \
+          -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+          -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
+          -DITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
+          -DITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
+          -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
+          -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
+          -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
+        # Cleanup
+        $PYTHON_EXECUTABLE setup.py clean
+      done
+
+    fi
+
     # Remove unecessary files for building against ITK
     find $build_path -name '*.cpp' -delete -o -name '*.xml' -delete
     rm -rf $build_path/Wrapping/Generators/castxml*
