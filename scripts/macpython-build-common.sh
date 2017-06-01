@@ -41,5 +41,5 @@ done
 # not the extension itself is explicitly linked against libpython. [...]"
 #
 # Source: https://www.python.org/dev/peps/pep-0513/#libpythonx-y-so-1
-PYTHON_LIBRARY=$(cd $(dirname $0); pwd)/internal/manylinux-libpython-not-needed-symbols-exported-by-interpreter
+PYTHON_LIBRARY=$(cd $(dirname $0); pwd)/internal/libpython-not-needed-symbols-exported-by-interpreter
 touch ${PYTHON_LIBRARY}
