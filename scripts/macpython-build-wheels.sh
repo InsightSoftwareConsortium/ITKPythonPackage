@@ -79,7 +79,7 @@ for VENV in "${VENVS[@]}"; do
       echo "#"
 
       # Configure setup.py
-      ${PYBIN}/python ${SETUP_PY_CONFIGURE} "itk"
+      ${PYTHON_EXECUTABLE} ${SETUP_PY_CONFIGURE} "itk"
       # Generate wheel
       $PYTHON_EXECUTABLE setup.py bdist_wheel --build-type ${build_type} --plat-name ${plat_name} -G Ninja -- \
         -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
@@ -122,9 +122,9 @@ for VENV in "${VENVS[@]}"; do
       wheel_names=$(cat ${SCRIPT_DIR}/WHEEL_NAMES.txt)
       for wheel_name in ${wheel_names}; do
         # Configure setup.py
-        ${PYBIN}/python ${SETUP_PY_CONFIGURE} ${wheel_name}
+        ${PYTHON_EXECUTABLE} ${SETUP_PY_CONFIGURE} ${wheel_name}
         # Generate wheel
-        ${PYBIN}/python setup.py bdist_wheel --build-type ${build_type} --plat-name ${plat_name} -G Ninja -- \
+        ${PYTHON_EXECUTABLE} setup.py bdist_wheel --build-type ${build_type} --plat-name ${plat_name} -G Ninja -- \
           -DITK_SOURCE_DIR:PATH=${source_path} \
           -DITK_BINARY_DIR:PATH=${build_path} \
           -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
