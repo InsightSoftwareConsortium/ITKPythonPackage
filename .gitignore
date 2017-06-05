@@ -9,7 +9,7 @@ downloads
 venvs
 venv-*
 ITK-*
-manylinux-libpython-not-needed-symbols-exported-by-interpreter
+libpython-not-needed-symbols-exported-by-interpreter
 
 # Python
 *.py[cod]
