@@ -82,7 +82,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
         && ninja
       )
 
-      wheel_names=$(cat ${script_dir}/WHEEL_NAMES.txt)
+      wheel_names=$(cat ${script_dir}/../WHEEL_NAMES.txt)
       for wheel_name in ${wheel_names}; do
         # Configure setup.py
         ${PYBIN}/python ${SETUP_PY_CONFIGURE} ${wheel_name}
