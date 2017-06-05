@@ -114,6 +114,10 @@ for VENV in "${VENVS[@]}"; do
           -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
           -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
           -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
+          -DPY_SITE_PACKAGES_PATH:PATH=${SCRIPT_DIR}/../_skbuild/cmake-install \
+          -DITK_LEGACY_SILENT:BOOL=ON \
+          -DITK_WRAP_PYTHON:BOOL=ON \
+          -DITK_WRAP_PYTHON_LEGACY:BOOL=OFF \
           -G Ninja \
           ${source_path} \
         && ninja

@@ -166,6 +166,11 @@ if(ITKPythonPackage_SUPERBUILD)
       message(STATUS "SuperBuild -   Force re-configure removing ${_stamp}")
     endif()
 
+    set(install_component_per_module OFF)
+    if(NOT ITKPythonPackage_WHEEL_NAME STREQUAL "itk")
+      set(install_component_per_module ON)
+    endif()
+
     ExternalProject_add(ITK
       DOWNLOAD_COMMAND ""
       SOURCE_DIR ${ITK_SOURCE_DIR}
@@ -175,6 +180,7 @@ if(ITKPythonPackage_SUPERBUILD)
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
         -DPY_SITE_PACKAGES_PATH:PATH=${CMAKE_INSTALL_PREFIX}
         -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel
+        -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=${install_component_per_module}
         -DITK_LEGACY_SILENT:BOOL=ON
         -DITK_WRAP_PYTHON:BOOL=ON
         -DITK_WRAP_PYTHON_LEGACY:BOOL=OFF
