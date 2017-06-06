@@ -54,7 +54,6 @@ for PYBIN in "${PYBINARIES[@]}"; do
       ${PYBIN}/python setup.py bdist_wheel --build-type ${build_type} -G Ninja -- \
             -DITK_SOURCE_DIR:PATH=${source_path} \
             -DITK_BINARY_DIR:PATH=${build_path} \
-            -DBUILD_TESTING:BOOL=OFF \
             -DITKPythonPackage_ITK_BINARY_REUSE:BOOL=OFF \
             -DITKPythonPackage_WHEEL_NAME:STRING="itk" \
             -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \

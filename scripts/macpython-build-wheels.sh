@@ -111,6 +111,7 @@ for VENV in "${VENVS[@]}"; do
           -DCMAKE_BUILD_TYPE:STRING=${build_type} \
           -DITK_SOURCE_DIR:PATH=${source_path} \
           -DITK_BINARY_DIR:PATH=${build_path} \
+          -DBUILD_TESTING:BOOL=OFF \
           -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
           -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
           -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
