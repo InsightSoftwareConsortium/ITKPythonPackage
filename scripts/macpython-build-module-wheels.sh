@@ -8,13 +8,17 @@
 #
 #   scripts/macpython-build-module-wheels.sh 2.7 3.5
 
-script_dir="`cd $(dirname $0); pwd`"
+script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/macpython-build-common.sh"
+
+# -----------------------------------------------------------------------
+# SCRIPT_DIR, VENVS variables are set in common script
+# -----------------------------------------------------------------------
 
 VENV="${VENVS[0]}"
 PYTHON_EXECUTABLE=${VENV}/bin/python
 $PYTHON_EXECUTABLE -m pip install --no-cache cmake
-CMAKE_EXECUTABLE=${VENV}/bin/cmake
+# CMAKE_EXECUTABLE=${VENV}/bin/cmake
 $PYTHON_EXECUTABLE -m pip install --no-cache ninja
 NINJA_EXECUTABLE=${VENV}/bin/ninja
 $PYTHON_EXECUTABLE -m pip install --no-cache delocate

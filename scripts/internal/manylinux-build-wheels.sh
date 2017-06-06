@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 
-script_dir="`cd $(dirname $0); pwd`"
+script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
 
+# -----------------------------------------------------------------------
+# ARCH, PYBINARIES variables are set in common script
+# -----------------------------------------------------------------------
+
 # Build standalone project and populate archive cache
-mkdir -p /work/standalone-${arch}-build
-pushd /work/standalone-${arch}-build > /dev/null 2>&1
+mkdir -p /work/standalone-${ARCH}-build
+pushd /work/standalone-${ARCH}-build > /dev/null 2>&1
   cmake -DITKPythonPackage_BUILD_PYTHON:PATH=0 -G Ninja ../
   ninja
 popd > /dev/null 2>&1
@@ -29,8 +33,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
     ${PYBIN}/pip install -r /work/requirements-dev.txt
 
     build_type=MinSizeRel
-    source_path=/work/standalone-${arch}-build/ITK-source
-    build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${arch}
+    source_path=/work/standalone-${ARCH}-build/ITK-source
+    build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${ARCH}
     SETUP_PY_CONFIGURE="${script_dir}/../setup_py_configure.py"
 
     # Clean up previous invocations
@@ -128,7 +132,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
     fi
     sudo ${PYBIN}/pip install itk --no-cache-dir --no-index -f /work/dist
     sudo ${PYBIN}/pip install numpy
-    (cd $HOME; ${PYBIN}/python -c 'from itk import ITKCommon;')
-    (cd $HOME; ${PYBIN}/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
-    (cd $HOME; ${PYBIN}/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
+    (cd $HOME && ${PYBIN}/python -c 'from itk import ITKCommon;')
+    (cd $HOME && ${PYBIN}/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
+    (cd $HOME && ${PYBIN}/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
 done
