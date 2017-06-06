@@ -125,7 +125,8 @@ for VENV in "${VENVS[@]}"; do
           -DITK_WRAP_PYTHON_LEGACY:BOOL=OFF \
           -G Ninja \
           ${source_path} \
-        && ninja
+        && ninja\
+        || exit 1
       )
 
       wheel_names=$(cat ${SCRIPT_DIR}/WHEEL_NAMES.txt)
@@ -142,7 +143,8 @@ for VENV in "${VENVS[@]}"; do
           -DITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
           -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
           -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
-          -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
+          -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+        || exit 1
         # Cleanup
         $PYTHON_EXECUTABLE setup.py clean
       done
