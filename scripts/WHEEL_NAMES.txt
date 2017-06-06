@@ -1,6 +1,6 @@
 itk-core
-itk-filtering
-itk-io
 itk-numerics
+itk-io
+itk-filtering
 itk-registration
 itk-segmentation

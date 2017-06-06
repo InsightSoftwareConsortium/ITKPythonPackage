@@ -50,6 +50,8 @@ pushd standalone-build > /dev/null 2>&1
   $NINJA_EXECUTABLE
 popd > /dev/null 2>&1
 
+SINGLE_WHEEL=0
+
 # Compile wheels re-using standalone project and archive cache
 for VENV in "${VENVS[@]}"; do
     py_mm=$(basename ${VENV})
@@ -74,9 +76,7 @@ for VENV in "${VENVS[@]}"; do
     # Clean up previous invocations
     rm -rf ${build_path}
 
-    single_wheel=0
-
-    if [[ ${single_wheel} == 1 ]]; then
+    if [[ ${SINGLE_WHEEL} == 1 ]]; then
 
       echo "#"
       echo "# Build single ITK wheel"
@@ -162,7 +162,14 @@ $DELOCATE_WHEEL ${SCRIPT_DIR}/../dist/*.whl # copies library dependencies into w
 
 # Install packages and test
 for VENV in "${VENVS[@]}"; do
-    ${VENV}/bin/pip install itk --no-cache-dir --no-index -f ${SCRIPT_DIR}/../dist
+    if [[ ${SINGLE_WHEEL} == 1 ]]; then
+        packages="itk"
+    else
+        packages=$(cat ${SCRIPT_DIR}/WHEEL_NAMES.txt)
+    fi
+    for package in ${packages}; do
+        ${VENV}/bin/pip install ${package} --no-cache-dir --no-index -f ${SCRIPT_DIR}/../dist
+    done
     ${VENV}/bin/pip install numpy
     (cd $HOME && ${VENV}/bin/python -c 'import itk;')
     (cd $HOME && ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')

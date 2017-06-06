@@ -14,6 +14,8 @@ pushd /work/standalone-${ARCH}-build > /dev/null 2>&1
   ninja
 popd > /dev/null 2>&1
 
+SINGLE_WHEEL=0
+
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
     if [[ ${PYBIN} == *"cp26"* || ${PYBIN} == *"cp33"* ]]; then
@@ -40,9 +42,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
     # Clean up previous invocations
     rm -rf ${build_path}
 
-    single_wheel=0
-
-    if [[ ${single_wheel} == 1 ]]; then
+    if [[ ${SINGLE_WHEEL} == 1 ]]; then
 
       echo "#"
       echo "# Build single ITK wheel"
@@ -133,7 +133,14 @@ for PYBIN in "${PYBINARIES[@]}"; do
         echo "Skipping ${PYBIN}"
         continue
     fi
-    sudo ${PYBIN}/pip install itk --no-cache-dir --no-index -f /work/dist
+    if [[ ${SINGLE_WHEEL} == 1 ]]; then
+        packages="itk"
+    else
+        packages=$(cat ${script_dir}/../WHEEL_NAMES.txt)
+    fi
+    for package in ${packages}; do
+        ${PYBIN}/pip install ${package} --no-cache-dir --no-index -f /work/dist
+    done
     sudo ${PYBIN}/pip install numpy
     (cd $HOME && ${PYBIN}/python -c 'from itk import ITKCommon;')
     (cd $HOME && ${PYBIN}/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
