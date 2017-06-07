@@ -100,7 +100,7 @@ def build_wrapped_itk(
         check_call([ninja_executable])
 
 
-def build_wheel(python_version, single_wheel=False, cleanup=False):
+def build_wheel(python_version, single_wheel=False, cleanup=False, wheel_names=None):
     venv_dir = os.path.join(ROOT_DIR, "venv-%s" % python_version)
 
     python_executable = os.path.join(venv_dir, "Scripts", "python.exe")
@@ -176,9 +176,11 @@ def build_wheel(python_version, single_wheel=False, cleanup=False):
                 python_executable, python_include_dir, python_library)
 
             # Build wheels
-            with open(os.path.join(SCRIPT_DIR, "WHEEL_NAMES.txt"), "r") as content:
-                wheel_names = [wheel_name.strip()
-                               for wheel_name in content.readlines()]
+            if wheel_names is None:
+                with open(os.path.join(SCRIPT_DIR, "WHEEL_NAMES.txt"), "r") \
+                        as content:
+                    wheel_names = [wheel_name.strip()
+                                   for wheel_name in content.readlines()]
 
             for wheel_name in wheel_names:
                 # Configure setup.py
@@ -228,7 +230,7 @@ def test_wheels(single_wheel=False):
     pass
 
 
-def build_wheels(py_envs=None, single_wheel=False, cleanup=False):
+def build_wheels(py_envs=None, single_wheel=False, cleanup=False, wheel_names=None):
 
     if py_envs is None:
         py_envs = ["27-x64", "35-x64", "36-x64"]
@@ -257,13 +259,15 @@ def build_wheels(py_envs=None, single_wheel=False, cleanup=False):
 
     # Compile wheels re-using standalone project and archive cache
     for py_env in py_envs:
-        build_wheel(py_env, single_wheel=single_wheel, cleanup=cleanup)
+        build_wheel(
+            py_env, single_wheel=single_wheel, cleanup=cleanup, wheel_names=wheel_names)
 
 
-def main(cleanup=True):
+def main(wheel_names=None, cleanup=True):
     single_wheel = False
 
-    build_wheels(single_wheel=single_wheel, cleanup=cleanup)
+    build_wheels(
+        single_wheel=single_wheel, cleanup=cleanup, wheel_names=wheel_names)
     fixup_wheels()
     test_wheels(single_wheel=single_wheel)
 
