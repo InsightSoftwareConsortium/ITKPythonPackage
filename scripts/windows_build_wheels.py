@@ -105,7 +105,7 @@ class push_dir(ContextDecorator):
 
 def pip_install(python_dir, package):
     pip = os.path.join(python_dir, "Scripts", "pip.exe")
-    print("Installing $package using %s" % pip)
+    print("Installing %s using %s" % (package, pip))
     check_call([pip, "install", package])
 
 
@@ -146,7 +146,7 @@ def build_wheel(python_version, single_wheel=False):
 
     # Update PATH
     path = os.path.join(venv_dir, "Scripts")
-    with push_env(PATH="%s:%s" % (path, os.environ["PATH"])):
+    with push_env(PATH="%s%s%s" % (path, os.pathsep, os.environ["PATH"])):
 
         # Install dependencies
         check_call([pip, "install",
