@@ -263,11 +263,12 @@ def build_wheels(py_envs=None, single_wheel=False, cleanup=False, wheel_names=No
             py_env, single_wheel=single_wheel, cleanup=cleanup, wheel_names=wheel_names)
 
 
-def main(wheel_names=None, cleanup=True):
+def main(py_envs=None, wheel_names=None, cleanup=True):
     single_wheel = False
 
     build_wheels(
-        single_wheel=single_wheel, cleanup=cleanup, wheel_names=wheel_names)
+        single_wheel=single_wheel, cleanup=cleanup,
+        py_envs=py_envs, wheel_names=wheel_names)
     fixup_wheels()
     test_wheels(single_wheel=single_wheel)
 
