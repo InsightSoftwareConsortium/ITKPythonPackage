@@ -175,7 +175,8 @@ def build_wheel(python_version, single_wheel=False):
 
             # Build wheels
             with open(os.path.join(SCRIPT_DIR, "WHEEL_NAMES.txt"), "r") as content:
-                wheel_names = content.readline()
+                wheel_names = [wheel_name.strip()
+                               for wheel_name in content.readlines()]
 
             for wheel_name in wheel_names:
                 # Configure setup.py
