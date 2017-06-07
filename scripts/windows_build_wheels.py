@@ -122,6 +122,65 @@ def prepare_build_env(python_version):
     pip_install(venv_dir, "scikit-build")
 
 
+def build_wrapped_itk(
+        build_type, source_path, build_path,
+        python_executable, python_include_dir, python_library):
+
+    ninja_executable = os.path.join(
+        ROOT_DIR, "venv-27-x64", "Scripts", "ninja.exe")
+    print("NINJA_EXECUTABLE:%s" % ninja_executable)
+
+    try:
+        # Because of python issue #14243, we set "delete=False" and
+        # delete manually after process execution.
+        script_file = tempfile.NamedTemporaryFile(
+            delete=False, suffix=".py")
+        script_file.write(bytearray(textwrap.dedent(
+            """
+            import json
+            from skbuild.platform_specifics.windows import WindowsPlatform
+            # Instantiate
+            build_platform = WindowsPlatform()
+            generator = build_platform.default_generators[0]
+            assert generator.name == "Ninja"
+            print(json.dumps(generator.env))
+            """  # noqa: E501
+        ), "utf-8"))
+        script_file.file.flush()
+        output = check_output([python_executable, script_file.name])
+        build_env = json.loads(output.decode("utf-8").strip())
+    finally:
+        script_file.close()
+        os.remove(script_file.name)
+
+    py_site_packages_path = os.path.join(
+        SCRIPT_DIR, "..", "_skbuild", "cmake-install")
+
+    # Build ITK python
+    with push_dir(directory=build_path, make_directory=True), \
+            push_env(**build_env):
+
+        check_call([
+            "cmake",
+            "-DCMAKE_BUILD_TYPE:STRING=%s" % build_type,
+            "-DITK_SOURCE_DIR:PATH=%s" % source_path,
+            "-DITK_BINARY_DIR:PATH=%s" % build_path,
+            "-DBUILD_TESTING:BOOL=OFF",
+            "-DPYTHON_EXECUTABLE:FILEPATH=%s" % python_executable,
+            "-DPYTHON_INCLUDE_DIR:PATH=%s" % python_include_dir,
+            "-DPYTHON_LIBRARY:FILEPATH=%s" % python_library,
+            "-DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
+            "-DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON",
+            "-DPY_SITE_PACKAGES_PATH:PATH=%s" % py_site_packages_path,
+            "-DITK_LEGACY_SILENT:BOOL=ON",
+            "-DITK_WRAP_PYTHON:BOOL=ON",
+            "-DITK_WRAP_PYTHON_LEGACY:BOOL=OFF",
+            "-G", "Ninja",
+            source_path
+        ])
+        check_call([ninja_executable])
+
+
 def build_wheel(python_version, single_wheel=False):
     venv_dir = os.path.join(ROOT_DIR, "venv-%s" % python_version)
 
@@ -141,9 +200,6 @@ def build_wheel(python_version, single_wheel=False):
 
     pip = os.path.join(venv_dir, "Scripts", "pip.exe")
 
-    ninja_executable = os.path.join(ROOT_DIR, "venv-27-x64", "Scripts", "ninja.exe")
-    print("NINJA_EXECUTABLE:%s" % ninja_executable)
-
     # Update PATH
     path = os.path.join(venv_dir, "Scripts")
     with push_env(PATH="%s%s%s" % (path, os.pathsep, os.environ["PATH"])):
@@ -154,7 +210,7 @@ def build_wheel(python_version, single_wheel=False):
 
         build_type = "Release"
         source_path = "%s/ITK-source" % STANDALONE_DIR
-        build_path = "C:/P/IPP/ITK-win_%s" % python_version
+        build_path = "%s/ITK-win_%s" % (ROOT_DIR, python_version)
         setup_py_configure = os.path.join(
             SCRIPT_DIR, "..", "setup_py_configure.py")
 
@@ -170,6 +226,10 @@ def build_wheel(python_version, single_wheel=False):
 
             # Configure setup.py
             check_call([python_executable, setup_py_configure, "itk"])
+
+            ninja_executable = os.path.join(
+                ROOT_DIR, "venv-27-x64", "Scripts", "ninja.exe")
+            print("NINJA_EXECUTABLE:%s" % ninja_executable)
 
             # Generate wheel
             check_call([
@@ -193,55 +253,9 @@ def build_wheel(python_version, single_wheel=False):
             print("# Build multiple ITK wheels")
             print("#")
 
-            try:
-                # Because of python issue #14243, we set "delete=False" and
-                # delete manually after process execution.
-                script_file = tempfile.NamedTemporaryFile(
-                    delete=False, suffix=".py")
-                script_file.write(bytearray(textwrap.dedent(
-                    """
-                    import json
-                    from skbuild.platform_specifics.windows import WindowsPlatform
-                    # Instantiate
-                    build_platform = WindowsPlatform()
-                    generator = build_platform.default_generators[0]
-                    assert generator.name == "Ninja"
-                    print(json.dumps(generator.env))
-                    """  # noqa: E501
-                ), "utf-8"))
-                script_file.file.flush()
-                output = check_output([python_executable, script_file.name])
-                build_env = json.loads(output.decode("utf-8").strip())
-            finally:
-                script_file.close()
-                os.remove(script_file.name)
-
-            py_site_packages_path = os.path.join(
-                SCRIPT_DIR, "..", "_skbuild", "cmake-install")
-
-            # Build ITK python
-            with push_dir(directory=build_path, make_directory=True), \
-                    push_env(**build_env):
-
-                check_call([
-                    "cmake",
-                    "-DCMAKE_BUILD_TYPE:STRING=%s" % build_type,
-                    "-DITK_SOURCE_DIR:PATH=%s" % source_path,
-                    "-DITK_BINARY_DIR:PATH=%s" % build_path,
-                    "-DBUILD_TESTING:BOOL=OFF",
-                    "-DPYTHON_EXECUTABLE:FILEPATH=%s" % python_executable,
-                    "-DPYTHON_INCLUDE_DIR:PATH=%s" % python_include_dir,
-                    "-DPYTHON_LIBRARY:FILEPATH=%s" % python_library,
-                    "-DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
-                    "-DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON",
-                    "-DPY_SITE_PACKAGES_PATH:PATH=%s" % py_site_packages_path,
-                    "-DITK_LEGACY_SILENT:BOOL=ON",
-                    "-DITK_WRAP_PYTHON:BOOL=ON",
-                    "-DITK_WRAP_PYTHON_LEGACY:BOOL=OFF",
-                    "-G", "Ninja",
-                    source_path
-                ])
-                check_call([ninja_executable])
+            build_wrapped_itk(
+                build_type, source_path, build_path,
+                python_executable, python_include_dir, python_library)
 
             # Build wheels
             with open(os.path.join(SCRIPT_DIR, "..", "WHEEL_NAMES.txt"), "r") as content:
