@@ -163,13 +163,11 @@ $DELOCATE_WHEEL ${SCRIPT_DIR}/../dist/*.whl # copies library dependencies into w
 # Install packages and test
 for VENV in "${VENVS[@]}"; do
     if [[ ${SINGLE_WHEEL} == 1 ]]; then
-        packages="itk"
+        package="itk"
     else
-        packages=$(cat ${SCRIPT_DIR}/WHEEL_NAMES.txt)
+        package="itk-meta"
     fi
-    for package in ${packages}; do
-        ${VENV}/bin/pip install ${package} --no-cache-dir --no-index -f ${SCRIPT_DIR}/../dist
-    done
+    ${VENV}/bin/pip install ${package} --no-cache-dir --no-index -f ${SCRIPT_DIR}/../dist
     ${VENV}/bin/pip install numpy
     (cd $HOME && ${VENV}/bin/python -c 'import itk;')
     (cd $HOME && ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')

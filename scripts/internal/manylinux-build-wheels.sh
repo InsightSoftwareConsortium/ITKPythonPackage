@@ -134,14 +134,12 @@ for PYBIN in "${PYBINARIES[@]}"; do
         continue
     fi
     if [[ ${SINGLE_WHEEL} == 1 ]]; then
-        packages="itk"
+        package="itk"
     else
-        packages=$(cat ${script_dir}/../WHEEL_NAMES.txt)
+        package="itk-meta"
     fi
-    for package in ${packages}; do
-        ${PYBIN}/pip install ${package} --no-cache-dir --no-index -f /work/dist
-    done
-    sudo ${PYBIN}/pip install numpy
+    ${PYBIN}/pip install ${package} --no-cache-dir --no-index -f /work/dist
+    ${PYBIN}/pip install numpy
     (cd $HOME && ${PYBIN}/python -c 'from itk import ITKCommon;')
     (cd $HOME && ${PYBIN}/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
     (cd $HOME && ${PYBIN}/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')

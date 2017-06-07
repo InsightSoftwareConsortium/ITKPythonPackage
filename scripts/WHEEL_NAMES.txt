@@ -4,3 +4,4 @@ itk-io
 itk-filtering
 itk-registration
 itk-segmentation
+itk-meta

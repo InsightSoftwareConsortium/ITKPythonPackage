@@ -180,6 +180,10 @@ def get_wheel_dependencies():
                 for group in match.group(2).split()
                 ]
             all_depends[wheel] = _wheel_depends
+    all_depends['itk-meta'] = [
+        wheel_name for wheel_name in get_wheel_names()
+        if wheel_name != 'itk-meta'
+        ]
     return all_depends
 
 
