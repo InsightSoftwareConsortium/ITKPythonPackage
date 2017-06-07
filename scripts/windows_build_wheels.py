@@ -1,11 +1,14 @@
 
 import errno
+import json
 import os
 import shutil
+import tempfile
+import textwrap
 
 from contextlib import contextmanager
 from functools import wraps
-from subprocess import check_call
+from subprocess import check_call, check_output
 
 
 SCRIPT_DIR = os.path.dirname(__file__)
@@ -190,11 +193,36 @@ def build_wheel(python_version, single_wheel=False):
             print("# Build multiple ITK wheels")
             print("#")
 
+            try:
+                # Because of python issue #14243, we set "delete=False" and
+                # delete manually after process execution.
+                script_file = tempfile.NamedTemporaryFile(
+                    delete=False, suffix=".py")
+                script_file.write(bytearray(textwrap.dedent(
+                    """
+                    import json
+                    from skbuild.platform_specifics.windows import WindowsPlatform
+                    # Instantiate
+                    build_platform = WindowsPlatform()
+                    generator = build_platform.default_generators[0]
+                    assert generator.name == "Ninja"
+                    print(json.dumps(generator.env))
+                    """  # noqa: E501
+                ), "utf-8"))
+                script_file.file.flush()
+                output = check_output([python_executable, script_file.name])
+                build_env = json.loads(output.decode("utf-8").strip())
+            finally:
+                script_file.close()
+                os.remove(script_file.name)
+
             py_site_packages_path = os.path.join(
                 SCRIPT_DIR, "..", "_skbuild", "cmake-install")
 
             # Build ITK python
-            with push_dir(directory=build_path, make_directory=True):
+            with push_dir(directory=build_path, make_directory=True), \
+                    push_env(**build_env):
+
                 check_call([
                     "cmake",
                     "-DCMAKE_BUILD_TYPE:STRING=%s" % build_type,
