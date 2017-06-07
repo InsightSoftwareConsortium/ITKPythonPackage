@@ -71,8 +71,7 @@ def build_wrapped_itk(
         script_file.close()
         os.remove(script_file.name)
 
-    py_site_packages_path = os.path.join(
-        SCRIPT_DIR, "..", "_skbuild", "cmake-install")
+    py_site_packages_path = os.path.join(ROOT_DIR, "_skbuild", "cmake-install")
 
     # Build ITK python
     with push_dir(directory=build_path, make_directory=True), \
@@ -129,8 +128,7 @@ def build_wheel(python_version, single_wheel=False):
         build_type = "Release"
         source_path = "%s/ITK-source" % STANDALONE_DIR
         build_path = "%s/ITK-win_%s" % (ROOT_DIR, python_version)
-        setup_py_configure = os.path.join(
-            SCRIPT_DIR, "..", "setup_py_configure.py")
+        setup_py_configure = os.path.join(SCRIPT_DIR, "setup_py_configure.py")
 
         # Clean up previous invocations
         if os.path.exists(build_path):
@@ -176,7 +174,7 @@ def build_wheel(python_version, single_wheel=False):
                 python_executable, python_include_dir, python_library)
 
             # Build wheels
-            with open(os.path.join(SCRIPT_DIR, "..", "WHEEL_NAMES.txt"), "r") as content:
+            with open(os.path.join(SCRIPT_DIR, "WHEEL_NAMES.txt"), "r") as content:
                 wheel_names = content.readline()
 
             for wheel_name in wheel_names:
