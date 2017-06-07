@@ -276,10 +276,8 @@ def build_wheel(python_version, single_wheel=False):
                 extension = os.path.splitext(filename)[1]
                 if extension in [".cpp", ".xml", ".obj"]:
                     os.remove(os.path.join(root, filename))
-
-        shutil.rmtree(os.path.join(build_path, "Wrapping", "Generators"))
-        # XXX
-        # Remove-Item -Recurse -Force $build_path\\Wrapping\\Generators\\castxml*
+        shutil.rmtree(
+            os.path.join(build_path, "Wrapping", "Generators", "CastXML"))
 
 
 def build_wheels():
