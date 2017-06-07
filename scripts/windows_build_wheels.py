@@ -1,4 +1,5 @@
 
+import glob
 import json
 import os
 import shutil
@@ -213,7 +214,20 @@ def build_wheel(python_version, single_wheel=False, cleanup=False):
                 os.path.join(build_path, "Wrapping", "Generators", "CastXML"))
 
 
-def build_wheels(py_envs=None, cleanup=False):
+def fixup_wheel(filepath):
+    pass
+
+
+def fixup_wheels():
+    for wheel in glob.glob(os.path.join(ROOT_DIR, "dist", "*.whl")):
+        fixup_wheel(wheel)
+
+
+def test_wheels(single_wheel=False):
+    pass
+
+
+def build_wheels(py_envs=None, single_wheel=False, cleanup=False):
 
     if py_envs is None:
         py_envs = ["27-x64", "35-x64", "36-x64"]
@@ -240,12 +254,18 @@ def build_wheels(py_envs=None, cleanup=False):
 
         check_call([ninja_executable])
 
-    single_wheel = False
-
     # Compile wheels re-using standalone project and archive cache
     for py_env in py_envs:
         build_wheel(py_env, single_wheel=single_wheel, cleanup=cleanup)
 
 
+def main():
+    single_wheel = False
+
+    build_wheels(single_wheel=single_wheel)
+    fixup_wheels()
+    test_wheels(single_wheel=single_wheel)
+
+
 if __name__ == "__main__":
-    build_wheels()
+    main()
