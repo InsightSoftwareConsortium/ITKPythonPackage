@@ -113,7 +113,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
       done
     fi
 
-    # Remove unecessary files for building against ITK
+    # Remove unnecessary files for building against ITK
     find $build_path -name '*.cpp' -delete -o -name '*.xml' -delete
     rm -rf $build_path/Wrapping/Generators/castxml*
     find $build_path -name '*.o' -delete
