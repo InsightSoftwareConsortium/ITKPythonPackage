@@ -31,7 +31,8 @@ def pip_install(python_dir, package):
 def prepare_build_env(python_version):
     python_dir = "C:/Python%s" % python_version
     if not os.path.exists(python_dir):
-        raise FileNotFoundError("Aborting. python_dir [%s] does not exist." % python_dir)
+        raise FileNotFoundError(
+            "Aborting. python_dir [%s] does not exist." % python_dir)
 
     venv = os.path.join(python_dir, "Scripts", "virtualenv.exe")
     venv_dir = os.path.join(ROOT_DIR, "venv-%s" % python_version)
@@ -100,7 +101,9 @@ def build_wrapped_itk(
         check_call([ninja_executable])
 
 
-def build_wheel(python_version, single_wheel=False, cleanup=False, wheel_names=None):
+def build_wheel(python_version, single_wheel=False,
+                cleanup=False, wheel_names=None):
+
     venv_dir = os.path.join(ROOT_DIR, "venv-%s" % python_version)
 
     python_executable = os.path.join(venv_dir, "Scripts", "python.exe")
@@ -230,7 +233,8 @@ def test_wheels(single_wheel=False):
     pass
 
 
-def build_wheels(py_envs=None, single_wheel=False, cleanup=False, wheel_names=None):
+def build_wheels(py_envs=None, single_wheel=False,
+                 cleanup=False, wheel_names=None):
 
     if py_envs is None:
         py_envs = ["27-x64", "35-x64", "36-x64"]
@@ -260,7 +264,8 @@ def build_wheels(py_envs=None, single_wheel=False, cleanup=False, wheel_names=No
     # Compile wheels re-using standalone project and archive cache
     for py_env in py_envs:
         build_wheel(
-            py_env, single_wheel=single_wheel, cleanup=cleanup, wheel_names=wheel_names)
+            py_env, single_wheel=single_wheel,
+            cleanup=cleanup, wheel_names=wheel_names)
 
 
 def main(py_envs=None, wheel_names=None, cleanup=True):
