@@ -98,7 +98,7 @@ def build_wrapped_itk(
         check_call([ninja_executable])
 
 
-def build_wheel(python_version, single_wheel=False):
+def build_wheel(python_version, single_wheel=False, cleanup=False):
     venv_dir = os.path.join(ROOT_DIR, "venv-%s" % python_version)
 
     python_executable = os.path.join(venv_dir, "Scripts", "python.exe")
@@ -131,7 +131,7 @@ def build_wheel(python_version, single_wheel=False):
         setup_py_configure = os.path.join(SCRIPT_DIR, "setup_py_configure.py")
 
         # Clean up previous invocations
-        if os.path.exists(build_path):
+        if cleanup and os.path.exists(build_path):
             shutil.rmtree(build_path)
 
         if single_wheel:
@@ -199,19 +199,24 @@ def build_wheel(python_version, single_wheel=False):
                 ])
 
                 # Cleanup
-                check_call([python_executable, "setup.py", "clean"])
+                if cleanup:
+                    check_call([python_executable, "setup.py", "clean"])
 
         # Remove unnecessary files for building against ITK
-        for root, _, file_list in os.walk(build_path):
-            for filename in file_list:
-                extension = os.path.splitext(filename)[1]
-                if extension in [".cpp", ".xml", ".obj"]:
-                    os.remove(os.path.join(root, filename))
-        shutil.rmtree(
-            os.path.join(build_path, "Wrapping", "Generators", "CastXML"))
+        if cleanup:
+            for root, _, file_list in os.walk(build_path):
+                for filename in file_list:
+                    extension = os.path.splitext(filename)[1]
+                    if extension in [".cpp", ".xml", ".obj"]:
+                        os.remove(os.path.join(root, filename))
+            shutil.rmtree(
+                os.path.join(build_path, "Wrapping", "Generators", "CastXML"))
 
 
-def build_wheels():
+def build_wheels(py_envs=None, cleanup=False):
+
+    if py_envs is None:
+        py_envs = ["27-x64", "35-x64", "36-x64"]
 
     prepare_build_env("27-x64")
     prepare_build_env("35-x64")
@@ -238,9 +243,8 @@ def build_wheels():
     single_wheel = False
 
     # Compile wheels re-using standalone project and archive cache
-    build_wheel("27-x64", single_wheel=single_wheel)
-    build_wheel("35-x64", single_wheel=single_wheel)
-    build_wheel("36-x64", single_wheel=single_wheel)
+    for py_env in py_envs:
+        build_wheel(py_env, single_wheel=single_wheel, cleanup=cleanup)
 
 
 if __name__ == "__main__":
