@@ -80,6 +80,7 @@ def build_wrapped_itk(
 
         check_call([
             "cmake",
+            "-DCMAKE_MAKE_PROGRAM:FILEPATH=%s" % ninja_executable,
             "-DCMAKE_BUILD_TYPE:STRING=%s" % build_type,
             "-DITK_SOURCE_DIR:PATH=%s" % source_path,
             "-DITK_BINARY_DIR:PATH=%s" % build_path,
