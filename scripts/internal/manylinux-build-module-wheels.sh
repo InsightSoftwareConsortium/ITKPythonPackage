@@ -4,7 +4,7 @@ script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
 
 # -----------------------------------------------------------------------
-# ARCH, PYBINARIES variables are set in common script
+# ARCH, PYBINARIES, PYTHON_LIBRARY variables are set in common script
 # -----------------------------------------------------------------------
 
 # Compile wheels re-using standalone project and archive cache
@@ -27,13 +27,13 @@ for PYBIN in "${PYBINARIES[@]}"; do
     fi
     itk_build_dir=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${ARCH}
     ln -fs /ITKPythonPackage/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${ARCH} $itk_build_dir
-    if [[ ! -d $itk_build_dir ]]; then
+    if [[ ! -d ${itk_build_dir} ]]; then
       echo 'ITK build tree not available!' 1>&2
       exit 1
     fi
     itk_source_dir=/work/standalone-${ARCH}-build/ITK-source
     ln -fs /ITKPythonPackage/standalone-${ARCH}-build/ /work/standalone-${ARCH}-build
-    if [[ ! -d $itk_source_dir ]]; then
+    if [[ ! -d ${itk_source_dir} ]]; then
       echo 'ITK source tree not available!' 1>&2
       exit 1
     fi
@@ -54,6 +54,6 @@ done
 # Since there are no external shared libraries to bundle into the wheels
 # this step will fixup the wheel switching from 'linux' to 'manylinux1' tag
 for whl in dist/*linux_$(uname -p).whl; do
-    auditwheel repair $whl -w /work/dist/
-    rm $whl
+    auditwheel repair ${whl} -w /work/dist/
+    rm ${whl}
 done

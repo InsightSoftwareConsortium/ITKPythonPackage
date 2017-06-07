@@ -123,8 +123,8 @@ done
 # Since there are no external shared libraries to bundle into the wheels
 # this step will fixup the wheel switching from 'linux' to 'manylinux1' tag
 for whl in dist/*linux_$(uname -p).whl; do
-    auditwheel repair $whl -w /work/dist/
-    rm $whl
+    auditwheel repair ${whl} -w /work/dist/
+    rm ${whl}
 done
 
 # Install packages and test
