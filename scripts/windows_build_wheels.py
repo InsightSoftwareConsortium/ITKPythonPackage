@@ -207,7 +207,7 @@ def build_wheel(python_version, single_wheel=False, cleanup=False):
             for root, _, file_list in os.walk(build_path):
                 for filename in file_list:
                     extension = os.path.splitext(filename)[1]
-                    if extension in [".cpp", ".xml", ".obj"]:
+                    if extension in [".cpp", ".xml", ".obj", ".o"]:
                         os.remove(os.path.join(root, filename))
             shutil.rmtree(
                 os.path.join(build_path, "Wrapping", "Generators", "CastXML"))
