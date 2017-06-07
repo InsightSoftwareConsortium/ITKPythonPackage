@@ -119,7 +119,7 @@ def prepare_build_env(python_version):
     pip_install(venv_dir, "scikit-build")
 
 
-def build_wheel(python_version):
+def build_wheel(python_version, single_wheel=False):
     venv_dir = os.path.join(ROOT_DIR, "venv-%s" % python_version)
 
     python_executable = os.path.join(venv_dir, "Scripts", "python.exe")
@@ -144,28 +144,103 @@ def build_wheel(python_version):
     # Update PATH
     path = os.path.join(venv_dir, "Scripts")
     with push_env(PATH="%s:%s" % (path, os.environ["PATH"])):
+
+        # Install dependencies
         check_call([pip, "install",
                     "-r", os.path.join(ROOT_DIR, "requirements-dev.txt")])
 
+        build_type = "Release"
+        source_path = "%s/ITK-source" % STANDALONE_DIR
         build_path = "C:/P/IPP/ITK-win_%s" % python_version
+        setup_py_configure = os.path.join(
+            SCRIPT_DIR, "..", "setup_py_configure.py")
 
         # Clean up previous invocations
         if os.path.exists(build_path):
             shutil.rmtree(build_path)
 
-        check_call([
-            python_executable,
-            "setup.py", "bdist_wheel", "--build-type", "Release", "-G", "Ninja",
-            "--",
-            "-DCMAKE_MAKE_PROGRAM:FILEPATH=%s" % ninja_executable,
-            "-DITK_SOURCE_DIR:PATH=%s/ITK-source" % STANDALONE_DIR,
-            "-DITK_BINARY_DIR:PATH=%s" % build_path,
-            "-DPYTHON_EXECUTABLE:FILEPATH=%s" % python_executable,
-            "-DPYTHON_INCLUDE_DIR:PATH=%s" % python_include_dir,
-            "-DPYTHON_LIBRARY:FILEPATH=%s" % python_library
-        ])
+        if single_wheel:
 
-        check_call([python_executable, "setup.py", "clean"])
+            print("#")
+            print("# Build single ITK wheel")
+            print("#")
+
+            # Configure setup.py
+            check_call([python_executable, setup_py_configure, "itk"])
+
+            # Generate wheel
+            check_call([
+                python_executable,
+                "setup.py", "bdist_wheel",
+                "--build-type", build_type, "-G", "Ninja",
+                "--",
+                "-DCMAKE_MAKE_PROGRAM:FILEPATH=%s" % ninja_executable,
+                "-DITK_SOURCE_DIR:PATH=%s" % source_path,
+                "-DITK_BINARY_DIR:PATH=%s" % build_path,
+                "-DPYTHON_EXECUTABLE:FILEPATH=%s" % python_executable,
+                "-DPYTHON_INCLUDE_DIR:PATH=%s" % python_include_dir,
+                "-DPYTHON_LIBRARY:FILEPATH=%s" % python_library
+            ])
+            # Cleanup
+            check_call([python_executable, "setup.py", "clean"])
+
+        else:
+
+            print("#")
+            print("# Build multiple ITK wheels")
+            print("#")
+
+            py_site_packages_path = os.path.join(
+                SCRIPT_DIR, "..", "_skbuild", "cmake-install")
+
+            # Build ITK python
+            with push_dir(directory=build_path, make_directory=True):
+                check_call([
+                    "cmake",
+                    "-DCMAKE_BUILD_TYPE:STRING=%s" % build_type,
+                    "-DITK_SOURCE_DIR:PATH=%s" % source_path,
+                    "-DITK_BINARY_DIR:PATH=%s" % build_path,
+                    "-DBUILD_TESTING:BOOL=OFF",
+                    "-DPYTHON_EXECUTABLE:FILEPATH=%s" % python_executable,
+                    "-DPYTHON_INCLUDE_DIR:PATH=%s" % python_include_dir,
+                    "-DPYTHON_LIBRARY:FILEPATH=%s" % python_library,
+                    "-DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
+                    "-DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON",
+                    "-DPY_SITE_PACKAGES_PATH:PATH=%s" % py_site_packages_path,
+                    "-DITK_LEGACY_SILENT:BOOL=ON",
+                    "-DITK_WRAP_PYTHON:BOOL=ON",
+                    "-DITK_WRAP_PYTHON_LEGACY:BOOL=OFF",
+                    "-G", "Ninja",
+                    source_path
+                ])
+                check_call([ninja_executable])
+
+            # Build wheels
+            with open(os.path.join(SCRIPT_DIR, "..", "WHEEL_NAMES.txt"), "r") as content:
+                wheel_names = content.readline()
+
+            for wheel_name in wheel_names:
+                # Configure setup.py
+                check_call([
+                    python_executable, setup_py_configure, wheel_name])
+
+                # Generate wheel
+                check_call([
+                    python_executable,
+                    "setup.py", "bdist_wheel",
+                    "--build-type", build_type, "-G", "Ninja",
+                    "--",
+                    "-DITK_SOURCE_DIR:PATH=%s" % source_path,
+                    "-DITK_BINARY_DIR:PATH=%s" % build_path,
+                    "-DITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON",
+                    "-DITKPythonPackage_WHEEL_NAME:STRING=%s" % wheel_name,
+                    "-DPYTHON_EXECUTABLE:FILEPATH=%s" % python_executable,
+                    "-DPYTHON_INCLUDE_DIR:PATH=%s" % python_include_dir,
+                    "-DPYTHON_LIBRARY:FILEPATH=%s" % python_library
+                ])
+
+                # Cleanup
+                check_call([python_executable, "setup.py", "clean"])
 
         # Remove unnecessary files for building against ITK
         for root, _, file_list in os.walk(build_path):
@@ -192,6 +267,7 @@ def build_wheels():
         pip_install(tools_venv, "ninja")
         ninja_executable = os.path.join(tools_venv, "Scripts", "ninja.exe")
 
+        # Build standalone project and populate archive cache
         check_call([
             cmake_executable,
             "-DITKPythonPackage_BUILD_PYTHON:PATH=0",
@@ -202,10 +278,12 @@ def build_wheels():
 
         check_call([ninja_executable])
 
+    single_wheel = False
+
     # Compile wheels re-using standalone project and archive cache
-    build_wheel("27-x64")
-    build_wheel("35-x64")
-    build_wheel("36-x64")
+    build_wheel("27-x64", single_wheel=single_wheel)
+    build_wheel("35-x64", single_wheel=single_wheel)
+    build_wheel("36-x64", single_wheel=single_wheel)
 
 
 if __name__ == "__main__":
