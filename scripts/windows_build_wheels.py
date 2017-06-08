@@ -47,12 +47,8 @@ def prepare_build_env(python_version):
 
 
 def build_wrapped_itk(
-        build_type, source_path, build_path,
+        ninja_executable, build_type, source_path, build_path,
         python_executable, python_include_dir, python_library):
-
-    ninja_executable = os.path.join(
-        ROOT_DIR, "venv-27-x64", "Scripts", "ninja.exe")
-    print("NINJA_EXECUTABLE:%s" % ninja_executable)
 
     try:
         # Because of python issue #14243, we set "delete=False" and
@@ -126,6 +122,10 @@ def build_wheel(python_version, single_wheel=False,
 
     pip = os.path.join(venv_dir, "Scripts", "pip.exe")
 
+    ninja_executable = os.path.join(
+        ROOT_DIR, "venv-27-x64", "Scripts", "ninja.exe")
+    print("NINJA_EXECUTABLE:%s" % ninja_executable)
+
     # Update PATH
     path = os.path.join(venv_dir, "Scripts")
     with push_env(PATH="%s%s%s" % (path, os.pathsep, os.environ["PATH"])):
@@ -152,10 +152,6 @@ def build_wheel(python_version, single_wheel=False,
             # Configure setup.py
             check_call([python_executable, setup_py_configure, "itk"])
 
-            ninja_executable = os.path.join(
-                ROOT_DIR, "venv-27-x64", "Scripts", "ninja.exe")
-            print("NINJA_EXECUTABLE:%s" % ninja_executable)
-
             # Generate wheel
             check_call([
                 python_executable,
@@ -179,7 +175,7 @@ def build_wheel(python_version, single_wheel=False,
             print("#")
 
             build_wrapped_itk(
-                build_type, source_path, build_path,
+                ninja_executable, build_type, source_path, build_path,
                 python_executable, python_include_dir, python_library)
 
             # Build wheels
@@ -200,6 +196,7 @@ def build_wheel(python_version, single_wheel=False,
                     "setup.py", "bdist_wheel",
                     "--build-type", build_type, "-G", "Ninja",
                     "--",
+                    "-DCMAKE_MAKE_PROGRAM:FILEPATH=%s" % ninja_executable,
                     "-DITK_SOURCE_DIR:PATH=%s" % source_path,
                     "-DITK_BINARY_DIR:PATH=%s" % build_path,
                     "-DITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON",
