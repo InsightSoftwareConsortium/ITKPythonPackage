@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 
+# -----------------------------------------------------------------------
+# These variables are set in common script:
+#
+ARCH=""
+PYBINARIES=""
+PYTHON_LIBRARY=""
+
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
-
-# -----------------------------------------------------------------------
-# ARCH, PYBINARIES, PYTHON_LIBRARY variables are set in common script
 # -----------------------------------------------------------------------
 
 # Compile wheels re-using standalone project and archive cache

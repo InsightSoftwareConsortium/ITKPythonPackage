@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 
+# -----------------------------------------------------------------------
+# These variables are set in common script:
+#
+ARCH=""
+PYBINARIES=""
+PYTHON_LIBRARY=""
+
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
-
-# -----------------------------------------------------------------------
-# ARCH, PYBINARIES variables are set in common script
 # -----------------------------------------------------------------------
 
 # Build standalone project and populate archive cache
@@ -114,9 +118,9 @@ for PYBIN in "${PYBINARIES[@]}"; do
     fi
 
     # Remove unnecessary files for building against ITK
-    find $build_path -name '*.cpp' -delete -o -name '*.xml' -delete
-    rm -rf $build_path/Wrapping/Generators/castxml*
-    find $build_path -name '*.o' -delete
+    find ${build_path} -name '*.cpp' -delete -o -name '*.xml' -delete
+    rm -rf ${build_path}/Wrapping/Generators/castxml*
+    find ${build_path} -name '*.o' -delete
 
 done
 

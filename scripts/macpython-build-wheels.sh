@@ -7,11 +7,16 @@
 #
 #   scripts/macpython-build-wheels.sh 2.7 3.5
 
+# -----------------------------------------------------------------------
+# These variables are set in common script:
+#
+MACPYTHON_PY_PREFIX=""
+PYBINARIES=""
+PYTHON_LIBRARY=""
+SCRIPT_DIR=""
+
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/macpython-build-common.sh"
-
-# -----------------------------------------------------------------------
-# SCRIPT_DIR, PYBINARIES variables are set in common script
 # -----------------------------------------------------------------------
 
 # Remove previous virtualenv's
@@ -26,28 +31,28 @@ for PYBIN in "${PYBINARIES[@]}"; do
     py_mm=$(basename ${PYBIN})
     VENV=${SCRIPT_DIR}/../venvs/${py_mm}
     VIRTUALENV_EXECUTABLE=${PYBIN}/bin/virtualenv
-    ${VIRTUALENV_EXECUTABLE} $VENV
+    ${VIRTUALENV_EXECUTABLE} ${VENV}
     VENVS+=(${VENV})
 done
 
 VENV="${VENVS[0]}"
 PYTHON_EXECUTABLE=${VENV}/bin/python
-$PYTHON_EXECUTABLE -m pip install --no-cache cmake
+${PYTHON_EXECUTABLE} -m pip install --no-cache cmake
 CMAKE_EXECUTABLE=${VENV}/bin/cmake
-$PYTHON_EXECUTABLE -m pip install --no-cache ninja
+${PYTHON_EXECUTABLE} -m pip install --no-cache ninja
 NINJA_EXECUTABLE=${VENV}/bin/ninja
-$PYTHON_EXECUTABLE -m pip install --no-cache delocate
+${PYTHON_EXECUTABLE} -m pip install --no-cache delocate
 DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
 
 # Build standalone project and populate archive cache
 mkdir -p standalone-build
 pushd standalone-build > /dev/null 2>&1
-  $CMAKE_EXECUTABLE -DITKPythonPackage_BUILD_PYTHON:PATH=0 \
+  ${CMAKE_EXECUTABLE} -DITKPythonPackage_BUILD_PYTHON:PATH=0 \
     -G Ninja \
     -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
       ${SCRIPT_DIR}/../
-  $NINJA_EXECUTABLE
+  ${NINJA_EXECUTABLE}
 popd > /dev/null 2>&1
 
 SINGLE_WHEEL=0
@@ -64,7 +69,7 @@ for VENV in "${VENVS[@]}"; do
     echo "PYTHON_LIBRARY:${PYTHON_LIBRARY}"
 
     # Install dependencies
-    $PYTHON_EXECUTABLE -m pip install -r ${SCRIPT_DIR}/../requirements-dev.txt
+    ${PYTHON_EXECUTABLE} -m pip install -r ${SCRIPT_DIR}/../requirements-dev.txt
 
     build_type="MinSizeRel"
     plat_name="macosx-10.6-x86_64"
@@ -85,7 +90,7 @@ for VENV in "${VENVS[@]}"; do
       # Configure setup.py
       ${PYTHON_EXECUTABLE} ${SETUP_PY_CONFIGURE} "itk"
       # Generate wheel
-      $PYTHON_EXECUTABLE setup.py bdist_wheel --build-type ${build_type} --plat-name ${plat_name} -G Ninja -- \
+      ${PYTHON_EXECUTABLE} setup.py bdist_wheel --build-type ${build_type} --plat-name ${plat_name} -G Ninja -- \
         -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
         -DITK_SOURCE_DIR:PATH= ${source_path} \
         -DITK_BINARY_DIR:PATH=${build_path} \
@@ -95,7 +100,7 @@ for VENV in "${VENVS[@]}"; do
         -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
         -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
       # Cleanup
-      $PYTHON_EXECUTABLE setup.py clean
+      ${PYTHON_EXECUTABLE} setup.py clean
 
     else
 
@@ -146,19 +151,19 @@ for VENV in "${VENVS[@]}"; do
           -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
         || exit 1
         # Cleanup
-        $PYTHON_EXECUTABLE setup.py clean
+        ${PYTHON_EXECUTABLE} setup.py clean
       done
 
     fi
 
     # Remove unnecessary files for building against ITK
-    find $build_path -name '*.cpp' -delete -o -name '*.xml' -delete
-    rm -rf $build_path/Wrapping/Generators/castxml*
-    find $build_path -name '*.o' -delete
+    find ${build_path} -name '*.cpp' -delete -o -name '*.xml' -delete
+    rm -rf ${build_path}/Wrapping/Generators/castxml*
+    find ${build_path} -name '*.o' -delete
 done
 
-$DELOCATE_LISTDEPS ${SCRIPT_DIR}/../dist/*.whl # lists library dependencies
-$DELOCATE_WHEEL ${SCRIPT_DIR}/../dist/*.whl # copies library dependencies into wheel
+${DELOCATE_LISTDEPS} ${SCRIPT_DIR}/../dist/*.whl # lists library dependencies
+${DELOCATE_WHEEL} ${SCRIPT_DIR}/../dist/*.whl # copies library dependencies into wheel
 
 # Install packages and test
 for VENV in "${VENVS[@]}"; do

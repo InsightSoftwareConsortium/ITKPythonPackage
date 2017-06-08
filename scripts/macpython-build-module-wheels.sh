@@ -8,11 +8,17 @@
 #
 #   scripts/macpython-build-module-wheels.sh 2.7 3.5
 
+# -----------------------------------------------------------------------
+# These variables are set in common script:
+#
+MACPYTHON_PY_PREFIX=""
+# PYBINARIES="" # unused
+PYTHON_LIBRARY=""
+SCRIPT_DIR=""
+VENVS=()
+
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/macpython-build-common.sh"
-
-# -----------------------------------------------------------------------
-# SCRIPT_DIR, VENVS, PYTHON_LIBRARY variables are set in common script
 # -----------------------------------------------------------------------
 
 VENV="${VENVS[0]}"
