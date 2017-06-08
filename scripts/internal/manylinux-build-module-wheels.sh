@@ -27,7 +27,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
     echo "PYTHON_LIBRARY:${PYTHON_LIBRARY}"
 
     if [[ -e /work/requirements-dev.txt ]]; then
-      ${PYBIN}/pip install -r /work/requirements-dev.txt
+      ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
     fi
     itk_build_dir=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${ARCH}
     ln -fs /ITKPythonPackage/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${ARCH} $itk_build_dir

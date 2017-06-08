@@ -43,7 +43,7 @@ for VENV in "${VENVS[@]}"; do
     echo "PYTHON_LIBRARY:${PYTHON_LIBRARY}"
 
     if [[ -e $PWD/requirements-dev.txt ]]; then
-      ${PYTHON_EXECUTABLE} -m pip install -r $PWD/requirements-dev.txt
+      ${PYTHON_EXECUTABLE} -m pip install --upgrade -r $PWD/requirements-dev.txt
     fi
     ${PYTHON_EXECUTABLE} -m pip install --no-cache ninja
     NINJA_EXECUTABLE=${VENV}/bin/ninja

@@ -36,7 +36,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
     echo "PYTHON_LIBRARY:${PYTHON_LIBRARY}"
 
     # Install dependencies
-    ${PYBIN}/pip install -r /work/requirements-dev.txt
+    ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
 
     build_type=MinSizeRel
     source_path=/work/standalone-${ARCH}-build/ITK-source

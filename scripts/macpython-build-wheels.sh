@@ -69,7 +69,7 @@ for VENV in "${VENVS[@]}"; do
     echo "PYTHON_LIBRARY:${PYTHON_LIBRARY}"
 
     # Install dependencies
-    ${PYTHON_EXECUTABLE} -m pip install -r ${SCRIPT_DIR}/../requirements-dev.txt
+    ${PYTHON_EXECUTABLE} -m pip install --upgrade -r ${SCRIPT_DIR}/../requirements-dev.txt
 
     build_type="MinSizeRel"
     plat_name="macosx-10.6-x86_64"
