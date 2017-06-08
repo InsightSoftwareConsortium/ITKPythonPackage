@@ -8,16 +8,26 @@
 #
 #   scripts/macpython-build-module-wheels.sh 2.7 3.5
 
-script_dir="`cd $(dirname $0); pwd`"
+# -----------------------------------------------------------------------
+# These variables are set in common script:
+#
+MACPYTHON_PY_PREFIX=""
+# PYBINARIES="" # unused
+PYTHON_LIBRARY=""
+SCRIPT_DIR=""
+VENVS=()
+
+script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/macpython-build-common.sh"
+# -----------------------------------------------------------------------
 
 VENV="${VENVS[0]}"
 PYTHON_EXECUTABLE=${VENV}/bin/python
-$PYTHON_EXECUTABLE -m pip install --no-cache cmake
-CMAKE_EXECUTABLE=${VENV}/bin/cmake
-$PYTHON_EXECUTABLE -m pip install --no-cache ninja
+${PYTHON_EXECUTABLE} -m pip install --no-cache cmake
+# CMAKE_EXECUTABLE=${VENV}/bin/cmake
+${PYTHON_EXECUTABLE} -m pip install --no-cache ninja
 NINJA_EXECUTABLE=${VENV}/bin/ninja
-$PYTHON_EXECUTABLE -m pip install --no-cache delocate
+${PYTHON_EXECUTABLE} -m pip install --no-cache delocate
 DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
 
@@ -33,12 +43,12 @@ for VENV in "${VENVS[@]}"; do
     echo "PYTHON_LIBRARY:${PYTHON_LIBRARY}"
 
     if [[ -e $PWD/requirements-dev.txt ]]; then
-      $PYTHON_EXECUTABLE -m pip install -r $PWD/requirements-dev.txt
+      ${PYTHON_EXECUTABLE} -m pip install --upgrade -r $PWD/requirements-dev.txt
     fi
-    $PYTHON_EXECUTABLE -m pip install --no-cache ninja
+    ${PYTHON_EXECUTABLE} -m pip install --no-cache ninja
     NINJA_EXECUTABLE=${VENV}/bin/ninja
     itk_build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
-    $PYTHON_EXECUTABLE setup.py bdist_wheel --build-type MinSizeRel --plat-name macosx-10.6-x86_64 -G Ninja -- \
+    ${PYTHON_EXECUTABLE} setup.py bdist_wheel --build-type MinSizeRel --plat-name macosx-10.6-x86_64 -G Ninja -- \
       -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
       -DITK_DIR:PATH=${itk_build_path} \
       -DITK_USE_SYSTEM_SWIG:BOOL=ON \
@@ -49,9 +59,10 @@ for VENV in "${VENVS[@]}"; do
       -DBUILD_TESTING:BOOL=OFF \
       -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
       -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
-      -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
-    $PYTHON_EXECUTABLE setup.py clean
+      -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+    || exit 1
+    ${PYTHON_EXECUTABLE} setup.py clean
 done
 
-$DELOCATE_LISTDEPS $PWD/dist/*.whl # lists library dependencies
-$DELOCATE_WHEEL $PWD/dist/*.whl # copies library dependencies into wheel
+${DELOCATE_LISTDEPS} $PWD/dist/*.whl # lists library dependencies
+${DELOCATE_WHEEL} $PWD/dist/*.whl # copies library dependencies into wheel

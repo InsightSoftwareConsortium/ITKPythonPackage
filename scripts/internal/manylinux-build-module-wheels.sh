@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 
-script_dir="`cd $(dirname $0); pwd`"
+# -----------------------------------------------------------------------
+# These variables are set in common script:
+#
+ARCH=""
+PYBINARIES=""
+PYTHON_LIBRARY=""
+
+script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
+# -----------------------------------------------------------------------
 
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
@@ -19,17 +27,17 @@ for PYBIN in "${PYBINARIES[@]}"; do
     echo "PYTHON_LIBRARY:${PYTHON_LIBRARY}"
 
     if [[ -e /work/requirements-dev.txt ]]; then
-      ${PYBIN}/pip install -r /work/requirements-dev.txt
+      ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
     fi
-    itk_build_dir=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${arch}
-    ln -fs /ITKPythonPackage/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${arch} $itk_build_dir
-    if [[ ! -d $itk_build_dir ]]; then
+    itk_build_dir=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${ARCH}
+    ln -fs /ITKPythonPackage/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${ARCH} $itk_build_dir
+    if [[ ! -d ${itk_build_dir} ]]; then
       echo 'ITK build tree not available!' 1>&2
       exit 1
     fi
-    itk_source_dir=/work/standalone-${arch}-build/ITK-source
-    ln -fs /ITKPythonPackage/standalone-${arch}-build/ /work/standalone-${arch}-build
-    if [[ ! -d $itk_source_dir ]]; then
+    itk_source_dir=/work/standalone-${ARCH}-build/ITK-source
+    ln -fs /ITKPythonPackage/standalone-${ARCH}-build/ /work/standalone-${ARCH}-build
+    if [[ ! -d ${itk_source_dir} ]]; then
       echo 'ITK source tree not available!' 1>&2
       exit 1
     fi
@@ -42,13 +50,14 @@ for PYBIN in "${PYBINARIES[@]}"; do
       -DBUILD_TESTING:BOOL=OFF \
       -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
       -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
-      -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
+      -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+    || exit 1
     ${PYBIN}/python setup.py clean
 done
 
 # Since there are no external shared libraries to bundle into the wheels
 # this step will fixup the wheel switching from 'linux' to 'manylinux1' tag
 for whl in dist/*linux_$(uname -p).whl; do
-    auditwheel repair $whl -w /work/dist/
-    rm $whl
+    auditwheel repair ${whl} -w /work/dist/
+    rm ${whl}
 done

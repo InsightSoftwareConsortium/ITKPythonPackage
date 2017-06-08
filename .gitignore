@@ -9,6 +9,7 @@ downloads
 venvs
 venv-*
 ITK-*
+libpython-not-needed-symbols-exported-by-interpreter
 
 # Python
 *.py[cod]

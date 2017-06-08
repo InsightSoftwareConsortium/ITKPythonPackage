@@ -18,17 +18,17 @@ fi
 # i686 or x86_64 ?
 case $(uname -p) in
     i686)
-        arch=x86
+        ARCH=x86
         ;;
     x86_64)
-        arch=x64
+        ARCH=x64
         ;;
     *)
         die "Unknown architecture $(uname -p)"
         ;;
 esac
 
-echo "Building wheels for $arch"
+echo "Building wheels for $ARCH"
 
 # Since the python interpreter exports its symbol (see [1]), python
 # modules should not link against any python libraries.

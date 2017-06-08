@@ -7,8 +7,17 @@
 #
 #   scripts/macpython-build-wheels.sh 2.7 3.5
 
-script_dir="`cd $(dirname $0); pwd`"
+# -----------------------------------------------------------------------
+# These variables are set in common script:
+#
+MACPYTHON_PY_PREFIX=""
+PYBINARIES=""
+PYTHON_LIBRARY=""
+SCRIPT_DIR=""
+
+script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/macpython-build-common.sh"
+# -----------------------------------------------------------------------
 
 # Remove previous virtualenv's
 rm -rf ${SCRIPT_DIR}/../venvs
@@ -22,29 +31,31 @@ for PYBIN in "${PYBINARIES[@]}"; do
     py_mm=$(basename ${PYBIN})
     VENV=${SCRIPT_DIR}/../venvs/${py_mm}
     VIRTUALENV_EXECUTABLE=${PYBIN}/bin/virtualenv
-    ${VIRTUALENV_EXECUTABLE} $VENV
+    ${VIRTUALENV_EXECUTABLE} ${VENV}
     VENVS+=(${VENV})
 done
 
 VENV="${VENVS[0]}"
 PYTHON_EXECUTABLE=${VENV}/bin/python
-$PYTHON_EXECUTABLE -m pip install --no-cache cmake
+${PYTHON_EXECUTABLE} -m pip install --no-cache cmake
 CMAKE_EXECUTABLE=${VENV}/bin/cmake
-$PYTHON_EXECUTABLE -m pip install --no-cache ninja
+${PYTHON_EXECUTABLE} -m pip install --no-cache ninja
 NINJA_EXECUTABLE=${VENV}/bin/ninja
-$PYTHON_EXECUTABLE -m pip install --no-cache delocate
+${PYTHON_EXECUTABLE} -m pip install --no-cache delocate
 DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
 
 # Build standalone project and populate archive cache
 mkdir -p standalone-build
 pushd standalone-build > /dev/null 2>&1
-  $CMAKE_EXECUTABLE -DITKPythonPackage_BUILD_PYTHON:PATH=0 \
+  ${CMAKE_EXECUTABLE} -DITKPythonPackage_BUILD_PYTHON:PATH=0 \
     -G Ninja \
     -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
       ${SCRIPT_DIR}/../
-  $NINJA_EXECUTABLE
+  ${NINJA_EXECUTABLE}
 popd > /dev/null 2>&1
+
+SINGLE_WHEEL=0
 
 # Compile wheels re-using standalone project and archive cache
 for VENV in "${VENVS[@]}"; do
@@ -57,34 +68,113 @@ for VENV in "${VENVS[@]}"; do
     echo "PYTHON_INCLUDE_DIR:${PYTHON_INCLUDE_DIR}"
     echo "PYTHON_LIBRARY:${PYTHON_LIBRARY}"
 
-    $PYTHON_EXECUTABLE -m pip install -r ${SCRIPT_DIR}/../requirements-dev.txt
+    # Install dependencies
+    ${PYTHON_EXECUTABLE} -m pip install --upgrade -r ${SCRIPT_DIR}/../requirements-dev.txt
+
+    build_type="MinSizeRel"
+    plat_name="macosx-10.6-x86_64"
+    osx_target="10.6"
+    source_path=${SCRIPT_DIR}/../standalone-build/ITK-source
     build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
+    SETUP_PY_CONFIGURE="${script_dir}/setup_py_configure.py"
+
     # Clean up previous invocations
-    rm -rf $build_path
-    $PYTHON_EXECUTABLE setup.py bdist_wheel --build-type MinSizeRel --plat-name macosx-10.6-x86_64 -G Ninja -- \
-      -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
-      -DITK_SOURCE_DIR:PATH=${SCRIPT_DIR}/../standalone-build/ITK-source \
-      -DITK_BINARY_DIR:PATH=${build_path} \
-      -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=10.6 \
-      -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
-      -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
-      -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
-      -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
-    $PYTHON_EXECUTABLE setup.py clean
-    # Remove unecessary files for building against ITK
-    find $build_path -name '*.cpp' -delete -o -name '*.xml' -delete
-    rm -rf $build_path/Wrapping/Generators/castxml*
-    find $build_path -name '*.o' -delete
+    rm -rf ${build_path}
+
+    if [[ ${SINGLE_WHEEL} == 1 ]]; then
+
+      echo "#"
+      echo "# Build single ITK wheel"
+      echo "#"
+
+      # Configure setup.py
+      ${PYTHON_EXECUTABLE} ${SETUP_PY_CONFIGURE} "itk"
+      # Generate wheel
+      ${PYTHON_EXECUTABLE} setup.py bdist_wheel --build-type ${build_type} --plat-name ${plat_name} -G Ninja -- \
+        -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
+        -DITK_SOURCE_DIR:PATH= ${source_path} \
+        -DITK_BINARY_DIR:PATH=${build_path} \
+        -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+        -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
+        -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
+        -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
+        -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
+      # Cleanup
+      ${PYTHON_EXECUTABLE} setup.py clean
+
+    else
+
+      echo "#"
+      echo "# Build multiple ITK wheels"
+      echo "#"
+
+      # Build ITK python
+      (
+        mkdir -p ${build_path} \
+        && cd ${build_path} \
+        && cmake \
+          -DCMAKE_BUILD_TYPE:STRING=${build_type} \
+          -DITK_SOURCE_DIR:PATH=${source_path} \
+          -DITK_BINARY_DIR:PATH=${build_path} \
+          -DBUILD_TESTING:BOOL=OFF \
+          -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+          -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
+          -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
+          -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
+          -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+          -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
+          -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
+          -DPY_SITE_PACKAGES_PATH:PATH=${SCRIPT_DIR}/../_skbuild/cmake-install \
+          -DITK_LEGACY_SILENT:BOOL=ON \
+          -DITK_WRAP_PYTHON:BOOL=ON \
+          -DITK_WRAP_PYTHON_LEGACY:BOOL=OFF \
+          -G Ninja \
+          ${source_path} \
+        && ninja\
+        || exit 1
+      )
+
+      wheel_names=$(cat ${SCRIPT_DIR}/WHEEL_NAMES.txt)
+      for wheel_name in ${wheel_names}; do
+        # Configure setup.py
+        ${PYTHON_EXECUTABLE} ${SETUP_PY_CONFIGURE} ${wheel_name}
+        # Generate wheel
+        ${PYTHON_EXECUTABLE} setup.py bdist_wheel --build-type ${build_type} --plat-name ${plat_name} -G Ninja -- \
+          -DITK_SOURCE_DIR:PATH=${source_path} \
+          -DITK_BINARY_DIR:PATH=${build_path} \
+          -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+          -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
+          -DITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
+          -DITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
+          -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
+          -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
+          -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+        || exit 1
+        # Cleanup
+        ${PYTHON_EXECUTABLE} setup.py clean
+      done
+
+    fi
+
+    # Remove unnecessary files for building against ITK
+    find ${build_path} -name '*.cpp' -delete -o -name '*.xml' -delete
+    rm -rf ${build_path}/Wrapping/Generators/castxml*
+    find ${build_path} -name '*.o' -delete
 done
 
-$DELOCATE_LISTDEPS ${SCRIPT_DIR}/../dist/*.whl # lists library dependencies
-$DELOCATE_WHEEL ${SCRIPT_DIR}/../dist/*.whl # copies library dependencies into wheel
+${DELOCATE_LISTDEPS} ${SCRIPT_DIR}/../dist/*.whl # lists library dependencies
+${DELOCATE_WHEEL} ${SCRIPT_DIR}/../dist/*.whl # copies library dependencies into wheel
 
 # Install packages and test
 for VENV in "${VENVS[@]}"; do
-    ${VENV}/bin/pip install itk --no-cache-dir --no-index -f ${SCRIPT_DIR}/../dist
+    if [[ ${SINGLE_WHEEL} == 1 ]]; then
+        package="itk"
+    else
+        package="itk-meta"
+    fi
+    ${VENV}/bin/pip install ${package} --no-cache-dir --no-index -f ${SCRIPT_DIR}/../dist
     ${VENV}/bin/pip install numpy
-    (cd $HOME; ${VENV}/bin/python -c 'import itk;')
-    (cd $HOME; ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
-    (cd $HOME; ${VENV}/bin/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
+    (cd $HOME && ${VENV}/bin/python -c 'import itk;')
+    (cd $HOME && ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
+    (cd $HOME && ${VENV}/bin/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
 done

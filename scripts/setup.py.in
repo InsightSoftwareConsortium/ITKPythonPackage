@@ -1,5 +1,5 @@
 
-# Generated using: python setup_py_configure.py 'itk'
+# Generated using: @SETUP_GENERATOR@
 
 from __future__ import print_function
 from os import sys, path
@@ -13,29 +13,19 @@ except ImportError:
     print('  python -m pip install scikit-build')
     sys.exit(1)
 
-sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-from itkVersion import get_versions
+@SETUP_PRE_CODE@
 
 setup(
-    name='itk',
-    version=get_versions()['package-version'],
+    name='@SETUP_NAME@',
+    version=@SETUP_VERSION@,
     author='Insight Software Consortium',
     author_email='community@itk.org',
     packages=['itk'],
     package_dir={'itk': 'itk'},
-    cmake_args=[],
-    py_modules=[
-        'itkBase',
-        'itkConfig',
-        'itkExtras',
-        'itkLazy',
-        'itkTemplate',
-        'itkTypes',
-        'itkVersion',
-        'itkBuildOptions'
-    ],
-    download_url=r'https://itk.org/ITK/resources/software.html',
-    description=r'ITK is an open-source toolkit for multidimensional image analysis',
+    cmake_args=[@SETUP_CMAKE_ARGS@],
+    py_modules=[@SETUP_PY_MODULES@],
+    download_url=r'@SETUP_DOWNLOAD_URL@',
+    description=r'@SETUP_DESCRIPTION@',
     long_description='ITK is an open-source, cross-platform library that '
                      'provides developers with an extensive suite of software '
                      'tools for image analysis. Developed through extreme '
@@ -62,8 +52,10 @@ setup(
         "Operating System :: MacOS"
         ],
     license='Apache',
-    keywords='ITK InsightToolkit segmentation registration image imaging',
+    keywords='ITK InsightToolkit @SETUP_EXTRA_KEYWORDS@',
     url=r'https://itk.org/',
     install_requires=[
+@SETUP_INSTALL_REQUIRES@
     ]
     )
+@SETUP_POST_CODE@
