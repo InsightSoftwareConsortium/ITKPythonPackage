@@ -131,7 +131,7 @@ def build_wheel(python_version, single_wheel=False,
     with push_env(PATH="%s%s%s" % (path, os.pathsep, os.environ["PATH"])):
 
         # Install dependencies
-        check_call([pip, "install",
+        check_call([pip, "install", "--upgrade",
                     "-r", os.path.join(ROOT_DIR, "requirements-dev.txt")])
 
         build_type = "Release"
