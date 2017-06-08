@@ -22,10 +22,14 @@ sys.path.insert(0, os.path.join(SCRIPT_DIR, "internal"))
 from wheel_builder_utils import push_dir, push_env
 
 
-def pip_install(python_dir, package):
+def pip_install(python_dir, package, upgrade=True):
     pip = os.path.join(python_dir, "Scripts", "pip.exe")
     print("Installing %s using %s" % (package, pip))
-    check_call([pip, "install", package])
+    args = [pip, "install"]
+    if upgrade:
+        args.append("--upgrade")
+    args.append(package)
+    check_call(args)
 
 
 def prepare_build_env(python_version):
