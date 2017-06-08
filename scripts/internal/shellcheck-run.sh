@@ -22,7 +22,6 @@ for f in $(find . -type f -not -iwholename '*.git*' | sort -u); do
       -e SC1090 \
       -e SC2046 \
       -e SC2086 \
-      -e SC2155 \
       "$f" \
     && echo "[OK]: successfully linted $f" || echo "[FAILED]: found issues linting $f"
     current_exit_code=$?

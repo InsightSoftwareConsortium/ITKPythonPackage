@@ -86,7 +86,8 @@ function fill_pyver {
     # Hence:
     # 2 -> 2.7.11  (depending on LATEST_27 value)
     # 2.7 -> 2.7.11  (depending on LATEST_27 value)
-    local ver=$1
+    local ver
+    ver=$1
     check_var $ver
     if [[ $ver =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
         # Major.minor.micro format already
@@ -111,10 +112,12 @@ function pyinst_ext_for_version {
     #   $py_version (python version in major.minor.extra format)
     #
     # Earlier Python installers are .dmg, later are .pkg.
-    local py_version=$1
+    local py_version
+    py_version=$1
     check_var $py_version
     py_version=$(fill_pyver $py_version)
-    local py_0=${py_version:0:1}
+    local py_0
+    py_0=${py_version:0:1}
     if [ $py_0 -eq 2 ]; then
         if [ "$(lex_ver $py_version)" -ge "$(lex_ver 2.7.9)" ]; then
             echo "pkg"
@@ -136,11 +139,16 @@ function install_macpython {
     # Version given in major or major.minor or major.minor.micro e.g
     # "3" or "3.4" or "3.4.1".
     # sets $PYTHON_EXE variable to python executable
-    local py_version=$(fill_pyver $1)
-    local py_stripped=$(strip_ver_suffix $py_version)
-    local inst_ext=$(pyinst_ext_for_version $py_version)
-    local py_inst=python-$py_version-macosx10.6.$inst_ext
-    local inst_path=$DOWNLOADS_SDIR/$py_inst
+    local py_version
+    py_version=$(fill_pyver $1)
+    local py_stripped
+    py_stripped=$(strip_ver_suffix $py_version)
+    local inst_ext
+    inst_ext=$(pyinst_ext_for_version $py_version)
+    local py_inst
+    py_inst=python-$py_version-macosx10.6.$inst_ext
+    local inst_path
+    inst_path=$DOWNLOADS_SDIR/$py_inst
     mkdir -p $DOWNLOADS_SDIR
     curl $MACPYTHON_URL/$py_stripped/${py_inst} > $inst_path
     if [ "$inst_ext" == "dmg" ]; then
@@ -148,8 +156,10 @@ function install_macpython {
         inst_path=/Volumes/Python/Python.mpkg
     fi
     sudo installer -pkg $inst_path -target /
-    local py_mm=${py_version:0:3}
-    local py_m=${py_version:0:1}
+    local py_mm
+    py_mm=${py_version:0:3}
+    local py_m
+    py_m=${py_version:0:1}
     PYTHON_EXE=$MACPYTHON_PY_PREFIX/$py_mm/bin/python$py_m
     export PYTHON_EXE
 }
@@ -165,7 +175,8 @@ function install_pip {
     # Travis VMS now install pip for system python by default - force install
     # even if installed already
     sudo $PYTHON_EXE $DOWNLOADS_SDIR/get-pip.py --ignore-installed
-    local py_mm=$(get_py_mm)
+    local py_mm
+    py_mm=$(get_py_mm)
     PIP_CMD="sudo $(dirname $PYTHON_EXE)/pip$py_mm"
     export PIP_CMD
 }
