@@ -187,6 +187,7 @@ def get_wheel_dependencies():
         wheel_name for wheel_name in get_wheel_names()
         if wheel_name != 'itk-meta'
         ]
+    all_depends['itk-meta'].append('numpy')
     return all_depends
 
 
