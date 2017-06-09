@@ -137,13 +137,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
         echo "Skipping ${PYBIN}"
         continue
     fi
-    if [[ ${SINGLE_WHEEL} == 1 ]]; then
-        package="itk"
-    else
-        package="itk-meta"
-    fi
-    ${PYBIN}/pip install ${package} --no-cache-dir --no-index -f /work/dist
     ${PYBIN}/pip install numpy
+    ${PYBIN}/pip install itk --no-cache-dir --no-index -f /work/dist
     (cd $HOME && ${PYBIN}/python -c 'from itk import ITKCommon;')
     (cd $HOME && ${PYBIN}/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
     (cd $HOME && ${PYBIN}/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')

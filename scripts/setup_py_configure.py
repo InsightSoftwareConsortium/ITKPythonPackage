@@ -139,7 +139,10 @@ def update_wheel_setup_py_parameters():
         params['SETUP_GENERATOR'] = "python %s '%s'" % (SCRIPT_NAME, wheel_name)
 
         # name
-        params['SETUP_NAME'] = wheel_name
+        if wheel_name == 'itk-meta':
+            params['SETUP_NAME'] = 'itk'
+        else:
+            params['SETUP_NAME'] = wheel_name
 
         # cmake_args
         params['SETUP_CMAKE_ARGS'] = list_to_str([
