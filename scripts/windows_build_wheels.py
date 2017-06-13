@@ -20,6 +20,7 @@ print("STANDALONE_DIR: %s" % STANDALONE_DIR)
 
 sys.path.insert(0, os.path.join(SCRIPT_DIR, "internal"))
 from wheel_builder_utils import push_dir, push_env
+from windows_build_common import DEFAULT_PY_ENVS, venv_paths
 
 
 def pip_install(python_dir, package, upgrade=True):
@@ -104,30 +105,13 @@ def build_wrapped_itk(
 def build_wheel(python_version, single_wheel=False,
                 cleanup=False, wheel_names=None):
 
-    venv_dir = os.path.join(ROOT_DIR, "venv-%s" % python_version)
+    python_executable, \
+            python_include_dir, \
+            python_library, \
+            pip, \
+            ninja_executable, \
+            path = venv_paths(python_version)
 
-    python_executable = os.path.join(venv_dir, "Scripts", "python.exe")
-    python_include_dir = os.path.join(venv_dir, "Include")
-
-    # XXX It should be possible to query skbuild for the library dir associated
-    #     with a given interpreter.
-    xy_ver = python_version.split("-")[0]
-
-    python_library = "C:/Python%s/libs/python%s.lib" % (python_version, xy_ver)
-
-    print("")
-    print("PYTHON_EXECUTABLE: %s" % python_executable)
-    print("PYTHON_INCLUDE_DIR: %s" % python_include_dir)
-    print("PYTHON_LIBRARY: %s" % python_library)
-
-    pip = os.path.join(venv_dir, "Scripts", "pip.exe")
-
-    ninja_executable = os.path.join(
-        ROOT_DIR, "venv-27-x64", "Scripts", "ninja.exe")
-    print("NINJA_EXECUTABLE:%s" % ninja_executable)
-
-    # Update PATH
-    path = os.path.join(venv_dir, "Scripts")
     with push_env(PATH="%s%s%s" % (path, os.pathsep, os.environ["PATH"])):
 
         # Install dependencies
@@ -234,11 +218,8 @@ def test_wheels(single_wheel=False):
     pass
 
 
-def build_wheels(py_envs=None, single_wheel=False,
+def build_wheels(py_envs=DEFAULT_PY_ENVS, single_wheel=False,
                  cleanup=False, wheel_names=None):
-
-    if py_envs is None:
-        py_envs = ["27-x64", "35-x64", "36-x64"]
 
     prepare_build_env("27-x64")
     prepare_build_env("35-x64")
@@ -269,7 +250,7 @@ def build_wheels(py_envs=None, single_wheel=False,
             cleanup=cleanup, wheel_names=wheel_names)
 
 
-def main(py_envs=None, wheel_names=None, cleanup=True):
+def main(py_envs=DEFAULT_PY_ENVS, wheel_names=None, cleanup=True):
     single_wheel = False
 
     build_wheels(
