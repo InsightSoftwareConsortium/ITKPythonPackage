@@ -167,13 +167,8 @@ ${DELOCATE_WHEEL} ${SCRIPT_DIR}/../dist/*.whl # copies library dependencies into
 
 # Install packages and test
 for VENV in "${VENVS[@]}"; do
-    if [[ ${SINGLE_WHEEL} == 1 ]]; then
-        package="itk"
-    else
-        package="itk-meta"
-    fi
-    ${VENV}/bin/pip install ${package} --no-cache-dir --no-index -f ${SCRIPT_DIR}/../dist
     ${VENV}/bin/pip install numpy
+    ${VENV}/bin/pip install itk --no-cache-dir --no-index -f ${SCRIPT_DIR}/../dist
     (cd $HOME && ${VENV}/bin/python -c 'import itk;')
     (cd $HOME && ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
     (cd $HOME && ${VENV}/bin/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
