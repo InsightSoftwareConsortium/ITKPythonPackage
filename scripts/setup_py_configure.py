@@ -144,6 +144,39 @@ def update_wheel_setup_py_parameters():
         else:
             params['SETUP_NAME'] = wheel_name
 
+
+        # long description
+        if wheel_name == 'itk-core':
+            params['SETUP_LONG_DESCRIPTION'] += (r'\n\n'
+            'This package contain the toolkit framework used'
+            ' by other modules. There are common base classes for data objects and process'
+            ' objects, basic data structures such as Image, Mesh, QuadEdgeMesh, and'
+            ' SpatialObjects, and common functionality for operations such as finite'
+            ' differences, image adaptors, or image transforms.')
+        elif wheel_name == 'itk-filtering':
+            params['SETUP_LONG_DESCRIPTION'] += (r'\n\n'
+            'These packages contains filters that modify data'
+            ' in the ITK pipeline framework.  These filters take an input object, such as an'
+            ' Image, and modify it to create an output.  Filters can be chained together to'
+            ' create a processing pipeline.')
+        elif wheel_name == 'itk-io':
+            params['SETUP_LONG_DESCRIPTION'] += (r'\n\n'
+            'This package contains classes for reading and writing images and other data objects.')
+        elif wheel_name == 'itk-numerics':
+            params['SETUP_LONG_DESCRIPTION'] += (r'\n\n'
+            'This package contains basic numerical tools and algorithms that'
+            ' have general applications outside of imaging.')
+        elif wheel_name == 'itk-registration':
+            params['SETUP_LONG_DESCRIPTION'] += (r'\n\n'
+            'This package addresses the registration problem: '
+            ' find the spatial transformation between two images. This is a high'
+            ' level package that makes use of many lower level packages.')
+        elif wheel_name == 'itk-segmentation':
+            params['SETUP_LONG_DESCRIPTION'] += (r'\n\n'
+            'This package addresses the segmentation problem: '
+            ' partition the image into classified regions (labels). This is a high'
+            ' level package that makes use of many lower level packages.')
+
         # cmake_args
         params['SETUP_CMAKE_ARGS'] = list_to_str([
             '-DITKPythonPackage_WHEEL_NAME:STRING=%s' % wheel_name
@@ -217,6 +250,12 @@ ITK_SETUP_PY_PARAMETERS = {
     ]),
     'SETUP_DOWNLOAD_URL': r'https://itk.org/ITK/resources/software.html',
     'SETUP_DESCRIPTION': r'ITK is an open-source toolkit for multidimensional image analysis',  # noqa: E501
+    'SETUP_LONG_DESCRIPTION': r'ITK is an open-source, cross-platform library that '
+                     'provides developers with an extensive suite of software '
+                     'tools for image analysis. Developed through extreme '
+                     'programming methodologies, ITK employs leading-edge '
+                     'algorithms for registering and segmenting '
+                     'multidimensional scientific images.',
     'SETUP_EXTRA_KEYWORDS': r'segmentation registration image imaging',
     'SETUP_INSTALL_REQUIRES': r'',
     'SETUP_POST_CODE': r''
