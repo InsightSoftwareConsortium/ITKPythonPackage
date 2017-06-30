@@ -30,6 +30,8 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS):
             if os.path.exists(requirements_file):
                 check_call([pip, "install", "--upgrade", "-r", requirements_file])
             check_call([pip, "install", "cmake"])
+            check_call([pip, "install", "scikit_build"])
+            check_call([pip, "install", "ninja"])
 
             build_type = "Release"
             source_path = ROOT_DIR
