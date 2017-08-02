@@ -272,7 +272,7 @@ else()
     #
     # Considering that
     #
-    # * Every ITK module is associated with exactly on ITK group.
+    # * Every ITK module is associated with exactly one ITK group.
     # * ITK module dependencies are specified independently of ITK groups
     #
     # we semi-arbitrarily defined a collection of wheels (see ``ITK_WHEEL_GROUPS``)
