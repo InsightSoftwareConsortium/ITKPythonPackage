@@ -142,4 +142,5 @@ for PYBIN in "${PYBINARIES[@]}"; do
     (cd $HOME && ${PYBIN}/python -c 'from itk import ITKCommon;')
     (cd $HOME && ${PYBIN}/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
     (cd $HOME && ${PYBIN}/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
+    (cd $HOME && ${PYBIN}/python ${script_dir}/../../docs/code/testDriver.py )
 done

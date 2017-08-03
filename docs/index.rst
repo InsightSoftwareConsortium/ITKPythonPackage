@@ -21,6 +21,7 @@ There are also many `downloadable examples documented in Sphinx
    :maxdepth: 2
    :caption: Contents
 
+   Quick_start_guide.rst
    Automated_wheels_building_with_scripts.rst
    Prerequisites.rst
    Detailed_build_instructions.rst
