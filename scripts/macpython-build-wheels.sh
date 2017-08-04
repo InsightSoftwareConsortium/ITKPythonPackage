@@ -172,4 +172,5 @@ for VENV in "${VENVS[@]}"; do
     (cd $HOME && ${VENV}/bin/python -c 'import itk;')
     (cd $HOME && ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
     (cd $HOME && ${VENV}/bin/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
+    (cd $HOME && ${PYBIN}/python ${SCRIPT_DIR}/../docs/code/testDriver.py )
 done
