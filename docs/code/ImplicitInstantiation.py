@@ -13,4 +13,3 @@ median = itk.MedianImageFilter.New(Input=reader.GetOutput())
 median = itk.MedianImageFilter.New(reader.GetOutput())
 # Same as above. `.GetOutput()` does not have to be specified.
 median = itk.MedianImageFilter.New(reader)
-

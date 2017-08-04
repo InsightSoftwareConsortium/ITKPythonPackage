@@ -48,4 +48,3 @@ vnl_vector = itk.GetVnlVectorFromArray(vec)
 # Array[View] from Vnl vector
 vec_view = itk.GetArrayViewFromVnlVector(vnl_vector)
 vec = itk.GetArrayFromVnlVector(vnl_vector)
-
