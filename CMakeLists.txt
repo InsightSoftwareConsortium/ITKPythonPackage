@@ -68,8 +68,8 @@ if(ITKPythonPackage_SUPERBUILD)
   include(ExternalProject)
 
   set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
-  # ITK nightly-master 2017-09-01
-  set(ITK_GIT_TAG "6408773")
+  # ITK nightly-master 2017-09-05
+  set(ITK_GIT_TAG "7e438c6")
 
   #-----------------------------------------------------------------------------
   # A separate project is used to download ITK, so that it can reused
