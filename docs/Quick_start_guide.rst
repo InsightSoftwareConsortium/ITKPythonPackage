@@ -2,6 +2,8 @@
 Quick start guide
 ===========================
 
+.. _quick-start:
+
 Installation
 ------------
 
