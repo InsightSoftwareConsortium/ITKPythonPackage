@@ -149,7 +149,7 @@ where `<your-username>` and `<your-password>` correspond to your PyPI account.
 If you have a `GPG signing key
 <https://help.github.com/articles/generating-a-new-gpg-key/>`_, sign the wheels::
 
-  gpg --detach-sign -a dist/*.whl
+  for whl in dist/*.whl; do gpg --detach-sign -a $whl; done
 
 Then, upload wheels to the testing server::
 
