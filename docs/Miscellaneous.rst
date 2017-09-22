@@ -8,4 +8,4 @@ It is covered by the Apache License, Version 2.0:
 
 http://www.apache.org/licenses/LICENSE-2.0
 
-For more information about ITK, visit http://itk.org
+For more information about ITK, visit https://itk.org
