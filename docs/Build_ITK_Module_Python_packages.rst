@@ -146,16 +146,21 @@ Next, create a `~/.pypirc` file with your login credentials::
 
 where `<your-username>` and `<your-password>` correspond to your PyPI account.
 
+If you have a `GPG signing key
+<https://help.github.com/articles/generating-a-new-gpg-key/>`_, sign the wheels::
+
+  gpg --detach-sign -a dist/*.whl
+
 Then, upload wheels to the testing server::
 
   python -m pip install twine
-  python -m twine upload -r pypitest dist/*.whl
+  python -m twine upload -r pypitest dist/*
 
 Check out the packages on `<https://test.pypi.org/>`_ the testing server.
 
 Finally, upload the wheel packages to the production PyPI server::
 
-  python -m twine upload dist/*.whl
+  python -m twine upload dist/*
 
 Congratulations! Your packages can be installed with the commands::
 
