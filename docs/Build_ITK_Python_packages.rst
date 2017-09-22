@@ -5,6 +5,11 @@ Build ITK Python packages
 This section describes how to builds ITK's Python packages. In most cases, the
 :ref:`pre-built ITK binary wheels can be used <quick-start>`.
 
+ITK Python packages are built nightly on Kitware build systems and uploaded to
+the `ITKPythonPackage GitHub releases page
+<https://github.com/InsightSoftwareConsortium/ITKPythonPackage/releases>`_.
+
+
 .. include:: Prerequisites.rst
 
 Automated platform scripts
