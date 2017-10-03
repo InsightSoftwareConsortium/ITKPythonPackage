@@ -10,4 +10,4 @@ PATH="/usr/local/opt/gnu-tar/libexec/gnubin:$PATH"
 tar xf ITKPythonBuilds-macosx.tar --checkpoint=10000 --checkpoint-action=dot
 sudo mkdir -p /Users/Kitware/Dashboards/ITK && sudo chown $UID:$GID /Users/Kitware/Dashboards/ITK && mv ITKPythonPackage /Users/Kitware/Dashboards/ITK/
 /Users/Kitware/Dashboards/ITK/ITKPythonPackage/scripts/macpython-install-python.sh
-/Users/Kitware/Dashboards/ITK/ITKPythonPackage/scripts/macpython-build-module-wheels.sh
+/Users/Kitware/Dashboards/ITK/ITKPythonPackage/scripts/macpython-build-module-wheels.sh "$@"
