@@ -198,10 +198,10 @@ function install_virtualenv {
 # Remove previous versions
 sudo rm -rf ${MACPYTHON_FRAMEWORK}
 
-LATEST_27=2.7.13
-LATEST_34=3.4.4
-LATEST_35=3.5.3
-LATEST_36=3.6.0
+LATEST_27=2.7.14
+LATEST_34=3.4.7
+LATEST_35=3.5.4
+LATEST_36=3.6.3
 
 for pyversion in $LATEST_27 $LATEST_34 $LATEST_35 $LATEST_36; do
   install_macpython $pyversion
