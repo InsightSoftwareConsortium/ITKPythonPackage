@@ -203,7 +203,7 @@ LATEST_34=3.4.7
 LATEST_35=3.5.4
 LATEST_36=3.6.3
 
-for pyversion in $LATEST_27 $LATEST_34 $LATEST_35 $LATEST_36; do
+for pyversion in $LATEST_27 $LATEST_35 $LATEST_36; do
   install_macpython $pyversion
   install_pip
   install_virtualenv
