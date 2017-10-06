@@ -12,6 +12,18 @@ To install the ITK Python package::
     $ python -m pip install --upgrade pip
     $ python -m pip install itk
 
+If a pre-compiled wheel package is not found for your Python distribution, then it will
+attempt to build from source.
+
+.. note::
+
+  On Windows machines, the source path cannot be greater than 50 characters or
+  issues will occur during build time due to filename truncation in Visual
+  Studio. If you must compile from source, clone this repository in a short
+  directory, like *C:/IPP*. Then, run `setup.py` within the repository via the
+  command line.
+
+
 Usage
 -----
 

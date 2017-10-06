@@ -85,7 +85,14 @@ In a PowerShell prompt::
 	    -a----         4/9/2017  11:14 PM       63274441 itk-4.11.0.dev20170407-cp35-cp35m-win_amd64.whl
 	    -a----        4/10/2017   2:08 AM       63257220 itk-4.11.0.dev20170407-cp36-cp36m-win_amd64.whl
 
-We need to work in a short directory to avoid path length limitations on Windows, so the repository is cloned into C:\IPP. Also, it is very important to disable antivirus checking on the C:\IPP directory. Otherwise, the build system conflicts with the antivirus when many files are created and deleted quickly, which can result in Access Denied errors. Windows 10 ships with an antivirus application, Windows Defender, that is enabled by default.
+We need to work in a short directory to avoid path length limitations on
+Windows, so the repository is cloned into C:\IPP.
+
+Also, it is very important to disable antivirus checking on the C:\IPP
+directory. Otherwise, the build system conflicts with the antivirus when many
+files are created and deleted quickly, which can result in Access Denied
+errors. Windows 10 ships with an antivirus application, Windows Defender, that
+is enabled by default.
 
 sdist
 -----
