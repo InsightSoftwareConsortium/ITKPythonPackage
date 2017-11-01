@@ -11,22 +11,23 @@ import numpy as np
 # Read input image
 itk_image = itk.imread(input_filename)
 
-#run filters on itkImage
+# Run filters on itk.Image
 
-#view only of itkImage, data is not copied
-np_view = itk.GetArrayViewFromImage( itk_image )
+# View only of itk.Image, data is not copied
+np_view = itk.GetArrayViewFromImage(itk_image)
 
-#copy of itkImage, data is copied
-np_copy = itk.GetArrayFromImage( itk_image )
+# Copy of itk.Image, data is copied
+np_copy = itk.GetArrayFromImage(itk_image)
 
 
-#do numpy stuff
+# Do numpy stuff
 
-#convert back to itk, view only, data is not copied
-itk_np_view = itk.GetImageViewFromArray( np_copy)
 
-#convert back to itk, data is not copied
-itk_np_copy = itk.GetImageFromArray( np_copy)
+# Convert back to itk, view only, data is not copied
+itk_np_view = itk.GetImageViewFromArray(np_copy)
+
+# Convert back to itk, data is not copied
+itk_np_copy = itk.GetImageFromArray(np_copy)
 
 # Save result
 itk.imwrite(itk_np_view, output_filename)
