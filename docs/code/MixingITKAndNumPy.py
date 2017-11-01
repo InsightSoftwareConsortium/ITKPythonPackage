@@ -26,7 +26,7 @@ np_copy = itk.GetArrayFromImage(itk_image)
 # Convert back to itk, view only, data is not copied
 itk_np_view = itk.GetImageViewFromArray(np_copy)
 
-# Convert back to itk, data is not copied
+# Convert back to itk, data is copied
 itk_np_copy = itk.GetImageFromArray(np_copy)
 
 # Save result
