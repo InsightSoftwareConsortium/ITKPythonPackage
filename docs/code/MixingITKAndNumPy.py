@@ -32,20 +32,16 @@ itk_np_copy = itk.GetImageFromArray(np_copy)
 # Save result
 itk.imwrite(itk_np_view, output_filename)
 
-# Vnl matrix[View] from array
+# Vnl matrix from array
 arr = np.zeros([3,3], np.uint8)
-matrix_view = itk.GetVnlMatrixViewFromArray(arr)
 matrix = itk.GetVnlMatrixFromArray(arr)
 
-# Array[View] from Vnl matrix
-arr_view = itk.GetArrayViewFromVnlMatrix(matrix)
+# Array from Vnl matrix
 arr = itk.GetArrayFromVnlMatrix(matrix)
 
-# Vnl vector[View] from array
+# Vnl vector from array
 vec = np.zeros([3], np.uint8)
-vnl_vector_view = itk.GetVnlVectorViewFromArray(vec)
 vnl_vector = itk.GetVnlVectorFromArray(vec)
 
-# Array[View] from Vnl vector
-vec_view = itk.GetArrayViewFromVnlVector(vnl_vector)
+# Array from Vnl vector
 vec = itk.GetArrayFromVnlVector(vnl_vector)
