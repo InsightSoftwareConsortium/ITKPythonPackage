@@ -98,13 +98,13 @@ A common use case for using ITK in Python is to mingle NumPy and ITK operations 
 The following script shows how to integrate NumPy and ITK:
 
 .. literalinclude:: code/MixingITKAndNumPy.py
-   :lines: 8-32
+   :lines: 8-33
 
 
 Similar functions are available to work with VNL vector and matrices:
 
 .. literalinclude:: code/MixingITKAndNumPy.py
-   :lines: 34-
+   :lines: 35-
 
 
 Examples
