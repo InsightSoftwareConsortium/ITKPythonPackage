@@ -64,5 +64,7 @@ for VENV in "${VENVS[@]}"; do
     ${PYTHON_EXECUTABLE} setup.py clean
 done
 
-${DELOCATE_LISTDEPS} $PWD/dist/*.whl # lists library dependencies
-${DELOCATE_WHEEL} $PWD/dist/*.whl # copies library dependencies into wheel
+# Temporarily disabled. See Issue
+# @InsightSoftwareConsortium/ITKPythonPackage#78
+#${DELOCATE_LISTDEPS} $PWD/dist/*.whl # lists library dependencies
+#${DELOCATE_WHEEL} $PWD/dist/*.whl # copies library dependencies into wheel
