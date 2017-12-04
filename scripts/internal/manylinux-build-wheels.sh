@@ -60,6 +60,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
             -DITK_BINARY_DIR:PATH=${build_path} \
             -DITKPythonPackage_ITK_BINARY_REUSE:BOOL=OFF \
             -DITKPythonPackage_WHEEL_NAME:STRING="itk" \
+            -DITK_WRAP_unsigned_short:BOOL=ON \
             -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
             -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
             -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
@@ -88,6 +89,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
           -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
           -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
+          -DITK_WRAP_unsigned_short:BOOL=ON \
           -DPY_SITE_PACKAGES_PATH:PATH=${script_dir}/../../_skbuild/cmake-install \
           -DITK_LEGACY_SILENT:BOOL=ON \
           -DITK_WRAP_PYTHON:BOOL=ON \
@@ -108,6 +110,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DITK_BINARY_DIR:PATH=${build_path} \
           -DITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
           -DITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
+          -DITK_WRAP_unsigned_short:BOOL=ON \
           -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
           -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
           -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
