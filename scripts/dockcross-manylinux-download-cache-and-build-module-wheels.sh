@@ -11,4 +11,8 @@ curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/do
 ./zstd-1.2.0-linux/bin/unzstd ITKPythonBuilds-linux.tar.zst -o ITKPythonBuilds-linux.tar
 tar xf ITKPythonBuilds-linux.tar
 
+mkdir tools
+wget -L http://ftp.stack.nl/pub/users/dimitri/doxygen-1.8.11.linux.bin.tar.gz -O doxygen-1.8.11.linux.bin.tar.gz
+tar -xvzf doxygen-1.8.11.linux.bin.tar.gz -C tools
+
 ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh

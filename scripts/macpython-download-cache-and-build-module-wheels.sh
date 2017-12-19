@@ -4,7 +4,7 @@
 # it is used by the .travis.yml file contained in ITKModuleTemplate: https://github.com/InsightSoftwareConsortium/ITKModuleTemplate
 
 brew update
-brew install zstd aria2 gnu-tar
+brew install zstd aria2 gnu-tar doxygen
 aria2c -c --file-allocation=none -o ITKPythonBuilds-macosx.tar.zst -s 10 -x 10 https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v4.12.0.post1}/ITKPythonBuilds-macosx.tar.zst
 unzstd ITKPythonBuilds-macosx.tar.zst -o ITKPythonBuilds-macosx.tar
 PATH="/usr/local/opt/gnu-tar/libexec/gnubin:$PATH"

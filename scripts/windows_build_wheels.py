@@ -96,6 +96,8 @@ def build_wrapped_itk(
             "-DITK_LEGACY_SILENT:BOOL=ON",
             "-DITK_WRAP_PYTHON:BOOL=ON",
             "-DITK_WRAP_PYTHON_LEGACY:BOOL=OFF",
+            "-DITK_WRAP_DOC:BOOL=ON",
+            "-DDOXYGEN_EXECUTABLE:FILEPATH=C:/P/doxygen/doxygen.exe",
             "-G", "Ninja",
             source_path
         ])

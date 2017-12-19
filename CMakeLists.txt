@@ -146,6 +146,7 @@ if(ITKPythonPackage_SUPERBUILD)
   message(STATUS "SuperBuild -   PYTHON_LIBRARY: ${PYTHON_LIBRARY}")
   message(STATUS "SuperBuild -   PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
   message(STATUS "SuperBuild - Searching for python[OK]")
+  message(STATUS "SuperBuild -   DOXYGEN_EXECUTABLE: ${DOXYGEN_EXECUTABLE}")
 
   #-----------------------------------------------------------------------------
   # ITK: This project builds ITK and associated Python modules
@@ -185,6 +186,8 @@ if(ITKPythonPackage_SUPERBUILD)
         -DITK_WRAP_PYTHON:BOOL=ON
         -DITK_WRAP_PYTHON_LEGACY:BOOL=OFF
         -DITK_WRAP_unsigned_short:BOOL=ON
+        -DITK_WRAP_DOC:BOOL=ON
+        -DDOXYGEN_EXECUTABLE:FILEPATH=${DOXYGEN_EXECUTABLE}
         -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR}
         -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
         -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE}
