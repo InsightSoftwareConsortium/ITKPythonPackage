@@ -9,6 +9,12 @@ PYTHON_LIBRARY=""
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
+# Install prerequirements
+mkdir -p /work/tools
+pushd /work/tools > /dev/null 2>&1
+wget -L http://ftp.stack.nl/pub/users/dimitri/doxygen-1.8.11.linux.bin.tar.gz -O doxygen-1.8.11.linux.bin.tar.gz
+tar -xvzf doxygen-1.8.11.linux.bin.tar.gz
+popd > /dev/null 2>&1
 # -----------------------------------------------------------------------
 
 # Build standalone project and populate archive cache
@@ -64,7 +70,9 @@ for PYBIN in "${PYBINARIES[@]}"; do
             -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
             -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
             -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
-            -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
+            -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+            -DITK_WRAP_DOC:BOOL=ON \
+            -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen
       # Cleanup
       ${PYBIN}/python setup.py clean
 
@@ -94,6 +102,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DITK_LEGACY_SILENT:BOOL=ON \
           -DITK_WRAP_PYTHON:BOOL=ON \
           -DITK_WRAP_PYTHON_LEGACY:BOOL=OFF \
+          -DITK_WRAP_DOC:BOOL=ON \
+          -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen \
           -G Ninja \
           ${source_path} \
         && ninja \
@@ -114,6 +124,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
           -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
           -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+          -DITK_WRAP_DOC:BOOL=ON \
+          -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen \
           || exit 1
         # Cleanup
         ${PYBIN}/python setup.py clean
