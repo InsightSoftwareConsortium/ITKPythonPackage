@@ -18,7 +18,10 @@ SCRIPT_DIR=""
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/macpython-build-common.sh"
 # -----------------------------------------------------------------------
-
+# Ensure that requirements are met
+brew update
+brew install doxygen
+# -----------------------------------------------------------------------
 # Remove previous virtualenv's
 rm -rf ${SCRIPT_DIR}/../venvs
 # Create virtualenv's
@@ -96,9 +99,11 @@ for VENV in "${VENVS[@]}"; do
         -DITK_BINARY_DIR:PATH=${build_path} \
         -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
         -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
+        -DITK_WRAP_unsigned_short:BOOL=ON \
         -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
         -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
-        -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
+        -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+        -DITK_WRAP_DOC:BOOL=ON
       # Cleanup
       ${PYTHON_EXECUTABLE} setup.py clean
 
@@ -119,6 +124,7 @@ for VENV in "${VENVS[@]}"; do
           -DBUILD_TESTING:BOOL=OFF \
           -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
           -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
+          -DITK_WRAP_unsigned_short:BOOL=ON \
           -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
           -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
           -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
@@ -128,6 +134,7 @@ for VENV in "${VENVS[@]}"; do
           -DITK_LEGACY_SILENT:BOOL=ON \
           -DITK_WRAP_PYTHON:BOOL=ON \
           -DITK_WRAP_PYTHON_LEGACY:BOOL=OFF \
+          -DITK_WRAP_DOC:BOOL=ON \
           -G Ninja \
           ${source_path} \
         && ninja\
@@ -146,9 +153,11 @@ for VENV in "${VENVS[@]}"; do
           -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
           -DITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
           -DITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
+          -DITK_WRAP_unsigned_short:BOOL=ON \
           -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
           -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
           -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+          -DITK_WRAP_DOC:BOOL=ON \
         || exit 1
         # Cleanup
         ${PYTHON_EXECUTABLE} setup.py clean
@@ -172,4 +181,5 @@ for VENV in "${VENVS[@]}"; do
     (cd $HOME && ${VENV}/bin/python -c 'import itk;')
     (cd $HOME && ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
     (cd $HOME && ${VENV}/bin/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
+    (cd $HOME && ${PYBIN}/python ${SCRIPT_DIR}/../docs/code/testDriver.py )
 done

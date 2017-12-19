@@ -9,6 +9,12 @@ PYTHON_LIBRARY=""
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
+# Install prerequirements
+mkdir -p /work/tools
+pushd /work/tools > /dev/null 2>&1
+wget -L http://ftp.stack.nl/pub/users/dimitri/doxygen-1.8.11.linux.bin.tar.gz -O doxygen-1.8.11.linux.bin.tar.gz
+tar -xvzf doxygen-1.8.11.linux.bin.tar.gz
+popd > /dev/null 2>&1
 # -----------------------------------------------------------------------
 
 # Build standalone project and populate archive cache
@@ -60,10 +66,13 @@ for PYBIN in "${PYBINARIES[@]}"; do
             -DITK_BINARY_DIR:PATH=${build_path} \
             -DITKPythonPackage_ITK_BINARY_REUSE:BOOL=OFF \
             -DITKPythonPackage_WHEEL_NAME:STRING="itk" \
+            -DITK_WRAP_unsigned_short:BOOL=ON \
             -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
             -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
             -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
-            -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
+            -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+            -DITK_WRAP_DOC:BOOL=ON \
+            -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen
       # Cleanup
       ${PYBIN}/python setup.py clean
 
@@ -88,10 +97,13 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
           -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
           -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
+          -DITK_WRAP_unsigned_short:BOOL=ON \
           -DPY_SITE_PACKAGES_PATH:PATH=${script_dir}/../../_skbuild/cmake-install \
           -DITK_LEGACY_SILENT:BOOL=ON \
           -DITK_WRAP_PYTHON:BOOL=ON \
           -DITK_WRAP_PYTHON_LEGACY:BOOL=OFF \
+          -DITK_WRAP_DOC:BOOL=ON \
+          -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen \
           -G Ninja \
           ${source_path} \
         && ninja \
@@ -108,9 +120,12 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DITK_BINARY_DIR:PATH=${build_path} \
           -DITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
           -DITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
+          -DITK_WRAP_unsigned_short:BOOL=ON \
           -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
           -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
           -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+          -DITK_WRAP_DOC:BOOL=ON \
+          -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen \
           || exit 1
         # Cleanup
         ${PYBIN}/python setup.py clean
@@ -142,4 +157,5 @@ for PYBIN in "${PYBINARIES[@]}"; do
     (cd $HOME && ${PYBIN}/python -c 'from itk import ITKCommon;')
     (cd $HOME && ${PYBIN}/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
     (cd $HOME && ${PYBIN}/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
+    (cd $HOME && ${PYBIN}/python ${script_dir}/../../docs/code/testDriver.py )
 done

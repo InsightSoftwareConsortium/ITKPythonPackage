@@ -68,8 +68,8 @@ if(ITKPythonPackage_SUPERBUILD)
   include(ExternalProject)
 
   set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
-  # ITK nightly-master 2017-06-13
-  set(ITK_GIT_TAG "c5c879a")
+  # ITK nightly-master 2017-12-18
+  set(ITK_GIT_TAG "e11bce2")
 
   #-----------------------------------------------------------------------------
   # A separate project is used to download ITK, so that it can reused
@@ -146,6 +146,7 @@ if(ITKPythonPackage_SUPERBUILD)
   message(STATUS "SuperBuild -   PYTHON_LIBRARY: ${PYTHON_LIBRARY}")
   message(STATUS "SuperBuild -   PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
   message(STATUS "SuperBuild - Searching for python[OK]")
+  message(STATUS "SuperBuild -   DOXYGEN_EXECUTABLE: ${DOXYGEN_EXECUTABLE}")
 
   #-----------------------------------------------------------------------------
   # ITK: This project builds ITK and associated Python modules
@@ -184,6 +185,9 @@ if(ITKPythonPackage_SUPERBUILD)
         -DITK_LEGACY_SILENT:BOOL=ON
         -DITK_WRAP_PYTHON:BOOL=ON
         -DITK_WRAP_PYTHON_LEGACY:BOOL=OFF
+        -DITK_WRAP_unsigned_short:BOOL=ON
+        -DITK_WRAP_DOC:BOOL=ON
+        -DDOXYGEN_EXECUTABLE:FILEPATH=${DOXYGEN_EXECUTABLE}
         -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR}
         -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
         -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE}
@@ -272,7 +276,7 @@ else()
     #
     # Considering that
     #
-    # * Every ITK module is associated with exactly on ITK group.
+    # * Every ITK module is associated with exactly one ITK group.
     # * ITK module dependencies are specified independently of ITK groups
     #
     # we semi-arbitrarily defined a collection of wheels (see ``ITK_WHEEL_GROUPS``)

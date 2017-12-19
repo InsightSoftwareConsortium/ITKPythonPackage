@@ -96,6 +96,8 @@ def build_wrapped_itk(
             "-DITK_LEGACY_SILENT:BOOL=ON",
             "-DITK_WRAP_PYTHON:BOOL=ON",
             "-DITK_WRAP_PYTHON_LEGACY:BOOL=OFF",
+            "-DITK_WRAP_DOC:BOOL=ON",
+            "-DDOXYGEN_EXECUTABLE:FILEPATH=C:/P/doxygen/doxygen.exe",
             "-G", "Ninja",
             source_path
         ])
@@ -215,7 +217,10 @@ def fixup_wheels():
 
 
 def test_wheels(single_wheel=False):
-    pass
+    check_call([
+        python_executable,
+        os.path.join(ROOT_DIR, "docs/code/testDriver.py")
+    ])
 
 
 def build_wheels(py_envs=DEFAULT_PY_ENVS, single_wheel=False,
