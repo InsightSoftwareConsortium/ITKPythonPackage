@@ -6,4 +6,7 @@ Invoke-WebRequest -Uri "https://github.com/InsightSoftwareConsortium/ITKPythonBu
 sz x ITKPythonBuilds-windows.zip -oC:\P -aoa -r
 Invoke-WebRequest -Uri "http://ftp.stack.nl/pub/users/dimitri/doxygen-1.8.11.windows.bin.zip" -OutFile "doxygen-1.8.11.windows.bin.zip"
 sz x doxygen-1.8.11.windows.bin.zip -oC:\P\doxygen -aoa -r
+Invoke-WebRequest -Uri "https://midas3.kitware.com/midas/download/bitstream/462235/grep-win.zip" -OutFile "grep-win.zip"
+sz x grep-win.zip -oC:\P\grep -aoa -r
+$env:Path += ";C:\P\grep"
 C:\Python27-x64\python.exe C:\P\IPP\scripts\windows_build_module_wheels.py
