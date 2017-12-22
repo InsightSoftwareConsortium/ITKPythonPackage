@@ -22,10 +22,10 @@ script_dir=$(cd $(dirname $0) || exit 1; pwd)
 
 # Build wheels
 mkdir -p dist
-DOCKER_ARGS="-v $(pwd)/dist:/work/dist/ -v "$script_dir/..":/ITKPythonPackage -v $(pwd}/tools:/tools"
+DOCKER_ARGS="-v $(pwd)/dist:/work/dist/ -v $script_dir/..:/ITKPythonPackage -v $(pwd)/tools:/tools"
 /tmp/dockcross-manylinux-x64 \
   -a "$DOCKER_ARGS" \
   "/ITKPythonPackage/scripts/internal/manylinux-build-module-wheels.sh" "$@"
 #/tmp/dockcross-manylinux-x86 \
 #  -a "$DOCKER_ARGS" \
-# "$script_dir/scripts/internal/manylinux-build-module-wheels.sh" "$@"
+# "/ITKPythonPackage/scripts/internal/manylinux-build-module-wheels.sh" "$@"
