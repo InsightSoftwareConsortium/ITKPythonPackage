@@ -13,7 +13,7 @@ source "${script_dir}/manylinux-build-common.sh"
 
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
-    if [[ ${PYBIN} == *"cp26"* || ${PYBIN} == *"cp33"* ]]; then
+    if [[ ${PYBIN} == *"cp26"* || ${PYBIN} == *"cp33"* || ${PYBIN} == *"cp34"* || ${PYBIN} == *"cpython-2.6"* ]]; then
         echo "Skipping ${PYBIN}"
         continue
     fi
