@@ -64,7 +64,5 @@ for VENV in "${VENVS[@]}"; do
     ${PYTHON_EXECUTABLE} setup.py clean
 done
 
-# Temporarily disabled. See Issue
-# @InsightSoftwareConsortium/ITKPythonPackage#78
-#${DELOCATE_LISTDEPS} $PWD/dist/*.whl # lists library dependencies
-#${DELOCATE_WHEEL} $PWD/dist/*.whl # copies library dependencies into wheel
+${DELOCATE_LISTDEPS} $PWD/dist/*.whl # lists library dependencies
+${DELOCATE_WHEEL} $PWD/dist/*.whl # copies library dependencies into wheel
