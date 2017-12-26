@@ -7,7 +7,13 @@ set -e -x
 # For example,
 # manylinux-build-wheels.sh cp27mu cp35
 if [[ $# -eq 0 ]]; then
-  PYBINARIES=(/opt/python/*/bin)
+  PYBIN=(/opt/python/*/bin)
+  PYBINARIES=()
+  for version in "${PYBIN[@]}"; do
+    if [[ ${version} == *"cp27"* || ${version} == *"cp35"* || ${version} == *"cp36"* ]]; then
+      PYBINARIES+=(${version})
+    fi
+  done
 else
   PYBINARIES=()
   for version in "$@"; do
