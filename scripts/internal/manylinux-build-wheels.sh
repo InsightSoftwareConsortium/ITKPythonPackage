@@ -28,11 +28,6 @@ SINGLE_WHEEL=0
 
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
-    if [[ ${PYBIN} == *"cp26"* || ${PYBIN} == *"cp33"* ]]; then
-        echo "Skipping ${PYBIN}"
-        continue
-    fi
-
     PYTHON_EXECUTABLE=${PYBIN}/python
     PYTHON_INCLUDE_DIR=$( find -L ${PYBIN}/../include/ -name Python.h -exec dirname {} \; )
 
@@ -148,10 +143,6 @@ done
 
 # Install packages and test
 for PYBIN in "${PYBINARIES[@]}"; do
-    if [[ ${PYBIN} == *"cp26"* || ${PYBIN} == *"cp33"* ]]; then
-        echo "Skipping ${PYBIN}"
-        continue
-    fi
     ${PYBIN}/pip install numpy
     ${PYBIN}/pip install itk --no-cache-dir --no-index -f /work/dist
     (cd $HOME && ${PYBIN}/python -c 'from itk import ITKCommon;')
