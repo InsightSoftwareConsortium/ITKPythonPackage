@@ -109,7 +109,7 @@ Then, build the wheels::
 Windows
 -------
 
-First, install Microsoft Visual C++ Compiler for Python 2.7, Visual Studio 2015, Git, and CMake, which should be added to the system PATH environmental variable.
+First, install Microsoft Visual Studio 2015, Git, and CMake, which should be added to the system PATH environmental variable.
 
 Open a PowerShell terminal as Administrator, and install Python::
 
