@@ -75,8 +75,8 @@ for VENV in "${VENVS[@]}"; do
     ${PYTHON_EXECUTABLE} -m pip install --upgrade -r ${SCRIPT_DIR}/../requirements-dev.txt
 
     build_type="MinSizeRel"
-    plat_name="macosx-10.6-x86_64"
-    osx_target="10.6"
+    plat_name="macosx-10.9-x86_64"
+    osx_target="10.9"
     source_path=${SCRIPT_DIR}/../standalone-build/ITK-source
     build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
     SETUP_PY_CONFIGURE="${script_dir}/setup_py_configure.py"
