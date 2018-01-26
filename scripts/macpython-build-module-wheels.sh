@@ -48,13 +48,13 @@ for VENV in "${VENVS[@]}"; do
     ${PYTHON_EXECUTABLE} -m pip install --no-cache ninja
     NINJA_EXECUTABLE=${VENV}/bin/ninja
     itk_build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
-    ${PYTHON_EXECUTABLE} setup.py bdist_wheel --build-type MinSizeRel --plat-name macosx-10.6-x86_64 -G Ninja -- \
+    ${PYTHON_EXECUTABLE} setup.py bdist_wheel --build-type MinSizeRel --plat-name macosx-10.9-x86_64 -G Ninja -- \
       -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
       -DITK_DIR:PATH=${itk_build_path} \
       -DITK_USE_SYSTEM_SWIG:BOOL=ON \
       -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
       -DSWIG_EXECUTABLE:FILEPATH=${itk_build_path}/Wrapping/Generators/SwigInterface/swig/bin/swig \
-      -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=10.6 \
+      -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=10.9 \
       -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
       -DBUILD_TESTING:BOOL=OFF \
       -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
