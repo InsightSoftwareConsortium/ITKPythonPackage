@@ -9,6 +9,11 @@ if(NOT DEFINED ITKPythonPackage_SUPERBUILD)
   set(ITKPythonPackage_SUPERBUILD 1)
 endif()
 
+if(NOT DEFINED ITKPythonPackage_WHEEL_NAME)
+  set(ITKPythonPackage_WHEEL_NAME "itk")
+endif()
+message(STATUS "SuperBuild - ITKPythonPackage_WHEEL_NAME:${ITKPythonPackage_WHEEL_NAME}")
+
 if(ITKPythonPackage_SUPERBUILD)
 
   #-----------------------------------------------------------------------------
@@ -224,11 +229,6 @@ if(ITKPythonPackage_SUPERBUILD)
 
   message(STATUS "SuperBuild -")
   message(STATUS "SuperBuild - ${PROJECT_NAME} => Requires ITK")
-
-  if(NOT DEFINED ITKPythonPackage_WHEEL_NAME)
-    set(ITKPythonPackage_WHEEL_NAME "itk")
-  endif()
-  message(STATUS "SuperBuild -   ITKPythonPackage_WHEEL_NAME:${ITKPythonPackage_WHEEL_NAME}")
 
   ExternalProject_add(${PROJECT_NAME}
     SOURCE_DIR ${CMAKE_SOURCE_DIR}
