@@ -20,7 +20,7 @@ source "${script_dir}/macpython-build-common.sh"
 # -----------------------------------------------------------------------
 # Ensure that requirements are met
 brew update
-brew install doxygen
+brew info doxygen | grep --quiet 'Not installed' && brew install doxygen
 # -----------------------------------------------------------------------
 # Remove previous virtualenv's
 rm -rf ${SCRIPT_DIR}/../venvs
