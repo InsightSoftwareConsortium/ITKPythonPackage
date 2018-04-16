@@ -200,8 +200,8 @@ sudo rm -rf ${MACPYTHON_FRAMEWORK}
 
 LATEST_27=2.7.14
 LATEST_34=3.4.7
-LATEST_35=3.5.4
-LATEST_36=3.6.3
+LATEST_35=3.5.5
+LATEST_36=3.6.5
 
 for pyversion in $LATEST_27 $LATEST_35 $LATEST_36; do
   install_macpython $pyversion
