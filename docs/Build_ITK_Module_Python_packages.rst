@@ -109,7 +109,7 @@ Then, build the wheels::
 Windows
 -------
 
-First, install Microsoft Visual C++ Compiler for Python 2.7, Visual Studio 2015, Git, and CMake, which should be added to the system PATH environmental variable.
+First, install Microsoft Visual Studio 2015, Git, and CMake, which should be added to the system PATH environmental variable.
 
 Open a PowerShell terminal as Administrator, and install Python::
 
@@ -145,11 +145,6 @@ Next, create a `~/.pypirc` file with your login credentials::
   password=<your-password>
 
 where `<your-username>` and `<your-password>` correspond to your PyPI account.
-
-If you have a `GPG signing key
-<https://help.github.com/articles/generating-a-new-gpg-key/>`_, sign the wheels::
-
-  for whl in dist/*.whl; do gpg --detach-sign -a $whl; done
 
 Then, upload wheels to the testing server::
 
