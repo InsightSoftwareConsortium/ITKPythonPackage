@@ -45,8 +45,6 @@ for VENV in "${VENVS[@]}"; do
     if [[ -e $PWD/requirements-dev.txt ]]; then
       ${PYTHON_EXECUTABLE} -m pip install --upgrade -r $PWD/requirements-dev.txt
     fi
-    ${PYTHON_EXECUTABLE} -m pip install --no-cache ninja
-    NINJA_EXECUTABLE=${VENV}/bin/ninja
     itk_build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
     ${PYTHON_EXECUTABLE} setup.py bdist_wheel --build-type MinSizeRel --plat-name macosx-10.9-x86_64 -G Ninja -- \
       -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
