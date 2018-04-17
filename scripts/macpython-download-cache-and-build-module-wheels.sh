@@ -5,6 +5,7 @@
 
 brew update
 brew install zstd aria2 gnu-tar doxygen
+brew upgrade cmake
 aria2c -c --file-allocation=none -o ITKPythonBuilds-macosx.tar.zst -s 10 -x 10 https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.0a01}/ITKPythonBuilds-macosx.tar.zst
 unzstd ITKPythonBuilds-macosx.tar.zst -o ITKPythonBuilds-macosx.tar
 PATH="/usr/local/opt/gnu-tar/libexec/gnubin:$PATH"
