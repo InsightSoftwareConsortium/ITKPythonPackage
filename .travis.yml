@@ -8,7 +8,7 @@ cache:
   - $HOME/docker
 
 before_install:
-  - pip install -U scikit-ci-addons
+  - sudo pip install -U scikit-ci-addons
   - ci_addons docker load-pull-save r.j3ss.co/shellcheck
 
 script:
