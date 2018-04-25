@@ -48,7 +48,6 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS):
                 "-DITK_DIR:PATH=%s" % itk_build_path,
                 "-DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
                 "-DSWIG_EXECUTABLE:FILEPATH=%s/Wrapping/Generators/SwigInterface/swig/bin/swig.exe" % itk_build_path,
-                "-DITK_WRAP_unsigned_short:BOOL=ON",
                 "-DBUILD_TESTING:BOOL=OFF",
                 "-DPYTHON_EXECUTABLE:FILEPATH=%s" % python_executable,
                 "-DPYTHON_INCLUDE_DIR:PATH=%s" % python_include_dir,
