@@ -1,4 +1,4 @@
-VERSION = '5.0a01.dev20180515+157.gaa57caf'
+VERSION = '5.0a01.dev20180518+170.ga077e98'
 
 def get_versions():
     """Returns versions for the ITK Python package.
