@@ -423,7 +423,7 @@ else()
       set(wheel_group_display ${wheel_group})
 
       # XXX Hard-coded dispatch
-      if(module STREQUAL "BridgeNumPy")
+      if(module STREQUAL "ITKBridgeNumPy")
         set(new_wheel_group "Core")
         set(wheel_group_display "${new_wheel_group} (was ${wheel_group})")
         set(wheel_group ${new_wheel_group})
