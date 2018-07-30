@@ -96,6 +96,8 @@ function fill_pyver {
         echo $LATEST_27
     elif [ $ver == 3 ] || [ $ver == "3.6" ]; then
         echo $LATEST_36
+    elif [ $ver == 3 ] || [ $ver == "3.7" ]; then
+        echo $LATEST_37
     elif [ $ver == "3.5" ]; then
         echo $LATEST_35
     elif [ $ver == "3.4" ]; then
@@ -201,9 +203,10 @@ sudo rm -rf ${MACPYTHON_FRAMEWORK}
 LATEST_27=2.7.14
 LATEST_34=3.4.7
 LATEST_35=3.5.4
-LATEST_36=3.6.5
+LATEST_36=3.6.6
+LATEST_37=3.7.0
 
-for pyversion in $LATEST_27 $LATEST_35 $LATEST_36; do
+for pyversion in $LATEST_27 $LATEST_35 $LATEST_36 $LATEST_37; do
   install_macpython $pyversion
   install_pip
   install_virtualenv
