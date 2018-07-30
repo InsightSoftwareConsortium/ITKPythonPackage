@@ -63,7 +63,7 @@ SINGLE_WHEEL=0
 # Compile wheels re-using standalone project and archive cache
 for VENV in "${VENVS[@]}"; do
     py_mm=$(basename ${VENV})
-    PYTHON_EXECUTABLE=${VENV}/bin/python
+    export PYTHON_EXECUTABLE=${VENV}/bin/python
     PYTHON_INCLUDE_DIR=$( find -L ${MACPYTHON_PY_PREFIX}/${py_mm}/include -name Python.h -exec dirname {} \; )
 
     echo ""
@@ -80,6 +80,7 @@ for VENV in "${VENVS[@]}"; do
     source_path=${SCRIPT_DIR}/../standalone-build/ITK-source
     build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
     SETUP_PY_CONFIGURE="${script_dir}/setup_py_configure.py"
+    SKBUILD_CMAKE_INSTALL_PREFIX=$(${PYTHON_EXECUTABLE} -c "from skbuild.constants import CMAKE_INSTALL_DIR; print(CMAKE_INSTALL_DIR)")
 
     # Clean up previous invocations
     rm -rf ${build_path}
@@ -130,7 +131,7 @@ for VENV in "${VENVS[@]}"; do
           -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
           -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
           -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
-          -DPY_SITE_PACKAGES_PATH:PATH=${SCRIPT_DIR}/../_skbuild/cmake-install \
+          -DPY_SITE_PACKAGES_PATH:PATH=${SKBUILD_CMAKE_INSTALL_PREFIX} \
           -DITK_LEGACY_SILENT:BOOL=ON \
           -DITK_WRAP_PYTHON:BOOL=ON \
           -DITK_WRAP_PYTHON_LEGACY:BOOL=OFF \
