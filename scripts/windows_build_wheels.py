@@ -227,6 +227,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, single_wheel=False,
 
     prepare_build_env("35-x64")
     prepare_build_env("36-x64")
+    prepare_build_env("37-x64")
 
     with push_dir(directory=STANDALONE_DIR, make_directory=True):
 
