@@ -17,6 +17,9 @@ libpython-not-needed-symbols-exported-by-interpreter
 # C extensions
 *.so
 
+# macOS
+.DS_Store
+
 # Packages
 *.egg
 *.eggs
