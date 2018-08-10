@@ -3,7 +3,7 @@ __all__ = ['DEFAULT_PY_ENVS', 'venv_paths']
 from subprocess import check_call
 import os
 
-DEFAULT_PY_ENVS = ["35-x64", "36-x64"]
+DEFAULT_PY_ENVS = ["35-x64", "36-x64", "37-x64"]
 
 SCRIPT_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
