@@ -225,6 +225,7 @@ def test_wheels(single_wheel=False):
 def build_wheels(py_envs=DEFAULT_PY_ENVS, single_wheel=False,
                  cleanup=False, wheel_names=None):
 
+    prepare_build_env("27-x64")
     prepare_build_env("35-x64")
     prepare_build_env("36-x64")
     prepare_build_env("37-x64")
