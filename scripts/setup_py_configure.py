@@ -205,6 +205,9 @@ def get_wheel_dependencies():
     regex_group_depends = \
         r'set\s*\(\s*ITK\_GROUP\_([a-zA-Z0-9\_\-]+)\_DEPENDS\s*([a-zA-Z0-9\_\-\s]*)\s*'  # noqa: E501
     pattern = re.compile(regex_group_depends)
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from itkVersion import get_versions
+    version = get_versions()['package-version']
     with open(os.path.join(SCRIPT_DIR, "..", "CMakeLists.txt"), 'r') as file_:
         for line in file_.readlines():
             match = re.search(pattern, line)
@@ -212,12 +215,12 @@ def get_wheel_dependencies():
                 continue
             wheel = from_group_to_wheel(match.group(1))
             _wheel_depends = [
-                from_group_to_wheel(group)
+                from_group_to_wheel(group) + '>=' + version
                 for group in match.group(2).split()
                 ]
             all_depends[wheel] = _wheel_depends
     all_depends['itk-meta'] = [
-        wheel_name for wheel_name in get_wheel_names()
+        wheel_name + '>=' + version for wheel_name in get_wheel_names()
         if wheel_name != 'itk-meta'
         ]
     all_depends['itk-meta'].append('numpy')
