@@ -73,8 +73,8 @@ if(ITKPythonPackage_SUPERBUILD)
   include(ExternalProject)
 
   set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
-  # ITK nightly-master 2018-05-25
-  set(ITK_GIT_TAG "v5.0a02")
+  # ITK nightly-master 2018-09-05
+  set(ITK_GIT_TAG "f5e254b")
 
   #-----------------------------------------------------------------------------
   # A separate project is used to download ITK, so that it can reused
@@ -423,7 +423,7 @@ else()
       set(wheel_group_display ${wheel_group})
 
       # XXX Hard-coded dispatch
-      if(module STREQUAL "BridgeNumPy")
+      if(module STREQUAL "ITKBridgeNumPy")
         set(new_wheel_group "Core")
         set(wheel_group_display "${new_wheel_group} (was ${wheel_group})")
         set(wheel_group ${new_wheel_group})

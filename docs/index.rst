@@ -14,8 +14,8 @@ To install the stable ITK Python package::
 The Python packages are built daily. To install the latest build from the ITK
 Git *master* branch::
 
-  python -m pip install --upgrade pip
-  python -m pip install itk --no-index \
+  python -m pip install --upgrade pip numpy
+  python -m pip install itk --upgrade --no-index \
     -f https://github.com/InsightSoftwareConsortium/ITKPythonPackage/releases/tag/latest
 
 

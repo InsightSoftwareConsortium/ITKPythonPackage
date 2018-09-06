@@ -74,8 +74,6 @@ def build_wrapped_itk(
         script_file.close()
         os.remove(script_file.name)
 
-    py_site_packages_path = os.path.join(ROOT_DIR, "_skbuild", "cmake-install")
-
     # Build ITK python
     with push_dir(directory=build_path, make_directory=True), \
             push_env(**build_env):
@@ -93,7 +91,7 @@ def build_wrapped_itk(
             "-DPYTHON_LIBRARY:FILEPATH=%s" % python_library,
             "-DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
             "-DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON",
-            "-DPY_SITE_PACKAGES_PATH:PATH=%s" % py_site_packages_path,
+            "-DPY_SITE_PACKAGES_PATH:PATH=.",
             "-DITK_LEGACY_SILENT:BOOL=ON",
             "-DITK_WRAP_PYTHON:BOOL=ON",
             "-DITK_WRAP_PYTHON_LEGACY:BOOL=OFF",
@@ -229,6 +227,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, single_wheel=False,
 
     prepare_build_env("35-x64")
     prepare_build_env("36-x64")
+    prepare_build_env("37-x64")
 
     with push_dir(directory=STANDALONE_DIR, make_directory=True):
 

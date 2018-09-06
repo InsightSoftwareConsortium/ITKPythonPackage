@@ -63,7 +63,7 @@ SINGLE_WHEEL=0
 # Compile wheels re-using standalone project and archive cache
 for VENV in "${VENVS[@]}"; do
     py_mm=$(basename ${VENV})
-    PYTHON_EXECUTABLE=${VENV}/bin/python
+    export PYTHON_EXECUTABLE=${VENV}/bin/python
     PYTHON_INCLUDE_DIR=$( find -L ${MACPYTHON_PY_PREFIX}/${py_mm}/include -name Python.h -exec dirname {} \; )
 
     echo ""
@@ -130,7 +130,7 @@ for VENV in "${VENVS[@]}"; do
           -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
           -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
           -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
-          -DPY_SITE_PACKAGES_PATH:PATH=${SCRIPT_DIR}/../_skbuild/cmake-install \
+          "-DPY_SITE_PACKAGES_PATH:PATH=." \
           -DITK_LEGACY_SILENT:BOOL=ON \
           -DITK_WRAP_PYTHON:BOOL=ON \
           -DITK_WRAP_PYTHON_LEGACY:BOOL=OFF \

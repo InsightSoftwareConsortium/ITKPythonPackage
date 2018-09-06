@@ -3,4 +3,5 @@
 # Python package on GitHub CI services.
 
 cd C:\P\
+Remove-Item IPP\dist\*
 C:\7-Zip\7z.exe a -r 'C:\P\ITKPythonBuilds-windows.zip' -w 'C:\P\IPP' -mem=AES256

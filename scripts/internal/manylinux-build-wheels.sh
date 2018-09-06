@@ -28,7 +28,7 @@ SINGLE_WHEEL=0
 
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
-    PYTHON_EXECUTABLE=${PYBIN}/python
+    export PYTHON_EXECUTABLE=${PYBIN}/python
     PYTHON_INCLUDE_DIR=$( find -L ${PYBIN}/../include/ -name Python.h -exec dirname {} \; )
 
     echo ""
@@ -43,6 +43,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
     source_path=/work/standalone-${ARCH}-build/ITK-source
     build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${ARCH}
     SETUP_PY_CONFIGURE="${script_dir}/../setup_py_configure.py"
+    SKBUILD_CMAKE_INSTALL_PREFIX=$(${PYTHON_EXECUTABLE} -c "from skbuild.constants import CMAKE_INSTALL_DIR; print(CMAKE_INSTALL_DIR)")
 
     # Clean up previous invocations
     rm -rf ${build_path}
@@ -93,7 +94,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
           -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
           -DITK_WRAP_unsigned_short:BOOL=ON \
-          -DPY_SITE_PACKAGES_PATH:PATH=${script_dir}/../../_skbuild/cmake-install \
+          -DPY_SITE_PACKAGES_PATH:PATH="." \
           -DITK_LEGACY_SILENT:BOOL=ON \
           -DITK_WRAP_PYTHON:BOOL=ON \
           -DITK_WRAP_PYTHON_LEGACY:BOOL=OFF \
@@ -143,8 +144,8 @@ done
 
 # Install packages and test
 for PYBIN in "${PYBINARIES[@]}"; do
-    ${PYBIN}/pip install numpy
-    ${PYBIN}/pip install itk --no-cache-dir --no-index -f /work/dist
+    ${PYBIN}/pip install --user numpy
+    ${PYBIN}/pip install itk --user --no-cache-dir --no-index -f /work/dist
     (cd $HOME && ${PYBIN}/python -c 'from itk import ITKCommon;')
     (cd $HOME && ${PYBIN}/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
     (cd $HOME && ${PYBIN}/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
