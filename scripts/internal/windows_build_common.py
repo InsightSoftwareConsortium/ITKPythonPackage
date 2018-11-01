@@ -31,8 +31,7 @@ def venv_paths(python_version):
 
     pip = os.path.join(venv_dir, "Scripts", "pip.exe")
 
-    ninja_executable = os.path.join(
-        ROOT_DIR, "venv-35-x64", "Scripts", "ninja.exe")
+    ninja_executable = os.path.join(venv_dir, "Scripts", "ninja.exe")
     print("NINJA_EXECUTABLE:%s" % ninja_executable)
 
     # Update PATH
