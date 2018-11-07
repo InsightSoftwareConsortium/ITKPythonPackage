@@ -90,7 +90,7 @@ if(ITKPythonPackage_SUPERBUILD)
 
   if(NOT DEFINED ITK_SOURCE_DIR)
 
-    set(ITK_SOURCE_DIR ${CMAKE_BINARY_DIR}/ITK-source)
+    set(ITK_SOURCE_DIR ${CMAKE_BINARY_DIR}/ITKs)
 
     ExternalProject_add(ITK-source-download
       SOURCE_DIR ${ITK_SOURCE_DIR}
@@ -158,7 +158,7 @@ if(ITKPythonPackage_SUPERBUILD)
 
   option(ITKPythonPackage_ITK_BINARY_REUSE "Reuse provided ITK_BINARY_DIR without configuring or building ITK" OFF)
 
-  set(ITK_BINARY_DIR "${CMAKE_BINARY_DIR}/ITK-build" CACHE PATH "ITK build directory")
+  set(ITK_BINARY_DIR "${CMAKE_BINARY_DIR}/ITKb" CACHE PATH "ITK build directory")
 
   message(STATUS "SuperBuild -")
   message(STATUS "SuperBuild - ITK => Requires ITK-source-download")
@@ -181,6 +181,7 @@ if(ITKPythonPackage_SUPERBUILD)
       DOWNLOAD_COMMAND ""
       SOURCE_DIR ${ITK_SOURCE_DIR}
       BINARY_DIR ${ITK_BINARY_DIR}
+      PREFIX "ITKp"
       CMAKE_CACHE_ARGS
         -DBUILD_TESTING:BOOL=OFF
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
