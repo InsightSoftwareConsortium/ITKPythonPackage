@@ -120,7 +120,7 @@ def build_wheel(python_version, single_wheel=False,
                     "-r", os.path.join(ROOT_DIR, "requirements-dev.txt")])
 
         build_type = "Release"
-        source_path = "%s/ITK-source" % STANDALONE_DIR
+        source_path = "%s/ITKs" % STANDALONE_DIR
         build_path = "%s/ITK-win_%s" % (ROOT_DIR, python_version)
         setup_py_configure = os.path.join(SCRIPT_DIR, "setup_py_configure.py")
 

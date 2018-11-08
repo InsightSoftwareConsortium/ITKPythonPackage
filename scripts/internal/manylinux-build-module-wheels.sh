@@ -30,7 +30,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
       echo 'ITK build tree not available!' 1>&2
       exit 1
     fi
-    itk_source_dir=/work/standalone-${ARCH}-build/ITK-source
+    itk_source_dir=/work/standalone-${ARCH}-build/ITKs
     ln -fs /ITKPythonPackage/standalone-${ARCH}-build/ /work/standalone-${ARCH}-build
     if [[ ! -d ${itk_source_dir} ]]; then
       echo 'ITK source tree not available!' 1>&2
