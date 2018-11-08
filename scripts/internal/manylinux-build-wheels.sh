@@ -40,7 +40,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
     ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
 
     build_type=MinSizeRel
-    source_path=/work/standalone-${ARCH}-build/ITK-source
+    source_path=/work/standalone-${ARCH}-build/ITKs
     build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${ARCH}
     SETUP_PY_CONFIGURE="${script_dir}/../setup_py_configure.py"
     SKBUILD_CMAKE_INSTALL_PREFIX=$(${PYTHON_EXECUTABLE} -c "from skbuild.constants import CMAKE_INSTALL_DIR; print(CMAKE_INSTALL_DIR)")

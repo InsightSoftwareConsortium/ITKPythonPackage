@@ -122,7 +122,7 @@ def build_wheel(python_version, single_wheel=False,
                     "-r", os.path.join(ROOT_DIR, "requirements-dev.txt")])
 
         build_type = "Release"
-        source_path = "%s/ITK-source" % STANDALONE_DIR
+        source_path = "%s/ITKs" % STANDALONE_DIR
         build_path = "%s/ITK-win_%s" % (ROOT_DIR, python_version)
         setup_py_configure = os.path.join(SCRIPT_DIR, "setup_py_configure.py")
 
@@ -255,7 +255,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, single_wheel=False,
             cleanup=cleanup, wheel_names=wheel_names)
 
 
-def main(py_envs=DEFAULT_PY_ENVS, wheel_names=None, cleanup=True):
+def main(wheel_names=None):
     parser = argparse.ArgumentParser(description='Driver script to build ITK Python wheels.')
     parser.add_argument('--single-wheel', action='store_true', help='Build a single wheel as opposed to one wheel per ITK module group.')
     parser.add_argument('--py-envs', nargs='+', default=DEFAULT_PY_ENVS,
