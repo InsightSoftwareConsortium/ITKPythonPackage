@@ -106,7 +106,8 @@ def build_wrapped_itk(
 
 
 def build_wheel(python_version, single_wheel=False,
-                cleanup=False, wheel_names=None):
+                cleanup=False, wheel_names=None,
+                cmake_options=[]):
 
     python_executable, \
             python_include_dir, \
@@ -152,7 +153,7 @@ def build_wheel(python_version, single_wheel=False,
                 "-DPYTHON_INCLUDE_DIR:PATH=%s" % python_include_dir,
                 "-DPYTHON_LIBRARY:FILEPATH=%s" % python_library,
                 "-DDOXYGEN_EXECUTABLE:FILEPATH=C:/P/doxygen/doxygen.exe",
-            ])
+            ] + cmake_options)
             # Cleanup
             check_call([python_executable, "setup.py", "clean"])
 
@@ -192,7 +193,7 @@ def build_wheel(python_version, single_wheel=False,
                     "-DPYTHON_EXECUTABLE:FILEPATH=%s" % python_executable,
                     "-DPYTHON_INCLUDE_DIR:PATH=%s" % python_include_dir,
                     "-DPYTHON_LIBRARY:FILEPATH=%s" % python_library
-                ])
+                ] + cmake_options)
 
                 # Cleanup
                 if cleanup:
@@ -226,7 +227,7 @@ def test_wheels(single_wheel=False):
 
 
 def build_wheels(py_envs=DEFAULT_PY_ENVS, single_wheel=False,
-                 cleanup=False, wheel_names=None):
+                 cleanup=False, wheel_names=None, cmake_options=[]):
 
     for py_env in py_envs:
         prepare_build_env(py_env)
@@ -252,7 +253,8 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, single_wheel=False,
     # Compile wheels re-using standalone project and archive cache
     for py_env in py_envs:
         build_wheel(py_env, single_wheel=single_wheel,
-            cleanup=cleanup, wheel_names=wheel_names)
+            cleanup=cleanup, wheel_names=wheel_names,
+            cmake_options=cmake_options)
 
 
 def main(wheel_names=None):
@@ -261,10 +263,12 @@ def main(wheel_names=None):
     parser.add_argument('--py-envs', nargs='+', default=DEFAULT_PY_ENVS,
             help='Target Python environment versions, e.g. "37-x64".')
     parser.add_argument('--no-cleanup', dest='cleanup', action='store_false', help='Do not clean up temporary build files.')
+    parser.add_argument('cmake_options', nargs='*', help='Extra options to pass to CMake, e.g. -DBUILD_SHARED_LIBS:BOOL=OFF')
     args = parser.parse_args()
 
     build_wheels(single_wheel=args.single_wheel, cleanup=args.cleanup,
-        py_envs=args.py_envs, wheel_names=wheel_names)
+        py_envs=args.py_envs, wheel_names=wheel_names,
+        cmake_options=args.cmake_options)
     fixup_wheels()
     test_wheels(single_wheel=args.single_wheel)
 
