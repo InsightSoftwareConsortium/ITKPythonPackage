@@ -219,15 +219,18 @@ def fixup_wheels():
         fixup_wheel(wheel)
 
 
-def test_wheels(python_version):
-    python_executable, \
-            python_include_dir, \
-            python_library, \
-            pip, \
-            ninja_executable, \
-            path = venv_paths(python_version)
+def test_wheels(python_env):
+    (
+        python_executable,
+        python_include_dir,
+        python_library,
+        pip,
+        ninja_executable,
+        path
+    ) = venv_paths(python_env)
     check_call([pip, 'install', 'itk', '--no-cache-dir', '--no-index',
         '-f', 'dist'])
+    print('Wheel successfully installed.')
     check_call([
         python_executable,
         os.path.join(ROOT_DIR, "docs/code/testDriver.py")
