@@ -219,11 +219,20 @@ def fixup_wheels():
         fixup_wheel(wheel)
 
 
-def test_wheels(single_wheel=False):
+def test_wheels(python_version):
+    python_executable, \
+            python_include_dir, \
+            python_library, \
+            pip, \
+            ninja_executable, \
+            path = venv_paths(python_version)
+    check_call([pip, 'install', 'itk', '--no-cache-dir', '--no-index',
+        '-f', 'dist'])
     check_call([
         python_executable,
         os.path.join(ROOT_DIR, "docs/code/testDriver.py")
     ])
+    print('Documentation tests passed.')
 
 
 def build_wheels(py_envs=DEFAULT_PY_ENVS, single_wheel=False,
@@ -270,7 +279,8 @@ def main(wheel_names=None):
         py_envs=args.py_envs, wheel_names=wheel_names,
         cmake_options=args.cmake_options)
     fixup_wheels()
-    test_wheels(single_wheel=args.single_wheel)
+    for py_env in args.py_envs:
+        test_wheels(py_env)
 
 
 if __name__ == "__main__":
