@@ -7,7 +7,7 @@ if (-not (Test-Path env:APPVEYOR)) { iex ((new-object net.webclient).DownloadStr
 if (-not (Test-Path env:ITK_PACKAGE_VERSION)) { $env:ITK_PACKAGE_VERSION = 'v5.0b01' }
 Invoke-WebRequest -Uri "https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/$env:ITK_PACKAGE_VERSION/ITKPythonBuilds-windows.zip" -OutFile "ITKPythonBuilds-windows.zip"
 sz x ITKPythonBuilds-windows.zip -oC:\P -aoa -r
-Invoke-WebRequest -Uri "http://ftp.stack.nl/pub/users/dimitri/doxygen-1.8.11.windows.bin.zip" -OutFile "doxygen-1.8.11.windows.bin.zip"
+Invoke-WebRequest -Uri "https://data.kitware.com/api/v1/file/5c0ad59d8d777f2179dd3e9c/download" -OutFile "doxygen-1.8.11.windows.bin.zip"
 sz x doxygen-1.8.11.windows.bin.zip -oC:\P\doxygen -aoa -r
 Invoke-WebRequest -Uri "https://data.kitware.com/api/v1/file/5bbf87ba8d777f06b91f27d6/download/grep-win.zip" -OutFile "grep-win.zip"
 sz x grep-win.zip -oC:\P\grep -aoa -r

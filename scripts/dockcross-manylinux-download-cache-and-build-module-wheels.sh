@@ -12,7 +12,7 @@ curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/do
 tar xf ITKPythonBuilds-linux.tar
 
 mkdir tools
-wget -L http://ftp.stack.nl/pub/users/dimitri/doxygen-1.8.11.linux.bin.tar.gz -O doxygen-1.8.11.linux.bin.tar.gz
+wget -L https://data.kitware.com/api/v1/file/5c0aa4b18d777f2179dd0a71/download -O doxygen-1.8.11.linux.bin.tar.gz
 tar -xvzf doxygen-1.8.11.linux.bin.tar.gz -C tools
 
 ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh
