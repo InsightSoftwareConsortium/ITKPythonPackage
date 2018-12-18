@@ -1,4 +1,6 @@
+#!/usr/bin/env python
 
+import argparse
 import glob
 import json
 import os
@@ -104,7 +106,8 @@ def build_wrapped_itk(
 
 
 def build_wheel(python_version, single_wheel=False,
-                cleanup=False, wheel_names=None):
+                cleanup=False, wheel_names=None,
+                cmake_options=[]):
 
     python_executable, \
             python_include_dir, \
@@ -148,8 +151,9 @@ def build_wheel(python_version, single_wheel=False,
                 "-DITK_BINARY_DIR:PATH=%s" % build_path,
                 "-DPYTHON_EXECUTABLE:FILEPATH=%s" % python_executable,
                 "-DPYTHON_INCLUDE_DIR:PATH=%s" % python_include_dir,
-                "-DPYTHON_LIBRARY:FILEPATH=%s" % python_library
-            ])
+                "-DPYTHON_LIBRARY:FILEPATH=%s" % python_library,
+                "-DDOXYGEN_EXECUTABLE:FILEPATH=C:/P/doxygen/doxygen.exe",
+            ] + cmake_options)
             # Cleanup
             check_call([python_executable, "setup.py", "clean"])
 
@@ -189,7 +193,7 @@ def build_wheel(python_version, single_wheel=False,
                     "-DPYTHON_EXECUTABLE:FILEPATH=%s" % python_executable,
                     "-DPYTHON_INCLUDE_DIR:PATH=%s" % python_include_dir,
                     "-DPYTHON_LIBRARY:FILEPATH=%s" % python_library
-                ])
+                ] + cmake_options)
 
                 # Cleanup
                 if cleanup:
@@ -215,24 +219,35 @@ def fixup_wheels():
         fixup_wheel(wheel)
 
 
-def test_wheels(single_wheel=False):
+def test_wheels(python_env):
+    (
+        python_executable,
+        python_include_dir,
+        python_library,
+        pip,
+        ninja_executable,
+        path
+    ) = venv_paths(python_env)
+    check_call([pip, 'install', 'itk', '--no-cache-dir', '--no-index',
+        '-f', 'dist'])
+    print('Wheel successfully installed.')
     check_call([
         python_executable,
         os.path.join(ROOT_DIR, "docs/code/testDriver.py")
     ])
+    print('Documentation tests passed.')
 
 
 def build_wheels(py_envs=DEFAULT_PY_ENVS, single_wheel=False,
-                 cleanup=False, wheel_names=None):
+                 cleanup=False, wheel_names=None, cmake_options=[]):
 
-    prepare_build_env("35-x64")
-    prepare_build_env("36-x64")
-    prepare_build_env("37-x64")
+    for py_env in py_envs:
+        prepare_build_env(py_env)
 
     with push_dir(directory=STANDALONE_DIR, make_directory=True):
 
         cmake_executable = "cmake.exe"
-        tools_venv = os.path.join(ROOT_DIR, "venv-35-x64")
+        tools_venv = os.path.join(ROOT_DIR, "venv-" + py_envs[0])
         pip_install(tools_venv, "ninja")
         ninja_executable = os.path.join(tools_venv, "Scripts", "ninja.exe")
 
@@ -249,19 +264,26 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, single_wheel=False,
 
     # Compile wheels re-using standalone project and archive cache
     for py_env in py_envs:
-        build_wheel(
-            py_env, single_wheel=single_wheel,
-            cleanup=cleanup, wheel_names=wheel_names)
+        build_wheel(py_env, single_wheel=single_wheel,
+            cleanup=cleanup, wheel_names=wheel_names,
+            cmake_options=cmake_options)
 
 
-def main(py_envs=DEFAULT_PY_ENVS, wheel_names=None, cleanup=True):
-    single_wheel = False
+def main(wheel_names=None):
+    parser = argparse.ArgumentParser(description='Driver script to build ITK Python wheels.')
+    parser.add_argument('--single-wheel', action='store_true', help='Build a single wheel as opposed to one wheel per ITK module group.')
+    parser.add_argument('--py-envs', nargs='+', default=DEFAULT_PY_ENVS,
+            help='Target Python environment versions, e.g. "37-x64".')
+    parser.add_argument('--no-cleanup', dest='cleanup', action='store_false', help='Do not clean up temporary build files.')
+    parser.add_argument('cmake_options', nargs='*', help='Extra options to pass to CMake, e.g. -DBUILD_SHARED_LIBS:BOOL=OFF')
+    args = parser.parse_args()
 
-    build_wheels(
-        single_wheel=single_wheel, cleanup=cleanup,
-        py_envs=py_envs, wheel_names=wheel_names)
+    build_wheels(single_wheel=args.single_wheel, cleanup=args.cleanup,
+        py_envs=args.py_envs, wheel_names=wheel_names,
+        cmake_options=args.cmake_options)
     fixup_wheels()
-    test_wheels(single_wheel=single_wheel)
+    for py_env in args.py_envs:
+        test_wheels(py_env)
 
 
 if __name__ == "__main__":

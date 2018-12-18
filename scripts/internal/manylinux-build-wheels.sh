@@ -12,7 +12,7 @@ source "${script_dir}/manylinux-build-common.sh"
 # Install prerequirements
 mkdir -p /work/tools
 pushd /work/tools > /dev/null 2>&1
-wget -L http://ftp.stack.nl/pub/users/dimitri/doxygen-1.8.11.linux.bin.tar.gz -O doxygen-1.8.11.linux.bin.tar.gz
+curl https://data.kitware.com/api/v1/file/5c0aa4b18d777f2179dd0a71/download -o doxygen-1.8.11.linux.bin.tar.gz
 tar -xvzf doxygen-1.8.11.linux.bin.tar.gz
 popd > /dev/null 2>&1
 # -----------------------------------------------------------------------

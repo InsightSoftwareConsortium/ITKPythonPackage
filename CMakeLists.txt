@@ -73,8 +73,8 @@ if(ITKPythonPackage_SUPERBUILD)
   include(ExternalProject)
 
   set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
-  # ITK nightly-master 2018-09-05
-  set(ITK_GIT_TAG "v5.0b01")
+  # ITK nightly-master 2018-12-17
+  set(ITK_GIT_TAG "0cdb1dd5b3")
 
   #-----------------------------------------------------------------------------
   # A separate project is used to download ITK, so that it can reused
@@ -153,6 +153,30 @@ if(ITKPythonPackage_SUPERBUILD)
   message(STATUS "SuperBuild - Searching for python[OK]")
   message(STATUS "SuperBuild -   DOXYGEN_EXECUTABLE: ${DOXYGEN_EXECUTABLE}")
 
+  # CMake configuration variables to pass to ITK's build
+  set(ep_itk_cmake_cache_args "")
+  foreach(var
+    BUILD_SHARED_LIBS
+    ITK_BUILD_DEFAULT_MODULES
+    )
+    if(DEFINED ${var})
+      list(APPEND ep_itk_cmake_cache_args "-D${var}=${${var}}")
+    endif()
+  endforeach()
+  function(cached_variables RESULTVAR PATTERN)
+    get_cmake_property(variables CACHE_VARIABLES)
+    set(result)
+    foreach(variable ${variables})
+      if(${variable} AND variable MATCHES "${PATTERN}")
+        list(APPEND result "-D${variable}=${${variable}}")
+      endif()
+    endforeach()
+    set(${RESULTVAR} ${result} PARENT_SCOPE)
+  endfunction()
+  cached_variables(itk_pattern_cached_vars "^(ITK_WRAP_)|(ITKGroup_)|(Module_)")
+  list(APPEND ep_itk_cmake_cache_args ${itk_pattern_cached_vars})
+  # Todo, also pass all Module_* variables
+  message(STATUS "ITK CMake Cache Args -   ${ep_itk_cmake_cache_args}")
   #-----------------------------------------------------------------------------
   # ITK: This project builds ITK and associated Python modules
 
@@ -182,7 +206,11 @@ if(ITKPythonPackage_SUPERBUILD)
       SOURCE_DIR ${ITK_SOURCE_DIR}
       BINARY_DIR ${ITK_BINARY_DIR}
       PREFIX "ITKp"
+<<<<<<< HEAD
       CMAKE_CACHE_ARGS
+=======
+      CMAKE_ARGS
+>>>>>>> master
         -DBUILD_TESTING:BOOL=OFF
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
         -DPY_SITE_PACKAGES_PATH:PATH=${CMAKE_INSTALL_PREFIX}
@@ -198,6 +226,7 @@ if(ITKPythonPackage_SUPERBUILD)
         -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
         -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE}
         ${ep_common_cmake_cache_args}
+        ${ep_itk_cmake_cache_args}
       USES_TERMINAL_DOWNLOAD 1
       USES_TERMINAL_UPDATE 1
       USES_TERMINAL_CONFIGURE 1

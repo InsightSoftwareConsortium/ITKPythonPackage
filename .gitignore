@@ -10,6 +10,7 @@ venvs
 venv-*
 ITK-*
 libpython-not-needed-symbols-exported-by-interpreter
+tools/
 
 # Python
 *.py[cod]
