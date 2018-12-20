@@ -264,6 +264,8 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, single_wheel=False,
 
     # Compile wheels re-using standalone project and archive cache
     for py_env in py_envs:
+        tools_venv = os.path.join(ROOT_DIR, "venv-" + py_env)
+        pip_install(tools_venv, "ninja")
         build_wheel(py_env, single_wheel=single_wheel,
             cleanup=cleanup, wheel_names=wheel_names,
             cmake_options=cmake_options)
