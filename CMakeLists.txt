@@ -137,6 +137,9 @@ if(ITKPythonPackage_SUPERBUILD)
   if(DEFINED PYTHON_EXECUTABLE AND NOT EXISTS ${PYTHON_EXECUTABLE})
     message(FATAL_ERROR "PYTHON_EXECUTABLE variable is defined but corresponds to nonexistent file")
   endif()
+  if(DEFINED DOXYGEN_EXECUTABLE AND NOT EXISTS ${DOXYGEN_EXECUTABLE})
+    message(FATAL_ERROR "DOXYGEN_EXECUTABLE variable is defined but corresponds to nonexistent file")
+  endif()
 
   if(NOT DEFINED PYTHON_INCLUDE_DIR
      OR NOT DEFINED PYTHON_LIBRARY
@@ -145,6 +148,9 @@ if(ITKPythonPackage_SUPERBUILD)
     find_package ( PythonLibs REQUIRED )
     find_package ( PythonInterp REQUIRED )
 
+  endif()
+  if(NOT DEFINED DOXYGEN_EXECUTABLE)
+    find_package(Doxygen REQUIRED)
   endif()
 
   message(STATUS "SuperBuild -   PYTHON_INCLUDE_DIR: ${PYTHON_INCLUDE_DIR}")
