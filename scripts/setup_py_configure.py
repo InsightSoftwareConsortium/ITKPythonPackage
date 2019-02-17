@@ -215,12 +215,12 @@ def get_wheel_dependencies():
                 continue
             wheel = from_group_to_wheel(match.group(1))
             _wheel_depends = [
-                from_group_to_wheel(group) + '>=' + version
+                from_group_to_wheel(group) + '==' + version
                 for group in match.group(2).split()
                 ]
             all_depends[wheel] = _wheel_depends
     all_depends['itk-meta'] = [
-        wheel_name + '>=' + version for wheel_name in get_wheel_names()
+        wheel_name + '==' + version for wheel_name in get_wheel_names()
         if wheel_name != 'itk-meta'
         ]
     all_depends['itk-meta'].append('numpy')
