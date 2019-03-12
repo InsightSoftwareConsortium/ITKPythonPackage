@@ -65,6 +65,7 @@ First, install Microsoft Visual Studio 2015, Git, and CMake, which should be add
 Open a PowerShell terminal as Administrator, and install Python::
 
 	PS C:\> Set-ExecutionPolicy Unrestricted
+	PS C:\> $pythonArch = "64"
 	PS C:\> iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/scikit-build/scikit-ci-addons/master/windows/install-python.ps1'))
 
 In a PowerShell prompt::
