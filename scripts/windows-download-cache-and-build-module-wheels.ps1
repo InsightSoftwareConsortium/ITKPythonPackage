@@ -3,7 +3,10 @@ $AllProtocols = [System.Net.SecurityProtocolType]'Ssl3,Tls,Tls11,Tls12'
 [System.Net.ServicePointManager]::SecurityProtocol = $AllProtocols
 
 set-alias sz "$env:ProgramFiles\7-Zip\7z.exe"
-if (-not (Test-Path env:APPVEYOR)) { iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/scikit-build/scikit-ci-addons/master/windows/install-python.ps1')) }
+if (-not (Test-Path env:APPVEYOR)) {
+  $pythonArch = "64"
+  iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/scikit-build/scikit-ci-addons/master/windows/install-python.ps1')) 
+}
 if (-not (Test-Path env:ITK_PACKAGE_VERSION)) { $env:ITK_PACKAGE_VERSION = 'v5.0rc01' }
 Invoke-WebRequest -Uri "https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/$env:ITK_PACKAGE_VERSION/ITKPythonBuilds-windows.zip" -OutFile "ITKPythonBuilds-windows.zip"
 sz x ITKPythonBuilds-windows.zip -oC:\P -aoa -r
