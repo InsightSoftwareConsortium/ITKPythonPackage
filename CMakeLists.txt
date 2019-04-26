@@ -73,8 +73,8 @@ if(ITKPythonPackage_SUPERBUILD)
   include(ExternalProject)
 
   set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
-  # ITK release 2019-02-01
-  set(ITK_GIT_TAG "3a11b90d06513")
+  # ITK nightly-master 2019-04-25
+  set(ITK_GIT_TAG "c351787a26")
 
   #-----------------------------------------------------------------------------
   # A separate project is used to download ITK, so that it can reused
@@ -137,6 +137,9 @@ if(ITKPythonPackage_SUPERBUILD)
   if(DEFINED PYTHON_EXECUTABLE AND NOT EXISTS ${PYTHON_EXECUTABLE})
     message(FATAL_ERROR "PYTHON_EXECUTABLE variable is defined but corresponds to nonexistent file")
   endif()
+  if(DEFINED DOXYGEN_EXECUTABLE AND NOT EXISTS ${DOXYGEN_EXECUTABLE})
+    message(FATAL_ERROR "DOXYGEN_EXECUTABLE variable is defined but corresponds to nonexistent file")
+  endif()
 
   if(NOT DEFINED PYTHON_INCLUDE_DIR
      OR NOT DEFINED PYTHON_LIBRARY
@@ -145,6 +148,9 @@ if(ITKPythonPackage_SUPERBUILD)
     find_package ( PythonLibs REQUIRED )
     find_package ( PythonInterp REQUIRED )
 
+  endif()
+  if(NOT DEFINED DOXYGEN_EXECUTABLE)
+    find_package(Doxygen REQUIRED)
   endif()
 
   message(STATUS "SuperBuild -   PYTHON_INCLUDE_DIR: ${PYTHON_INCLUDE_DIR}")
