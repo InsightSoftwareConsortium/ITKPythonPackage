@@ -11,7 +11,7 @@ print("ROOT_DIR: %s" % ROOT_DIR)
 
 sys.path.insert(0, os.path.join(SCRIPT_DIR, "internal"))
 
-from wheel_builder_utils import push_dir, push_env
+from build_common import push_dir, push_env
 from windows_build_common import DEFAULT_PY_ENVS, venv_paths
 
 def build_wheels(py_envs=DEFAULT_PY_ENVS):
