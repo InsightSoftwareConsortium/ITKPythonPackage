@@ -245,6 +245,7 @@ ITK_SETUP_PY_PARAMETERS = {
         'itkBase',
         'itkConfig',
         'itkExtras',
+        'itkHelpers',
         'itkLazy',
         'itkTemplate',
         'itkTypes',
