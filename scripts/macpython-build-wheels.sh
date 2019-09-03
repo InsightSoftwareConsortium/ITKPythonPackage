@@ -5,7 +5,7 @@
 # Versions can be restricted by passing them in as arguments to the script
 # For example,
 #
-#   scripts/macpython-build-wheels.sh 2.7 3.5
+#   scripts/macpython-build-wheels.sh 3.5
 
 # -----------------------------------------------------------------------
 # These variables are set in common script:
