@@ -8,20 +8,10 @@ infrastructure to build ITK external module Python wheels.
 
 To install the stable ITK Python package::
 
-  python -m pip install --upgrade pip
-  python -m pip install itk
+  $ pip install itk
 
-The Python packages are built daily. To install the latest build from the ITK
-Git *master* branch::
-
-  python -m pip install --upgrade pip numpy
-  python -m pip install itk --upgrade --no-index \
-    -f https://github.com/InsightSoftwareConsortium/ITKPythonPackage/releases/tag/latest
-
-
-For more information on ITK's Python wrapping, see `an introduction in the ITK
-Software Guide
-<https://itk.org/ITKSoftwareGuide/html/Book1/ITKSoftwareGuide-Book1ch3.html#x32-420003.7>`_.
+For more information on ITK's Python wrapping, see `an introduction in the
+Book 1, Chapter 3 of the ITK Software Guide <https://itk.org/ItkSoftwareGuide.pdf>`_.
 There are also many `downloadable examples documented in Sphinx
 <https://itk.org/ITKExamples/search.html?q=Python>`_.
 
