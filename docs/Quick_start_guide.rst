@@ -78,6 +78,15 @@ Some objects (matrix, vector, RGBPixel, ...) do not require the attribute `.New(
 
 In case of doubt, look at the attributes of the object you are trying to instantiate.
 
+Filter Parameters
+.................
+
+ITK filter parameters can be specified in the following ways:
+
+.. literalinclude:: code/FilterParameters.py
+   :lines: 10-
+
+
 Mixing ITK and NumPy
 --------------------
 
