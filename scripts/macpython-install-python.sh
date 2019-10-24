@@ -288,11 +288,10 @@ function install_mac_cpython {
     # sets $PYTHON_EXE variable to Python executable
     local py_version=$(fill_pyver $1)
     local py_osx_ver=$2
-    local py_stripped=$(strip_ver_suffix $py_version)
     local py_inst=$(pyinst_fname_for_version $py_version $py_osx_ver)
     local inst_path=$DOWNLOADS_SDIR/$py_inst
     mkdir -p $DOWNLOADS_SDIR
-    curl $MACPYTHON_URL/$py_stripped/${py_inst} > $inst_path
+    curl $MACPYTHON_URL/$py_version/${py_inst} > $inst_path
     if [ "${py_inst: -3}" == "dmg" ]; then
         hdiutil attach $inst_path -mountpoint /Volumes/Python
         inst_path=/Volumes/Python/Python.mpkg
@@ -376,8 +375,14 @@ function make_workon_venv {
 # Remove previous versions
 sudo rm -rf ${MACPYTHON_FRAMEWORK}
 
-for pyversion in $LATEST_3p5 $LATEST_3p6 $LATEST_3p7 $LATEST_3p8; do
-  install_macpython $pyversion
+for pyversion in $LATEST_3p5 $LATEST_3p6 $LATEST_3p7; do
+  install_macpython $pyversion 10.6
+  install_pip
+  install_virtualenv
+done
+
+for pyversion in $LATEST_3p8; do
+  install_macpython $pyversion 10.9
   install_pip
   install_virtualenv
 done
