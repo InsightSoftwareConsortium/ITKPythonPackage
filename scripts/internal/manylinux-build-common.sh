@@ -10,7 +10,7 @@ if [[ $# -eq 0 ]]; then
   PYBIN=(/opt/python/*/bin)
   PYBINARIES=()
   for version in "${PYBIN[@]}"; do
-    if [[ ${version} == *"cp27"* || ${version} == *"cp35"* || ${version} == *"cp36"* || ${version} == *"cp37"* ]]; then
+    if [[  ${version} == *"cp35"* || ${version} == *"cp36"* || ${version} == *"cp37"* || ${version} == *"cp38"*  ]]; then
       PYBINARIES+=(${version})
     fi
   done
