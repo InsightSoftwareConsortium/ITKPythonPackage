@@ -135,7 +135,6 @@ for VENV in "${VENVS[@]}"; do
           "-DPY_SITE_PACKAGES_PATH:PATH=." \
           -DITK_LEGACY_SILENT:BOOL=ON \
           -DITK_WRAP_PYTHON:BOOL=ON \
-          -DITK_WRAP_PYTHON_LEGACY:BOOL=OFF \
           -DITK_WRAP_DOC:BOOL=ON \
           -G Ninja \
           ${source_path} \

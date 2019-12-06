@@ -220,7 +220,6 @@ if(ITKPythonPackage_SUPERBUILD)
         -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=${install_component_per_module}
         -DITK_LEGACY_SILENT:BOOL=ON
         -DITK_WRAP_PYTHON:BOOL=ON
-        -DITK_WRAP_PYTHON_LEGACY:BOOL=OFF
         -DITK_WRAP_unsigned_short:BOOL=ON
         -DITK_WRAP_double:BOOL=ON
         -DITK_WRAP_DOC:BOOL=ON

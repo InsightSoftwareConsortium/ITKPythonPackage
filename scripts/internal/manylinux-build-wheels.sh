@@ -99,7 +99,6 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DPY_SITE_PACKAGES_PATH:PATH="." \
           -DITK_LEGACY_SILENT:BOOL=ON \
           -DITK_WRAP_PYTHON:BOOL=ON \
-          -DITK_WRAP_PYTHON_LEGACY:BOOL=OFF \
           -DITK_WRAP_DOC:BOOL=ON \
           -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen \
           -G Ninja \
