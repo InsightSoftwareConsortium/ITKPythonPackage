@@ -50,6 +50,9 @@ add_test(["CompareITKTypes.py"])
 # Run test InstantiateITKObjects.py
 add_test(["InstantiateITKObjects.py"])
 
+# Run test FilterParameters.py
+add_test(["FilterParameters.py", baseline_image])
+
 # Run test MixingITKAndNumPy.py
 output_image = os.path.join(temp_folder, "filtered_image.png")
 add_test(["MixingITKAndNumPy.py", baseline_image, output_image])

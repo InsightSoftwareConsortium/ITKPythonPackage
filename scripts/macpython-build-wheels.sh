@@ -99,8 +99,8 @@ for VENV in "${VENVS[@]}"; do
         -DITK_BINARY_DIR:PATH=${build_path} \
         -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
         -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
-        -DCMAKE_OSX_SYSROOT:STRING=macosx10.13 \
         -DITK_WRAP_unsigned_short:BOOL=ON \
+        -DITK_WRAP_double:BOOL=ON \
         -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
         -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
         -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
@@ -125,8 +125,8 @@ for VENV in "${VENVS[@]}"; do
           -DBUILD_TESTING:BOOL=OFF \
           -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
           -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
-          -DCMAKE_OSX_SYSROOT:STRING=macosx10.13 \
           -DITK_WRAP_unsigned_short:BOOL=ON \
+          -DITK_WRAP_double:BOOL=ON \
           -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
           -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
           -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
@@ -153,10 +153,10 @@ for VENV in "${VENVS[@]}"; do
           -DITK_BINARY_DIR:PATH=${build_path} \
           -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
           -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
-          -DCMAKE_OSX_SYSROOT:STRING=macosx10.13 \
           -DITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
           -DITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
           -DITK_WRAP_unsigned_short:BOOL=ON \
+          -DITK_WRAP_double:BOOL=ON \
           -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
           -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
           -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \

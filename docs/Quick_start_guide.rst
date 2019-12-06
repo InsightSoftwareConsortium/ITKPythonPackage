@@ -9,19 +9,7 @@ Installation
 
 To install the ITK Python package::
 
-    $ python -m pip install --upgrade pip
-    $ python -m pip install itk
-
-If a pre-compiled wheel package is not found for your Python distribution, then it will
-attempt to build from source.
-
-.. note::
-
-  On Windows machines, the source path cannot be greater than 50 characters or
-  issues will occur during build time due to filename truncation in Visual
-  Studio. If you must compile from source, clone this repository in a short
-  directory, like *C:/IPP*. Then, run `setup.py` within the repository via the
-  command line.
+    $ pip install itk
 
 
 Usage
@@ -36,22 +24,22 @@ Here is a simple python script that reads an image, applies a median image filte
 
 There are two ways to instantiate filters with ITKPython:
 
-- Implicit (recommended): ITK type information is automatically detected from the data. Typed filter objects and images are implicitly created.
+- *Implicit (recommended)*: ITK type information is automatically detected from the data. Typed filter objects and images are implicitly created.
 
 .. literalinclude:: code/ImplicitInstantiation.py
    :lines: 8-
 
-- Explicit: This can be useful if a filter cannot automatically select the type information (e.g. `CastImageFilter`), or to detect type mismatch errors which can lead to cryptic error messages.
+- *Explicit*: This can be useful if an appropriate type cannot be determined implicitly, e.g. with the `CastImageFilter`, and when a different filter type than the default is desired.
 
-Explicit instantiation of median image filter:
+Explicit instantiation of a median image filter:
 
-.. literalinclude:: code/ImplicitInstantiation.py
+.. literalinclude:: code/ExplicitInstantiation.py
    :lines: 8-
 
 Explicit instantiation of cast image filter:
 
 .. literalinclude:: code/CastImageFilter.py
-   :lines: 9-
+   :lines: 9-23
 
 ITK Python types
 ................
@@ -68,7 +56,7 @@ ITK Python types
 | std::complex<float> | itk.complex[itk.F] |
 +---------------------+--------------------+
 
-This list is not exhaustive and is only presented to illustrate the type names. The complete list of types can be found in the `ITK Software Guide <https://itk.org/ITKSoftwareGuide/html/Book1/ITKSoftwareGuide-Book1ch9.html#x48-1530009.5>`_.
+This list is not exhaustive and is only presented to illustrate the type names. The complete list of types can be found in the `ITK Software Guide <https://itk.org/ItkSoftwareGuide.pdf>`_.
 
 Types can also be obtained from their name in the C programming language:
 
@@ -90,6 +78,15 @@ Some objects (matrix, vector, RGBPixel, ...) do not require the attribute `.New(
 
 In case of doubt, look at the attributes of the object you are trying to instantiate.
 
+Filter Parameters
+.................
+
+ITK filter parameters can be specified in the following ways:
+
+.. literalinclude:: code/FilterParameters.py
+   :lines: 10-
+
+
 Mixing ITK and NumPy
 --------------------
 
@@ -101,7 +98,7 @@ The following script shows how to integrate NumPy and ITK:
    :lines: 8-33
 
 
-Similar functions are available to work with VNL vector and matrices:
+Similar functions are available to work with `itk.Matrix`, VNL vectors and matrices:
 
 .. literalinclude:: code/MixingITKAndNumPy.py
    :lines: 35-

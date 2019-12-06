@@ -73,8 +73,8 @@ if(ITKPythonPackage_SUPERBUILD)
   include(ExternalProject)
 
   set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
-  # ITK master 2019-09-04
-  set(ITK_GIT_TAG "10e12d911693e34e7215ae92ac3a75ae05b53329")
+  # ITK nightly-master 2019-12-05
+  set(ITK_GIT_TAG "527c8c2b51")
 
   #-----------------------------------------------------------------------------
   # A separate project is used to download ITK, so that it can reused
@@ -222,6 +222,7 @@ if(ITKPythonPackage_SUPERBUILD)
         -DITK_WRAP_PYTHON:BOOL=ON
         -DITK_WRAP_PYTHON_LEGACY:BOOL=OFF
         -DITK_WRAP_unsigned_short:BOOL=ON
+        -DITK_WRAP_double:BOOL=ON
         -DITK_WRAP_DOC:BOOL=ON
         -DDOXYGEN_EXECUTABLE:FILEPATH=${DOXYGEN_EXECUTABLE}
         -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR}
