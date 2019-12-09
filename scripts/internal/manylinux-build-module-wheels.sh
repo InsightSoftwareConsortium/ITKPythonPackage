@@ -39,7 +39,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
       echo 'ITK source tree not available!' 1>&2
       exit 1
     fi
-    ${PYBIN}/python setup.py bdist_wheel --build-type MinSizeRel -G Ninja -- \
+    ${PYBIN}/python setup.py bdist_wheel --build-type Release -G Ninja -- \
       -DITK_DIR:PATH=${itk_build_dir} \
       -DITK_USE_SYSTEM_SWIG:BOOL=ON \
       -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
