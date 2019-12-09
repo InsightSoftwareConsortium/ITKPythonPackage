@@ -24,8 +24,11 @@ for PYBIN in "${PYBINARIES[@]}"; do
     if [[ -e /work/requirements-dev.txt ]]; then
       ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
     fi
-    itk_build_dir=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${ARCH}
-    ln -fs /ITKPythonPackage/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${ARCH} $itk_build_dir
+    version=$(basename $(dirname ${PYBIN}))
+    # Remove "m" -- not present in Python 3.8 and later
+    version=${version:0:9}
+    itk_build_dir=/work/$(basename /ITKPythonPackage/ITK-${version}*-manylinux1_${ARCH})
+    ln -fs /ITKPythonPackage/ITK-${version}*-manylinux1_${ARCH} $itk_build_dir
     if [[ ! -d ${itk_build_dir} ]]; then
       echo 'ITK build tree not available!' 1>&2
       exit 1
