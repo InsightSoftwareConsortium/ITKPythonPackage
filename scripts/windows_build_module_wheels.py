@@ -49,9 +49,9 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS):
                 "-DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
                 "-DSWIG_EXECUTABLE:FILEPATH=%s/Wrapping/Generators/SwigInterface/swig/bin/swig.exe" % itk_build_path,
                 "-DBUILD_TESTING:BOOL=OFF",
-                "-DPYTHON_EXECUTABLE:FILEPATH=%s" % python_executable,
-                "-DPYTHON_INCLUDE_DIR:PATH=%s" % python_include_dir,
-                "-DPYTHON_LIBRARY:FILEPATH=%s" % python_library
+                "-DPython3_EXECUTABLE:FILEPATH=%s" % python_executable,
+                "-DPython3_INCLUDE_DIR:PATH=%s" % python_include_dir,
+                "-DPython3_LIBRARY:FILEPATH=%s" % python_library
             ])
             # Cleanup
             check_call([python_executable, "setup.py", "clean"])
