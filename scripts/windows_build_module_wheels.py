@@ -54,7 +54,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS):
                 "-DPYTHON_LIBRARY:FILEPATH=%s" % python_library
             ])
             # Cleanup
-            check_output([python_executable, "setup.py", "clean"])
+            check_call([python_executable, "setup.py", "clean"])
 
 if __name__ == '__main__':
     build_wheels()
