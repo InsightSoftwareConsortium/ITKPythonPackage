@@ -146,6 +146,10 @@ if(ITKPythonPackage_SUPERBUILD)
      OR NOT DEFINED Python3_EXECUTABLE)
 
     find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+    if(NOT Python3_EXECUTABLE AND _Python3_EXECUTABLE)
+      set(Python3_EXECUTABLE ${_Python3_EXECUTABLE} CACHE INTERNAL
+        "Path to the Python interpreter" FORCE)
+    endif()
   endif()
   if(NOT DEFINED DOXYGEN_EXECUTABLE)
     find_package(Doxygen REQUIRED)
