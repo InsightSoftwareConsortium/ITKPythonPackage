@@ -12,7 +12,7 @@
 #
 MACPYTHON_PY_PREFIX=""
 PYBINARIES=""
-PYTHON_LIBRARY=""
+Python3_LIBRARY=""
 SCRIPT_DIR=""
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
@@ -39,12 +39,12 @@ for PYBIN in "${PYBINARIES[@]}"; do
 done
 
 VENV="${VENVS[0]}"
-PYTHON_EXECUTABLE=${VENV}/bin/python
-${PYTHON_EXECUTABLE} -m pip install --no-cache cmake
+Python3_EXECUTABLE=${VENV}/bin/python
+${Python3_EXECUTABLE} -m pip install --no-cache cmake
 CMAKE_EXECUTABLE=${VENV}/bin/cmake
-${PYTHON_EXECUTABLE} -m pip install --no-cache ninja
+${Python3_EXECUTABLE} -m pip install --no-cache ninja
 NINJA_EXECUTABLE=${VENV}/bin/ninja
-${PYTHON_EXECUTABLE} -m pip install --no-cache delocate
+${Python3_EXECUTABLE} -m pip install --no-cache delocate
 DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
 
@@ -63,16 +63,16 @@ SINGLE_WHEEL=0
 # Compile wheels re-using standalone project and archive cache
 for VENV in "${VENVS[@]}"; do
     py_mm=$(basename ${VENV})
-    export PYTHON_EXECUTABLE=${VENV}/bin/python
-    PYTHON_INCLUDE_DIR=$( find -L ${MACPYTHON_PY_PREFIX}/${py_mm}/include -name Python.h -exec dirname {} \; )
+    export Python3_EXECUTABLE=${VENV}/bin/python
+    Python3_INCLUDE_DIR=$( find -L ${MACPYTHON_PY_PREFIX}/${py_mm}/include -name Python.h -exec dirname {} \; )
 
     echo ""
-    echo "PYTHON_EXECUTABLE:${PYTHON_EXECUTABLE}"
-    echo "PYTHON_INCLUDE_DIR:${PYTHON_INCLUDE_DIR}"
-    echo "PYTHON_LIBRARY:${PYTHON_LIBRARY}"
+    echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
+    echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
+    echo "Python3_LIBRARY:${Python3_LIBRARY}"
 
     # Install dependencies
-    ${PYTHON_EXECUTABLE} -m pip install --upgrade -r ${SCRIPT_DIR}/../requirements-dev.txt
+    ${Python3_EXECUTABLE} -m pip install --upgrade -r ${SCRIPT_DIR}/../requirements-dev.txt
 
     build_type="MinSizeRel"
     plat_name="macosx-10.9-x86_64"
@@ -91,9 +91,9 @@ for VENV in "${VENVS[@]}"; do
       echo "#"
 
       # Configure setup.py
-      ${PYTHON_EXECUTABLE} ${SETUP_PY_CONFIGURE} "itk"
+      ${Python3_EXECUTABLE} ${SETUP_PY_CONFIGURE} "itk"
       # Generate wheel
-      ${PYTHON_EXECUTABLE} setup.py bdist_wheel --build-type ${build_type} --plat-name ${plat_name} -G Ninja -- \
+      ${Python3_EXECUTABLE} setup.py bdist_wheel --build-type ${build_type} --plat-name ${plat_name} -G Ninja -- \
         -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
         -DITK_SOURCE_DIR:PATH= ${source_path} \
         -DITK_BINARY_DIR:PATH=${build_path} \
@@ -101,12 +101,12 @@ for VENV in "${VENVS[@]}"; do
         -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
         -DITK_WRAP_unsigned_short:BOOL=ON \
         -DITK_WRAP_double:BOOL=ON \
-        -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
-        -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
-        -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+        -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+        -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+        -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
         -DITK_WRAP_DOC:BOOL=ON
       # Cleanup
-      ${PYTHON_EXECUTABLE} setup.py clean
+      ${Python3_EXECUTABLE} setup.py clean
 
     else
 
@@ -127,9 +127,9 @@ for VENV in "${VENVS[@]}"; do
           -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
           -DITK_WRAP_unsigned_short:BOOL=ON \
           -DITK_WRAP_double:BOOL=ON \
-          -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
-          -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
-          -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+          -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+          -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+          -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
           -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
           -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
           "-DPY_SITE_PACKAGES_PATH:PATH=." \
@@ -145,9 +145,9 @@ for VENV in "${VENVS[@]}"; do
       wheel_names=$(cat ${SCRIPT_DIR}/WHEEL_NAMES.txt)
       for wheel_name in ${wheel_names}; do
         # Configure setup.py
-        ${PYTHON_EXECUTABLE} ${SETUP_PY_CONFIGURE} ${wheel_name}
+        ${Python3_EXECUTABLE} ${SETUP_PY_CONFIGURE} ${wheel_name}
         # Generate wheel
-        ${PYTHON_EXECUTABLE} setup.py bdist_wheel --build-type ${build_type} --plat-name ${plat_name} -G Ninja -- \
+        ${Python3_EXECUTABLE} setup.py bdist_wheel --build-type ${build_type} --plat-name ${plat_name} -G Ninja -- \
           -DITK_SOURCE_DIR:PATH=${source_path} \
           -DITK_BINARY_DIR:PATH=${build_path} \
           -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
@@ -156,13 +156,13 @@ for VENV in "${VENVS[@]}"; do
           -DITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
           -DITK_WRAP_unsigned_short:BOOL=ON \
           -DITK_WRAP_double:BOOL=ON \
-          -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
-          -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
-          -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+          -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+          -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+          -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
           -DITK_WRAP_DOC:BOOL=ON \
         || exit 1
         # Cleanup
-        ${PYTHON_EXECUTABLE} setup.py clean
+        ${Python3_EXECUTABLE} setup.py clean
       done
 
     fi

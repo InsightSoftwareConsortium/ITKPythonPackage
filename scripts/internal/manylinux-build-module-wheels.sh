@@ -5,7 +5,7 @@
 #
 ARCH=""
 PYBINARIES=""
-PYTHON_LIBRARY=""
+Python3_LIBRARY=""
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
@@ -13,13 +13,13 @@ source "${script_dir}/manylinux-build-common.sh"
 
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
-    PYTHON_EXECUTABLE=${PYBIN}/python
-    PYTHON_INCLUDE_DIR=$( find -L ${PYBIN}/../include/ -name Python.h -exec dirname {} \; )
+    Python3_EXECUTABLE=${PYBIN}/python
+    Python3_INCLUDE_DIR=$( find -L ${PYBIN}/../include/ -name Python.h -exec dirname {} \; )
 
     echo ""
-    echo "PYTHON_EXECUTABLE:${PYTHON_EXECUTABLE}"
-    echo "PYTHON_INCLUDE_DIR:${PYTHON_INCLUDE_DIR}"
-    echo "PYTHON_LIBRARY:${PYTHON_LIBRARY}"
+    echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
+    echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
+    echo "Python3_LIBRARY:${Python3_LIBRARY}"
 
     if [[ -e /work/requirements-dev.txt ]]; then
       ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
@@ -46,9 +46,9 @@ for PYBIN in "${PYBINARIES[@]}"; do
       -DSWIG_EXECUTABLE:FILEPATH=${itk_build_dir}/Wrapping/Generators/SwigInterface/swig/bin/swig \
       -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
       -DBUILD_TESTING:BOOL=OFF \
-      -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
-      -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
-      -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+      -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+      -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+      -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
     || exit 1
     ${PYBIN}/python setup.py clean
 done

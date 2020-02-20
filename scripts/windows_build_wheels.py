@@ -87,11 +87,11 @@ def build_wrapped_itk(
             "-DITK_SOURCE_DIR:PATH=%s" % source_path,
             "-DITK_BINARY_DIR:PATH=%s" % build_path,
             "-DBUILD_TESTING:BOOL=OFF",
-            "-DPYTHON_EXECUTABLE:FILEPATH=%s" % python_executable,
+            "-DPython3_EXECUTABLE:FILEPATH=%s" % python_executable,
             "-DITK_WRAP_unsigned_short:BOOL=ON",
             "-DITK_WRAP_double:BOOL=ON",
-            "-DPYTHON_INCLUDE_DIR:PATH=%s" % python_include_dir,
-            "-DPYTHON_LIBRARY:FILEPATH=%s" % python_library,
+            "-DPython3_INCLUDE_DIR:PATH=%s" % python_include_dir,
+            "-DPython3_LIBRARY:FILEPATH=%s" % python_library,
             "-DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
             "-DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON",
             "-DPY_SITE_PACKAGES_PATH:PATH=.",
@@ -149,9 +149,9 @@ def build_wheel(python_version, single_wheel=False,
                 "-DCMAKE_MAKE_PROGRAM:FILEPATH=%s" % ninja_executable,
                 "-DITK_SOURCE_DIR:PATH=%s" % source_path,
                 "-DITK_BINARY_DIR:PATH=%s" % build_path,
-                "-DPYTHON_EXECUTABLE:FILEPATH=%s" % python_executable,
-                "-DPYTHON_INCLUDE_DIR:PATH=%s" % python_include_dir,
-                "-DPYTHON_LIBRARY:FILEPATH=%s" % python_library,
+                "-DPython3_EXECUTABLE:FILEPATH=%s" % python_executable,
+                "-DPython3_INCLUDE_DIR:PATH=%s" % python_include_dir,
+                "-DPython3_LIBRARY:FILEPATH=%s" % python_library,
                 "-DDOXYGEN_EXECUTABLE:FILEPATH=C:/P/doxygen/doxygen.exe",
             ] + cmake_options)
             # Cleanup
@@ -190,9 +190,9 @@ def build_wheel(python_version, single_wheel=False,
                     "-DITK_BINARY_DIR:PATH=%s" % build_path,
                     "-DITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON",
                     "-DITKPythonPackage_WHEEL_NAME:STRING=%s" % wheel_name,
-                    "-DPYTHON_EXECUTABLE:FILEPATH=%s" % python_executable,
-                    "-DPYTHON_INCLUDE_DIR:PATH=%s" % python_include_dir,
-                    "-DPYTHON_LIBRARY:FILEPATH=%s" % python_library
+                    "-DPython3_EXECUTABLE:FILEPATH=%s" % python_executable,
+                    "-DPython3_INCLUDE_DIR:PATH=%s" % python_include_dir,
+                    "-DPython3_LIBRARY:FILEPATH=%s" % python_library
                 ] + cmake_options)
 
                 # Cleanup
