@@ -5,7 +5,7 @@
 #
 ARCH=""
 PYBINARIES=""
-PYTHON_LIBRARY=""
+Python3_LIBRARY=""
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
@@ -28,13 +28,13 @@ SINGLE_WHEEL=0
 
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
-    export PYTHON_EXECUTABLE=${PYBIN}/python
-    PYTHON_INCLUDE_DIR=$( find -L ${PYBIN}/../include/ -name Python.h -exec dirname {} \; )
+    export Python3_EXECUTABLE=${PYBIN}/python3
+    Python3_INCLUDE_DIR=$( find -L ${PYBIN}/../include/ -name Python.h -exec dirname {} \; )
 
     echo ""
-    echo "PYTHON_EXECUTABLE:${PYTHON_EXECUTABLE}"
-    echo "PYTHON_INCLUDE_DIR:${PYTHON_INCLUDE_DIR}"
-    echo "PYTHON_LIBRARY:${PYTHON_LIBRARY}"
+    echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
+    echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
+    echo "Python3_LIBRARY:${Python3_LIBRARY}"
 
     # Install dependencies
     ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
@@ -43,7 +43,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
     source_path=/work/standalone-${ARCH}-build/ITKs
     build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${ARCH}
     SETUP_PY_CONFIGURE="${script_dir}/../setup_py_configure.py"
-    SKBUILD_CMAKE_INSTALL_PREFIX=$(${PYTHON_EXECUTABLE} -c "from skbuild.constants import CMAKE_INSTALL_DIR; print(CMAKE_INSTALL_DIR)")
+    SKBUILD_CMAKE_INSTALL_PREFIX=$(${Python3_EXECUTABLE} -c "from skbuild.constants import CMAKE_INSTALL_DIR; print(CMAKE_INSTALL_DIR)")
 
     # Clean up previous invocations
     rm -rf ${build_path}
@@ -65,9 +65,9 @@ for PYBIN in "${PYBINARIES[@]}"; do
             -DITK_WRAP_unsigned_short:BOOL=ON \
             -DITK_WRAP_double:BOOL=ON \
             -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
-            -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
-            -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
-            -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+            -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+            -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+            -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
             -DITK_WRAP_DOC:BOOL=ON \
             -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen
       # Cleanup
@@ -88,9 +88,9 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DITK_SOURCE_DIR:PATH=${source_path} \
           -DITK_BINARY_DIR:PATH=${build_path} \
           -DBUILD_TESTING:BOOL=OFF \
-          -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
-          -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
-          -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+          -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+          -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+          -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
           -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
           -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
           -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
@@ -99,7 +99,6 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DPY_SITE_PACKAGES_PATH:PATH="." \
           -DITK_LEGACY_SILENT:BOOL=ON \
           -DITK_WRAP_PYTHON:BOOL=ON \
-          -DITK_WRAP_PYTHON_LEGACY:BOOL=OFF \
           -DITK_WRAP_DOC:BOOL=ON \
           -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen \
           -G Ninja \
@@ -120,9 +119,9 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
           -DITK_WRAP_unsigned_short:BOOL=ON \
           -DITK_WRAP_double:BOOL=ON \
-          -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
-          -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
-          -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+          -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+          -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+          -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
           -DITK_WRAP_DOC:BOOL=ON \
           -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen \
           || exit 1

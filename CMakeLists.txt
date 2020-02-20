@@ -73,8 +73,8 @@ if(ITKPythonPackage_SUPERBUILD)
   include(ExternalProject)
 
   set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
-  # ITK master 2019-12-07
-  set(ITK_GIT_TAG "7fd3e4082b13a580f6438e9efb041c3eb618fd1c")
+  # ITK nightly-master 2020-02-19
+  set(ITK_GIT_TAG "808cd8ba30")
 
   #-----------------------------------------------------------------------------
   # A separate project is used to download ITK, so that it can reused
@@ -128,34 +128,36 @@ if(ITKPythonPackage_SUPERBUILD)
   message(STATUS "SuperBuild - Searching for python")
 
   # Sanity checks
-  if(DEFINED PYTHON_INCLUDE_DIR AND NOT EXISTS ${PYTHON_INCLUDE_DIR})
-    message(FATAL_ERROR "PYTHON_INCLUDE_DIR variable is defined but corresponds to nonexistent directory")
+  if(DEFINED Python3_INCLUDE_DIR AND NOT EXISTS ${Python3_INCLUDE_DIR})
+    message(FATAL_ERROR "Python3_INCLUDE_DIR variable is defined but corresponds to nonexistent directory")
   endif()
-  if(DEFINED PYTHON_LIBRARY AND NOT EXISTS ${PYTHON_LIBRARY})
-    message(FATAL_ERROR "PYTHON_LIBRARY variable is defined but corresponds to nonexistent file")
+  if(DEFINED Python3_LIBRARY AND NOT EXISTS ${Python3_LIBRARY})
+    message(FATAL_ERROR "Python3_LIBRARY variable is defined but corresponds to nonexistent file")
   endif()
-  if(DEFINED PYTHON_EXECUTABLE AND NOT EXISTS ${PYTHON_EXECUTABLE})
-    message(FATAL_ERROR "PYTHON_EXECUTABLE variable is defined but corresponds to nonexistent file")
+  if(DEFINED Python3_EXECUTABLE AND NOT EXISTS ${Python3_EXECUTABLE})
+    message(FATAL_ERROR "Python3_EXECUTABLE variable is defined but corresponds to nonexistent file")
   endif()
   if(DEFINED DOXYGEN_EXECUTABLE AND NOT EXISTS ${DOXYGEN_EXECUTABLE})
     message(FATAL_ERROR "DOXYGEN_EXECUTABLE variable is defined but corresponds to nonexistent file")
   endif()
 
-  if(NOT DEFINED PYTHON_INCLUDE_DIR
-     OR NOT DEFINED PYTHON_LIBRARY
-     OR NOT DEFINED PYTHON_EXECUTABLE)
+  if(NOT DEFINED Python3_INCLUDE_DIR
+     OR NOT DEFINED Python3_LIBRARY
+     OR NOT DEFINED Python3_EXECUTABLE)
 
-    find_package ( PythonLibs REQUIRED )
-    find_package ( PythonInterp REQUIRED )
-
+    find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+    if(NOT Python3_EXECUTABLE AND _Python3_EXECUTABLE)
+      set(Python3_EXECUTABLE ${_Python3_EXECUTABLE} CACHE INTERNAL
+        "Path to the Python interpreter" FORCE)
+    endif()
   endif()
   if(NOT DEFINED DOXYGEN_EXECUTABLE)
     find_package(Doxygen REQUIRED)
   endif()
 
-  message(STATUS "SuperBuild -   PYTHON_INCLUDE_DIR: ${PYTHON_INCLUDE_DIR}")
-  message(STATUS "SuperBuild -   PYTHON_LIBRARY: ${PYTHON_LIBRARY}")
-  message(STATUS "SuperBuild -   PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
+  message(STATUS "SuperBuild -   Python3_INCLUDE_DIR: ${Python3_INCLUDE_DIR}")
+  message(STATUS "SuperBuild -   Python3_LIBRARY: ${Python3_LIBRARY}")
+  message(STATUS "SuperBuild -   Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
   message(STATUS "SuperBuild - Searching for python[OK]")
   message(STATUS "SuperBuild -   DOXYGEN_EXECUTABLE: ${DOXYGEN_EXECUTABLE}")
 
@@ -220,14 +222,13 @@ if(ITKPythonPackage_SUPERBUILD)
         -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=${install_component_per_module}
         -DITK_LEGACY_SILENT:BOOL=ON
         -DITK_WRAP_PYTHON:BOOL=ON
-        -DITK_WRAP_PYTHON_LEGACY:BOOL=OFF
         -DITK_WRAP_unsigned_short:BOOL=ON
         -DITK_WRAP_double:BOOL=ON
         -DITK_WRAP_DOC:BOOL=ON
         -DDOXYGEN_EXECUTABLE:FILEPATH=${DOXYGEN_EXECUTABLE}
-        -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR}
-        -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
-        -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE}
+        -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR}
+        -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY}
+        -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE}
         ${ep_common_cmake_cache_args}
         ${ep_itk_cmake_cache_args}
       USES_TERMINAL_DOWNLOAD 1

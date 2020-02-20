@@ -13,7 +13,7 @@
 #
 MACPYTHON_PY_PREFIX=""
 # PYBINARIES="" # unused
-PYTHON_LIBRARY=""
+Python3_LIBRARY=""
 SCRIPT_DIR=""
 VENVS=()
 
@@ -22,31 +22,31 @@ source "${script_dir}/macpython-build-common.sh"
 # -----------------------------------------------------------------------
 
 VENV="${VENVS[0]}"
-PYTHON_EXECUTABLE=${VENV}/bin/python
-${PYTHON_EXECUTABLE} -m pip install --no-cache cmake
+Python3_EXECUTABLE=${VENV}/bin/python
+${Python3_EXECUTABLE} -m pip install --no-cache cmake
 # CMAKE_EXECUTABLE=${VENV}/bin/cmake
-${PYTHON_EXECUTABLE} -m pip install --no-cache ninja
+${Python3_EXECUTABLE} -m pip install --no-cache ninja
 NINJA_EXECUTABLE=${VENV}/bin/ninja
-${PYTHON_EXECUTABLE} -m pip install --no-cache delocate
+${Python3_EXECUTABLE} -m pip install --no-cache delocate
 DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
 
 # Compile wheels re-using standalone project and archive cache
 for VENV in "${VENVS[@]}"; do
     py_mm=$(basename ${VENV})
-    PYTHON_EXECUTABLE=${VENV}/bin/python
-    PYTHON_INCLUDE_DIR=$( find -L ${MACPYTHON_PY_PREFIX}/${py_mm}/include -name Python.h -exec dirname {} \; )
+    Python3_EXECUTABLE=${VENV}/bin/python
+    Python3_INCLUDE_DIR=$( find -L ${MACPYTHON_PY_PREFIX}/${py_mm}/include -name Python.h -exec dirname {} \; )
 
     echo ""
-    echo "PYTHON_EXECUTABLE:${PYTHON_EXECUTABLE}"
-    echo "PYTHON_INCLUDE_DIR:${PYTHON_INCLUDE_DIR}"
-    echo "PYTHON_LIBRARY:${PYTHON_LIBRARY}"
+    echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
+    echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
+    echo "Python3_LIBRARY:${Python3_LIBRARY}"
 
     if [[ -e $PWD/requirements-dev.txt ]]; then
-      ${PYTHON_EXECUTABLE} -m pip install --upgrade -r $PWD/requirements-dev.txt
+      ${Python3_EXECUTABLE} -m pip install --upgrade -r $PWD/requirements-dev.txt
     fi
     itk_build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
-    ${PYTHON_EXECUTABLE} setup.py bdist_wheel --build-type Release --plat-name macosx-10.9-x86_64 -G Ninja -- \
+    ${Python3_EXECUTABLE} setup.py bdist_wheel --build-type Release --plat-name macosx-10.9-x86_64 -G Ninja -- \
       -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
       -DITK_DIR:PATH=${itk_build_path} \
       -DITK_USE_SYSTEM_SWIG:BOOL=ON \
@@ -55,11 +55,11 @@ for VENV in "${VENVS[@]}"; do
       -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=10.9 \
       -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
       -DBUILD_TESTING:BOOL=OFF \
-      -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE} \
-      -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR} \
-      -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY} \
+      -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+      -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+      -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
     || exit 1
-    ${PYTHON_EXECUTABLE} setup.py clean
+    ${Python3_EXECUTABLE} setup.py clean
 done
 
 ${DELOCATE_LISTDEPS} $PWD/dist/*.whl # lists library dependencies

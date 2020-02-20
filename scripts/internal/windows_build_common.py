@@ -25,9 +25,9 @@ def venv_paths(python_version):
     python_library = "C:/Python%s/libs/python%s.lib" % (python_version, xy_ver)
 
     print("")
-    print("PYTHON_EXECUTABLE: %s" % python_executable)
-    print("PYTHON_INCLUDE_DIR: %s" % python_include_dir)
-    print("PYTHON_LIBRARY: %s" % python_library)
+    print("Python3_EXECUTABLE: %s" % python_executable)
+    print("Python3_INCLUDE_DIR: %s" % python_include_dir)
+    print("Python3_LIBRARY: %s" % python_library)
 
     pip = os.path.join(venv_dir, "Scripts", "pip.exe")
 
