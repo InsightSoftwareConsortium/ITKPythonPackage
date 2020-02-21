@@ -16,7 +16,7 @@ def venv_paths(python_version):
     check_call([venv_executable, venv_dir])
 
     python_executable = os.path.join(venv_dir, "Scripts", "python.exe")
-    python_include_dir = os.path.join(venv_dir, "Include")
+    python_include_dir = "C:/Python%s/include" % (python_version)
 
     # XXX It should be possible to query skbuild for the library dir associated
     #     with a given interpreter.
