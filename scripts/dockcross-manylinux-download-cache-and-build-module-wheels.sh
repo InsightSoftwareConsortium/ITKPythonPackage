@@ -25,7 +25,7 @@ if [[ ! -f ./zstd-1.2.0-linux/bin/unzstd ]]; then
 fi
 
 if [[ ! -f ITKPythonBuilds-linux.tar.zst ]]; then
-  curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.0.1}/ITKPythonBuilds-linux.tar.zst -O
+  curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.1rc02}/ITKPythonBuilds-linux.tar.zst -O
   ./zstd-1.2.0-linux/bin/unzstd ./ITKPythonBuilds-linux.tar.zst -o ITKPythonBuilds-linux.tar
   tar xf ITKPythonBuilds-linux.tar
 fi
