@@ -51,6 +51,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS):
                 "-DBUILD_TESTING:BOOL=OFF",
                 "-DPython3_EXECUTABLE:FILEPATH=%s" % python_executable,
                 "-DPython3_INCLUDE_DIR:PATH=%s" % python_include_dir,
+                "-DPython3_INCLUDE_DIRS:PATH=%s" % python_include_dir,
                 "-DPython3_LIBRARY:FILEPATH=%s" % python_library
             ])
             # Cleanup

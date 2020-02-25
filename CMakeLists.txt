@@ -156,6 +156,7 @@ if(ITKPythonPackage_SUPERBUILD)
   endif()
 
   message(STATUS "SuperBuild -   Python3_INCLUDE_DIR: ${Python3_INCLUDE_DIR}")
+  message(STATUS "SuperBuild -   Python3_INCLUDE_DIRS: ${Python3_INCLUDE_DIRS}")
   message(STATUS "SuperBuild -   Python3_LIBRARY: ${Python3_LIBRARY}")
   message(STATUS "SuperBuild -   Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
   message(STATUS "SuperBuild - Searching for python[OK]")

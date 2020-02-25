@@ -65,10 +65,12 @@ for VENV in "${VENVS[@]}"; do
     py_mm=$(basename ${VENV})
     export Python3_EXECUTABLE=${VENV}/bin/python
     Python3_INCLUDE_DIR=$( find -L ${MACPYTHON_PY_PREFIX}/${py_mm}/include -name Python.h -exec dirname {} \; )
+    Python3_INCLUDE_DIRS=${Python3_INCLUDE_DIR}
 
     echo ""
     echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
+    echo "Python3_INCLUDE_DIRS:${Python3_INCLUDE_DIRS}"
     echo "Python3_LIBRARY:${Python3_LIBRARY}"
 
     # Install dependencies
@@ -103,6 +105,7 @@ for VENV in "${VENVS[@]}"; do
         -DITK_WRAP_double:BOOL=ON \
         -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
         -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+        -DPython3_INCLUDE_DIRS:PATH=${Python3_INCLUDE_DIRS} \
         -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
         -DITK_WRAP_DOC:BOOL=ON
       # Cleanup
@@ -129,6 +132,7 @@ for VENV in "${VENVS[@]}"; do
           -DITK_WRAP_double:BOOL=ON \
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+          -DPython3_INCLUDE_DIRS:PATH=${Python3_INCLUDE_DIRS} \
           -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
           -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
           -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
@@ -158,6 +162,7 @@ for VENV in "${VENVS[@]}"; do
           -DITK_WRAP_double:BOOL=ON \
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+          -DPython3_INCLUDE_DIRS:PATH=${Python3_INCLUDE_DIRS} \
           -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
           -DITK_WRAP_DOC:BOOL=ON \
         || exit 1
