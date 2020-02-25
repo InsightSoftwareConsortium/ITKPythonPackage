@@ -91,6 +91,7 @@ def build_wrapped_itk(
             "-DITK_WRAP_unsigned_short:BOOL=ON",
             "-DITK_WRAP_double:BOOL=ON",
             "-DPython3_INCLUDE_DIR:PATH=%s" % python_include_dir,
+            "-DPython3_INCLUDE_DIRS:PATH=%s" % python_include_dir,
             "-DPython3_LIBRARY:FILEPATH=%s" % python_library,
             "-DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
             "-DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON",
@@ -151,6 +152,7 @@ def build_wheel(python_version, single_wheel=False,
                 "-DITK_BINARY_DIR:PATH=%s" % build_path,
                 "-DPython3_EXECUTABLE:FILEPATH=%s" % python_executable,
                 "-DPython3_INCLUDE_DIR:PATH=%s" % python_include_dir,
+                "-DPython3_INCLUDE_DIRS:PATH=%s" % python_include_dir,
                 "-DPython3_LIBRARY:FILEPATH=%s" % python_library,
                 "-DDOXYGEN_EXECUTABLE:FILEPATH=C:/P/doxygen/doxygen.exe",
             ] + cmake_options)
@@ -192,6 +194,7 @@ def build_wheel(python_version, single_wheel=False,
                     "-DITKPythonPackage_WHEEL_NAME:STRING=%s" % wheel_name,
                     "-DPython3_EXECUTABLE:FILEPATH=%s" % python_executable,
                     "-DPython3_INCLUDE_DIR:PATH=%s" % python_include_dir,
+                    "-DPython3_INCLUDE_DIRS:PATH=%s" % python_include_dir,
                     "-DPython3_LIBRARY:FILEPATH=%s" % python_library
                 ] + cmake_options)
 

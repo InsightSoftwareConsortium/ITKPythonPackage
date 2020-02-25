@@ -30,10 +30,12 @@ SINGLE_WHEEL=0
 for PYBIN in "${PYBINARIES[@]}"; do
     export Python3_EXECUTABLE=${PYBIN}/python3
     Python3_INCLUDE_DIR=$( find -L ${PYBIN}/../include/ -name Python.h -exec dirname {} \; )
+    Python3_INCLUDE_DIRS=${Python3_INCLUDE_DIR}
 
     echo ""
     echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
+    echo "Python3_INCLUDE_DIRS:${Python3_INCLUDE_DIRS}"
     echo "Python3_LIBRARY:${Python3_LIBRARY}"
 
     # Install dependencies
@@ -67,6 +69,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
             -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
             -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
             -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+            -DPython3_INCLUDE_DIRS:PATH=${Python3_INCLUDE_DIRS} \
             -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
             -DITK_WRAP_DOC:BOOL=ON \
             -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen
@@ -90,6 +93,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DBUILD_TESTING:BOOL=OFF \
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+          -DPython3_INCLUDE_DIRS:PATH=${Python3_INCLUDE_DIRS} \
           -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
           -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
           -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
@@ -121,6 +125,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DITK_WRAP_double:BOOL=ON \
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+          -DPython3_INCLUDE_DIRS:PATH=${Python3_INCLUDE_DIRS} \
           -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
           -DITK_WRAP_DOC:BOOL=ON \
           -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen \
