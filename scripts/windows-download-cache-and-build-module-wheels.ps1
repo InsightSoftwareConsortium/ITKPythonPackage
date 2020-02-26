@@ -7,7 +7,7 @@ if (-not (Test-Path env:APPVEYOR)) {
   $pythonArch = "64"
   iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/scikit-build/scikit-ci-addons/master/windows/install-python.ps1'))
 }
-if (-not (Test-Path env:ITK_PACKAGE_VERSION)) { $env:ITK_PACKAGE_VERSION = 'v5.0.1' }
+if (-not (Test-Path env:ITK_PACKAGE_VERSION)) { $env:ITK_PACKAGE_VERSION = 'v5.1rc02' }
 Invoke-WebRequest -Uri "https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/$env:ITK_PACKAGE_VERSION/ITKPythonBuilds-windows.zip" -OutFile "ITKPythonBuilds-windows.zip"
 sz x ITKPythonBuilds-windows.zip -oC:\P -aoa -r
 Invoke-WebRequest -Uri "https://data.kitware.com/api/v1/file/5c0ad59d8d777f2179dd3e9c/download" -OutFile "doxygen-1.8.11.windows.bin.zip"

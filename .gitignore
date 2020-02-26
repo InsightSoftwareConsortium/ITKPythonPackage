@@ -12,6 +12,9 @@ ITK-*
 libpython-not-needed-symbols-exported-by-interpreter
 tools/
 
+# back-up files when conflicts occur
+*.orig
+
 # Python
 *.py[cod]
 

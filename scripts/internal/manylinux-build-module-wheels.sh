@@ -15,10 +15,12 @@ source "${script_dir}/manylinux-build-common.sh"
 for PYBIN in "${PYBINARIES[@]}"; do
     Python3_EXECUTABLE=${PYBIN}/python
     Python3_INCLUDE_DIR=$( find -L ${PYBIN}/../include/ -name Python.h -exec dirname {} \; )
+    Python3_INCLUDE_DIRS=${Python3_INCLUDE_DIR}
 
     echo ""
     echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
+    echo "Python3_INCLUDE_DIRS:${Python3_INCLUDE_DIRS}"
     echo "Python3_LIBRARY:${Python3_LIBRARY}"
 
     if [[ -e /work/requirements-dev.txt ]]; then
@@ -48,6 +50,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
       -DBUILD_TESTING:BOOL=OFF \
       -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
       -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+      -DPython3_INCLUDE_DIRS:PATH=${Python3_INCLUDE_DIRS} \
       -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
     || exit 1
     ${PYBIN}/python setup.py clean
