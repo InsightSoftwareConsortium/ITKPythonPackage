@@ -42,7 +42,6 @@ for VENV in "${VENVS[@]}"; do
     echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
     echo "Python3_INCLUDE_DIRS:${Python3_INCLUDE_DIRS}"
-    echo "Python3_LIBRARY:${Python3_LIBRARY}"
 
     if [[ -e $PWD/requirements-dev.txt ]]; then
       ${Python3_EXECUTABLE} -m pip install --upgrade -r $PWD/requirements-dev.txt
@@ -60,7 +59,6 @@ for VENV in "${VENVS[@]}"; do
       -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
       -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
       -DPython3_INCLUDE_DIRS:PATH=${Python3_INCLUDE_DIRS} \
-      -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
     || exit 1
     ${Python3_EXECUTABLE} setup.py clean
 done
