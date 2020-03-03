@@ -7,7 +7,6 @@
 cd /home/kitware/Packaging
 tar -c --to-stdout \
   ITKPythonPackage/ITK-* \
-  ITKPythonPackage/standalone-* \
   ITKPythonPackage/scripts > ITKPythonBuilds-linux.tar
 /home/kitware/Support/zstd-build/programs/zstd -f \
   ./ITKPythonBuilds-linux.tar \

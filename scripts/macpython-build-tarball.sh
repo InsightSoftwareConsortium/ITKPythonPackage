@@ -7,7 +7,6 @@
 pushd /Users/kitware/Dashboards/ITK > /dev/null
 tar -cf ITKPythonBuilds-macosx.tar \
   ITKPythonPackage/ITK-* \
-  ITKPythonPackage/standalone-* \
   ITKPythonPackage/venvs \
   ITKPythonPackageRequiredExtractionDir.txt \
   ITKPythonPackage/scripts

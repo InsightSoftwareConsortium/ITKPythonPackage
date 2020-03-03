@@ -15,6 +15,20 @@ except ImportError:
 
 @SETUP_PRE_CODE@
 
+long_description = '@SETUP_NAME@\n'
+long_description += '====================================\n\n'
+long_description += '@SETUP_LONG_DESCRIPTION@\n\n'
+
+this_directory = path.abspath(path.dirname(__file__))
+itk_readme_path = path.join(this_directory, 'ITK-source', 'ITK', 'README.md')
+if path.exists(itk_readme_path):
+    with open(itk_readme_path, encoding='utf-8') as f:
+        long_description += f.read()
+else:
+    with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+        long_description += f.read()
+
+
 setup(
     name='@SETUP_NAME@',
     version=@SETUP_VERSION@,
@@ -26,7 +40,8 @@ setup(
     py_modules=[@SETUP_PY_MODULES@],
     download_url=r'@SETUP_DOWNLOAD_URL@',
     description=r'@SETUP_DESCRIPTION@',
-    long_description='@SETUP_LONG_DESCRIPTION@',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     classifiers=[
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python",

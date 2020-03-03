@@ -90,7 +90,7 @@ if(ITKPythonPackage_SUPERBUILD)
 
   if(NOT DEFINED ITK_SOURCE_DIR)
 
-    set(ITK_SOURCE_DIR ${CMAKE_BINARY_DIR}/ITKs)
+    set(ITK_SOURCE_DIR ${CMAKE_BINARY_DIR}/ITK)
 
     ExternalProject_add(ITK-source-download
       SOURCE_DIR ${ITK_SOURCE_DIR}

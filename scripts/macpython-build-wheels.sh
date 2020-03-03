@@ -48,8 +48,8 @@ DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
 
 # Build standalone project and populate archive cache
-mkdir -p standalone-build
-pushd standalone-build > /dev/null 2>&1
+mkdir -p ITK-source
+pushd ITK-source > /dev/null 2>&1
   ${CMAKE_EXECUTABLE} -DITKPythonPackage_BUILD_PYTHON:PATH=0 \
     -G Ninja \
     -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
@@ -77,7 +77,7 @@ for VENV in "${VENVS[@]}"; do
     build_type="MinSizeRel"
     plat_name="macosx-10.9-x86_64"
     osx_target="10.9"
-    source_path=${SCRIPT_DIR}/../standalone-build/ITKs
+    source_path=${SCRIPT_DIR}/../ITK-source/ITK
     build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
     SETUP_PY_CONFIGURE="${script_dir}/setup_py_configure.py"
 

@@ -14,11 +14,11 @@ from subprocess import check_call, check_output
 
 SCRIPT_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
-STANDALONE_DIR = os.path.join(ROOT_DIR, "standalone-build")
+ITK_SOURCE = os.path.join(ROOT_DIR, "ITK-source")
 
 print("SCRIPT_DIR: %s" % SCRIPT_DIR)
 print("ROOT_DIR: %s" % ROOT_DIR)
-print("STANDALONE_DIR: %s" % STANDALONE_DIR)
+print("ITK_SOURCE: %s" % ITK_SOURCE)
 
 sys.path.insert(0, os.path.join(SCRIPT_DIR, "internal"))
 from wheel_builder_utils import push_dir, push_env
@@ -124,7 +124,7 @@ def build_wheel(python_version, single_wheel=False,
                     "-r", os.path.join(ROOT_DIR, "requirements-dev.txt")])
 
         build_type = "Release"
-        source_path = "%s/ITKs" % STANDALONE_DIR
+        source_path = "%s/ITK" % ITK_SOURCE
         build_path = "%s/ITK-win_%s" % (ROOT_DIR, python_version)
         setup_py_configure = os.path.join(SCRIPT_DIR, "setup_py_configure.py")
 
@@ -247,7 +247,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, single_wheel=False,
     for py_env in py_envs:
         prepare_build_env(py_env)
 
-    with push_dir(directory=STANDALONE_DIR, make_directory=True):
+    with push_dir(directory=ITK_SOURCE, make_directory=True):
 
         cmake_executable = "cmake.exe"
         tools_venv = os.path.join(ROOT_DIR, "venv-" + py_envs[0])
