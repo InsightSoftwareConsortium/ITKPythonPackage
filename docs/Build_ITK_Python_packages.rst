@@ -130,4 +130,4 @@ Here are the steps:
 - Build "flavor" of package using::
 
 	python setup.py bdist_wheel -- \
-	  -DITK_SOURCE_DIR:PATH=/path/to/ITKPythonPackage-core-build/ITKs
+	  -DITK_SOURCE_DIR:PATH=/path/to/ITKPythonPackage-core-build/ITK
