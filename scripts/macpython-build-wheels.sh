@@ -5,7 +5,7 @@
 # Versions can be restricted by passing them in as arguments to the script
 # For example,
 #
-#   scripts/macpython-build-wheels.sh 2.7 3.5
+#   scripts/macpython-build-wheels.sh 3.5
 
 # -----------------------------------------------------------------------
 # These variables are set in common script:
@@ -70,6 +70,7 @@ for VENV in "${VENVS[@]}"; do
     echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
     echo "Python3_INCLUDE_DIRS:${Python3_INCLUDE_DIRS}"
+    echo "Python3_LIBRARY:${Python3_LIBRARY}"
 
     # Install dependencies
     ${Python3_EXECUTABLE} -m pip install --upgrade -r ${SCRIPT_DIR}/../requirements-dev.txt
@@ -104,6 +105,7 @@ for VENV in "${VENVS[@]}"; do
         -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
         -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
         -DPython3_INCLUDE_DIRS:PATH=${Python3_INCLUDE_DIRS} \
+        -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
         -DITK_WRAP_DOC:BOOL=ON
       # Cleanup
       ${Python3_EXECUTABLE} setup.py clean
@@ -130,6 +132,7 @@ for VENV in "${VENVS[@]}"; do
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
           -DPython3_INCLUDE_DIRS:PATH=${Python3_INCLUDE_DIRS} \
+          -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
           -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
           -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
           "-DPY_SITE_PACKAGES_PATH:PATH=." \
@@ -159,6 +162,7 @@ for VENV in "${VENVS[@]}"; do
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
           -DPython3_INCLUDE_DIRS:PATH=${Python3_INCLUDE_DIRS} \
+          -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
           -DITK_WRAP_DOC:BOOL=ON \
         || exit 1
         # Cleanup
