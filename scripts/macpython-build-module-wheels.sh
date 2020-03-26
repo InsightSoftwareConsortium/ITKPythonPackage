@@ -13,7 +13,6 @@
 #
 MACPYTHON_PY_PREFIX=""
 # PYBINARIES="" # unused
-Python3_LIBRARY=""
 SCRIPT_DIR=""
 VENVS=()
 
