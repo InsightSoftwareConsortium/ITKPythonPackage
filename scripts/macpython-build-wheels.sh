@@ -105,7 +105,6 @@ for VENV in "${VENVS[@]}"; do
         -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
         -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
         -DPython3_INCLUDE_DIRS:PATH=${Python3_INCLUDE_DIRS} \
-        -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
         -DITK_WRAP_DOC:BOOL=ON
       # Cleanup
       ${Python3_EXECUTABLE} setup.py clean
@@ -132,7 +131,6 @@ for VENV in "${VENVS[@]}"; do
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
           -DPython3_INCLUDE_DIRS:PATH=${Python3_INCLUDE_DIRS} \
-          -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
           -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
           -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
           "-DPY_SITE_PACKAGES_PATH:PATH=." \
@@ -162,7 +160,6 @@ for VENV in "${VENVS[@]}"; do
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
           -DPython3_INCLUDE_DIRS:PATH=${Python3_INCLUDE_DIRS} \
-          -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY} \
           -DITK_WRAP_DOC:BOOL=ON \
         || exit 1
         # Cleanup
