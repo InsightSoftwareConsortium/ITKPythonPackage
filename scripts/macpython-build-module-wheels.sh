@@ -35,13 +35,10 @@ for VENV in "${VENVS[@]}"; do
     py_mm=$(basename ${VENV})
     Python3_EXECUTABLE=${VENV}/bin/python
     Python3_INCLUDE_DIR=$( find -L ${MACPYTHON_PY_PREFIX}/${py_mm}/include -name Python.h -exec dirname {} \; )
-    Python3_INCLUDE_DIRS=${Python3_INCLUDE_DIR}
 
     echo ""
     echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
-    echo "Python3_INCLUDE_DIRS:${Python3_INCLUDE_DIRS}"
-    echo "Python3_LIBRARY:${Python3_LIBRARY}"
 
     if [[ -e $PWD/requirements-dev.txt ]]; then
       ${Python3_EXECUTABLE} -m pip install --upgrade -r $PWD/requirements-dev.txt
@@ -58,7 +55,6 @@ for VENV in "${VENVS[@]}"; do
       -DBUILD_TESTING:BOOL=OFF \
       -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
       -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-      -DPython3_INCLUDE_DIRS:PATH=${Python3_INCLUDE_DIRS} \
     || exit 1
     ${Python3_EXECUTABLE} setup.py clean
 done

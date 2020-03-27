@@ -5,7 +5,6 @@
 #
 ARCH=""
 PYBINARIES=""
-Python3_LIBRARY=""
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
@@ -20,8 +19,6 @@ for PYBIN in "${PYBINARIES[@]}"; do
     echo ""
     echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
-    echo "Python3_INCLUDE_DIRS:${Python3_INCLUDE_DIRS}"
-    echo "Python3_LIBRARY:${Python3_LIBRARY}"
 
     if [[ -e /work/requirements-dev.txt ]]; then
       ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
@@ -49,7 +46,6 @@ for PYBIN in "${PYBINARIES[@]}"; do
       -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
       -DBUILD_TESTING:BOOL=OFF \
       -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-      -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
       -DPython3_INCLUDE_DIRS:PATH=${Python3_INCLUDE_DIRS} \
     || exit 1
     ${PYBIN}/python setup.py clean
