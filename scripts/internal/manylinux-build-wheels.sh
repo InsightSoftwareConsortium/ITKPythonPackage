@@ -134,7 +134,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
 done
 
 # auditwheel contains a regression where it will consume the "itk" wheels.
-/opt/python/cp37-cp37m/bin/pip3 install auditwheel==1.9.0
+/opt/python/cp37-cp37m/bin/pip3 install auditwheel==1.9.0 wheel==0.26.0
 # Since there are no external shared libraries to bundle into the wheels
 # this step will fixup the wheel switching from 'linux' to 'manylinux1' tag
 for whl in dist/*linux_$(uname -p).whl; do
