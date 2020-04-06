@@ -14,7 +14,6 @@ source "${script_dir}/manylinux-build-common.sh"
 for PYBIN in "${PYBINARIES[@]}"; do
     Python3_EXECUTABLE=${PYBIN}/python
     Python3_INCLUDE_DIR=$( find -L ${PYBIN}/../include/ -name Python.h -exec dirname {} \; )
-    Python3_INCLUDE_DIRS=${Python3_INCLUDE_DIR}
 
     echo ""
     echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
@@ -46,7 +45,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
       -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
       -DBUILD_TESTING:BOOL=OFF \
       -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-      -DPython3_INCLUDE_DIRS:PATH=${Python3_INCLUDE_DIRS} \
+      -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
     || exit 1
     ${PYBIN}/python setup.py clean
 done
