@@ -8,11 +8,8 @@
 #
 #   scripts/dockcross-manylinux-build-module-wheels.sh cp35
 
-# Pull dockcross manylinux images
-docker pull dockcross/manylinux1-x64
-
 # Generate dockcross scripts
-docker run dockcross/manylinux1-x64 > /tmp/dockcross-manylinux-x64
+docker run dockcross/manylinux1-x64:20200416-a6b6635 > /tmp/dockcross-manylinux-x64
 chmod u+x /tmp/dockcross-manylinux-x64
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
