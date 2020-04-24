@@ -16,6 +16,7 @@ aria2c -c --file-allocation=none -o ITKPythonBuilds-macosx.tar.zst -s 10 -x 10 h
 unzstd ITKPythonBuilds-macosx.tar.zst -o ITKPythonBuilds-macosx.tar
 PATH="/usr/local/opt/gnu-tar/libexec/gnubin:$PATH"
 tar xf ITKPythonBuilds-macosx.tar --checkpoint=10000 --checkpoint-action=dot
+rm ITKPythonBuilds-macosx.tar
 sudo mkdir -p /Users/Kitware/Dashboards/ITK && sudo chown $UID:$GID /Users/Kitware/Dashboards/ITK && mv ITKPythonPackage /Users/Kitware/Dashboards/ITK/
 /Users/Kitware/Dashboards/ITK/ITKPythonPackage/scripts/macpython-install-python.sh
 /Users/Kitware/Dashboards/ITK/ITKPythonPackage/scripts/macpython-build-module-wheels.sh "$@"
