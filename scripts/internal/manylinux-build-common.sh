@@ -3,6 +3,10 @@
 
 set -e -x
 
+script_dir=$(cd $(dirname $0) || exit 1; pwd)
+# Workaround broken FindPython3 in CMake 3.17
+sudo cp ${script_dir}/Support.cmake /usr/share/cmake-3.17/Modules/FindPython/
+
 # Versions can be restricted by passing them in as arguments to the script
 # For example,
 # manylinux-build-wheels.sh cp35

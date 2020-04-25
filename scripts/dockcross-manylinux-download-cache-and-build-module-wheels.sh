@@ -26,13 +26,14 @@ fi
 
 if [[ ! -f ITKPythonBuilds-linux.tar.zst ]]; then
   curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.1rc02}/ITKPythonBuilds-linux.tar.zst -O
-  ./zstd-1.2.0-linux/bin/unzstd ./ITKPythonBuilds-linux.tar.zst -o ITKPythonBuilds-linux.tar
-  tar xf ITKPythonBuilds-linux.tar
 fi
 if [[ ! -f ./ITKPythonBuilds-linux.tar.zst ]]; then
   echo "ERROR: can not find required binary './ITKPythonBuilds-linux.tar.zst'"
   exit 255
 fi
+./zstd-1.2.0-linux/bin/unzstd ./ITKPythonBuilds-linux.tar.zst -o ITKPythonBuilds-linux.tar
+tar xf ITKPythonBuilds-linux.tar
+rm ITKPythonBuilds-linux.tar
 if [[ ! -f ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh ]]; then
   echo "ERROR: can not find required binary './ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh'"
   exit 255
