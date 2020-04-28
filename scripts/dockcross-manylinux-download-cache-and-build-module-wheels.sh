@@ -39,4 +39,4 @@ if [[ ! -f ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh
   exit 255
 fi
 
-./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh
+./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh "$@"
