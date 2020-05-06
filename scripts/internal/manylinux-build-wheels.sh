@@ -38,7 +38,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
     # Install dependencies
     ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
 
-    build_type=MinSizeRel
+    build_type=""
+    compile_flags="-O2 -DNDEBUG"
     source_path=/work/ITK-source/ITK
     build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${ARCH}
     SETUP_PY_CONFIGURE="${script_dir}/../setup_py_configure.py"
@@ -56,7 +57,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
       # Configure setup.py
       ${PYBIN}/python ${SETUP_PY_CONFIGURE} "itk"
       # Generate wheel
-      ${PYBIN}/python setup.py bdist_wheel --build-type ${build_type} -G Ninja -- \
+      ${PYBIN}/python setup.py bdist_wheel -G Ninja -- \
             -DITK_SOURCE_DIR:PATH=${source_path} \
             -DITK_BINARY_DIR:PATH=${build_path} \
             -DITKPythonPackage_ITK_BINARY_REUSE:BOOL=OFF \
@@ -64,6 +65,9 @@ for PYBIN in "${PYBINARIES[@]}"; do
             -DITK_WRAP_unsigned_short:BOOL=ON \
             -DITK_WRAP_double:BOOL=ON \
             -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
+            -DCMAKE_CXX_FLAGS:STRING="$compile_flags" \
+            -DCMAKE_C_FLAGS:STRING="$compile_flags" \
+            -DCMAKE_BUILD_TYPE:STRING="${build_type}" \
             -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
             -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
             -DITK_WRAP_DOC:BOOL=ON \
@@ -89,6 +93,9 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
           -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
+          -DCMAKE_CXX_FLAGS:STRING="$compile_flags" \
+          -DCMAKE_C_FLAGS:STRING="$compile_flags" \
+          -DCMAKE_BUILD_TYPE:STRING="${build_type}" \
           -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
           -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
           -DITK_WRAP_unsigned_short:BOOL=ON \
@@ -109,7 +116,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
         # Configure setup.py
         ${PYBIN}/python ${SETUP_PY_CONFIGURE} ${wheel_name}
         # Generate wheel
-        ${PYBIN}/python setup.py bdist_wheel --build-type ${build_type} -G Ninja -- \
+        ${PYBIN}/python setup.py bdist_wheel -G Ninja -- \
           -DITK_SOURCE_DIR:PATH=${source_path} \
           -DITK_BINARY_DIR:PATH=${build_path} \
           -DITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
@@ -118,6 +125,9 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DITK_WRAP_double:BOOL=ON \
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+          -DCMAKE_BUILD_TYPE:STRING="${build_type}" \
+          -DCMAKE_CXX_FLAGS:STRING="${compile_flags}" \
+          -DCMAKE_C_FLAGS:STRING="${compile_flags}" \
           -DITK_WRAP_DOC:BOOL=ON \
           -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen \
           || exit 1

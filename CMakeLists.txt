@@ -73,6 +73,7 @@ if(ITKPythonPackage_SUPERBUILD)
   include(ExternalProject)
 
   set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
+
   # ITK nightly-master 2020-05-05
   set(ITK_GIT_TAG "cd38ccce01")
 
