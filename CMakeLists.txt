@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.3)
 
-project(ITKPythonPackage NONE)
+project(ITKPythonPackage CXX)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 include(ITKPythonPackage)
@@ -486,6 +486,14 @@ else()
       list(APPEND components ${module}PythonWheelRuntimeLibraries)
     endforeach()
 
+  endif()
+
+  if(MSVC AND ITKPythonPackage_WHEEL_NAME STREQUAL "itk-core")
+    message(STATUS "Adding install rules for compiler runtime libraries")
+    # Put the runtime libraries next to the "itk/_*.pyd" C-extensions so they
+    # are found.
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "itk")
+    include(InstallRequiredSystemLibraries)
   endif()
 
   #-----------------------------------------------------------------------------
