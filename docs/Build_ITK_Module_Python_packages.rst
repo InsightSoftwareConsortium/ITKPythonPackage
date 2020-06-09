@@ -42,7 +42,7 @@ macOS, and Windows Python packages for your module.
 
 For every pull request and push to the GitHub repository, a GitHub Action will
 run that builds and runs the repository's C++ tests and reports the results to
-the [ITK CDash Dashboard](https://open.cdash.org/index.php?project=Insight).
+the `ITK CDash Dashboard <https://open.cdash.org/index.php?project=Insight>`_.
 Python packages are also generated for every commit. Packages for a commit's
 build can be downloaded from the GitHub Action result page in the *Artifacts*
 Section.
@@ -93,7 +93,7 @@ Automate PyPI Package Uploads
 -----------------------------
 
 Automated uploads of Python packages to the Python package index,
-[PyPI](https://pypi.org) will occur after adding a PyPI upload token to GitHub
+`PyPI <https://pypi.org>`_ will occur after adding a PyPI upload token to GitHub
 and creating a Git tag.
 
 .. figure:: images/PyPIToken.png
