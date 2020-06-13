@@ -2,6 +2,7 @@ __all__ = ['DEFAULT_PY_ENVS', 'venv_paths']
 
 from subprocess import check_call
 import os
+import shutil
 
 DEFAULT_PY_ENVS = ["35-x64", "36-x64", "37-x64", "38-x64"]
 
@@ -32,6 +33,8 @@ def venv_paths(python_version):
     pip = os.path.join(venv_dir, "Scripts", "pip.exe")
 
     ninja_executable = os.path.join(venv_dir, "Scripts", "ninja.exe")
+    if not os.path.exists(ninja_executable):
+        ninja_executable = shutil.which("ninja.exe")
     print("NINJA_EXECUTABLE:%s" % ninja_executable)
 
     # Update PATH
