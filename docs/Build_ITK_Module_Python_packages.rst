@@ -1,4 +1,4 @@
-======================================
+=====================================
 Build ITK Module Python packages
 ======================================
 
@@ -36,9 +36,11 @@ can be found in the `ITK Software Guide
 GitHub automated CI package builds
 ==================================
 
-Freely available GitHub Action continous integration (CI) build and test services for open source
-repositories are provided by `GitHub <https://github.com/>`_. These services will build and test the C++ code for your module and also generate Linux,
-macOS, and Windows Python packages for your module.
+Freely available GitHub Action continous integration (CI) build and test
+services for open source repositories are provided by
+`GitHub <https://github.com/>`_. These services will build and test the C++
+code for your module and also generate Linux, macOS, and Windows Python
+packages for your module.
 
 For every pull request and push to the GitHub repository, a GitHub Action will
 run that builds and runs the repository's C++ tests and reports the results to
@@ -73,7 +75,10 @@ Next, create a `~/.pypirc` file with your login credentials::
 
 where `<your-username>` and `<your-password>` correspond to your PyPI account.
 
-Then, upload wheels to the testing server::
+Then, upload wheels to the testing server. The wheels of dist/* are those that
+you have built locally or have downloaded from a recent build listed at
+`https://github.com/InsightSoftwareConsortium/<your-long-module-name>/actions`.
+::
 
   python -m pip install twine
   python -m twine upload -r pypitest dist/*
@@ -87,30 +92,52 @@ Finally, upload the wheel packages to the production PyPI server::
 Congratulations! Your packages can be installed with the commands::
 
   python -m pip install --upgrade pip
-  python -m pip install itk-<yourmodulename>
+  python -m pip install itk-<your-short-module-name>
+
+where `itk-<your-short-module-name>` is the short name for your module that is
+specified in your setup.py file.
 
 Automate PyPI Package Uploads
 -----------------------------
 
-Automated uploads of Python packages to the Python package index,
-`PyPI <https://pypi.org>`_ will occur after adding a PyPI upload token to GitHub
-and creating a Git tag.
+Automated uploads of Python packages to the Python package index, `PyPI
+<https://pypi.org>`_ will occur after adding a PyPI upload token to GitHub and
+creating a Git tag. Create a PyPI API token by logging in to
+`<https://pypi.org/manage/account/token/>`_. Generally, for the token name
+use::
+
+  itk-<your-short-module-name>-github-action
+
+and for the scope use::
+
+  itk-<your-short-module-name>
+
+where `<your-short-module-name>` is the short name for your module that is
+specified in your setup.py file. That scope will be available if you have
+already uploaded a first set of wheels via twine as described above; and that
+is the recommended approach. Otherwise, if you are creating the project at
+this time, choose an unlimited scope, but be careful with the created token.
 
 .. figure:: images/PyPIToken.png
   :alt: PyPI Token
 
-Then, add the API token to the GitHub repository's *Settings -> Secrets* page
-in a key called *pypi_password*. Note that this will be a *token* instead of a
-password. Limit the scope of the token to the individual package as a best
-practice.
+Then, add the API token to the GitHub repository
+`https://github.com/InsightSoftwareConsortium/<your-long-module-name>`. Choose
+the *Settings -> Secrets* page and add a key called *pypi_password*, setting
+the password to be the token string that begins with `pypi-`. Note that this
+will be a *token* instead of a password. Limit the scope of the token to the
+individual package as a best practice.
 
 .. figure:: images/GitHubPyPISecret.png
   :alt: GitHub PyPI token secret
 
 To push packages to PyPI, first, make sure to update the `version` for your
-package in the *setup.py* file. Then create a Git tag corresponding to the
-version. A Git tag can be created in the GitHub user interface via
-*Releases -> Draft a new release*.
+package in the *setup.py* file. The initial version might be `0.1.0` or
+`1.0.0`. Subsequent versions should follow
+`semantic versioning <https://semver.org/>`_.
+
+Then, create a Git tag corresponding to the version. A Git tag can be created
+in the GitHub user interface via *Releases -> Draft a new release*.
 
 .. figure:: images/GitHubReleaseTag.png
   :alt: GitHub Release Tag
