@@ -43,7 +43,7 @@ Usage
 ```
 
 See also the [ITK Python Quick Start
-Guide](https://itkpythonpackage.readthedocs.io/en/latest/Quick_start_guide.html).
+Guide](https://itkpythonpackage.readthedocs.io/en/master/Quick_start_guide.html).
 There are also many [downloadable examples documented in
 Sphinx](https://itk.org/ITKExamples/search.html?q=Python).
 
