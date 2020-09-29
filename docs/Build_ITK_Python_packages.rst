@@ -114,9 +114,9 @@ Building ITK Python wheels
 
 Build the ITK Python wheel with the following command::
 
-	mkvirtualenv build-itk
-	pip install -r requirements-dev.txt
-	python setup.py bdist_wheel
+	python3 -m venv build-itk
+	./build-itk/bin/pip install -r requirements-dev.txt
+	./build-itk/bin/python setup.py bdist_wheel
 
 Efficiently building wheels for different version of python
 -----------------------------------------------------------
