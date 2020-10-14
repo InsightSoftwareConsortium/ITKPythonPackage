@@ -50,7 +50,8 @@ LATEST_2p7=2.7.17
 LATEST_3p5=3.5.4
 LATEST_3p6=3.6.8
 LATEST_3p7=3.7.6
-LATEST_3p8=3.8.0
+LATEST_3p8=3.8.6
+LATEST_3p9=3.9.0
 
 
 function check_python {
@@ -115,6 +116,8 @@ function fill_pyver {
         echo $LATEST_3p5
     elif [ $ver == "3.8" ]; then
         echo $LATEST_3p8
+    elif [ $ver == "3.9" ]; then
+        echo $LATEST_3p9
     else
         echo "Can't fill version $ver" 1>&2
         exit 1
@@ -381,7 +384,7 @@ for pyversion in $LATEST_3p5 $LATEST_3p6 $LATEST_3p7; do
   install_virtualenv
 done
 
-for pyversion in $LATEST_3p8; do
+for pyversion in $LATEST_3p8 $LATEST_3p9; do
   install_macpython $pyversion 10.9
   install_pip
   install_virtualenv
