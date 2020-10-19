@@ -9,7 +9,7 @@ MACPYTHON_PY_PREFIX=/Library/Frameworks/Python.framework/Versions
 
 # Versions can be restricted by passing them in as arguments to the script
 # For example,
-# macpython-build-wheels.sh 3.5
+# macpython-build-wheels.sh 3.9
 if [[ $# -eq 0 ]]; then
   PYBINARIES=(${MACPYTHON_PY_PREFIX}/*)
 else
