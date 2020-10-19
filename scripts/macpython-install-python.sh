@@ -43,13 +43,13 @@ GET_PIP_URL=https://bootstrap.pypa.io/get-pip.py
 DOWNLOADS_SDIR=downloads
 WORKING_SDIR=working
 
-# As of 24 Oct 2019 - latest Python of each version with binary download
+# As of 24 September 2020 - latest Python of each version with binary download
 # available.
 # See: https://www.python.org/downloads/mac-osx/
-LATEST_2p7=2.7.17
+LATEST_2p7=2.7.18
 LATEST_3p5=3.5.4
 LATEST_3p6=3.6.8
-LATEST_3p7=3.7.6
+LATEST_3p7=3.7.9
 LATEST_3p8=3.8.6
 LATEST_3p9=3.9.0
 
@@ -108,20 +108,50 @@ function fill_pyver {
         echo $ver
     elif [ $ver == 2 ] || [ $ver == "2.7" ]; then
         echo $LATEST_2p7
-    elif [ $ver == 3 ] || [ $ver == "3.7" ]; then
+    elif [ $ver == 3 ] || [ $ver == "3.9" ]; then
+        echo $LATEST_3p9
+    elif [ $ver == "3.8" ]; then
+        echo $LATEST_3p8
+    elif [ $ver == "3.7" ]; then
         echo $LATEST_3p7
     elif [ $ver == "3.6" ]; then
         echo $LATEST_3p6
     elif [ $ver == "3.5" ]; then
         echo $LATEST_3p5
-    elif [ $ver == "3.8" ]; then
-        echo $LATEST_3p8
-    elif [ $ver == "3.9" ]; then
-        echo $LATEST_3p9
     else
         echo "Can't fill version $ver" 1>&2
         exit 1
     fi
+}
+
+function macpython_sdk_list_for_version {
+    # return a list of SDK targets supported for a given CPython version
+    # Parameters
+    #   $py_version (python version in major.minor.extra format)
+    # eg
+    #  macpython_sdks_for_version 2.7.15
+    #  >> 10.6 10.9
+    local _ver=$(fill_pyver $1)
+    local _major=${_ver%%.*}
+    local _return
+
+    if [ "$_major" -eq "2" ]; then
+        [ $(lex_ver $_ver) -lt $(lex_ver 2.7.18) ] && _return="10.6"
+        [ $(lex_ver $_ver) -ge $(lex_ver 2.7.15) ] && _return="$_return 10.9"
+    elif [ "$_major" -eq "3" ]; then
+        [ $(lex_ver $_ver) -lt $(lex_ver 3.8)    ] && _return="10.6"
+        [ $(lex_ver $_ver) -ge $(lex_ver 3.6.5)  ] && _return="$_return 10.9"
+    else
+        echo "Error version=${_ver}, expecting 2.x or 3.x" 1>&2
+        exit 1
+    fi
+    echo $_return
+}
+
+function macpython_sdk_for_version {
+    # assumes the output of macpython_sdk_list_for_version is a list
+    # of SDK versions XX.Y in sorted order, eg "10.6 10.9" or "10.9"
+    echo $(macpython_sdk_list_for_version $1) | awk -F' ' '{print $NF}'
 }
 
 function pyinst_ext_for_version {
@@ -151,13 +181,11 @@ function pyinst_fname_for_version {
     # Parameters
     #   $py_version (Python version in major.minor.extra format)
     #   $py_osx_ver: {major.minor | not defined}
-    #       if defined, the macOS version that Python is built for, e.g.
-    #       "10.6" or "10.9", if not defined, uses the default
-    #       MACPYTHON_DEFAULT_OSX
-    #       Note: this is the version the Python is built for, and hence
-    #       the min version supported, NOT the version of the current system
+    #       if defined, the minimum macOS SDK version that Python is
+    #       built for, eg: "10.6" or "10.9", if not defined, infers
+    #       this from $py_version using macpython_sdk_for_version
     local py_version=$1
-    local py_osx_ver=${2:-$MACPYTHON_DEFAULT_OSX}
+    local py_osx_ver=${2:-$(macpython_sdk_for_version $py_version)}
     local inst_ext=$(pyinst_ext_for_version $py_version)
     echo "python-${py_version}-macosx${py_osx_ver}.${inst_ext}"
 }
@@ -232,7 +260,7 @@ function macpython_impl_for_version {
     #         "pypy-5.4" for PyPy
     local version=$1
     check_var $1
-    if [[ "$version" =~ pypy-([0-9\.]+) ]]; then
+    if [[ "$version" =~ ^pypy ]]; then
         echo pp
     elif [[ "$version" =~ ([0-9\.]+) ]]; then
         echo cp
@@ -260,17 +288,17 @@ function install_macpython {
     # Install Python and set $PYTHON_EXE to the installed executable
     # Parameters:
     #     $version : [implementation-]major[.minor[.patch]]
-    #         The Python implementation to install, e.g. "3.6" or "pypy-5.4"
+    #         The Python implementation to install, e.g. "3.6", "pypy-5.4" or "pypy3.6-7.2"
     #     $py_osx_ver: {major.minor | not defined}
     #       if defined, the macOS version that CPython is built for, e.g.
     #       "10.6" or "10.9". Ignored for PyPy
     local version=$1
     local py_osx_ver=$2
     local impl=$(macpython_impl_for_version $version)
-    local stripped_ver=$(strip_macpython_ver_prefix $version)
     if [[ "$impl" == "pp" ]]; then
-        install_mac_pypy $stripped_ver
+        install_pypy $version
     elif [[ "$impl" == "cp" ]]; then
+        local stripped_ver=$(strip_macpython_ver_prefix $version)
         install_mac_cpython $stripped_ver $py_osx_ver
     else
         echo "Unexpected Python impl: ${impl}"
@@ -291,10 +319,11 @@ function install_mac_cpython {
     # sets $PYTHON_EXE variable to Python executable
     local py_version=$(fill_pyver $1)
     local py_osx_ver=$2
+    local py_stripped=$(strip_ver_suffix $py_version)
     local py_inst=$(pyinst_fname_for_version $py_version $py_osx_ver)
     local inst_path=$DOWNLOADS_SDIR/$py_inst
     mkdir -p $DOWNLOADS_SDIR
-    curl $MACPYTHON_URL/$py_version/${py_inst} > $inst_path
+    curl $MACPYTHON_URL/$py_stripped/${py_inst} > $inst_path
     if [ "${py_inst: -3}" == "dmg" ]; then
         hdiutil attach $inst_path -mountpoint /Volumes/Python
         inst_path=/Volumes/Python/Python.mpkg
@@ -306,43 +335,6 @@ function install_mac_cpython {
     local inst_cmd="/Applications/Python ${py_mm}/Install Certificates.command"
     if [ -e "$inst_cmd" ]; then
         sh "$inst_cmd"
-    fi
-}
-
-function install_mac_pypy {
-    # Installs pypy.org PyPy
-    # Parameter $version
-    # Version given in major or major.minor or major.minor.micro e.g
-    # "3" or "3.7" or "3.7.1".
-    # sets $PYTHON_EXE variable to python executable
-    local py_version=$(fill_pypy_ver $1)
-    local py_build=$(get_pypy_build_prefix $py_version)$py_version-osx64
-    local py_zip=$py_build.tar.bz2
-    local zip_path=$DOWNLOADS_SDIR/$py_zip
-    mkdir -p $DOWNLOADS_SDIR
-    wget -nv $PYPY_URL/${py_zip} -P $DOWNLOADS_SDIR
-    untar $zip_path
-    PYTHON_EXE=$(realpath $py_build/bin/pypy)
-}
-
-function install_pip {
-    # Generic install pip
-    # Gets needed version from version implied by $PYTHON_EXE
-    # Installs pip into python given by $PYTHON_EXE
-    # Assumes pip will be installed into same directory as $PYTHON_EXE
-    check_python
-    mkdir -p $DOWNLOADS_SDIR
-    local py_mm=`get_py_mm`
-    local get_pip_path=$DOWNLOADS_SDIR/get-pip.py
-    curl $GET_PIP_URL > $get_pip_path
-    # Travis VMS now install pip for system python by default - force install
-    # even if installed already.
-    sudo $PYTHON_EXE $get_pip_path --ignore-installed $pip_args
-    PIP_CMD="sudo $(dirname $PYTHON_EXE)/pip$py_mm"
-    # Append pip_args if present (avoiding trailing space cf using variable
-    # above).
-    if [ -n "$pip_args" ]; then
-        PIP_CMD="$PIP_CMD $pip_args"
     fi
 }
 
