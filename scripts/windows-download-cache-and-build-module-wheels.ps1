@@ -15,4 +15,4 @@ sz x doxygen-1.8.11.windows.bin.zip -oC:\P\doxygen -aoa -r
 Invoke-WebRequest -Uri "https://data.kitware.com/api/v1/file/5bbf87ba8d777f06b91f27d6/download/grep-win.zip" -OutFile "grep-win.zip"
 sz x grep-win.zip -oC:\P\grep -aoa -r
 $env:Path += ";C:\P\grep"
-C:\Python35-x64\python.exe C:\P\IPP\scripts\windows_build_module_wheels.py
+C:\Python37-x64\python.exe C:\P\IPP\scripts\windows_build_module_wheels.py
