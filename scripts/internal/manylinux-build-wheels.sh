@@ -64,6 +64,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
             -DITKPythonPackage_WHEEL_NAME:STRING="itk" \
             -DITK_WRAP_unsigned_short:BOOL=ON \
             -DITK_WRAP_double:BOOL=ON \
+            -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
             -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
             -DCMAKE_CXX_FLAGS:STRING="$compile_flags" \
             -DCMAKE_C_FLAGS:STRING="$compile_flags" \
@@ -100,6 +101,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
           -DITK_WRAP_unsigned_short:BOOL=ON \
           -DITK_WRAP_double:BOOL=ON \
+          -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
           -DPY_SITE_PACKAGES_PATH:PATH="." \
           -DITK_LEGACY_SILENT:BOOL=ON \
           -DITK_WRAP_PYTHON:BOOL=ON \
@@ -123,6 +125,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
           -DITK_WRAP_unsigned_short:BOOL=ON \
           -DITK_WRAP_double:BOOL=ON \
+          -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
           -DCMAKE_BUILD_TYPE:STRING="${build_type}" \

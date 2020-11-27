@@ -99,6 +99,7 @@ for VENV in "${VENVS[@]}"; do
         -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
         -DITK_WRAP_unsigned_short:BOOL=ON \
         -DITK_WRAP_double:BOOL=ON \
+        -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
         -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
         -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
         -DITK_WRAP_DOC:BOOL=ON
@@ -124,6 +125,7 @@ for VENV in "${VENVS[@]}"; do
           -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
           -DITK_WRAP_unsigned_short:BOOL=ON \
           -DITK_WRAP_double:BOOL=ON \
+          -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
           -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
@@ -152,6 +154,7 @@ for VENV in "${VENVS[@]}"; do
           -DITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
           -DITK_WRAP_unsigned_short:BOOL=ON \
           -DITK_WRAP_double:BOOL=ON \
+          -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
           -DITK_WRAP_DOC:BOOL=ON \
