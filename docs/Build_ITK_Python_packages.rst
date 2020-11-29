@@ -118,16 +118,13 @@ Build the ITK Python wheel with the following command::
 	./build-itk/bin/pip install -r requirements-dev.txt
 	./build-itk/bin/python setup.py bdist_wheel
 
-Efficiently building wheels for different version of python
------------------------------------------------------------
+Build a wheel for a custom version of ITK
+-----------------------------------------
 
-If on a given platform you would like to build wheels for different version of python, you can download and build the ITK components independent from python first and reuse them when building each wheel.
+To build a wheel for a custom version of ITK, point to your ITK git repository
+with the `ITK_SOURCE_DIR` CMake variable::
 
-Here are the steps:
-
-- Build ITKPythonPackage with ITKPythonPackage_BUILD_PYTHON set to OFF
-
-- Build "flavor" of package using::
-
-	python setup.py bdist_wheel -- \
+	./build-itk/bin/python setup.py bdist_wheel -- \
 	  -DITK_SOURCE_DIR:PATH=/path/to/ITKPythonPackage-core-build/ITK
+
+Other CMake variables can also be passed with `-D` after the double dash.
