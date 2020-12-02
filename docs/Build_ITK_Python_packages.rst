@@ -32,11 +32,11 @@ For example::
 	[...]
 
 	$ ls -1 dist/
-	itk-4.11.0.dev20170218-cp27-cp27m-manylinux1_x86_64.whl
-	itk-4.11.0.dev20170218-cp27-cp27mu-manylinux1_x86_64.whl
-	itk-4.11.0.dev20170218-cp34-cp34m-manylinux1_x86_64.whl
-	itk-4.11.0.dev20170218-cp35-cp35m-manylinux1_x86_64.whl
-	itk-4.11.0.dev20170218-cp36-cp36m-manylinux1_x86_64.whl
+	itk-4.11.0.dev20170218-cp27-cp27m-manylinux2014_x86_64.whl
+	itk-4.11.0.dev20170218-cp27-cp27mu-manylinux2014_x86_64.whl
+	itk-4.11.0.dev20170218-cp34-cp34m-manylinux2014_x86_64.whl
+	itk-4.11.0.dev20170218-cp35-cp35m-manylinux2014_x86_64.whl
+	itk-4.11.0.dev20170218-cp36-cp36m-manylinux2014_x86_64.whl
 
 macOS
 -----

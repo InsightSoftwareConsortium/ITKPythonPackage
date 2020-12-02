@@ -41,7 +41,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
     build_type="Release"
     compile_flags="-O3 -DNDEBUG"
     source_path=/work/ITK-source/ITK
-    build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${ARCH}
+    build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux2014_${ARCH}
     SETUP_PY_CONFIGURE="${script_dir}/../setup_py_configure.py"
     SKBUILD_CMAKE_INSTALL_PREFIX=$(${Python3_EXECUTABLE} -c "from skbuild.constants import CMAKE_INSTALL_DIR; print(CMAKE_INSTALL_DIR)")
 
@@ -146,14 +146,15 @@ for PYBIN in "${PYBINARIES[@]}"; do
 
 done
 
-# auditwheel contains a regression where it will consume the "itk" wheels.
-/opt/python/cp37-cp37m/bin/pip3 install auditwheel==1.9.0 wheel==0.26.0
+/opt/python/cp37-cp37m/bin/pip3 install auditwheel wheel
 # Since there are no external shared libraries to bundle into the wheels
-# this step will fixup the wheel switching from 'linux' to 'manylinux1' tag
-for whl in dist/*linux_$(uname -p).whl; do
-    /opt/python/cp37-cp37m/bin/auditwheel repair ${whl} -w /work/dist/
+# this step will fixup the wheel switching from 'linux' to 'manylinux2014' tag
+for whl in dist/itk_*linux_$(uname -p).whl; do
+    /opt/python/cp37-cp37m/bin/auditwheel repair --plat manylinux2014_x86_64 ${whl} -w /work/dist/
     rm ${whl}
 done
+itk_wheel=$(ls dist/itk-*linux*)
+mv ${itk_wheel} ${itk_wheel/linux/manylinux2014}
 
 # Install packages and test
 for PYBIN in "${PYBINARIES[@]}"; do
