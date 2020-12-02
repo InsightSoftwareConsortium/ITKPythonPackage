@@ -38,8 +38,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
     # Install dependencies
     ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
 
-    build_type=""
-    compile_flags="-O2 -DNDEBUG"
+    build_type="Release"
+    compile_flags="-O3 -DNDEBUG"
     source_path=/work/ITK-source/ITK
     build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${ARCH}
     SETUP_PY_CONFIGURE="${script_dir}/../setup_py_configure.py"

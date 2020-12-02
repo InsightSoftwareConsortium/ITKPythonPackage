@@ -72,7 +72,7 @@ for VENV in "${VENVS[@]}"; do
     # Install dependencies
     ${Python3_EXECUTABLE} -m pip install --upgrade -r ${SCRIPT_DIR}/../requirements-dev.txt
 
-    build_type="MinSizeRel"
+    build_type="Release"
     plat_name="macosx-10.9-x86_64"
     osx_target="10.9"
     source_path=${SCRIPT_DIR}/../ITK-source/ITK
