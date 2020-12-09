@@ -90,6 +90,7 @@ def build_wrapped_itk(
             "-DPython3_EXECUTABLE:FILEPATH=%s" % python_executable,
             "-DITK_WRAP_unsigned_short:BOOL=ON",
             "-DITK_WRAP_double:BOOL=ON",
+            "-DITK_WRAP_IMAGE_DIMS:STRING=2;3;4",
             "-DPython3_INCLUDE_DIR:PATH=%s" % python_include_dir,
             "-DPython3_INCLUDE_DIRS:PATH=%s" % python_include_dir,
             "-DPython3_LIBRARY:FILEPATH=%s" % python_library,

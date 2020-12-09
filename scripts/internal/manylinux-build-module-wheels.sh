@@ -25,8 +25,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
     version=$(basename $(dirname ${PYBIN}))
     # Remove "m" -- not present in Python 3.8 and later
     version=${version:0:9}
-    itk_build_dir=/work/$(basename /ITKPythonPackage/ITK-${version}*-manylinux1_${ARCH})
-    ln -fs /ITKPythonPackage/ITK-${version}*-manylinux1_${ARCH} $itk_build_dir
+    itk_build_dir=/work/$(basename /ITKPythonPackage/ITK-${version}*-manylinux2014_${ARCH})
+    ln -fs /ITKPythonPackage/ITK-${version}*-manylinux2014_${ARCH} $itk_build_dir
     if [[ ! -d ${itk_build_dir} ]]; then
       echo 'ITK build tree not available!' 1>&2
       exit 1
@@ -51,7 +51,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
 done
 
 # Since there are no external shared libraries to bundle into the wheels
-# this step will fixup the wheel switching from 'linux' to 'manylinux1' tag
+# this step will fixup the wheel switching from 'linux' to 'manylinux2014' tag
 for whl in dist/*linux_$(uname -p).whl; do
     auditwheel repair ${whl} -w /work/dist/
     rm ${whl}

@@ -38,10 +38,10 @@ for PYBIN in "${PYBINARIES[@]}"; do
     # Install dependencies
     ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
 
-    build_type=""
-    compile_flags="-O2 -DNDEBUG"
+    build_type="Release"
+    compile_flags="-O3 -DNDEBUG"
     source_path=/work/ITK-source/ITK
-    build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux1_${ARCH}
+    build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux2014_${ARCH}
     SETUP_PY_CONFIGURE="${script_dir}/../setup_py_configure.py"
     SKBUILD_CMAKE_INSTALL_PREFIX=$(${Python3_EXECUTABLE} -c "from skbuild.constants import CMAKE_INSTALL_DIR; print(CMAKE_INSTALL_DIR)")
 
@@ -64,6 +64,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
             -DITKPythonPackage_WHEEL_NAME:STRING="itk" \
             -DITK_WRAP_unsigned_short:BOOL=ON \
             -DITK_WRAP_double:BOOL=ON \
+            -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
             -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
             -DCMAKE_CXX_FLAGS:STRING="$compile_flags" \
             -DCMAKE_C_FLAGS:STRING="$compile_flags" \
@@ -100,6 +101,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
           -DITK_WRAP_unsigned_short:BOOL=ON \
           -DITK_WRAP_double:BOOL=ON \
+          -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
           -DPY_SITE_PACKAGES_PATH:PATH="." \
           -DITK_LEGACY_SILENT:BOOL=ON \
           -DITK_WRAP_PYTHON:BOOL=ON \
@@ -123,6 +125,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
           -DITK_WRAP_unsigned_short:BOOL=ON \
           -DITK_WRAP_double:BOOL=ON \
+          -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
           -DCMAKE_BUILD_TYPE:STRING="${build_type}" \
@@ -143,14 +146,15 @@ for PYBIN in "${PYBINARIES[@]}"; do
 
 done
 
-# auditwheel contains a regression where it will consume the "itk" wheels.
-/opt/python/cp37-cp37m/bin/pip3 install auditwheel==1.9.0 wheel==0.26.0
+/opt/python/cp37-cp37m/bin/pip3 install auditwheel wheel
 # Since there are no external shared libraries to bundle into the wheels
-# this step will fixup the wheel switching from 'linux' to 'manylinux1' tag
-for whl in dist/*linux_$(uname -p).whl; do
-    /opt/python/cp37-cp37m/bin/auditwheel repair ${whl} -w /work/dist/
+# this step will fixup the wheel switching from 'linux' to 'manylinux2014' tag
+for whl in dist/itk_*linux_$(uname -p).whl; do
+    /opt/python/cp37-cp37m/bin/auditwheel repair --plat manylinux2014_x86_64 ${whl} -w /work/dist/
     rm ${whl}
 done
+itk_wheel=$(ls dist/itk-*linux*)
+mv ${itk_wheel} ${itk_wheel/linux/manylinux2014}
 
 # Install packages and test
 for PYBIN in "${PYBINARIES[@]}"; do
