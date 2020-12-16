@@ -153,8 +153,9 @@ for whl in dist/itk_*linux_$(uname -p).whl; do
     /opt/python/cp37-cp37m/bin/auditwheel repair --plat manylinux2014_x86_64 ${whl} -w /work/dist/
     rm ${whl}
 done
-itk_wheel=$(ls dist/itk-*linux*)
-mv ${itk_wheel} ${itk_wheel/linux/manylinux2014}
+for itk_wheel in dist/itk-*linux*.whl; do
+  mv ${itk_wheel} ${itk_wheel/linux/manylinux2014}
+done
 
 # Install packages and test
 for PYBIN in "${PYBINARIES[@]}"; do
