@@ -4,7 +4,7 @@
 # downloaded by the external module build scripts and used to build their
 # Python package on GitHub CI services.
 
-pushd /Users/kitware/Dashboards/ITK > /dev/null
+pushd /Users/svc-dashboard/D/P > /dev/null
 tar -cf ITKPythonBuilds-macosx.tar \
   ITKPythonPackage/ITK-* \
   ITKPythonPackage/venvs \
