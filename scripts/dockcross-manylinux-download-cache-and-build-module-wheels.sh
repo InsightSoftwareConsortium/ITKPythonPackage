@@ -11,6 +11,7 @@ if [[ ! -f doxygen-1.8.11.linux.bin.tar.gz ]]; then
 fi
 # if doxygen tarball was cached, we need to unzip it
 if [[ ! -f ./tools/doxygen-1.8.11/bin/doxygen ]]; then
+  mkdir tools
   tar -xvzf doxygen-1.8.11.linux.bin.tar.gz -C tools
 fi
 if [[ ! -f ./tools/doxygen-1.8.11/bin/doxygen ]]; then
