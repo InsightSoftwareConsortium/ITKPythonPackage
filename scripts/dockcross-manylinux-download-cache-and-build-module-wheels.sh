@@ -2,10 +2,15 @@
 
 # This module should be pulled and run from an ITKModule root directory to generate the Linux python wheels of this module,
 # it is used by the azure-pipeline.yml file contained in ITKModuleTemplate: https://github.com/InsightSoftwareConsortium/ITKModuleTemplate
+
 # First download doxygen
 if [[ ! -f doxygen-1.8.11.linux.bin.tar.gz ]]; then
   mkdir tools
   curl https://data.kitware.com/api/v1/file/5c0aa4b18d777f2179dd0a71/download -o doxygen-1.8.11.linux.bin.tar.gz
+  tar -xvzf doxygen-1.8.11.linux.bin.tar.gz -C tools
+fi
+# if doxygen tarball was cached, we need to unzip it
+if [[ ! -f ./tools/doxygen-1.8.11/bin/doxygen ]]; then
   tar -xvzf doxygen-1.8.11.linux.bin.tar.gz -C tools
 fi
 if [[ ! -f ./tools/doxygen-1.8.11/bin/doxygen ]]; then
