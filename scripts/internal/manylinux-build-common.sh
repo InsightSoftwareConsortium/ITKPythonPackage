@@ -9,12 +9,12 @@ sudo cp ${script_dir}/Support.cmake /usr/share/cmake-3.17/Modules/FindPython/
 
 # Versions can be restricted by passing them in as arguments to the script
 # For example,
-# manylinux-build-wheels.sh cp35
+# manylinux-build-wheels.sh cp39
 if [[ $# -eq 0 ]]; then
   PYBIN=(/opt/python/*/bin)
   PYBINARIES=()
   for version in "${PYBIN[@]}"; do
-    if [[  ${version} == *"cp35"* || ${version} == *"cp36"* || ${version} == *"cp37"* || ${version} == *"cp38"* || ${version} == *"cp39"* ]]; then
+    if [[ ${version} == *"cp36"* || ${version} == *"cp37"* || ${version} == *"cp38"* || ${version} == *"cp39"* ]]; then
       PYBINARIES+=(${version})
     fi
   done
