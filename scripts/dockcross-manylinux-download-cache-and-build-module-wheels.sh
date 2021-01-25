@@ -38,7 +38,15 @@ if [[ ! -f ./ITKPythonBuilds-linux.tar.zst ]]; then
   exit 255
 fi
 ./zstd-1.2.0-linux/bin/unzstd ./ITKPythonBuilds-linux.tar.zst -o ITKPythonBuilds-linux.tar
-tar xf ITKPythonBuilds-linux.tar
+if [ "$#" -le 1 ]; then
+  echo "Extracting all files";
+  tar xf ITKPythonBuilds-linux.tar
+else
+  echo "Extracting files relevant for: $1";
+  tar xf ITKPythonBuilds-linux.tar ITKPythonPackage/scripts/
+  tar xf ITKPythonBuilds-linux.tar ITKPythonPackage/ITK-source/
+  tar xf ITKPythonBuilds-linux.tar --wildcards ITKPythonPackage/ITK-$1*
+fi
 rm ITKPythonBuilds-linux.tar
 if [[ ! -f ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh ]]; then
   echo "ERROR: can not find required binary './ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh'"
