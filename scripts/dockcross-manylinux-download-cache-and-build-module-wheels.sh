@@ -7,12 +7,12 @@
 if [[ ! -f doxygen-1.8.11.linux.bin.tar.gz ]]; then
   mkdir tools
   curl https://data.kitware.com/api/v1/file/5c0aa4b18d777f2179dd0a71/download -o doxygen-1.8.11.linux.bin.tar.gz
-  tar -xvzf doxygen-1.8.11.linux.bin.tar.gz -C tools
+  tar -xzf doxygen-1.8.11.linux.bin.tar.gz -C tools
 fi
 # if doxygen tarball was cached, we need to unzip it
 if [[ ! -f ./tools/doxygen-1.8.11/bin/doxygen ]]; then
   mkdir tools
-  tar -xvzf doxygen-1.8.11.linux.bin.tar.gz -C tools
+  tar -xzf doxygen-1.8.11.linux.bin.tar.gz -C tools
 fi
 if [[ ! -f ./tools/doxygen-1.8.11/bin/doxygen ]]; then
   echo "ERROR: can not find required binary './tools/doxygen-1.8.11/bin/doxygen'"
@@ -38,7 +38,15 @@ if [[ ! -f ./ITKPythonBuilds-linux.tar.zst ]]; then
   exit 255
 fi
 ./zstd-1.2.0-linux/bin/unzstd ./ITKPythonBuilds-linux.tar.zst -o ITKPythonBuilds-linux.tar
-tar xf ITKPythonBuilds-linux.tar
+if [ "$#" -le 1 ]; then
+  echo "Extracting all files";
+  tar xf ITKPythonBuilds-linux.tar
+else
+  echo "Extracting files relevant for: $1";
+  tar xf ITKPythonBuilds-linux.tar ITKPythonPackage/scripts/
+  tar xf ITKPythonBuilds-linux.tar ITKPythonPackage/ITK-source/
+  tar xf ITKPythonBuilds-linux.tar --wildcards ITKPythonPackage/ITK-$1*
+fi
 rm ITKPythonBuilds-linux.tar
 if [[ ! -f ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh ]]; then
   echo "ERROR: can not find required binary './ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh'"
