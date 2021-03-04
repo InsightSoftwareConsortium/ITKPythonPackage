@@ -11,6 +11,7 @@ tar -cf ITKPythonBuilds-macosx.tar \
   ITKPythonPackageRequiredExtractionDir.txt \
   ITKPythonPackage/scripts
 /usr/local/bin/zstd -f \
+  -15 \
   ./ITKPythonBuilds-macosx.tar \
   -o ./ITKPythonBuilds-macosx.tar.zst
 popd > /dev/null
