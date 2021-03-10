@@ -372,12 +372,12 @@ function make_workon_venv {
 # Remove previous versions
 sudo rm -rf ${MACPYTHON_FRAMEWORK}
 
-for pyversion in $LATEST_3p6 $LATEST_3p7; do
+for pyversion in $LATEST_3p6; do
   install_macpython $pyversion 10.6
   install_virtualenv
 done
 
-for pyversion in $LATEST_3p8 $LATEST_3p9; do
+for pyversion in $LATEST_3p7 $LATEST_3p8 $LATEST_3p9; do
   install_macpython $pyversion 10.9
   install_virtualenv
 done
