@@ -69,15 +69,15 @@ for VENV in "${VENVS[@]}"; do
     echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
 
+    ${Python3_EXECUTABLE} -m pip install --upgrade -r ${SCRIPT_DIR}/../requirements-dev.txt
+
     build_type="Release"
     if [[ $(arch) == "arm64" ]]; then
-      ${Python3_EXECUTABLE} -m pip install --upgrade scikit-build
-      plat_name="macosx-10.9-x86_64"
+      plat_name="macosx-11.0-arm64"
       osx_target="10.9"
       build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
     else
-      ${Python3_EXECUTABLE} -m pip install --upgrade -r ${SCRIPT_DIR}/../requirements-dev.txt
-      plat_name="macosx-11.0-arm64"
+      plat_name="macosx-10.9-x86_64"
       osx_target="11.0"
       build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_arm64"
     fi
