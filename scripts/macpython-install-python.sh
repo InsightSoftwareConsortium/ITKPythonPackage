@@ -43,15 +43,15 @@ GET_PIP_URL=https://bootstrap.pypa.io/get-pip.py
 DOWNLOADS_SDIR=downloads
 WORKING_SDIR=working
 
-# As of 26 January 2021 - latest Python of each version with binary download
+# As of 5 April 2021 - latest Python of each version with binary download
 # available.
 # See: https://www.python.org/downloads/mac-osx/
 LATEST_2p7=2.7.18
 LATEST_3p5=3.5.4
 LATEST_3p6=3.6.8
 LATEST_3p7=3.7.9
-LATEST_3p8=3.8.7
-LATEST_3p9=3.9.1
+LATEST_3p8=3.8.9
+LATEST_3p9=3.9.4
 
 
 function check_python {
@@ -135,7 +135,9 @@ function macpython_sdk_list_for_version {
     local _major=${_ver%%.*}
     local _return
 
-    if [ "$_major" -eq "2" ]; then
+    if [ "${PLAT}" = "arm64" ]; then
+        _return="11.0"
+    elif [ "$_major" -eq "2" ]; then
         [ $(lex_ver $_ver) -lt $(lex_ver 2.7.18) ] && _return="10.6"
         [ $(lex_ver $_ver) -ge $(lex_ver 2.7.15) ] && _return="$_return 10.9"
     elif [ "$_major" -eq "3" ]; then
@@ -187,7 +189,15 @@ function pyinst_fname_for_version {
     local py_version=$1
     local py_osx_ver=${2:-$(macpython_sdk_for_version $py_version)}
     local inst_ext=$(pyinst_ext_for_version $py_version)
-    echo "python-${py_version}-macosx${py_osx_ver}.${inst_ext}"
+    if [ "${PLAT:-}" == "arm64" ] || [ "${PLAT:-}" == "universal2" ]; then
+      if [ "$py_version" == "3.9.1" ]; then
+        echo "python-${py_version}-macos11.0.${inst_ext}"
+      else
+        echo "python-${py_version}-macos11.${inst_ext}"
+      fi
+    else
+      echo "python-${py_version}-macosx${py_osx_ver}.${inst_ext}"
+    fi
 }
 
 function get_macpython_arch {
@@ -200,7 +210,7 @@ function get_macpython_arch {
     # Note: MUST only be called after the version of Python used to build the
     # target wheel has been installed and is on the path
     local distutils_plat=${1:-$(get_distutils_platform)}
-    if [[ $distutils_plat =~ macosx-(10\.[0-9]+)-(.*) ]]; then
+    if [[ $distutils_plat =~ macosx-(1[0-9]\.[0-9]+)-(.*) ]]; then
         echo ${BASH_REMATCH[2]}
     else
         echo "Error parsing macOS distutils platform '$distutils_plat'"
@@ -218,7 +228,7 @@ function get_macpython_osx_ver {
     # Note: MUST only be called after the version of Python used to build the
     # target wheel has been installed and is on the path
     local distutils_plat=${1:-$(get_distutils_platform)}
-    if [[ $distutils_plat =~ macosx-(10\.[0-9]+)-(.*) ]]; then
+    if [[ $distutils_plat =~ macosx-(1[0-9]\.[0-9]+)-(.*) ]]; then
         echo ${BASH_REMATCH[1]}
     else
         echo "Error parsing macOS distutils platform '$distutils_plat'"
@@ -319,10 +329,19 @@ function install_mac_cpython {
     # sets $PYTHON_EXE variable to Python executable
     local py_version=$(fill_pyver $1)
     local py_osx_ver=$2
+    #local py_stripped=$(strip_ver_suffix $py_version)
+    local py_stripped=$py_version
     local py_inst=$(pyinst_fname_for_version $py_version $py_osx_ver)
     local inst_path=$DOWNLOADS_SDIR/$py_inst
+    local retval=""
     mkdir -p $DOWNLOADS_SDIR
-    curl $MACPYTHON_URL/$py_version/${py_inst} > $inst_path
+    # exit early on curl errors, but don't let it exit the shell
+    curl -f $MACPYTHON_URL/$py_stripped/${py_inst} > $inst_path || retval=$?
+    if [ ${retval:-0} -ne 0 ]; then
+      echo "Python download failed! Check ${py_inst} exists on the server."
+      exit $retval
+    fi
+
     if [ "${py_inst: -3}" == "dmg" ]; then
         hdiutil attach $inst_path -mountpoint /Volumes/Python
         inst_path=/Volumes/Python/Python.mpkg
@@ -372,12 +391,22 @@ function make_workon_venv {
 # Remove previous versions
 sudo rm -rf ${MACPYTHON_FRAMEWORK}
 
-for pyversion in $LATEST_3p6; do
-  install_macpython $pyversion 10.6
-  install_virtualenv
-done
+if test "$(arch)" == "arm64"; then
+  echo "we are arm"
+  PLAT=arm64
+  for pyversion in $LATEST_3p9; do
+    install_macpython $pyversion 11
+    install_virtualenv
+  done
+else
+  # intel
+  for pyversion in $LATEST_3p6; do
+    install_macpython $pyversion 10.6
+    install_virtualenv
+  done
 
-for pyversion in $LATEST_3p7 $LATEST_3p8 $LATEST_3p9; do
-  install_macpython $pyversion 10.9
-  install_virtualenv
-done
+  for pyversion in $LATEST_3p7 $LATEST_3p8 $LATEST_3p9; do
+    install_macpython $pyversion 10.9
+    install_virtualenv
+  done
+fi

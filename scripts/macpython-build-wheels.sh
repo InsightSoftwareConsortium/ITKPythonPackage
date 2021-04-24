@@ -20,6 +20,10 @@ source "${script_dir}/macpython-build-common.sh"
 # Ensure that requirements are met
 brew update
 brew info doxygen | grep --quiet 'Not installed' && brew install doxygen
+brew info ninja | grep --quiet 'Not installed' && brew install ninja
+NINJA_EXECUTABLE=$(which ninja)
+brew info cmake | grep --quiet 'Not installed' && brew install cmake
+CMAKE_EXECUTABLE=$(which cmake)
 # -----------------------------------------------------------------------
 # Remove previous virtualenv's
 rm -rf ${SCRIPT_DIR}/../venvs
@@ -38,11 +42,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
 done
 
 VENV="${VENVS[0]}"
-Python3_EXECUTABLE=${VENV}/bin/python
-${Python3_EXECUTABLE} -m pip install --no-cache cmake
-CMAKE_EXECUTABLE=${VENV}/bin/cmake
-${Python3_EXECUTABLE} -m pip install --no-cache ninja
-NINJA_EXECUTABLE=${VENV}/bin/ninja
+Python3_EXECUTABLE=${VENV}/bin/python3
 ${Python3_EXECUTABLE} -m pip install --no-cache delocate
 DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
@@ -69,14 +69,19 @@ for VENV in "${VENVS[@]}"; do
     echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
 
-    # Install dependencies
     ${Python3_EXECUTABLE} -m pip install --upgrade -r ${SCRIPT_DIR}/../requirements-dev.txt
 
     build_type="Release"
-    plat_name="macosx-10.9-x86_64"
-    osx_target="10.9"
+    if [[ $(arch) == "arm64" ]]; then
+      plat_name="macosx-11.0-arm64"
+      osx_target="10.9"
+      build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
+    else
+      plat_name="macosx-10.9-x86_64"
+      osx_target="11.0"
+      build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_arm64"
+    fi
     source_path=${SCRIPT_DIR}/../ITK-source/ITK
-    build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
     SETUP_PY_CONFIGURE="${script_dir}/setup_py_configure.py"
 
     # Clean up previous invocations
@@ -178,11 +183,15 @@ ${DELOCATE_LISTDEPS} ${SCRIPT_DIR}/../dist/*.whl # lists library dependencies
 ${DELOCATE_WHEEL} ${SCRIPT_DIR}/../dist/*.whl # copies library dependencies into wheel
 
 # Install packages and test
-for VENV in "${VENVS[@]}"; do
-    ${VENV}/bin/pip install numpy
-    ${VENV}/bin/pip install itk --no-cache-dir --no-index -f ${SCRIPT_DIR}/../dist
-    (cd $HOME && ${VENV}/bin/python -c 'import itk;')
-    (cd $HOME && ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
-    (cd $HOME && ${VENV}/bin/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
-    (cd $HOME && ${VENV}/bin/python ${SCRIPT_DIR}/../docs/code/testDriver.py )
-done
+# numpy wheel not currently available for the M1
+# https://github.com/numpy/numpy/issues/17807
+if [[ $(arch) != "arm64" ]]; then
+  for VENV in "${VENVS[@]}"; do
+      ${VENV}/bin/pip install numpy
+      ${VENV}/bin/pip install itk --no-cache-dir --no-index -f ${SCRIPT_DIR}/../dist
+      (cd $HOME && ${VENV}/bin/python -c 'import itk;')
+      (cd $HOME && ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
+      (cd $HOME && ${VENV}/bin/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
+      (cd $HOME && ${VENV}/bin/python ${SCRIPT_DIR}/../docs/code/testDriver.py )
+  done
+fi
