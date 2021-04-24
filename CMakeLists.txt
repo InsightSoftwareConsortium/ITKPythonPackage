@@ -74,8 +74,8 @@ if(ITKPythonPackage_SUPERBUILD)
 
   set(ITK_REPOSITORY "https://github.com/thewtex/ITK.git")
 
-  # ITK nightly-master 2021-04-02
-  set(ITK_GIT_TAG "fde7fa6ce846fcc53f4378290484abdccbe318bf")
+  # ITK release 2021-04-24
+  set(ITK_GIT_TAG "a9b3dbf3e4d632c217c632c81ada39b4dfb2d2ee")
 
   #-----------------------------------------------------------------------------
   # A separate project is used to download ITK, so that it can reused
