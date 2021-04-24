@@ -5,7 +5,9 @@ set -e -x
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 # Workaround broken FindPython3 in CMake 3.17
-sudo cp ${script_dir}/Support.cmake /usr/share/cmake-3.17/Modules/FindPython/
+if test -e /usr/share/cmake-3.17/Modules/FindPython/Support.cmake; then
+  sudo cp ${script_dir}/Support.cmake /usr/share/cmake-3.17/Modules/FindPython/
+fi
 
 # Versions can be restricted by passing them in as arguments to the script
 # For example,
@@ -32,6 +34,9 @@ case $(uname -p) in
         ;;
     x86_64)
         ARCH=x64
+        ;;
+    aarch64)
+        ARCH=aarch64
         ;;
     *)
         die "Unknown architecture $(uname -p)"

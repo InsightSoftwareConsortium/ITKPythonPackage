@@ -10,11 +10,21 @@ Python3_LIBRARY=""
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
 # Install prerequirements
-mkdir -p /work/tools
-pushd /work/tools > /dev/null 2>&1
-curl https://data.kitware.com/api/v1/file/5c0aa4b18d777f2179dd0a71/download -o doxygen-1.8.11.linux.bin.tar.gz
-tar -xvzf doxygen-1.8.11.linux.bin.tar.gz
-popd > /dev/null 2>&1
+yum install -y doxygen
+if ! type ninja > /dev/null 2>&1; then
+  git clone git://github.com/ninja-build/ninja.git
+  pushd ninja
+  git checkout release
+  cmake -Bbuild-cmake -H.
+  cmake --build build-cmake
+  cp build-cmake/ninja /usr/local/bin/
+  popd
+fi
+#mkdir -p /work/tools
+#pushd /work/tools > /dev/null 2>&1
+#curl https://data.kitware.com/api/v1/file/5c0aa4b18d777f2179dd0a71/download -o doxygen-1.8.11.linux.bin.tar.gz
+#tar -xvzf doxygen-1.8.11.linux.bin.tar.gz
+#popd > /dev/null 2>&1
 # -----------------------------------------------------------------------
 
 # Build standalone project and populate archive cache
@@ -73,7 +83,6 @@ for PYBIN in "${PYBINARIES[@]}"; do
             -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
             -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
             -DITK_WRAP_DOC:BOOL=ON \
-            -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen
       # Cleanup
       ${PYBIN}/python setup.py clean
 
@@ -108,7 +117,6 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DITK_LEGACY_SILENT:BOOL=ON \
           -DITK_WRAP_PYTHON:BOOL=ON \
           -DITK_WRAP_DOC:BOOL=ON \
-          -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen \
           -G Ninja \
           ${source_path} \
         && ninja \
@@ -135,7 +143,6 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DCMAKE_CXX_FLAGS:STRING="${compile_flags}" \
           -DCMAKE_C_FLAGS:STRING="${compile_flags}" \
           -DITK_WRAP_DOC:BOOL=ON \
-          -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen \
           || exit 1
         # Cleanup
         ${PYBIN}/python setup.py clean
