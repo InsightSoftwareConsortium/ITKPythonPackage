@@ -44,18 +44,34 @@ case $(uname -p) in
 esac
 
 # Install prerequirements
-if test "${ARCH}" == "x64"; then
-  export PATH=/work/tools/doxygen-1.8.11/bin:$PATH
-  if ! type doxygen > /dev/null 2>&1; then
-    mkdir -p /work/tools
-      pushd /work/tools > /dev/null 2>&1
-      curl https://data.kitware.com/api/v1/file/5c0aa4b18d777f2179dd0a71/download -o doxygen-1.8.11.linux.bin.tar.gz
-      tar -xvzf doxygen-1.8.11.linux.bin.tar.gz
-    popd > /dev/null 2>&1
-  fi
-else
-  yum install -y doxygen
-fi
+export PATH=/work/tools/doxygen-1.8.11/bin:$PATH
+case $(uname -p) in
+    i686)
+        ARCH=x86
+        ;;
+    x86_64)
+        if ! type doxygen > /dev/null 2>&1; then
+          mkdir -p /work/tools
+            pushd /work/tools > /dev/null 2>&1
+            curl https://data.kitware.com/api/v1/file/5c0aa4b18d777f2179dd0a71/download -o doxygen-1.8.11.linux.bin.tar.gz
+            tar -xvzf doxygen-1.8.11.linux.bin.tar.gz
+          popd > /dev/null 2>&1
+        fi
+        ;;
+    aarch64)
+        ARCH=aarch64
+        if ! type doxygen > /dev/null 2>&1; then
+          mkdir -p /work/tools
+            pushd /work/tools > /dev/null 2>&1
+            curl https://data.kitware.com/api/v1/file/6086e4b02fa25629b93ac66e/download -o doxygen-1.8.11.linux.aarch64.bin.tar.gz
+            tar -xvzf doxygen-1.8.11.linux.aarch64.bin.tar.gz
+          popd > /dev/null 2>&1
+        fi
+        ;;
+    *)
+        die "Unknown architecture $(uname -p)"
+        ;;
+esac
 if ! type ninja > /dev/null 2>&1; then
   git clone git://github.com/ninja-build/ninja.git
   pushd ninja
