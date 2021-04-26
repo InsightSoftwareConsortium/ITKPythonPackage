@@ -70,5 +70,6 @@ setup(
     keywords='ITK InsightToolkit segmentation registration image imaging',
     url=r'https://itk.org/',
     install_requires=[
+        r'numpy',
     ]
     )
