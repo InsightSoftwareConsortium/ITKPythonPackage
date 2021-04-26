@@ -43,4 +43,27 @@ case $(uname -p) in
         ;;
 esac
 
+# Install prerequirements
+if test "${ARCH}" == "x64"; then
+  export PATH=/work/tools/doxygen-1.8.11/bin:$PATH
+  if ! type doxygen > /dev/null 2>&1; then
+    mkdir -p /work/tools
+      pushd /work/tools > /dev/null 2>&1
+      curl https://data.kitware.com/api/v1/file/5c0aa4b18d777f2179dd0a71/download -o doxygen-1.8.11.linux.bin.tar.gz
+      tar -xvzf doxygen-1.8.11.linux.bin.tar.gz
+    popd > /dev/null 2>&1
+  fi
+else
+  yum install -y doxygen
+fi
+if ! type ninja > /dev/null 2>&1; then
+  git clone git://github.com/ninja-build/ninja.git
+  pushd ninja
+  git checkout release
+  cmake -Bbuild-cmake -H.
+  cmake --build build-cmake
+  cp build-cmake/ninja /usr/local/bin/
+  popd
+fi
+
 echo "Building wheels for $ARCH"
