@@ -73,7 +73,9 @@ case $(uname -p) in
         ;;
 esac
 if ! type ninja > /dev/null 2>&1; then
-  git clone git://github.com/ninja-build/ninja.git
+  if test ! -d ninja; then
+    git clone git://github.com/ninja-build/ninja.git
+  fi
   pushd ninja
   git checkout release
   cmake -Bbuild-cmake -H.
