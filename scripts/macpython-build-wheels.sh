@@ -16,14 +16,7 @@ SCRIPT_DIR=""
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/macpython-build-common.sh"
-# -----------------------------------------------------------------------
-# Ensure that requirements are met
-brew update
-brew info doxygen | grep --quiet 'Not installed' && brew install doxygen
-brew info ninja | grep --quiet 'Not installed' && brew install ninja
-NINJA_EXECUTABLE=$(which ninja)
-brew info cmake | grep --quiet 'Not installed' && brew install cmake
-CMAKE_EXECUTABLE=$(which cmake)
+
 # -----------------------------------------------------------------------
 # Remove previous virtualenv's
 rm -rf ${SCRIPT_DIR}/../venvs
@@ -101,7 +94,7 @@ for VENV in "${VENVS[@]}"; do
         -DITK_SOURCE_DIR:PATH= ${source_path} \
         -DITK_BINARY_DIR:PATH=${build_path} \
         -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
-        -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
+        -DCMAKE_OSX_ARCHITECTURES:STRING=$(arch) \
         -DITK_WRAP_unsigned_short:BOOL=ON \
         -DITK_WRAP_double:BOOL=ON \
         -DITK_WRAP_complex_double:BOOL=ON \
@@ -128,7 +121,7 @@ for VENV in "${VENVS[@]}"; do
           -DITK_BINARY_DIR:PATH=${build_path} \
           -DBUILD_TESTING:BOOL=OFF \
           -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
-          -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
+          -DCMAKE_OSX_ARCHITECTURES:STRING=$(arch) \
           -DITK_WRAP_unsigned_short:BOOL=ON \
           -DITK_WRAP_double:BOOL=ON \
           -DITK_WRAP_complex_double:BOOL=ON \
@@ -156,7 +149,7 @@ for VENV in "${VENVS[@]}"; do
           -DITK_SOURCE_DIR:PATH=${source_path} \
           -DITK_BINARY_DIR:PATH=${build_path} \
           -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
-          -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
+          -DCMAKE_OSX_ARCHITECTURES:STRING=$(arch) \
           -DITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
           -DITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
           -DITK_WRAP_unsigned_short:BOOL=ON \

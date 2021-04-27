@@ -21,11 +21,7 @@ source "${script_dir}/macpython-build-common.sh"
 # -----------------------------------------------------------------------
 
 VENV="${VENVS[0]}"
-Python3_EXECUTABLE=${VENV}/bin/python
-${Python3_EXECUTABLE} -m pip install --no-cache cmake
-# CMAKE_EXECUTABLE=${VENV}/bin/cmake
-${Python3_EXECUTABLE} -m pip install --no-cache ninja
-NINJA_EXECUTABLE=${VENV}/bin/ninja
+Python3_EXECUTABLE=${VENV}/bin/python3
 ${Python3_EXECUTABLE} -m pip install --no-cache delocate
 DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
@@ -40,18 +36,28 @@ for VENV in "${VENVS[@]}"; do
     echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
 
+    if [[ $(arch) == "arm64" ]]; then
+      plat_name="macosx-11.0-arm64"
+      osx_target="10.9"
+      build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
+    else
+      plat_name="macosx-10.9-x86_64"
+      osx_target="11.0"
+      build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_arm64"
+    fi
+
     if [[ -e $PWD/requirements-dev.txt ]]; then
       ${Python3_EXECUTABLE} -m pip install --upgrade -r $PWD/requirements-dev.txt
     fi
-    itk_build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
-    ${Python3_EXECUTABLE} setup.py bdist_wheel --build-type Release --plat-name macosx-10.9-x86_64 -G Ninja -- \
+    itk_build_path="${build_path}"
+    ${Python3_EXECUTABLE} setup.py bdist_wheel --build-type Release --plat-name ${plat_name} -G Ninja -- \
       -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
       -DITK_DIR:PATH=${itk_build_path} \
       -DITK_USE_SYSTEM_SWIG:BOOL=ON \
       -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
       -DSWIG_EXECUTABLE:FILEPATH=${itk_build_path}/Wrapping/Generators/SwigInterface/swig/bin/swig \
-      -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=10.9 \
-      -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64 \
+      -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+      -DCMAKE_OSX_ARCHITECTURES:STRING=$(arch) \
       -DBUILD_TESTING:BOOL=OFF \
       -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
       -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
