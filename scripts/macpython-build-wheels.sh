@@ -67,11 +67,13 @@ for VENV in "${VENVS[@]}"; do
     build_type="Release"
     if [[ $(arch) == "arm64" ]]; then
       plat_name="macosx-11.0-arm64"
-      osx_target="10.0"
+      osx_target="11.0"
+      osx_arch="arm64"
       build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
     else
       plat_name="macosx-10.9-x86_64"
       osx_target="10.9"
+      osx_arch="x86_64"
       build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_arm64"
     fi
     source_path=${SCRIPT_DIR}/../ITK-source/ITK
@@ -94,7 +96,7 @@ for VENV in "${VENVS[@]}"; do
         -DITK_SOURCE_DIR:PATH= ${source_path} \
         -DITK_BINARY_DIR:PATH=${build_path} \
         -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
-        -DCMAKE_OSX_ARCHITECTURES:STRING=$(arch) \
+        -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
         -DITK_WRAP_unsigned_short:BOOL=ON \
         -DITK_WRAP_double:BOOL=ON \
         -DITK_WRAP_complex_double:BOOL=ON \
@@ -121,7 +123,7 @@ for VENV in "${VENVS[@]}"; do
           -DITK_BINARY_DIR:PATH=${build_path} \
           -DBUILD_TESTING:BOOL=OFF \
           -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
-          -DCMAKE_OSX_ARCHITECTURES:STRING=$(arch) \
+          -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
           -DITK_WRAP_unsigned_short:BOOL=ON \
           -DITK_WRAP_double:BOOL=ON \
           -DITK_WRAP_complex_double:BOOL=ON \
@@ -149,7 +151,7 @@ for VENV in "${VENVS[@]}"; do
           -DITK_SOURCE_DIR:PATH=${source_path} \
           -DITK_BINARY_DIR:PATH=${build_path} \
           -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
-          -DCMAKE_OSX_ARCHITECTURES:STRING=$(arch) \
+          -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
           -DITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
           -DITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
           -DITK_WRAP_unsigned_short:BOOL=ON \
