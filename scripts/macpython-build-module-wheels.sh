@@ -38,11 +38,11 @@ for VENV in "${VENVS[@]}"; do
 
     if [[ $(arch) == "arm64" ]]; then
       plat_name="macosx-11.0-arm64"
-      osx_target="10.9"
+      osx_target="11.0"
       build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
     else
       plat_name="macosx-10.9-x86_64"
-      osx_target="11.0"
+      osx_target="10.9"
       build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_arm64"
     fi
 
