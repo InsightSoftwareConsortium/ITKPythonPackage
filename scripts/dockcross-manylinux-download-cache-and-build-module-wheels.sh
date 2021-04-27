@@ -15,7 +15,7 @@ if [[ ! -f ./zstd-1.2.0-linux/bin/unzstd ]]; then
 fi
 
 if [[ ! -f ITKPythonBuilds-linux.tar.zst ]]; then
-  curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.1.0}/ITKPythonBuilds-linux.tar.zst -O
+  curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.2.0.post1}/ITKPythonBuilds-linux.tar.zst -O
 fi
 if [[ ! -f ./ITKPythonBuilds-linux.tar.zst ]]; then
   echo "ERROR: can not find required binary './ITKPythonBuilds-linux.tar.zst'"
