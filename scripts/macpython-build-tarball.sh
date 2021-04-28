@@ -4,14 +4,19 @@
 # downloaded by the external module build scripts and used to build their
 # Python package on GitHub CI services.
 
+arch_postfix=""
+if test $(arch) == "arm64"; then
+  arch_postfix="-arm64"
+fi
+
 pushd /Users/svc-dashboard/D/P > /dev/null
-tar -cf ITKPythonBuilds-macosx.tar \
+tar -cf ITKPythonBuilds-macosx${arch_postfix}.tar \
   ITKPythonPackage/ITK-* \
   ITKPythonPackage/venvs \
   ITKPythonPackageRequiredExtractionDir.txt \
   ITKPythonPackage/scripts
-/usr/local/bin/zstd -f \
+zstd -f \
   -15 \
-  ./ITKPythonBuilds-macosx.tar \
-  -o ./ITKPythonBuilds-macosx.tar.zst
+  ./ITKPythonBuilds-macosx${arch_postfix}.tar \
+  -o ./ITKPythonBuilds-macosx${arch_postfix}.tar.zst
 popd > /dev/null
