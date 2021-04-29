@@ -38,12 +38,14 @@ for VENV in "${VENVS[@]}"; do
 
     if [[ $(arch) == "arm64" ]]; then
       plat_name="macosx-11.0-arm64"
-      osx_target="10.9"
-      build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
+      osx_target="11.0"
+      osx_arch="arm64"
+      build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_arm64"
     else
       plat_name="macosx-10.9-x86_64"
-      osx_target="11.0"
-      build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_arm64"
+      osx_target="10.9"
+      osx_arch="x86_64"
+      build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
     fi
 
     if [[ -e $PWD/requirements-dev.txt ]]; then
@@ -57,7 +59,7 @@ for VENV in "${VENVS[@]}"; do
       -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
       -DSWIG_EXECUTABLE:FILEPATH=${itk_build_path}/Wrapping/Generators/SwigInterface/swig/bin/swig \
       -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
-      -DCMAKE_OSX_ARCHITECTURES:STRING=$(arch) \
+      -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
       -DBUILD_TESTING:BOOL=OFF \
       -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
       -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
