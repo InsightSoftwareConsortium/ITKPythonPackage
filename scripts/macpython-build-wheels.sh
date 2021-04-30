@@ -69,12 +69,12 @@ for VENV in "${VENVS[@]}"; do
       plat_name="macosx-11.0-arm64"
       osx_target="11.0"
       osx_arch="arm64"
-      build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
+      build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_arm64"
     else
       plat_name="macosx-10.9-x86_64"
       osx_target="10.9"
       osx_arch="x86_64"
-      build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_arm64"
+      build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
     fi
     source_path=${SCRIPT_DIR}/../ITK-source/ITK
     SETUP_PY_CONFIGURE="${script_dir}/setup_py_configure.py"
@@ -93,7 +93,7 @@ for VENV in "${VENVS[@]}"; do
       # Generate wheel
       ${Python3_EXECUTABLE} setup.py bdist_wheel --build-type ${build_type} --plat-name ${plat_name} -G Ninja -- \
         -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
-        -DITK_SOURCE_DIR:PATH= ${source_path} \
+        -DITK_SOURCE_DIR:PATH=${source_path} \
         -DITK_BINARY_DIR:PATH=${build_path} \
         -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
         -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
