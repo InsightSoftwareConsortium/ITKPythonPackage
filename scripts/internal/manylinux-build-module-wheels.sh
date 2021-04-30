@@ -55,12 +55,6 @@ if test "${ARCH}" == "x64"; then
     auditwheel repair ${whl} -w /work/dist/
     rm ${whl}
   done
-  # Since there are no external shared libraries to bundle into the wheels
-  # this step will fixup the wheel switching from 'linux' to 'manylinux2014' tag
-  for whl in dist/itk_*linux_$(uname -p).whl; do
-      /opt/python/cp37-cp37m/bin/auditwheel repair --plat manylinux2014_x86_64 ${whl} -w /work/dist/
-      rm ${whl}
-  done
 fi
 for itk_wheel in dist/itk*-linux*.whl; do
   mv ${itk_wheel} ${itk_wheel/linux/manylinux2014}
