@@ -56,6 +56,8 @@ if test "${ARCH}" == "x64"; then
     rm ${whl}
   done
 fi
-for itk_wheel in dist/itk*-linux*.whl; do
-  mv ${itk_wheel} ${itk_wheel/linux/manylinux2014}
-done
+if compgen -G "dist/itk*-linux*.whl" > /dev/null; then
+  for itk_wheel in dist/itk*-linux*.whl; do
+    mv ${itk_wheel} ${itk_wheel/linux/manylinux2014}
+  done
+fi
