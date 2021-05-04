@@ -182,12 +182,15 @@ def update_wheel_setup_py_parameters():
             '-DITKPythonPackage_WHEEL_NAME:STRING=%s' % wheel_name
         ])
 
+        # install_requires
+        wheel_depends = get_wheel_dependencies()[wheel_name]
+
         # py_modules
         if wheel_name != 'itk-core':
             params['SETUP_PY_MODULES'] = r''
+        else:
+            wheel_depends.append('numpy')
 
-        # install_requires
-        wheel_depends = get_wheel_dependencies()[wheel_name]
         params['SETUP_INSTALL_REQUIRES'] = list_to_str(wheel_depends)
 
         SETUP_PY_PARAMETERS[wheel_name] = params
