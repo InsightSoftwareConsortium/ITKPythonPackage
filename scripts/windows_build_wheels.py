@@ -239,7 +239,7 @@ def test_wheels(python_env):
     print('Wheel successfully installed.')
     check_call([
         python_executable,
-        os.path.join(ROOT_DIR, "docs/code/testDriver.py")
+        os.path.join(ROOT_DIR, "docs/code/test.py")
     ])
     print('Documentation tests passed.')
 

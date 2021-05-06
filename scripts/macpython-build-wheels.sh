@@ -187,6 +187,6 @@ if [[ $(arch) != "arm64" ]]; then
       (cd $HOME && ${VENV}/bin/python -c 'import itk;')
       (cd $HOME && ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
       (cd $HOME && ${VENV}/bin/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
-      (cd $HOME && ${VENV}/bin/python ${SCRIPT_DIR}/../docs/code/testDriver.py )
+      (cd $HOME && ${VENV}/bin/python ${SCRIPT_DIR}/../docs/code/test.py )
   done
 fi

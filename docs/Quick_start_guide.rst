@@ -22,9 +22,11 @@ Here is a simple python script that reads an image, applies a median image filte
 
 .. literalinclude:: code/ReadMedianWrite.py
 
-There are two ways to instantiate filters with ITKPython:
+In `itk`, filters are optimized at compile time for each image pixel type and
+image dimension. There are two ways to instantiate these filters with the `itk`
+Python wrapping:
 
-- *Implicit (recommended)*: ITK type information is automatically detected from the data. Typed filter objects and images are implicitly created.
+- *Implicit (recommended)*: Type information is automatically detected from the data. Typed filter objects and images are implicitly created.
 
 .. literalinclude:: code/ImplicitInstantiation.py
    :lines: 8-
@@ -38,23 +40,23 @@ Explicit instantiation of a median image filter:
 
 Explicit instantiation of cast image filter:
 
-.. literalinclude:: code/CastImageFilter.py
-   :lines: 9-23
+.. literalinclude:: code/Cast.py
+   :lines: 10-18
 
 ITK Python types
 ................
 
-+---------------------+--------------------+
-| C++ type            | Python type        |
-+=====================+====================+
-| float               | itk.F              |
-+---------------------+--------------------+
-| double              | itk.D              |
-+---------------------+--------------------+
-| unsigned char       | itk.UC             |
-+---------------------+--------------------+
-| std::complex<float> | itk.complex[itk.F] |
-+---------------------+--------------------+
++---------------------+--------------------+--------------------+
+| C++ type            | Python type        | NumPy dtype        |
++=====================+====================+====================+
+| float               | itk.F              | np.float32         |
++---------------------+--------------------+--------------------+
+| double              | itk.D              | np.float64         |
++---------------------+--------------------+--------------------+
+| unsigned char       | itk.UC             | np.uint8           |
++---------------------+--------------------+--------------------+
+| std::complex<float> | itk.complex[itk.F] | np.complex64       |
++---------------------+--------------------+--------------------+
 
 This list is not exhaustive and is only presented to illustrate the type names. The complete list of types can be found in the `ITK Software Guide <https://itk.org/ItkSoftwareGuide.pdf>`_.
 
@@ -90,7 +92,7 @@ ITK filter parameters can be specified in the following ways:
 Mixing ITK and NumPy
 --------------------
 
-A common use case for using ITK in Python is to mingle NumPy and ITK operations on raster data. ITK provides a large number of I/O image formats and several sophisticated image processing algorithms not available in any other packages. The ability to intersperse that with numpy special purpose hacking provides a great tool for rapid prototyping.
+A common use case for using ITK in Python is to mingle NumPy and ITK operations on raster data. ITK provides a large number of I/O image formats and several sophisticated image processing algorithms not available in any other packages. The ability to intersperse that with the SciPy ecosystem provides a great tool for rapid prototyping.
 
 The following script shows how to integrate NumPy and ITK:
 
@@ -107,4 +109,4 @@ Similar functions are available to work with `itk.Matrix`, VNL vectors and matri
 Examples
 --------
 
-Examples can be found in the `ITKExamples project <https://itk.org/ITKExamples/src/index.html>`_.
+Examples can be found in the `ITKSphinxExamples project <https://itk.org/ITKExamples/src/index.html>`_.

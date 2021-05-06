@@ -39,9 +39,9 @@ add_test(["ImplicitInstantiation.py", baseline_image])
 # Run test ExplicitInstantiation.py
 add_test(["ExplicitInstantiation.py", baseline_image])
 
-# Run test CastImageFilter.py
+# Run test Cast.py
 output_image = os.path.join(temp_folder, "filtered_image.png")
-add_test(["CastImageFilter.py", baseline_image, output_image])
+add_test(["Cast.py", baseline_image, output_image])
 cleanup([output_image])
 
 # Run test CompareITKTypes.py
