@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import itk
 import sys
@@ -11,15 +11,13 @@ image = itk.imread(input_filename, itk.F)
 #
 #   number_of_iterations
 #
-smoothed = itk.anti_alias_binary_image_filter(image,
-        number_of_iterations=3)
+smoothed = itk.anti_alias_binary_image_filter(image, number_of_iterations=3)
 
 # CamelCase keyword arguments:
 #
 #   NumberOfIterations
 #
-smoother = itk.AntiAliasBinaryImageFilter.New(image,
-        NumberOfIterations=3)
+smoother = itk.AntiAliasBinaryImageFilter.New(image, NumberOfIterations=3)
 smoother.Update()
 smoothed = smoother.GetOutput()
 

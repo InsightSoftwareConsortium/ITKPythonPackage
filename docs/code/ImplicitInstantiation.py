@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import itk
 import sys
@@ -6,6 +6,7 @@ import sys
 input_filename = sys.argv[1]
 
 image = itk.imread(input_filename)
+
 # Use ITK's functional, Pythonic interface. The filter type is implied by the
 # type of the input image. The filter is eagerly executed, and the output image
 # is directly returned.
@@ -21,9 +22,10 @@ smoothed = itk.median_image_filter(image)
 
 # Use itk.ImageFileReader instead of the wrapping function,
 # itk.imread to illustrate this example.
-reader = itk.ImageFileReader.New(FileName=input_filename)
+ImageType = itk.Image[itk.UC, 2]
+reader = itk.ImageFileReader[ImageType].New(FileName=input_filename)
 # Here we specify the filter input explicitly
-median = itk.MedianImageFilter.New(Input=reader.GetOutput())
+median = itk.MedianImageFilter.New(reader.GetOutput())
 # Same as above but shortened. Input does not have to be specified.
 median = itk.MedianImageFilter.New(reader.GetOutput())
 # Same as above. .GetOutput() does not have to be specified.
