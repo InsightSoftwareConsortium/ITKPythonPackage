@@ -29,3 +29,12 @@ for PYBIN in "${PYBINARIES[@]}"; do
     VENV=${SCRIPT_DIR}/../venvs/${py_mm}
     VENVS+=(${VENV})
 done
+
+# -----------------------------------------------------------------------
+# Ensure that requirements are met
+brew update
+brew info doxygen | grep --quiet 'Not installed' && brew install doxygen
+brew info ninja | grep --quiet 'Not installed' && brew install ninja
+NINJA_EXECUTABLE=$(which ninja)
+brew info cmake | grep --quiet 'Not installed' && brew install cmake
+CMAKE_EXECUTABLE=$(which cmake)

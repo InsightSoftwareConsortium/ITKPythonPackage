@@ -4,10 +4,16 @@
 # downloaded by the external module build scripts and used to build their
 # Python package on GitHub CI services.
 
-cd /home/kitware/Packaging
+if test -d /home/kitware/Packaging; then
+  cd /home/kitware/Packaging
+fi
+zstd_exe=zstd
+if test -e /home/kitware/Support/zstd-build/programs/zstd; then
+  zstd_exe=/home/kitware/Support/zstd-build/programs/zstd
+fi
 tar -c --to-stdout \
   ITKPythonPackage/ITK-* \
   ITKPythonPackage/scripts > ITKPythonBuilds-linux.tar
-/home/kitware/Support/zstd-build/programs/zstd -f \
+$zstd_exe -f \
   ./ITKPythonBuilds-linux.tar \
   -o ./ITKPythonBuilds-linux.tar.zst

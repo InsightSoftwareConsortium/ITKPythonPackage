@@ -9,12 +9,7 @@ Python3_LIBRARY=""
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
-# Install prerequirements
-mkdir -p /work/tools
-pushd /work/tools > /dev/null 2>&1
-curl https://data.kitware.com/api/v1/file/5c0aa4b18d777f2179dd0a71/download -o doxygen-1.8.11.linux.bin.tar.gz
-tar -xvzf doxygen-1.8.11.linux.bin.tar.gz
-popd > /dev/null 2>&1
+
 # -----------------------------------------------------------------------
 
 # Build standalone project and populate archive cache
@@ -72,8 +67,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
             -DCMAKE_BUILD_TYPE:STRING="${build_type}" \
             -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
             -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-            -DITK_WRAP_DOC:BOOL=ON \
-            -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen
+            -DITK_WRAP_DOC:BOOL=ON
       # Cleanup
       ${PYBIN}/python setup.py clean
 
@@ -108,7 +102,6 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DITK_LEGACY_SILENT:BOOL=ON \
           -DITK_WRAP_PYTHON:BOOL=ON \
           -DITK_WRAP_DOC:BOOL=ON \
-          -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen \
           -G Ninja \
           ${source_path} \
         && ninja \
@@ -135,7 +128,6 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DCMAKE_CXX_FLAGS:STRING="${compile_flags}" \
           -DCMAKE_C_FLAGS:STRING="${compile_flags}" \
           -DITK_WRAP_DOC:BOOL=ON \
-          -DDOXYGEN_EXECUTABLE:FILEPATH=/work/tools/doxygen-1.8.11/bin/doxygen \
           || exit 1
         # Cleanup
         ${PYBIN}/python setup.py clean
@@ -149,14 +141,16 @@ for PYBIN in "${PYBINARIES[@]}"; do
 
 done
 
-/opt/python/cp37-cp37m/bin/pip3 install auditwheel wheel
-# Since there are no external shared libraries to bundle into the wheels
-# this step will fixup the wheel switching from 'linux' to 'manylinux2014' tag
-for whl in dist/itk_*linux_$(uname -p).whl; do
-    /opt/python/cp37-cp37m/bin/auditwheel repair --plat manylinux2014_x86_64 ${whl} -w /work/dist/
-    rm ${whl}
-done
-for itk_wheel in dist/itk-*linux*.whl; do
+if test "${ARCH}" == "x64"; then
+  /opt/python/cp37-cp37m/bin/pip3 install auditwheel wheel
+  # Since there are no external shared libraries to bundle into the wheels
+  # this step will fixup the wheel switching from 'linux' to 'manylinux2014' tag
+  for whl in dist/itk_*linux_$(uname -p).whl; do
+      /opt/python/cp37-cp37m/bin/auditwheel repair --plat manylinux2014_x86_64 ${whl} -w /work/dist/
+      rm ${whl}
+  done
+fi
+for itk_wheel in dist/itk*-linux*.whl; do
   mv ${itk_wheel} ${itk_wheel/linux/manylinux2014}
 done
 
@@ -167,5 +161,5 @@ for PYBIN in "${PYBINARIES[@]}"; do
     (cd $HOME && ${PYBIN}/python -c 'from itk import ITKCommon;')
     (cd $HOME && ${PYBIN}/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
     (cd $HOME && ${PYBIN}/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
-    (cd $HOME && ${PYBIN}/python ${script_dir}/../../docs/code/testDriver.py )
+    (cd $HOME && ${PYBIN}/python ${script_dir}/../../docs/code/test.py )
 done

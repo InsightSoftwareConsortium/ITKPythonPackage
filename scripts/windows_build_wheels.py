@@ -233,12 +233,13 @@ def test_wheels(python_env):
         ninja_executable,
         path
     ) = venv_paths(python_env)
+    check_call([pip, 'install', 'numpy'])
     check_call([pip, 'install', 'itk', '--no-cache-dir', '--no-index',
         '-f', 'dist'])
     print('Wheel successfully installed.')
     check_call([
         python_executable,
-        os.path.join(ROOT_DIR, "docs/code/testDriver.py")
+        os.path.join(ROOT_DIR, "docs/code/test.py")
     ])
     print('Documentation tests passed.')
 
