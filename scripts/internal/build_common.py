@@ -1,7 +1,7 @@
+"""
+Code shared by platform-specific build scripts
 
-"""This module provides convenient function facilitating scripting.
-
-These functions have been copied from scikit-build project.
+Some of these functions have been copied from scikit-build project.
 See https://github.com/scikit-build/scikit-build
 """
 
@@ -93,3 +93,19 @@ class push_dir(ContextDecorator):
 
     def __exit__(self, typ, val, traceback):
         os.chdir(self.old_cwd)
+
+def main(wheel_names=None):
+    parser = argparse.ArgumentParser(description='Driver script to build ITK Python wheels.')
+    parser.add_argument('--single-wheel', action='store_true', help='Build a single wheel as opposed to one wheel per ITK module group.')
+    parser.add_argument('--py-envs', nargs='+', default=DEFAULT_PY_ENVS,
+            help='Target Python environment versions, e.g. "37-x64".')
+    parser.add_argument('--no-cleanup', dest='cleanup', action='store_false', help='Do not clean up temporary build files.')
+    parser.add_argument('cmake_options', nargs='*', help='Extra options to pass to CMake, e.g. -DBUILD_SHARED_LIBS:BOOL=OFF')
+    args = parser.parse_args()
+
+    build_wheels(single_wheel=args.single_wheel, cleanup=args.cleanup,
+        py_envs=args.py_envs, wheel_names=wheel_names,
+        cmake_options=args.cmake_options)
+    fixup_wheels()
+    for py_env in args.py_envs:
+        test_wheels(py_env)
