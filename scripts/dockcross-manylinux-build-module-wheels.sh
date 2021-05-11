@@ -14,6 +14,8 @@ chmod u+x /tmp/dockcross-manylinux-x64
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 
+mkdir -p $(pwd)/tools
+chmod 777 $(pwd)/tools
 # Build wheels
 mkdir -p dist
 DOCKER_ARGS="-v $(pwd)/dist:/work/dist/ -v $script_dir/..:/ITKPythonPackage -v $(pwd)/tools:/tools"
