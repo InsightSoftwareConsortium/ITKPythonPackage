@@ -50,8 +50,8 @@ LATEST_2p7=2.7.18
 LATEST_3p5=3.5.4
 LATEST_3p6=3.6.8
 LATEST_3p7=3.7.9
-LATEST_3p8=3.8.9
-LATEST_3p9=3.9.4
+LATEST_3p8=3.8.10
+LATEST_3p9=3.9.5
 
 
 function check_python {
