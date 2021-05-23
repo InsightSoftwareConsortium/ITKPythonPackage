@@ -146,7 +146,7 @@ Input/Output (IO)
 .................
 
 Convenient functions are provided read and write from ITK's many supported
-file formats.::
+file formats::
 
   image = itk.imread('image.tif')
 
@@ -220,12 +220,12 @@ To specify the type of the filter, use the `ttype` keyword argument. Explicit in
 Instantiate an ITK object
 .........................
 
-There are two types of ITK objects. Most ITK objects (images, filters, adapters, ...) are instantiated the following way:
+There are two types of ITK objects. Most ITK objects, such as images, filters, or adapters, are instantiated the following way:
 
 .. literalinclude:: code/InstantiateITKObjects.py
    :lines: 6-8
 
-Some objects (matrix, vector, RGBPixel, ...) do not require the attribute `.New()` to be added to instantiate them:
+Some objects, like a Matrix, Vector, or RGBPixel, do not require the attribute `.New()` to be added to instantiate them:
 
 .. literalinclude:: code/InstantiateITKObjects.py
    :lines: 11
