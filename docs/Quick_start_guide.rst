@@ -142,6 +142,43 @@ Array views of an `itk.Image` provide a way to set and get pixel values with Num
                   [ -993,  -999],
                   [ -996,  -994]], dtype=int16)
 
+Input/Output (IO)
+.................
+
+Convenient functions are provided read and write from ITK's many supported
+file formats.::
+
+  image = itk.imread('image.tif')
+
+  # Read in with a specific pixel type.
+  image = itk.imread('image.tif', itk.F)
+
+  # Read in an image series.
+  # Pass a sorted list of files.
+  image = itk.imread(['image1.png', 'image2.png', 'image3.png'])
+
+  # Read in a volume from a DICOM series.
+  # Pass a directory.
+  # Only a single series, sorted spatially, will be returned.
+  image = itk.imread('/a/dicom/directory/')
+
+  # Write an image.
+  itk.imwrite(image, 'image.tif')
+
+
+  # Read a mesh.
+  mesh = itk.meshread('mesh.vtk')
+
+  # Write a mesh.
+  itk.meshwrite(mesh, 'mesh.vtk')
+
+
+  # Read a spatial transform.
+  transform = itk.transformread('transform.h5')
+
+  # Write a spatial transform.
+  itk.transformwrite(transform, 'transform.h5')
+
 Image filters and Image-like inputs and outputs
 ...............................................
 
