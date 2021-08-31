@@ -17,12 +17,6 @@ To install the ITK Python package:
     $ pip install itk
 ```
 
-or:
-
-```
-    $ conda install -c conda-forge itk
-```
-
 Usage
 -----
 
@@ -54,4 +48,3 @@ Guide](https://itk.org/ITKSoftwareGuide/html/Book1/ITKSoftwareGuide-Book1ch3.htm
 -   Free software: Apache Software license
 -   Documentation: <http://itkpythonpackage.readthedocs.org>
 -   Source code: <https://github.com/InsightSoftwareConsortium/ITKPythonPackage>
-
