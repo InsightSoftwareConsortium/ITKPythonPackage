@@ -18,6 +18,9 @@ pushd /work/ITK-source > /dev/null 2>&1
   cmake -DITKPythonPackage_BUILD_PYTHON:PATH=0 -G Ninja ../
   ninja
 popd > /dev/null 2>&1
+tbb_dir=/work/oneTBB-prefix/lib64/cmake/TBB
+# So auditwheel can find the libs
+export LD_LIBRARY_PATH=/work/oneTBB-prefix/lib64
 
 SINGLE_WHEEL=0
 
@@ -67,6 +70,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
             -DCMAKE_BUILD_TYPE:STRING="${build_type}" \
             -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
             -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+            -DModule_ITKTBB:BOOL=ON \
+            -DTBB_DIR:PATH=${tbb_dir} \
             -DITK_WRAP_DOC:BOOL=ON
       # Cleanup
       ${PYBIN}/python setup.py clean
@@ -102,6 +107,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DITK_LEGACY_SILENT:BOOL=ON \
           -DITK_WRAP_PYTHON:BOOL=ON \
           -DITK_WRAP_DOC:BOOL=ON \
+          -DModule_ITKTBB:BOOL=ON \
+          -DTBB_DIR:PATH=${tbb_dir} \
           -G Ninja \
           ${source_path} \
         && ninja \
@@ -143,8 +150,7 @@ done
 
 if test "${ARCH}" == "x64"; then
   /opt/python/cp37-cp37m/bin/pip3 install auditwheel wheel
-  # Since there are no external shared libraries to bundle into the wheels
-  # this step will fixup the wheel switching from 'linux' to 'manylinux2014' tag
+  # This step will fixup the wheel switching from 'linux' to 'manylinux2014' tag
   for whl in dist/itk_*linux_$(uname -p).whl; do
       /opt/python/cp37-cp37m/bin/auditwheel repair --plat manylinux2014_x86_64 ${whl} -w /work/dist/
       rm ${whl}

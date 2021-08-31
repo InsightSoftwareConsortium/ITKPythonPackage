@@ -42,6 +42,7 @@ develop-eggs
 lib
 lib64
 MANIFEST
+oneTBB-prefix/
 
 # Installer logs
 pip-log.txt

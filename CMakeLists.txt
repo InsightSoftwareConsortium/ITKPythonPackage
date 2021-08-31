@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.16.3 FATAL_ERROR)
 
 project(ITKPythonPackage CXX)
 
@@ -13,6 +13,8 @@ if(NOT DEFINED ITKPythonPackage_WHEEL_NAME)
   set(ITKPythonPackage_WHEEL_NAME "itk")
 endif()
 message(STATUS "SuperBuild - ITKPythonPackage_WHEEL_NAME:${ITKPythonPackage_WHEEL_NAME}")
+
+option(ITKPythonPackage_USE_TBB "Build and use oneTBB in the ITK python package" ON)
 
 if(ITKPythonPackage_SUPERBUILD)
 
@@ -44,8 +46,8 @@ if(ITKPythonPackage_SUPERBUILD)
   #  ITK_SOURCE_DIR: Path to an existing source directory
   #
 
-  option ( ITKPythonPackage_BUILD_PYTHON "Build ITK python module" ON )
-  mark_as_advanced( ITKPythonPackage_BUILD_PYTHON )
+  option(ITKPythonPackage_BUILD_PYTHON "Build ITK python module" ON)
+  mark_as_advanced(ITKPythonPackage_BUILD_PYTHON)
 
   if(CMAKE_OSX_DEPLOYMENT_TARGET)
     list(APPEND ep_common_cmake_cache_args
@@ -89,6 +91,39 @@ if(ITKPythonPackage_SUPERBUILD)
     message(FATAL_ERROR "ITK_SOURCE_DIR variable is defined but corresponds to nonexistent directory")
   endif()
 
+  set(tbb_args )
+  if(ITKPythonPackage_USE_TBB)
+    ExternalProject_add(oneTBB
+      GIT_REPOSITORY "https://github.com/oneapi-src/oneTBB.git"
+      GIT_TAG "v2021.3.0"
+      CMAKE_ARGS
+        -DTBB_TEST:BOOL=OFF
+        -DCMAKE_BUILD_TYPE:STRING=Release
+        -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/../oneTBB-prefix
+        ${ep_common_cmake_cache_args}
+      USES_TERMINAL_DOWNLOAD 1
+      USES_TERMINAL_UPDATE 1
+      USES_TERMINAL_CONFIGURE 1
+      USES_TERMINAL_BUILD 1
+      )
+    if(ITK_SOURCE_DIR)
+      set(TBB_DIR "${ITK_SOURCE_DIR}/../oneTBB-prefix/lib64/cmake/TBB")
+    else()
+      set(TBB_DIR "${CMAKE_BINARY_DIR}/../oneTBB-prefix/lib64/cmake/TBB")
+    endif()
+    set(tbb_args
+      -DModule_ITKTBB:BOOL=ON
+      -DTBB_DIR:PATH=${TBB_DIR}
+    )
+    message(STATUS "SuperBuild -   TBB: Enabled")
+    message(STATUS "SuperBuild -   TBB_DIR: ${TBB_DIR}")
+  endif()
+  set(tbb_depends "")
+  if(ITKPythonPackage_USE_TBB)
+    set(tbb_depends oneTBB)
+  endif()
+
+
   if(NOT DEFINED ITK_SOURCE_DIR)
 
     set(ITK_SOURCE_DIR ${CMAKE_BINARY_DIR}/ITK)
@@ -101,6 +136,7 @@ if(ITKPythonPackage_SUPERBUILD)
       CONFIGURE_COMMAND ""
       BUILD_COMMAND ""
       INSTALL_COMMAND ""
+      DEPENDS ${tbb_depends}
       )
     set(proj_status "")
 
@@ -234,6 +270,7 @@ if(ITKPythonPackage_SUPERBUILD)
         -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE}
         ${ep_common_cmake_cache_args}
         ${ep_itk_cmake_cache_args}
+        ${tbb_args}
       USES_TERMINAL_DOWNLOAD 1
       USES_TERMINAL_UPDATE 1
       USES_TERMINAL_CONFIGURE 1

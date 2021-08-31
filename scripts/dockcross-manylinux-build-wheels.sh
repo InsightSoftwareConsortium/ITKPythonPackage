@@ -5,10 +5,10 @@
 # Versions can be restricted by passing them in as arguments to the script
 # For example,
 #
-#   scripts/dockcross-manylinux-build-wheels.sh cp35
+#   scripts/dockcross-manylinux-build-wheels.sh cp39
 
 # Generate dockcross scripts
-docker run --rm dockcross/manylinux2014-x64:20201015-96d8741 > /tmp/dockcross-manylinux-x64
+docker run --rm dockcross/manylinux2014-x64:20210823-d7b98b4 > /tmp/dockcross-manylinux-x64
 chmod u+x /tmp/dockcross-manylinux-x64
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
