@@ -41,6 +41,9 @@ DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
 
 # Build standalone project and populate archive cache
+tbb_dir=$PWD/oneTBB-prefix/lib/cmake/TBB
+# So delocate can find the libs
+export DYLD_LIBRARY_PATH=$PWD/oneTBB-prefix/lib
 mkdir -p ITK-source
 pushd ITK-source > /dev/null 2>&1
   ${CMAKE_EXECUTABLE} -DITKPythonPackage_BUILD_PYTHON:PATH=0 \
@@ -103,6 +106,8 @@ for VENV in "${VENVS[@]}"; do
         -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
         -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
         -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+        -DModule_ITKTBB:BOOL=ON \
+        -DTBB_DIR:PATH=${tbb_dir} \
         -DITK_WRAP_DOC:BOOL=ON
       # Cleanup
       ${Python3_EXECUTABLE} setup.py clean
@@ -136,6 +141,8 @@ for VENV in "${VENVS[@]}"; do
           -DITK_LEGACY_SILENT:BOOL=ON \
           -DITK_WRAP_PYTHON:BOOL=ON \
           -DITK_WRAP_DOC:BOOL=ON \
+          -DModule_ITKTBB:BOOL=ON \
+          -DTBB_DIR:PATH=${tbb_dir} \
           -G Ninja \
           ${source_path} \
         && ninja\

@@ -106,10 +106,14 @@ if(ITKPythonPackage_SUPERBUILD)
       USES_TERMINAL_CONFIGURE 1
       USES_TERMINAL_BUILD 1
       )
+    set(libpath "lib")
+    if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+      set(libpath "lib64")
+    endif()
     if(ITK_SOURCE_DIR)
-      set(TBB_DIR "${ITK_SOURCE_DIR}/../oneTBB-prefix/lib64/cmake/TBB")
+      set(TBB_DIR "${ITK_SOURCE_DIR}/../oneTBB-prefix/${libpath}/cmake/TBB")
     else()
-      set(TBB_DIR "${CMAKE_BINARY_DIR}/../oneTBB-prefix/lib64/cmake/TBB")
+      set(TBB_DIR "${CMAKE_BINARY_DIR}/../oneTBB-prefix/${libpath}/cmake/TBB")
     endif()
     set(tbb_args
       -DModule_ITKTBB:BOOL=ON
