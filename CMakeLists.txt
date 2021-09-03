@@ -16,6 +16,23 @@ message(STATUS "SuperBuild - ITKPythonPackage_WHEEL_NAME:${ITKPythonPackage_WHEE
 
 option(ITKPythonPackage_USE_TBB "Build and use oneTBB in the ITK python package" ON)
 
+set(libpath "lib")
+if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+  set(libpath "lib64")
+endif()
+if(ITK_SOURCE_DIR)
+  set(TBB_DIR "${ITK_SOURCE_DIR}/../oneTBB-prefix/${libpath}/cmake/TBB")
+else()
+  set(TBB_DIR "${CMAKE_BINARY_DIR}/../oneTBB-prefix/${libpath}/cmake/TBB")
+endif()
+set(tbb_args )
+if(ITKPythonPackage_USE_TBB)
+  set(tbb_args
+    -DModule_ITKTBB:BOOL=ON
+    -DTBB_DIR:PATH=${TBB_DIR}
+    )
+endif()
+
 if(ITKPythonPackage_SUPERBUILD)
 
   #-----------------------------------------------------------------------------
@@ -29,7 +46,7 @@ if(ITKPythonPackage_SUPERBUILD)
   # Avoid "Manually-specified variables were not used by the project" warnings.
   ipp_unused_vars(${PYTHON_VERSION_STRING} ${SKBUILD})
 
-  set(ep_common_cmake_cache_args)
+  set(ep_common_cmake_cache_args )
   if(NOT CMAKE_CONFIGURATION_TYPES)
     list(APPEND ep_common_cmake_cache_args
       -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
@@ -91,34 +108,22 @@ if(ITKPythonPackage_SUPERBUILD)
     message(FATAL_ERROR "ITK_SOURCE_DIR variable is defined but corresponds to nonexistent directory")
   endif()
 
-  set(tbb_args )
   if(ITKPythonPackage_USE_TBB)
     ExternalProject_add(oneTBB
-      GIT_REPOSITORY "https://github.com/oneapi-src/oneTBB.git"
-      GIT_TAG "v2021.3.0"
+      URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.3.0.tar.gz
+      URL_HASH SHA256=8f616561603695bbb83871875d2c6051ea28f8187dbe59299961369904d1d49e
       CMAKE_ARGS
         -DTBB_TEST:BOOL=OFF
         -DCMAKE_BUILD_TYPE:STRING=Release
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/../oneTBB-prefix
         ${ep_common_cmake_cache_args}
+        -DCMAKE_BUILD_TYPE:STRING=Release
+      BUILD_BYPRODUCTS "${TBB_DIR}/TBBConfig.cmake"
       USES_TERMINAL_DOWNLOAD 1
       USES_TERMINAL_UPDATE 1
       USES_TERMINAL_CONFIGURE 1
       USES_TERMINAL_BUILD 1
       )
-    set(libpath "lib")
-    if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-      set(libpath "lib64")
-    endif()
-    if(ITK_SOURCE_DIR)
-      set(TBB_DIR "${ITK_SOURCE_DIR}/../oneTBB-prefix/${libpath}/cmake/TBB")
-    else()
-      set(TBB_DIR "${CMAKE_BINARY_DIR}/../oneTBB-prefix/${libpath}/cmake/TBB")
-    endif()
-    set(tbb_args
-      -DModule_ITKTBB:BOOL=ON
-      -DTBB_DIR:PATH=${TBB_DIR}
-    )
     message(STATUS "SuperBuild -   TBB: Enabled")
     message(STATUS "SuperBuild -   TBB_DIR: ${TBB_DIR}")
   endif()
@@ -140,7 +145,7 @@ if(ITKPythonPackage_SUPERBUILD)
       CONFIGURE_COMMAND ""
       BUILD_COMMAND ""
       INSTALL_COMMAND ""
-      DEPENDS ${tbb_depends}
+      DEPENDS "${tbb_depends}"
       )
     set(proj_status "")
 
@@ -273,8 +278,8 @@ if(ITKPythonPackage_SUPERBUILD)
         -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY}
         -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE}
         ${ep_common_cmake_cache_args}
-        ${ep_itk_cmake_cache_args}
         ${tbb_args}
+        ${ep_itk_cmake_cache_args}
       USES_TERMINAL_DOWNLOAD 1
       USES_TERMINAL_UPDATE 1
       USES_TERMINAL_CONFIGURE 1
@@ -319,6 +324,7 @@ if(ITKPythonPackage_SUPERBUILD)
       -DITK_SOURCE_DIR:PATH=${ITK_SOURCE_DIR}
       -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
       -DITKPythonPackage_WHEEL_NAME:STRING=${ITKPythonPackage_WHEEL_NAME}
+      -DITKPythonPackage_USE_TBB:BOOL=${ITKPythonPackage_USE_TBB}
       ${ep_common_cmake_cache_args}
     USES_TERMINAL_CONFIGURE 1
     INSTALL_COMMAND ""
@@ -548,7 +554,7 @@ else()
 unset(CMAKE_INSTALL_COMPONENT)
 set(COMPONENT \"${component}\")
 set(CMAKE_INSTALL_DO_STRIP 1)
-include\(\"${ITK_BINARY_DIR}/cmake_install.cmake\")
+include(\"${ITK_BINARY_DIR}/cmake_install.cmake\")
 unset(CMAKE_INSTALL_COMPONENT)
 ")
   endforeach()

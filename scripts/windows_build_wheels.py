@@ -47,6 +47,7 @@ def prepare_build_env(python_version):
     if not os.path.exists(venv_dir):
         check_call([venv, venv_dir])
     pip_install(venv_dir, "scikit-build")
+    pip_install(venv_dir, "delvewheel")
 
 
 def build_wrapped_itk(
@@ -76,6 +77,8 @@ def build_wrapped_itk(
         script_file.close()
         os.remove(script_file.name)
 
+    tbb_dir = os.path.join(ROOT_DIR, 'oneTBB-prefix', 'lib', 'cmake', 'TBB')
+
     # Build ITK python
     with push_dir(directory=build_path, make_directory=True), \
             push_env(**build_env):
@@ -102,6 +105,8 @@ def build_wrapped_itk(
             "-DITK_WRAP_PYTHON:BOOL=ON",
             "-DITK_WRAP_DOC:BOOL=ON",
             "-DDOXYGEN_EXECUTABLE:FILEPATH=C:/P/doxygen/doxygen.exe",
+            "-DModule_ITKTBB:BOOL=ON",
+            "-DTBB_DIR:PATH=%s" % tbb_dir,
             "-G", "Ninja",
             source_path
         ])
@@ -214,14 +219,21 @@ def build_wheel(python_version, single_wheel=False,
             shutil.rmtree(
                 os.path.join(build_path, "Wrapping", "Generators", "CastXML"))
 
+def fixup_wheel(py_envs, filepath):
+    py_env = py_envs[0]
+    delve_wheel = os.path.join(ROOT_DIR, "venv-" + py_env, "Scripts", "delvewheel.exe")
+    check_call([delve_wheel, "repair", "--no-mangle-all", "--add-path",
+        "C:/P/IPP/oneTBB-prefix/bin", "--ignore-in-wheel", "-w",
+        os.path.join(ROOT_DIR, "dist"), filepath])
 
-def fixup_wheel(filepath):
-    pass
 
-
-def fixup_wheels():
-    for wheel in glob.glob(os.path.join(ROOT_DIR, "dist", "*.whl")):
-        fixup_wheel(wheel)
+def fixup_wheels(single_wheel, py_envs):
+    # TBB library fix-up
+    tbb_wheel = "itk_core"
+    if single_wheel:
+        tbb_wheel = "itk"
+    for wheel in glob.glob(os.path.join(ROOT_DIR, "dist", tbb_wheel + "*.whl")):
+        fixup_wheel(py_envs, wheel)
 
 
 def test_wheels(python_env):
@@ -293,7 +305,7 @@ def main(wheel_names=None):
     build_wheels(single_wheel=args.single_wheel, cleanup=args.cleanup,
         py_envs=args.py_envs, wheel_names=wheel_names,
         cmake_options=args.cmake_options)
-    fixup_wheels()
+    fixup_wheels(args.single_wheel, args.py_envs)
     for py_env in args.py_envs:
         test_wheels(py_env)
 
