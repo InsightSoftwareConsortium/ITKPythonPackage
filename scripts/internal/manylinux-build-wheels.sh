@@ -155,6 +155,11 @@ if test "${ARCH}" == "x64"; then
       /opt/python/cp37-cp37m/bin/auditwheel repair --plat manylinux2014_x86_64 ${whl} -w /work/dist/
       rm ${whl}
   done
+else
+  for whl in dist/itk_*$(uname -p).whl; do
+      auditwheel repair ${whl} -w /work/dist/
+      rm ${whl}
+  done
 fi
 for itk_wheel in dist/itk*-linux*.whl; do
   mv ${itk_wheel} ${itk_wheel/linux/manylinux2014}
