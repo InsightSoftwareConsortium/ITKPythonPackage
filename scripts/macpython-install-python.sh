@@ -399,12 +399,6 @@ if test "$(arch)" == "arm64"; then
     install_virtualenv
   done
 else
-  # intel
-  for pyversion in $LATEST_3p6; do
-    install_macpython $pyversion 10.6
-    install_virtualenv
-  done
-
   for pyversion in $LATEST_3p7 $LATEST_3p8 $LATEST_3p9; do
     install_macpython $pyversion 10.9
     install_virtualenv
