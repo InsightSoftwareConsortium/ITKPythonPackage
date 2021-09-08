@@ -36,5 +36,6 @@ if [[ ! -f ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh
   echo "ERROR: can not find required binary './ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh'"
   exit 255
 fi
+cp -a ITKPythonPackage/oneTBB-prefix ./
 
 ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh "$@"

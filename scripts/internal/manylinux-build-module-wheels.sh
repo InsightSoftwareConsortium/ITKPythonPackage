@@ -10,6 +10,9 @@ script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
 # -----------------------------------------------------------------------
 
+# So auditwheel can find the libs
+export LD_LIBRARY_PATH=/work/oneTBB-prefix/lib64
+
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
     Python3_EXECUTABLE=${PYBIN}/python
