@@ -1,0 +1,5 @@
+diff -uNr ./itk/__init__.py ../itk_numerics-5.2.1.dev20210824-cp39-cp39-macosx_10_9_x86_64/itk/__init__.py
+--- ./itk/__init__.py	2021-09-08 21:11:35.000000000 -0400
++++ ../itk_numerics-5.2.1.dev20210824-cp39-cp39-macosx_10_9_x86_64/itk/__init__.py	1969-12-31 19:00:00.000000000 -0500
+@@ -1 +0,0 @@
+-from . import *

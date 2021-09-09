@@ -39,6 +39,7 @@ Python3_EXECUTABLE=${VENV}/bin/python3
 ${Python3_EXECUTABLE} -m pip install --no-cache delocate
 DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
+DELOCATE_PATCH=${VENV}/bin/delocate-patch
 
 # Build standalone project and populate archive cache
 tbb_dir=$PWD/oneTBB-prefix/lib/cmake/TBB
@@ -181,8 +182,18 @@ for VENV in "${VENVS[@]}"; do
     find ${build_path} -name '*.o' -delete
 done
 
-${DELOCATE_LISTDEPS} ${SCRIPT_DIR}/../dist/*.whl # lists library dependencies
-${DELOCATE_WHEEL} ${SCRIPT_DIR}/../dist/*.whl # copies library dependencies into wheel
+for wheel in dist/*.whl; do
+  echo "Delocating $wheel"
+  if [[ $wheel = *itk_core* ]]; then
+    ${DELOCATE_LISTDEPS} $wheel # lists library dependencies
+    ${DELOCATE_WHEEL} $wheel # copies library dependencies into wheel
+  else
+    ${DELOCATE_PATCH} $wheel ${SCRIPT_DIR}/delocate.package.apply.patch # workaround for delocate's need for a package
+    ${DELOCATE_LISTDEPS} $wheel # lists library dependencies
+    ${DELOCATE_WHEEL} $wheel # copies library dependencies into wheel
+    ${DELOCATE_PATCH} $wheel ${SCRIPT_DIR}/delocate.package.revert.patch # workaround for delocate's need for a package
+  fi
+done
 
 # Install packages and test
 # numpy wheel not currently available for the M1

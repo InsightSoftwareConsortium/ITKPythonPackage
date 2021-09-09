@@ -25,6 +25,8 @@ Python3_EXECUTABLE=${VENV}/bin/python3
 ${Python3_EXECUTABLE} -m pip install --no-cache delocate
 DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
+# So delocate can find the libs
+export DYLD_LIBRARY_PATH=${script_dir}/../oneTBB-prefix/lib
 
 # Compile wheels re-using standalone project and archive cache
 for VENV in "${VENVS[@]}"; do
@@ -67,5 +69,9 @@ for VENV in "${VENVS[@]}"; do
     ${Python3_EXECUTABLE} setup.py clean
 done
 
-${DELOCATE_LISTDEPS} $PWD/dist/*.whl # lists library dependencies
-${DELOCATE_WHEEL} $PWD/dist/*.whl # copies library dependencies into wheel
+for wheel in $PWD/dist/*.whl; do
+  ${DELOCATE_PATCH} $wheel ${script_dir}/delocate.package.apply.patch # workaround for delocate's need for a package
+  ${DELOCATE_LISTDEPS} $wheel # lists library dependencies
+  ${DELOCATE_WHEEL} $wheel # copies library dependencies into wheel
+  ${DELOCATE_PATCH} $wheel ${script_dir}/delocate.package.revert.patch # workaround for delocate's need for a package
+done
