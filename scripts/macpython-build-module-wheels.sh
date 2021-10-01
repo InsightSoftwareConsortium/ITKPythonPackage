@@ -26,7 +26,7 @@ ${Python3_EXECUTABLE} -m pip install --no-cache delocate
 DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
 # So delocate can find the libs
-export DYLD_LIBRARY_PATH=${script_dir}/../oneTBB-prefix/lib
+export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${script_dir}/../oneTBB-prefix/lib
 
 # Compile wheels re-using standalone project and archive cache
 for VENV in "${VENVS[@]}"; do
@@ -66,7 +66,7 @@ for VENV in "${VENVS[@]}"; do
       -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
       -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
     || exit 1
-    ${Python3_EXECUTABLE} setup.py clean
+    # ${Python3_EXECUTABLE} setup.py clean    # Permission denied
 done
 
 for wheel in $PWD/dist/*.whl; do
