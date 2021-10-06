@@ -12,6 +12,7 @@ fi
 pushd /Users/svc-dashboard/D/P > /dev/null
 tar -cf ITKPythonBuilds-macosx${arch_postfix}.tar \
   ITKPythonPackage/ITK-* \
+  ITKPythonPackage/oneTBB* \
   ITKPythonPackage/venvs \
   ITKPythonPackageRequiredExtractionDir.txt \
   ITKPythonPackage/scripts

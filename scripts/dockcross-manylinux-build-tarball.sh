@@ -13,6 +13,7 @@ if test -e /home/kitware/Support/zstd-build/programs/zstd; then
 fi
 tar -c --to-stdout \
   ITKPythonPackage/ITK-* \
+  ITKPythonPackage/oneTBB* \
   ITKPythonPackage/scripts > ITKPythonBuilds-linux.tar
 $zstd_exe -f \
   ./ITKPythonBuilds-linux.tar \
