@@ -29,6 +29,7 @@ else
   echo "Extracting files relevant for: $1";
   tar xf ITKPythonBuilds-linux.tar ITKPythonPackage/scripts/
   tar xf ITKPythonBuilds-linux.tar ITKPythonPackage/ITK-source/
+  tar xf ITKPythonBuilds-linux.tar ITKPythonPackage/oneTBB-prefix/
   tar xf ITKPythonBuilds-linux.tar --wildcards ITKPythonPackage/ITK-$1*
 fi
 rm ITKPythonBuilds-linux.tar
