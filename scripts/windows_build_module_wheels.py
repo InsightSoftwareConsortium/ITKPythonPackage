@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+
+# See usage with .\scripts\windows_build_module_wheels.py --help
+
 from subprocess import check_call
 import os
 import glob

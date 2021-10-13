@@ -1,6 +1,20 @@
 #!/usr/bin/env bash
 
-# Run this script inside a dockcross container to build Python wheels for an ITK module
+# Run this script inside a dockcross container to build Python wheels for an ITK module.
+#
+# Versions can be restricted by passing them in as arguments to the script.
+# For example,
+#
+#   /tmp/dockcross-manylinux-x64 manylinux-build-module-wheels.sh cp39
+#
+# Shared library dependencies can be included in the wheel by mounting them to /usr/lib64 or /usr/local/lib64 
+# before running this script.
+# 
+# For example,
+#
+#   DOCKER_ARGS="-v /path/to/lib.so:/usr/local/lib64/lib.so"
+#   /tmp/dockcross-manylinux-x64 -a "$DOCKER_ARGS" manylinux-build-module-wheels.sh
+#
 
 # -----------------------------------------------------------------------
 # These variables are set in common script:
