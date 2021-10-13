@@ -1,11 +1,11 @@
 from subprocess import check_call
 import os
+import glob
 import sys
 import argparse
 
 SCRIPT_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.abspath(os.getcwd())
-
 
 print("SCRIPT_DIR: %s" % SCRIPT_DIR)
 print("ROOT_DIR: %s" % ROOT_DIR)
@@ -33,6 +33,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
             check_call([pip, "install", "cmake"])
             check_call([pip, "install", "scikit_build"])
             check_call([pip, "install", "ninja"])
+            check_call([pip, "install", "delvewheel"])
 
             build_type = "Release"
             source_path = ROOT_DIR
@@ -59,12 +60,33 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
             if cleanup:
                 check_call([python_executable, "setup.py", "clean"])
 
+
+def fixup_wheel(py_envs, filepath, lib_paths:str=''):
+    lib_paths = lib_paths.strip() if lib_paths.isspace() else lib_paths.strip() + ";"
+    lib_paths += "C:/P/IPP/oneTBB-prefix/bin"
+    print(f'Library paths for fixup: {lib_paths}')
+
+    py_env = py_envs[0]
+    
+    delve_wheel = os.path.join(ROOT_DIR, "venv-" + py_env, "Scripts", "delvewheel.exe")
+    check_call([delve_wheel, "repair", "--no-mangle-all", "--add-path",
+        lib_paths, "--ignore-in-wheel", "-w",
+        os.path.join(ROOT_DIR, "dist"), filepath])
+
+
+def fixup_wheels(py_envs, lib_paths:str=''):
+    # shared library fix-up
+    for wheel in glob.glob(os.path.join(ROOT_DIR, "dist", "*.whl")):
+        fixup_wheel(py_envs, wheel, ';'.join(lib_paths))
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Driver script to build ITK Python module wheels.')
     parser.add_argument('--py-envs', nargs='+', default=DEFAULT_PY_ENVS,
             help='Target Python environment versions, e.g. "37-x64".')
     parser.add_argument('--no-cleanup', dest='cleanup', action='store_false', help='Do not clean up temporary build files.')
+    parser.add_argument('--lib-paths', nargs=1, default='', help='Add semicolon-delimited library directories for delvewheel to include in the module wheel')
     parser.add_argument('cmake_options', nargs='*', help='Extra options to pass to CMake, e.g. -DBUILD_SHARED_LIBS:BOOL=OFF')
     args = parser.parse_args()
 
     build_wheels(cleanup=args.cleanup, py_envs=args.py_envs, cmake_options=args.cmake_options)
+    fixup_wheels(args.py_envs, ';'.join(args.lib_paths))

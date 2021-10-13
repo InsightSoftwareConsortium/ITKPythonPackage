@@ -20,7 +20,8 @@ pushd /work/ITK-source > /dev/null 2>&1
 popd > /dev/null 2>&1
 tbb_dir=/work/oneTBB-prefix/lib64/cmake/TBB
 # So auditwheel can find the libs
-export LD_LIBRARY_PATH=/work/oneTBB-prefix/lib64
+sudo ldconfig
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/oneTBB-prefix/lib64:/usr/lib:/usr/lib64
 
 SINGLE_WHEEL=0
 

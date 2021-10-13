@@ -44,7 +44,7 @@ DELOCATE_PATCH=${VENV}/bin/delocate-patch
 # Build standalone project and populate archive cache
 tbb_dir=$PWD/oneTBB-prefix/lib/cmake/TBB
 # So delocate can find the libs
-export DYLD_LIBRARY_PATH=$PWD/oneTBB-prefix/lib
+export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:$PWD/oneTBB-prefix/lib
 mkdir -p ITK-source
 pushd ITK-source > /dev/null 2>&1
   ${CMAKE_EXECUTABLE} -DITKPythonPackage_BUILD_PYTHON:PATH=0 \
