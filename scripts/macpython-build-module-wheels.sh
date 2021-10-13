@@ -7,6 +7,15 @@
 # For example,
 #
 #   scripts/macpython-build-module-wheels.sh 2.7 3.5
+#
+# Shared libraries can be included in the wheel by exporting them to DYLD_LIBRARY_PATH before
+# running this script.
+# 
+# For example,
+#
+#   export DYLD_LIBRARY_PATH="/path/to/libs"
+#   scripts/macpython-build-module-wheels.sh cp39
+#
 
 # -----------------------------------------------------------------------
 # These variables are set in common script:
