@@ -166,10 +166,10 @@ for PYBIN in "${PYBINARIES[@]}"; do
 done
 
 if test "${ARCH}" == "x64"; then
-  /opt/python/cp37-cp37m/bin/pip3 install auditwheel wheel
+  sudo /opt/python/cp39-cp39/bin/pip3 install auditwheel wheel
   # This step will fixup the wheel switching from 'linux' to 'manylinux2014' tag
   for whl in dist/itk_*linux_$(uname -p).whl; do
-      /opt/python/cp37-cp37m/bin/auditwheel repair --plat manylinux2014_x86_64 ${whl} -w /work/dist/
+      /opt/python/cp39-cp39/bin/auditwheel repair --plat manylinux2014_x86_64 ${whl} -w /work/dist/
       rm ${whl}
   done
 else
