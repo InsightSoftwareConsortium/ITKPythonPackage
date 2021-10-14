@@ -18,7 +18,7 @@
 #
 
 # Generate dockcross scripts
-docker run --rm dockcross/manylinux2014-x64:20210823-d7b98b4 > /tmp/dockcross-manylinux-x64
+docker run --rm dockcross/manylinux2014-x64:20211011-a315bdc > /tmp/dockcross-manylinux-x64
 chmod u+x /tmp/dockcross-manylinux-x64
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
