@@ -178,8 +178,22 @@ else
       rm ${whl}
   done
 fi
+itk_core_whl=$(ls dist/itk_core*whl | head -n 1)
+repaired_plat1=$(echo $itk_core_whl | cut -d- -f5 | cut -d. -f1)
+repaired_plat2=$(echo $itk_core_whl | cut -d- -f5 | cut -d. -f2)
 for itk_wheel in dist/itk*-linux*.whl; do
-  mv ${itk_wheel} ${itk_wheel/linux/manylinux2014}
+  mkdir -p unpacked_whl packed_whl
+  /opt/python/cp39-cp39/bin/wheel unpack -d unpacked_whl ${itk_wheel}
+  version=$(echo ${itk_wheel} | cut -d- -f3-4)
+  echo "Wheel-Version: 1.0" > unpacked_whl/itk-*/*.dist-info/WHEEL
+  echo "Generator: skbuild 0.8.1" >> unpacked_whl/itk-*/*.dist-info/WHEEL
+  echo "Root-Is-Purelib: false" >> unpacked_whl/itk-*/*.dist-info/WHEEL
+  echo "Tag: ${version}-${repaired_plat1}" >> unpacked_whl/itk-*/*.dist-info/WHEEL
+  echo "Tag: ${version}-${repaired_plat2}" >> unpacked_whl/itk-*/*.dist-info/WHEEL
+  echo "" >> unpacked_whl/itk-*/*.dist-info/WHEEL
+  /opt/python/cp39-cp39/bin/wheel pack -d packed_whl ./unpacked_whl/itk-*
+  mv packed_whl/*.whl dist/
+  rm -rf unpacked_whl packed_whl ${itk_wheel}
 done
 
 # Install packages and test
