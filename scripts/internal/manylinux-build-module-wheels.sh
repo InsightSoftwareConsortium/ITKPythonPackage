@@ -1,5 +1,21 @@
 #!/usr/bin/env bash
 
+# Run this script inside a dockcross container to build Python wheels for an ITK module.
+#
+# Versions can be restricted by passing them in as arguments to the script.
+# For example,
+#
+#   /tmp/dockcross-manylinux-x64 manylinux-build-module-wheels.sh cp39
+#
+# Shared library dependencies can be included in the wheel by mounting them to /usr/lib64 or /usr/local/lib64 
+# before running this script.
+# 
+# For example,
+#
+#   DOCKER_ARGS="-v /path/to/lib.so:/usr/local/lib64/lib.so"
+#   /tmp/dockcross-manylinux-x64 -a "$DOCKER_ARGS" manylinux-build-module-wheels.sh
+#
+
 # -----------------------------------------------------------------------
 # These variables are set in common script:
 #
@@ -10,8 +26,9 @@ script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
 # -----------------------------------------------------------------------
 
-# So auditwheel can find the libs
-export LD_LIBRARY_PATH=/work/oneTBB-prefix/lib64
+# Set up library paths in container so that shared libraries can be added to wheels
+sudo ldconfig
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/oneTBB-prefix/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
 
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do

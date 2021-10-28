@@ -52,6 +52,7 @@ LATEST_3p6=3.6.8
 LATEST_3p7=3.7.9
 LATEST_3p8=3.8.10
 LATEST_3p9=3.9.5
+LATEST_3p10=3.10.0
 
 
 function check_python {
@@ -108,7 +109,9 @@ function fill_pyver {
         echo $ver
     elif [ $ver == 2 ] || [ $ver == "2.7" ]; then
         echo $LATEST_2p7
-    elif [ $ver == 3 ] || [ $ver == "3.9" ]; then
+    elif [ $ver == 3 ] || [ $ver == "3.10" ]; then
+        echo $LATEST_3p10
+    elif [ $ver == "3.9" ]; then
         echo $LATEST_3p9
     elif [ $ver == "3.8" ]; then
         echo $LATEST_3p8
@@ -196,7 +199,11 @@ function pyinst_fname_for_version {
         echo "python-${py_version}-macos11.${inst_ext}"
       fi
     else
-      echo "python-${py_version}-macosx${py_osx_ver}.${inst_ext}"
+      if [ "$py_version" == "3.10.0" ]; then
+        echo "python-${py_version}-macos${py_osx_ver}.${inst_ext}"
+      else
+        echo "python-${py_version}-macosx${py_osx_ver}.${inst_ext}"
+      fi
     fi
 }
 
@@ -347,7 +354,7 @@ function install_mac_cpython {
         inst_path=/Volumes/Python/Python.mpkg
     fi
     sudo installer -pkg $inst_path -target /
-    local py_mm=${py_version:0:3}
+    local py_mm=${py_version%.*}
     PYTHON_EXE=$MACPYTHON_PY_PREFIX/$py_mm/bin/python$py_mm
     # Install certificates for Python 3.6
     local inst_cmd="/Applications/Python ${py_mm}/Install Certificates.command"
@@ -394,13 +401,17 @@ sudo rm -rf ${MACPYTHON_FRAMEWORK}
 if test "$(arch)" == "arm64"; then
   echo "we are arm"
   PLAT=arm64
-  for pyversion in $LATEST_3p9; do
+  for pyversion in $LATEST_3p9 $LATEST_3p10; do
     install_macpython $pyversion 11
     install_virtualenv
   done
 else
   for pyversion in $LATEST_3p7 $LATEST_3p8 $LATEST_3p9; do
     install_macpython $pyversion 10.9
+    install_virtualenv
+  done
+  for pyversion in $LATEST_3p10; do
+    install_macpython $pyversion 11
     install_virtualenv
   done
 fi

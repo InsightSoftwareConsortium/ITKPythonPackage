@@ -219,21 +219,26 @@ def build_wheel(python_version, single_wheel=False,
             shutil.rmtree(
                 os.path.join(build_path, "Wrapping", "Generators", "CastXML"))
 
-def fixup_wheel(py_envs, filepath):
+def fixup_wheel(py_envs, filepath, lib_paths:str=''):
+    lib_paths = lib_paths.strip() if lib_paths.isspace() else lib_paths.strip() + ";"
+    lib_paths += "C:/P/IPP/oneTBB-prefix/bin"
+    print(f'Library paths for fixup: {lib_paths}')
+
     py_env = py_envs[0]
+    
     delve_wheel = os.path.join(ROOT_DIR, "venv-" + py_env, "Scripts", "delvewheel.exe")
     check_call([delve_wheel, "repair", "--no-mangle-all", "--add-path",
-        "C:/P/IPP/oneTBB-prefix/bin", "--ignore-in-wheel", "-w",
+        lib_paths, "--ignore-in-wheel", "-w",
         os.path.join(ROOT_DIR, "dist"), filepath])
 
 
-def fixup_wheels(single_wheel, py_envs):
+def fixup_wheels(single_wheel, py_envs, lib_paths:str=''):
     # TBB library fix-up
     tbb_wheel = "itk_core"
     if single_wheel:
         tbb_wheel = "itk"
     for wheel in glob.glob(os.path.join(ROOT_DIR, "dist", tbb_wheel + "*.whl")):
-        fixup_wheel(py_envs, wheel)
+        fixup_wheel(py_envs, wheel, lib_paths)
 
 
 def test_wheels(python_env):
@@ -299,13 +304,14 @@ def main(wheel_names=None):
     parser.add_argument('--py-envs', nargs='+', default=DEFAULT_PY_ENVS,
             help='Target Python environment versions, e.g. "37-x64".')
     parser.add_argument('--no-cleanup', dest='cleanup', action='store_false', help='Do not clean up temporary build files.')
+    parser.add_argument('--lib-paths', nargs=1, default='', help='Add semicolon-delimited library directories for delvewheel to include in the module wheel')
     parser.add_argument('cmake_options', nargs='*', help='Extra options to pass to CMake, e.g. -DBUILD_SHARED_LIBS:BOOL=OFF')
     args = parser.parse_args()
 
     build_wheels(single_wheel=args.single_wheel, cleanup=args.cleanup,
         py_envs=args.py_envs, wheel_names=wheel_names,
         cmake_options=args.cmake_options)
-    fixup_wheels(args.single_wheel, args.py_envs)
+    fixup_wheels(args.single_wheel, args.py_envs, ';'.join(args.lib_paths))
     for py_env in args.py_envs:
         test_wheels(py_env)
 

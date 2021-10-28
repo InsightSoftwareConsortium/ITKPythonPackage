@@ -1,5 +1,21 @@
 #!/usr/bin/env bash
 
+# Run this script inside a dockcross container to build Python wheels for ITK.
+#
+# Versions can be restricted by passing them in as arguments to the script.
+# For example,
+#
+#   /tmp/dockcross-manylinux-x64 manylinux-build-wheels.sh cp39
+#
+# Shared library dependencies can be included wheels by mounting them to /usr/lib64 or /usr/local/lib64 
+# before running this script.
+# 
+# For example,
+#
+#   DOCKER_ARGS="-v /path/to/lib.so:/usr/local/lib64/lib.so"
+#   /tmp/dockcross-manylinux-x64 -a "$DOCKER_ARGS" manylinux-build-wheels.sh
+#
+
 # -----------------------------------------------------------------------
 # These variables are set in common script:
 #
@@ -20,7 +36,8 @@ pushd /work/ITK-source > /dev/null 2>&1
 popd > /dev/null 2>&1
 tbb_dir=/work/oneTBB-prefix/lib64/cmake/TBB
 # So auditwheel can find the libs
-export LD_LIBRARY_PATH=/work/oneTBB-prefix/lib64
+sudo ldconfig
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/oneTBB-prefix/lib64:/usr/lib:/usr/lib64
 
 SINGLE_WHEEL=0
 
@@ -149,10 +166,10 @@ for PYBIN in "${PYBINARIES[@]}"; do
 done
 
 if test "${ARCH}" == "x64"; then
-  /opt/python/cp37-cp37m/bin/pip3 install auditwheel wheel
+  sudo /opt/python/cp39-cp39/bin/pip3 install auditwheel wheel
   # This step will fixup the wheel switching from 'linux' to 'manylinux2014' tag
   for whl in dist/itk_*linux_$(uname -p).whl; do
-      /opt/python/cp37-cp37m/bin/auditwheel repair --plat manylinux2014_x86_64 ${whl} -w /work/dist/
+      /opt/python/cp39-cp39/bin/auditwheel repair --plat manylinux2014_x86_64 ${whl} -w /work/dist/
       rm ${whl}
   done
 else
@@ -161,8 +178,22 @@ else
       rm ${whl}
   done
 fi
+itk_core_whl=$(ls dist/itk_core*whl | head -n 1)
+repaired_plat1=$(echo $itk_core_whl | cut -d- -f5 | cut -d. -f1)
+repaired_plat2=$(echo $itk_core_whl | cut -d- -f5 | cut -d. -f2)
 for itk_wheel in dist/itk*-linux*.whl; do
-  mv ${itk_wheel} ${itk_wheel/linux/manylinux2014}
+  mkdir -p unpacked_whl packed_whl
+  /opt/python/cp39-cp39/bin/wheel unpack -d unpacked_whl ${itk_wheel}
+  version=$(echo ${itk_wheel} | cut -d- -f3-4)
+  echo "Wheel-Version: 1.0" > unpacked_whl/itk-*/*.dist-info/WHEEL
+  echo "Generator: skbuild 0.8.1" >> unpacked_whl/itk-*/*.dist-info/WHEEL
+  echo "Root-Is-Purelib: false" >> unpacked_whl/itk-*/*.dist-info/WHEEL
+  echo "Tag: ${version}-${repaired_plat1}" >> unpacked_whl/itk-*/*.dist-info/WHEEL
+  echo "Tag: ${version}-${repaired_plat2}" >> unpacked_whl/itk-*/*.dist-info/WHEEL
+  echo "" >> unpacked_whl/itk-*/*.dist-info/WHEEL
+  /opt/python/cp39-cp39/bin/wheel pack -d packed_whl ./unpacked_whl/itk-*
+  mv packed_whl/*.whl dist/
+  rm -rf unpacked_whl packed_whl ${itk_wheel}
 done
 
 # Install packages and test

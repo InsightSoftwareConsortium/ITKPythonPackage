@@ -3,10 +3,16 @@
 # Run this script to build the Python wheel packages for macOS for an ITK
 # external module.
 #
-# Versions can be restricted by passing them in as arguments to the script
+# Versions can be restricted by passing them in as arguments to the script.
+#
+# Shared libraries can be included in the wheel by exporting them to DYLD_LIBRARY_PATH before
+# running this script.
+#
 # For example,
 #
-#   scripts/macpython-build-module-wheels.sh 2.7 3.5
+#   export DYLD_LIBRARY_PATH="/path/to/libs"
+#   scripts/macpython-build-module-wheels.sh 3.7 3.9
+#
 
 # -----------------------------------------------------------------------
 # These variables are set in common script:
@@ -25,8 +31,9 @@ Python3_EXECUTABLE=${VENV}/bin/python3
 ${Python3_EXECUTABLE} -m pip install --no-cache delocate
 DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
+DELOCATE_PATCH=${VENV}/bin/delocate-patch
 # So delocate can find the libs
-export DYLD_LIBRARY_PATH=${script_dir}/../oneTBB-prefix/lib
+export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${script_dir}/../oneTBB-prefix/lib
 
 # Compile wheels re-using standalone project and archive cache
 for VENV in "${VENVS[@]}"; do
@@ -66,7 +73,7 @@ for VENV in "${VENVS[@]}"; do
       -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
       -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
     || exit 1
-    ${Python3_EXECUTABLE} setup.py clean
+    # ${Python3_EXECUTABLE} setup.py clean    # Permission denied
 done
 
 for wheel in $PWD/dist/*.whl; do

@@ -6,6 +6,15 @@
 # For example,
 #
 #   scripts/macpython-build-wheels.sh 3.9
+#
+# Shared libraries can be included in the wheel by exporting them to DYLD_LIBRARY_PATH before
+# running this script.
+# 
+# For example,
+#
+#   export DYLD_LIBRARY_PATH="/path/to/libs"
+#   scripts/macpython-build-module-wheels.sh cp39
+#
 
 # -----------------------------------------------------------------------
 # These variables are set in common script:
@@ -44,7 +53,7 @@ DELOCATE_PATCH=${VENV}/bin/delocate-patch
 # Build standalone project and populate archive cache
 tbb_dir=$PWD/oneTBB-prefix/lib/cmake/TBB
 # So delocate can find the libs
-export DYLD_LIBRARY_PATH=$PWD/oneTBB-prefix/lib
+export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:$PWD/oneTBB-prefix/lib
 mkdir -p ITK-source
 pushd ITK-source > /dev/null 2>&1
   ${CMAKE_EXECUTABLE} -DITKPythonPackage_BUILD_PYTHON:PATH=0 \
