@@ -66,8 +66,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
 
 
 def fixup_wheel(py_envs, filepath, lib_paths:str=''):
-    lib_paths = lib_paths.strip() if lib_paths.isspace() else lib_paths.strip() + ";"
-    lib_paths += "C:/P/IPP/oneTBB-prefix/bin"
+    lib_paths = ';'.join(["C:/P/IPP/oneTBB-prefix/bin",lib_paths.strip()]).strip(';')
     print(f'Library paths for fixup: {lib_paths}')
 
     py_env = py_envs[0]
@@ -81,7 +80,7 @@ def fixup_wheel(py_envs, filepath, lib_paths:str=''):
 def fixup_wheels(py_envs, lib_paths:str=''):
     # shared library fix-up
     for wheel in glob.glob(os.path.join(ROOT_DIR, "dist", "*.whl")):
-        fixup_wheel(py_envs, wheel, ';'.join(lib_paths))
+        fixup_wheel(py_envs, wheel, lib_paths)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Driver script to build ITK Python module wheels.')
