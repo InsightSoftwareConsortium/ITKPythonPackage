@@ -271,6 +271,7 @@ if(ITKPythonPackage_SUPERBUILD)
         -DITK_WRAP_PYTHON:BOOL=ON
         -DITK_WRAP_unsigned_short:BOOL=ON
         -DITK_WRAP_double:BOOL=ON
+        -DITK_WRAP_complex_double:BOOL=ON
         -DITK_WRAP_IMAGE_DIMS:STRING=2;3;4
         -DITK_WRAP_DOC:BOOL=ON
         -DDOXYGEN_EXECUTABLE:FILEPATH=${DOXYGEN_EXECUTABLE}
