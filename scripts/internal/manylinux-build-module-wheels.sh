@@ -17,6 +17,39 @@
 #
 
 # -----------------------------------------------------------------------
+# Script argument parsing
+#
+usage()
+{
+  echo "Usage:
+  manylinux-build-module-wheels
+    [ -h | --help ]           show usage
+    [ -c | --cmake_options ]  space-separated string of CMake options to forward to the module (e.g. \"-DBUILD_TESTING=OFF\")
+    [ -x | --exclude_libs ]   semicolon-separated library names to exclude when repairing wheel (e.g. \"libcuda.so\")
+    [ python_version ]        build wheel for a specific python version. (e.g. cp39)"
+  exit 2
+}
+
+PARSED_ARGS=$(getopt -a -n dockcross-manylinux-download-cache-and-build-module-wheels \
+  -o hc:x: --long help,cmake_options:,exclude_libs: -- "$@")
+eval set -- "$PARSED_ARGS"
+
+while :
+do
+  case "$1" in
+    -h | --help) usage; break ;;
+    -c | --cmake_options) CMAKE_OPTIONS="$2" ; shift 2 ;;
+    -x | --exclude_libs) EXCLUDE_LIBS="$2" ; shift 2 ;;
+    --) shift; break ;;
+    *) echo "Unexpected option: $1.";
+       usage; break ;;
+  esac
+done
+
+PYTHON_VERSION="$@"
+# -----------------------------------------------------------------------
+
+# -----------------------------------------------------------------------
 # These variables are set in common script:
 #
 ARCH=""
@@ -66,13 +99,19 @@ for PYBIN in "${PYBINARIES[@]}"; do
       -DBUILD_TESTING:BOOL=OFF \
       -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
       -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+      ${CMAKE_OPTIONS} \
     || exit 1
     ${PYBIN}/python setup.py clean
 done
 
 if test "${ARCH}" == "x64"; then
+  # Make sure auditwheel is installed for this python exe before importing
+  # it in auditwheel_whitelist_monkeypatch.py
+  sudo ${Python3_EXECUTABLE} -m pip install auditwheel
   for whl in dist/*linux_$(uname -p).whl; do
-    auditwheel repair ${whl} -w /work/dist/
+    # Repair wheel using monkey patch to exclude shared libraries provided in whitelist
+    ${Python3_EXECUTABLE} "${script_dir}/auditwheel_whitelist_monkeypatch.py" \
+      repair ${whl} -w /work/dist/ --whitelist "${EXCLUDE_LIBS}"
     rm ${whl}
   done
 fi
