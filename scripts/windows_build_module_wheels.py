@@ -107,7 +107,7 @@ def rename_wheel_init(py_env, filepath):
     check_call([python_executable, "-m", "wheel", "pack", wheel_dir, "-d", dist_dir])
     shutil.rmtree(wheel_dir)
 
-def fixup_wheel(py_envs, filepath, lib_paths:str=''):
+def fixup_wheel(py_envs, filepath, lib_paths:str='', exclude_libs:str=''):
     lib_paths = ';'.join(["C:/P/IPP/oneTBB-prefix/bin",lib_paths.strip()]).strip(';')
     print(f'Library paths for fixup: {lib_paths}')
 
@@ -115,7 +115,7 @@ def fixup_wheel(py_envs, filepath, lib_paths:str=''):
     
     delve_wheel = os.path.join(ROOT_DIR, "venv-" + py_env, "Scripts", "delvewheel.exe")
     check_call([delve_wheel, "repair", "--no-mangle-all", "--add-path",
-        lib_paths, "--ignore-in-wheel", "-w",
+        lib_paths, "--no-dll", exclude_libs, "--ignore-in-wheel", "-w",
         os.path.join(ROOT_DIR, "dist"), filepath])
 
     # The delve_wheel patch loading shared libraries is added to the module
@@ -123,10 +123,10 @@ def fixup_wheel(py_envs, filepath, lib_paths:str=''):
     # The renamed __init__ file will be executed when loading ITK.
     rename_wheel_init(py_env, filepath)
 
-def fixup_wheels(py_envs, lib_paths:str=''):
+def fixup_wheels(py_envs, lib_paths:str='', exclude_libs:str=''):
     # shared library fix-up
     for wheel in glob.glob(os.path.join(ROOT_DIR, "dist", "*.whl")):
-        fixup_wheel(py_envs, wheel, lib_paths)
+        fixup_wheel(py_envs, wheel, lib_paths, exclude_libs)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Driver script to build ITK Python module wheels.')
@@ -134,8 +134,9 @@ if __name__ == '__main__':
             help='Target Python environment versions, e.g. "37-x64".')
     parser.add_argument('--no-cleanup', dest='cleanup', action='store_false', help='Do not clean up temporary build files.')
     parser.add_argument('--lib-paths', nargs=1, default='', help='Add semicolon-delimited library directories for delvewheel to include in the module wheel')
+    parser.add_argument('--exclude-libs', nargs=1, default='', help='Add semicolon-delimited library names that must not be included in the module wheel, e.g. "nvcuda.dll"')
     parser.add_argument('cmake_options', nargs='*', help='Extra options to pass to CMake, e.g. -DBUILD_SHARED_LIBS:BOOL=OFF')
     args = parser.parse_args()
 
     build_wheels(cleanup=args.cleanup, py_envs=args.py_envs, cmake_options=args.cmake_options)
-    fixup_wheels(args.py_envs, ';'.join(args.lib_paths))
+    fixup_wheels(args.py_envs, ';'.join(args.lib_paths), ';'.join(args.exclude_libs))
