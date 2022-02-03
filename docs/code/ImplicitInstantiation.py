@@ -25,7 +25,7 @@ smoothed = itk.median_image_filter(image)
 ImageType = itk.Image[itk.UC, 2]
 reader = itk.ImageFileReader[ImageType].New(FileName=input_filename)
 # Here we specify the filter input explicitly
-median = itk.MedianImageFilter.New(reader.GetOutput())
+median = itk.MedianImageFilter.New(Input=reader.GetOutput())
 # Same as above but shortened. Input does not have to be specified.
 median = itk.MedianImageFilter.New(reader.GetOutput())
 # Same as above. .GetOutput() does not have to be specified.
