@@ -17,7 +17,9 @@ tar -cf ITKPythonBuilds-macosx${arch_postfix}.tar \
   ITKPythonPackageRequiredExtractionDir.txt \
   ITKPythonPackage/scripts
 zstd -f \
-  -15 \
+  -10 \
+  -T6 \
+  --long=31 \
   ./ITKPythonBuilds-macosx${arch_postfix}.tar \
   -o ./ITKPythonBuilds-macosx${arch_postfix}.tar.zst
 popd > /dev/null

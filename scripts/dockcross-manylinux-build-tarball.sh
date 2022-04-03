@@ -16,5 +16,8 @@ tar -c --to-stdout \
   ITKPythonPackage/oneTBB* \
   ITKPythonPackage/scripts > ITKPythonBuilds-linux.tar
 $zstd_exe -f \
+  -10 \
+  -T6 \
+  --long=31 \
   ./ITKPythonBuilds-linux.tar \
   -o ./ITKPythonBuilds-linux.tar.zst
