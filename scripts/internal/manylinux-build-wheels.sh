@@ -56,7 +56,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
     build_type="Release"
     compile_flags="-O3 -DNDEBUG"
     source_path=/work/ITK-source/ITK
-    build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux2014_${ARCH}
+    build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux${MANYLINUX_VERSION}_${ARCH}
     SETUP_PY_CONFIGURE="${script_dir}/../setup_py_configure.py"
     SKBUILD_CMAKE_INSTALL_PREFIX=$(${Python3_EXECUTABLE} -c "from skbuild.constants import CMAKE_INSTALL_DIR; print(CMAKE_INSTALL_DIR)")
 
@@ -167,9 +167,9 @@ done
 
 if test "${ARCH}" == "x64"; then
   sudo /opt/python/cp39-cp39/bin/pip3 install auditwheel wheel
-  # This step will fixup the wheel switching from 'linux' to 'manylinux2014' tag
+  # This step will fixup the wheel switching from 'linux' to 'manylinux<version>' tag
   for whl in dist/itk_*linux_$(uname -p).whl; do
-      /opt/python/cp39-cp39/bin/auditwheel repair --plat manylinux2014_x86_64 ${whl} -w /work/dist/
+      /opt/python/cp39-cp39/bin/auditwheel repair --plat manylinux${MANYLINUX_VERSION}_x86_64 ${whl} -w /work/dist/
       rm ${whl}
   done
 else

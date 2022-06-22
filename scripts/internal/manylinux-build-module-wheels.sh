@@ -78,8 +78,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
     version=$(basename $(dirname ${PYBIN}))
     # Remove "m" -- not present in Python 3.8 and later
     version=${version:0:9}
-    itk_build_dir=/work/$(basename /ITKPythonPackage/ITK-${version}*-manylinux2014_${ARCH})
-    ln -fs /ITKPythonPackage/ITK-${version}*-manylinux2014_${ARCH} $itk_build_dir
+    itk_build_dir=/work/$(basename /ITKPythonPackage/ITK-${version}*-manylinux${MANYLINUX_VERSION}_${ARCH})
+    ln -fs /ITKPythonPackage/ITK-${version}*-manylinux${MANYLINUX_VERSION}_${ARCH} $itk_build_dir
     if [[ ! -d ${itk_build_dir} ]]; then
       echo 'ITK build tree not available!' 1>&2
       exit 1
@@ -117,6 +117,6 @@ if test "${ARCH}" == "x64"; then
 fi
 if compgen -G "dist/itk*-linux*.whl" > /dev/null; then
   for itk_wheel in dist/itk*-linux*.whl; do
-    mv ${itk_wheel} ${itk_wheel/linux/manylinux2014}
+    mv ${itk_wheel} ${itk_wheel/linux/manylinux${MANYLINUX_VERSION}}
   done
 fi
