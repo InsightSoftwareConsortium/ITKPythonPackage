@@ -61,7 +61,7 @@ source "${script_dir}/manylinux-build-common.sh"
 
 # Set up library paths in container so that shared libraries can be added to wheels
 sudo ldconfig
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/oneTBB-prefix/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/oneTBB-prefix/lib:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
 
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
