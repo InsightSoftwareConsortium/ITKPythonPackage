@@ -28,7 +28,7 @@ else
 fi
 
 # i686 or x86_64 ?
-case $(uname -p) in
+case $(uname -m) in
     i686)
         ARCH=x86
         ;;
@@ -39,13 +39,13 @@ case $(uname -p) in
         ARCH=aarch64
         ;;
     *)
-        die "Unknown architecture $(uname -p)"
+        die "Unknown architecture $(uname -m)"
         ;;
 esac
 
 # Install prerequirements
 export PATH=/work/tools/doxygen-1.8.11/bin:$PATH
-case $(uname -p) in
+case $(uname -m) in
     i686)
         ARCH=x86
         ;;
@@ -69,7 +69,7 @@ case $(uname -p) in
         fi
         ;;
     *)
-        die "Unknown architecture $(uname -p)"
+        die "Unknown architecture $(uname -m)"
         ;;
 esac
 if ! type ninja > /dev/null 2>&1; then

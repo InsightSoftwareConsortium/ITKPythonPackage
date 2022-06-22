@@ -81,7 +81,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
             -DITK_WRAP_double:BOOL=ON \
             -DITK_WRAP_complex_double:BOOL=ON \
             -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
-            -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
+            -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
             -DCMAKE_CXX_FLAGS:STRING="$compile_flags" \
             -DCMAKE_C_FLAGS:STRING="$compile_flags" \
             -DCMAKE_BUILD_TYPE:STRING="${build_type}" \
@@ -110,7 +110,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DBUILD_TESTING:BOOL=OFF \
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-          -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
+          -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
           -DCMAKE_CXX_FLAGS:STRING="$compile_flags" \
           -DCMAKE_C_FLAGS:STRING="$compile_flags" \
           -DCMAKE_BUILD_TYPE:STRING="${build_type}" \
@@ -168,12 +168,12 @@ done
 if test "${ARCH}" == "x64"; then
   sudo /opt/python/cp39-cp39/bin/pip3 install auditwheel wheel
   # This step will fixup the wheel switching from 'linux' to 'manylinux<version>' tag
-  for whl in dist/itk_*linux_$(uname -p).whl; do
+  for whl in dist/itk_*linux_$(uname -m).whl; do
       /opt/python/cp39-cp39/bin/auditwheel repair --plat manylinux${MANYLINUX_VERSION}_x86_64 ${whl} -w /work/dist/
       rm ${whl}
   done
 else
-  for whl in dist/itk_*$(uname -p).whl; do
+  for whl in dist/itk_*$(uname -m).whl; do
       auditwheel repair ${whl} -w /work/dist/
       rm ${whl}
   done
