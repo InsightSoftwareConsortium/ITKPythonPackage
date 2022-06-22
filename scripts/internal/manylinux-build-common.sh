@@ -84,6 +84,6 @@ if ! type ninja > /dev/null 2>&1; then
   popd
 fi
 
-MANYLINUX_VERSION=2014
+MANYLINUX_VERSION=_2_24
 
 echo "Building wheels for $ARCH using manylinux${MANYLINUX_VERSION}"
