@@ -87,10 +87,10 @@ if(ITKPythonPackage_SUPERBUILD)
   #-----------------------------------------------------------------------------
   include(ExternalProject)
 
-  set(ITK_REPOSITORY "https://github.com/jcfr/ITK.git")
+  set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
 
-  # ITK update-from-manylinux2014-to-manylinux_2_24 2022-06-22
-  set(ITK_GIT_TAG "8ca6e8dc15")
+  # ITK nightly-master 2022-07-05
+  set(ITK_GIT_TAG "c44a7731f22bd5d241ac8f9369018671800f5cd9")
 
   #-----------------------------------------------------------------------------
   # A separate project is used to download ITK, so that it can reused
