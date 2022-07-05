@@ -4,10 +4,6 @@
 set -e -x
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
-# Workaround broken FindPython3 in CMake 3.17
-if test -e /usr/share/cmake-3.17/Modules/FindPython/Support.cmake; then
-  sudo cp ${script_dir}/Support.cmake /usr/share/cmake-3.17/Modules/FindPython/
-fi
 
 # Versions can be restricted by passing them in as arguments to the script
 # For example,
@@ -44,7 +40,7 @@ case $(uname -m) in
 esac
 
 # Install prerequirements
-export PATH=/work/tools/doxygen-1.8.11/bin:$PATH
+export PATH=/work/tools/doxygen-1.8.16/bin:$PATH
 case $(uname -m) in
     i686)
         ARCH=x86
@@ -53,8 +49,8 @@ case $(uname -m) in
         if ! type doxygen > /dev/null 2>&1; then
           mkdir -p /work/tools
             pushd /work/tools > /dev/null 2>&1
-            curl https://data.kitware.com/api/v1/file/5c0aa4b18d777f2179dd0a71/download -o doxygen-1.8.11.linux.bin.tar.gz
-            tar -xvzf doxygen-1.8.11.linux.bin.tar.gz
+            curl https://data.kitware.com/api/v1/file/62c4d615bddec9d0c46cb705/download -o doxygen-1.8.16.linux.bin.tar.gz
+            tar -xvzf doxygen-1.8.16.linux.bin.tar.gz
           popd > /dev/null 2>&1
         fi
         ;;
@@ -63,8 +59,8 @@ case $(uname -m) in
         if ! type doxygen > /dev/null 2>&1; then
           mkdir -p /work/tools
             pushd /work/tools > /dev/null 2>&1
-            curl https://data.kitware.com/api/v1/file/6086e4b02fa25629b93ac66e/download -o doxygen-1.8.11.linux.aarch64.bin.tar.gz
-            tar -xvzf doxygen-1.8.11.linux.aarch64.bin.tar.gz
+            curl https://data.kitware.com/api/v1/file/62c4ed58bddec9d0c46f1388/download -o doxygen-1.8.16.linux.aarch64.bin.tar.gz
+            tar -xvzf doxygen-1.8.16.linux.aarch64.bin.tar.gz
           popd > /dev/null 2>&1
         fi
         ;;
@@ -84,6 +80,6 @@ if ! type ninja > /dev/null 2>&1; then
   popd
 fi
 
-MANYLINUX_VERSION=_2_24
+MANYLINUX_VERSION=_2_28
 
 echo "Building wheels for $ARCH using manylinux${MANYLINUX_VERSION}"
