@@ -16,14 +16,10 @@ message(STATUS "SuperBuild - ITKPythonPackage_WHEEL_NAME:${ITKPythonPackage_WHEE
 
 option(ITKPythonPackage_USE_TBB "Build and use oneTBB in the ITK python package" ON)
 
-set(libpath "lib")
-if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-  set(libpath "lib64")
-endif()
 if(ITK_SOURCE_DIR)
-  set(TBB_DIR "${ITK_SOURCE_DIR}/../oneTBB-prefix/${libpath}/cmake/TBB")
+  set(TBB_DIR "${ITK_SOURCE_DIR}/../oneTBB-prefix/lib/cmake/TBB")
 else()
-  set(TBB_DIR "${CMAKE_BINARY_DIR}/../oneTBB-prefix/${libpath}/cmake/TBB")
+  set(TBB_DIR "${CMAKE_BINARY_DIR}/../oneTBB-prefix/lib/cmake/TBB")
 endif()
 set(tbb_args )
 if(ITKPythonPackage_USE_TBB)
@@ -93,8 +89,8 @@ if(ITKPythonPackage_SUPERBUILD)
 
   set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
 
-  # ITK release 2022-04-01
-  set(ITK_GIT_TAG "801370c025c7d296783481779a41c6d559c992c5")
+ # ITK nightly-master 2022-07-05
+  set(ITK_GIT_TAG "c44a7731f2")
 
   #-----------------------------------------------------------------------------
   # A separate project is used to download ITK, so that it can reused
@@ -116,6 +112,7 @@ if(ITKPythonPackage_SUPERBUILD)
         -DTBB_TEST:BOOL=OFF
         -DCMAKE_BUILD_TYPE:STRING=Release
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/../oneTBB-prefix
+        -DCMAKE_INSTALL_LIBDIR:STRING=lib # Skip default initialization by GNUInstallDirs CMake module
         ${ep_common_cmake_cache_args}
         -DCMAKE_BUILD_TYPE:STRING=Release
       BUILD_BYPRODUCTS "${TBB_DIR}/TBBConfig.cmake"
