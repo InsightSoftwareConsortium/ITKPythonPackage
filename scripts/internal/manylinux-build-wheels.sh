@@ -34,10 +34,10 @@ pushd /work/ITK-source > /dev/null 2>&1
   cmake -DITKPythonPackage_BUILD_PYTHON:PATH=0 -G Ninja ../
   ninja
 popd > /dev/null 2>&1
-tbb_dir=/work/oneTBB-prefix/lib64/cmake/TBB
+tbb_dir=/work/oneTBB-prefix/lib/cmake/TBB
 # So auditwheel can find the libs
 sudo ldconfig
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/oneTBB-prefix/lib64:/usr/lib:/usr/lib64
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/oneTBB-prefix/lib:/usr/lib:/usr/lib64
 
 SINGLE_WHEEL=0
 
@@ -56,7 +56,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
     build_type="Release"
     compile_flags="-O3 -DNDEBUG"
     source_path=/work/ITK-source/ITK
-    build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux2014_${ARCH}
+    build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux${MANYLINUX_VERSION}_${ARCH}
     SETUP_PY_CONFIGURE="${script_dir}/../setup_py_configure.py"
     SKBUILD_CMAKE_INSTALL_PREFIX=$(${Python3_EXECUTABLE} -c "from skbuild.constants import CMAKE_INSTALL_DIR; print(CMAKE_INSTALL_DIR)")
 
@@ -81,7 +81,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
             -DITK_WRAP_double:BOOL=ON \
             -DITK_WRAP_complex_double:BOOL=ON \
             -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
-            -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
+            -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
             -DCMAKE_CXX_FLAGS:STRING="$compile_flags" \
             -DCMAKE_C_FLAGS:STRING="$compile_flags" \
             -DCMAKE_BUILD_TYPE:STRING="${build_type}" \
@@ -110,7 +110,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DBUILD_TESTING:BOOL=OFF \
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-          -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
+          -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
           -DCMAKE_CXX_FLAGS:STRING="$compile_flags" \
           -DCMAKE_C_FLAGS:STRING="$compile_flags" \
           -DCMAKE_BUILD_TYPE:STRING="${build_type}" \
@@ -167,13 +167,13 @@ done
 
 if test "${ARCH}" == "x64"; then
   sudo /opt/python/cp39-cp39/bin/pip3 install auditwheel wheel
-  # This step will fixup the wheel switching from 'linux' to 'manylinux2014' tag
-  for whl in dist/itk_*linux_$(uname -p).whl; do
-      /opt/python/cp39-cp39/bin/auditwheel repair --plat manylinux2014_x86_64 ${whl} -w /work/dist/
+  # This step will fixup the wheel switching from 'linux' to 'manylinux<version>' tag
+  for whl in dist/itk_*linux_$(uname -m).whl; do
+      /opt/python/cp39-cp39/bin/auditwheel repair --plat manylinux${MANYLINUX_VERSION}_x86_64 ${whl} -w /work/dist/
       rm ${whl}
   done
 else
-  for whl in dist/itk_*$(uname -p).whl; do
+  for whl in dist/itk_*$(uname -m).whl; do
       auditwheel repair ${whl} -w /work/dist/
       rm ${whl}
   done

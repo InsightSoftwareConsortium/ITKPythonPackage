@@ -61,7 +61,7 @@ source "${script_dir}/manylinux-build-common.sh"
 
 # Set up library paths in container so that shared libraries can be added to wheels
 sudo ldconfig
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/oneTBB-prefix/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/oneTBB-prefix/lib:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
 
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
@@ -78,8 +78,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
     version=$(basename $(dirname ${PYBIN}))
     # Remove "m" -- not present in Python 3.8 and later
     version=${version:0:9}
-    itk_build_dir=/work/$(basename /ITKPythonPackage/ITK-${version}*-manylinux2014_${ARCH})
-    ln -fs /ITKPythonPackage/ITK-${version}*-manylinux2014_${ARCH} $itk_build_dir
+    itk_build_dir=/work/$(basename /ITKPythonPackage/ITK-${version}*-manylinux${MANYLINUX_VERSION}_${ARCH})
+    ln -fs /ITKPythonPackage/ITK-${version}*-manylinux${MANYLINUX_VERSION}_${ARCH} $itk_build_dir
     if [[ ! -d ${itk_build_dir} ]]; then
       echo 'ITK build tree not available!' 1>&2
       exit 1
@@ -95,7 +95,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
       -DITK_USE_SYSTEM_SWIG:BOOL=ON \
       -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
       -DSWIG_EXECUTABLE:FILEPATH=${itk_build_dir}/Wrapping/Generators/SwigInterface/swig/bin/swig \
-      -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -p)-linux-gnu \
+      -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
       -DBUILD_TESTING:BOOL=OFF \
       -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
       -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
@@ -108,7 +108,7 @@ if test "${ARCH}" == "x64"; then
   # Make sure auditwheel is installed for this python exe before importing
   # it in auditwheel_whitelist_monkeypatch.py
   sudo ${Python3_EXECUTABLE} -m pip install auditwheel
-  for whl in dist/*linux_$(uname -p).whl; do
+  for whl in dist/*linux_$(uname -m).whl; do
     # Repair wheel using monkey patch to exclude shared libraries provided in whitelist
     ${Python3_EXECUTABLE} "${script_dir}/auditwheel_whitelist_monkeypatch.py" \
       repair ${whl} -w /work/dist/ --whitelist "${EXCLUDE_LIBS}"
@@ -117,6 +117,6 @@ if test "${ARCH}" == "x64"; then
 fi
 if compgen -G "dist/itk*-linux*.whl" > /dev/null; then
   for itk_wheel in dist/itk*-linux*.whl; do
-    mv ${itk_wheel} ${itk_wheel/linux/manylinux2014}
+    mv ${itk_wheel} ${itk_wheel/linux/manylinux${MANYLINUX_VERSION}}
   done
 fi
