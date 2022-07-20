@@ -18,7 +18,7 @@
 #
 
 MANYLINUX_VERSION=_2_28
-IMAGE_TAG=20220705-b1eb184
+IMAGE_TAG=20220715-9ce3707
 
 # Generate dockcross scripts
 docker run --rm dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > /tmp/dockcross-manylinux-x64
