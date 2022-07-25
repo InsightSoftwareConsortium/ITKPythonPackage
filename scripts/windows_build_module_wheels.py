@@ -113,7 +113,7 @@ def fixup_wheel(py_envs, filepath, lib_paths:str='', exclude_libs:str=''):
 
     py_env = py_envs[0]
     
-    delve_wheel = os.path.join(ROOT_DIR, "venv-" + py_env, "Scripts", "delvewheel.exe")
+    delve_wheel = os.path.join("C:/P/IPP", "venv-" + py_env, "Scripts", "delvewheel.exe")
     check_call([delve_wheel, "repair", "--no-mangle-all", "--add-path",
         lib_paths, "--no-dll", exclude_libs, "--ignore-in-wheel", "-w",
         os.path.join(ROOT_DIR, "dist"), filepath])
