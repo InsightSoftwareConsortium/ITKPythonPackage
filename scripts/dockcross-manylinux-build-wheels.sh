@@ -7,7 +7,7 @@
 #
 #   scripts/dockcross-manylinux-build-wheels.sh cp39
 
-MANYLINUX_VERSION=_2_28
+MANYLINUX_VERSION=2014
 IMAGE_TAG=20221108-102ebcc
 
 # Generate dockcross scripts

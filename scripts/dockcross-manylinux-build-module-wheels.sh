@@ -10,14 +10,14 @@
 #
 # Shared libraries can be included in the wheel by exporting them to LD_LIBRARY_PATH before
 # running this script.
-# 
+#
 # For example,
 #
 #   export LD_LIBRARY_PATH="/path/to/OpenCL.so:/path/to/OpenCL.so.1.2"
 #   scripts/dockcross-manylinux-build-module-wheels.sh cp39
 #
 
-MANYLINUX_VERSION=_2_28
+MANYLINUX_VERSION=2014
 IMAGE_TAG=20221108-102ebcc
 
 # Generate dockcross scripts

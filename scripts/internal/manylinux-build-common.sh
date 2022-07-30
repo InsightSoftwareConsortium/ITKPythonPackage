@@ -1,6 +1,8 @@
 # Content common to manylinux-build-wheels.sh and
 # manylinux-build-module-wheels.sh
 
+MANYLINUX_VERSION=2014
+
 set -e -x
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
@@ -40,7 +42,11 @@ case $(uname -m) in
 esac
 
 # Install prerequirements
-export PATH=/work/tools/doxygen-1.8.16/bin:$PATH
+if test $MANYLINUX_VERSION = "2014"; then
+  export PATH=/work/tools/doxygen-1.8.11/bin:$PATH
+else
+  export PATH=/work/tools/doxygen-1.8.16/bin:$PATH
+fi
 case $(uname -m) in
     i686)
         ARCH=x86
@@ -49,8 +55,13 @@ case $(uname -m) in
         if ! type doxygen > /dev/null 2>&1; then
           mkdir -p /work/tools
             pushd /work/tools > /dev/null 2>&1
-            curl https://data.kitware.com/api/v1/file/62c4d615bddec9d0c46cb705/download -o doxygen-1.8.16.linux.bin.tar.gz
-            tar -xvzf doxygen-1.8.16.linux.bin.tar.gz
+            if test $MANYLINUX_VERSION = "2014"; then
+                curl https://data.kitware.com/api/v1/file/5c0aa4b18d777f2179dd0a71/download -o doxygen-1.8.11.linux.bin.tar.gz
+                tar -xvzf doxygen-1.8.11.linux.bin.tar.gz
+            else
+              curl https://data.kitware.com/api/v1/file/62c4d615bddec9d0c46cb705/download -o doxygen-1.8.16.linux.bin.tar.gz
+              tar -xvzf doxygen-1.8.16.linux.bin.tar.gz
+            fi
           popd > /dev/null 2>&1
         fi
         ;;
@@ -59,8 +70,13 @@ case $(uname -m) in
         if ! type doxygen > /dev/null 2>&1; then
           mkdir -p /work/tools
             pushd /work/tools > /dev/null 2>&1
-            curl https://data.kitware.com/api/v1/file/62c4ed58bddec9d0c46f1388/download -o doxygen-1.8.16.linux.aarch64.bin.tar.gz
-            tar -xvzf doxygen-1.8.16.linux.aarch64.bin.tar.gz
+            if test $MANYLINUX_VERSION = "2014"; then
+              curl https://data.kitware.com/api/v1/file/6086e4b02fa25629b93ac66e/download -o doxygen-1.8.11.linux.aarch64.bin.tar.gz
+              tar -xvzf doxygen-1.8.11.linux.aarch64.bin.tar.gz
+            else
+              curl https://data.kitware.com/api/v1/file/62c4ed58bddec9d0c46f1388/download -o doxygen-1.8.16.linux.aarch64.bin.tar.gz
+              tar -xvzf doxygen-1.8.16.linux.aarch64.bin.tar.gz
+            fi
           popd > /dev/null 2>&1
         fi
         ;;
@@ -79,7 +95,5 @@ if ! type ninja > /dev/null 2>&1; then
   cp build-cmake/ninja /usr/local/bin/
   popd
 fi
-
-MANYLINUX_VERSION=_2_28
 
 echo "Building wheels for $ARCH using manylinux${MANYLINUX_VERSION}"
