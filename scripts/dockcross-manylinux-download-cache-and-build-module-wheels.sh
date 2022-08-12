@@ -46,25 +46,27 @@ if [[ ! -f ./zstd-1.2.0-linux/bin/unzstd ]]; then
   exit 255
 fi
 
-if [[ ! -f ITKPythonBuilds-linux.tar.zst ]]; then
-  curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.2.0.post1}/ITKPythonBuilds-linux.tar.zst -O
+TARBALL_NAME="ITKPythonBuilds-linux${TARBALL_SPECIALIZATION}.tar"
+
+if [[ ! -f ${TARBALL_NAME}.zst ]]; then
+  curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.2.0.post1}/${TARBALL_NAME}.zst -O
 fi
-if [[ ! -f ./ITKPythonBuilds-linux.tar.zst ]]; then
-  echo "ERROR: can not find required binary './ITKPythonBuilds-linux.tar.zst'"
+if [[ ! -f ./${TARBALL_NAME}.zst ]]; then
+  echo "ERROR: can not find required binary './${TARBALL_NAME}.zst'"
   exit 255
 fi
-./zstd-1.2.0-linux/bin/unzstd ./ITKPythonBuilds-linux.tar.zst -o ITKPythonBuilds-linux.tar
+./zstd-1.2.0-linux/bin/unzstd ./${TARBALL_NAME}.zst -o ${TARBALL_NAME}
 if [ "$#" -lt 1 ]; then
   echo "Extracting all files";
-  tar xf ITKPythonBuilds-linux.tar
+  tar xf ${TARBALL_NAME}
 else
   echo "Extracting files relevant for: $1";
-  tar xf ITKPythonBuilds-linux.tar ITKPythonPackage/scripts/
-  tar xf ITKPythonBuilds-linux.tar ITKPythonPackage/ITK-source/
-  tar xf ITKPythonBuilds-linux.tar ITKPythonPackage/oneTBB-prefix/
-  tar xf ITKPythonBuilds-linux.tar --wildcards ITKPythonPackage/ITK-$1*
+  tar xf ${TARBALL_NAME} ITKPythonPackage/scripts/
+  tar xf ${TARBALL_NAME} ITKPythonPackage/ITK-source/
+  tar xf ${TARBALL_NAME} ITKPythonPackage/oneTBB-prefix/
+  tar xf ${TARBALL_NAME} --wildcards ITKPythonPackage/ITK-$1*
 fi
-rm ITKPythonBuilds-linux.tar
+rm ${TARBALL_NAME}
 if [[ ! -f ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh ]]; then
   echo "ERROR: can not find required binary './ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh'"
   exit 255
