@@ -7,14 +7,53 @@ SCRIPT_DIR=$(cd $(dirname $0) || exit 1; pwd)
 
 MACPYTHON_PY_PREFIX=/Library/Frameworks/Python.framework/Versions
 
+# -----------------------------------------------------------------------
+# Script argument parsing
+#
+usage()
+{
+  echo "Usage:
+  macpython-build-common
+    [ -h | --help ]           show usage
+    [ -c | --cmake_options ]  space-separated string of CMake options to forward to the module (e.g. \"-DBUILD_TESTING=OFF\")
+    [ -- python_versions ]        build wheel for a specific python version(s). (e.g. -- cp39 cp310)"
+  exit 2
+}
+
+PYTHON_VERSIONS=""
+CMAKE_OPTIONS=""
+
+while (( "$#" )); do
+  case "$1" in
+    -c|--cmake_options)
+      CMAKE_OPTIONS="$2";
+      shift 2;;
+    -h|--help)
+      usage;
+      break;;
+    --)
+      shift;
+      break;;
+    *)
+      # Parse any unrecognized arguments as python versions
+      PYTHON_VERSIONS="${PYTHON_VERSIONS} $1";
+      shift;;
+  esac
+done
+
+# Parse all arguments after "--" as python versions
+PYTHON_VERSIONS="${PYTHON_VERSIONS} $@"
+# Trim whitespace
+PYTHON_VERSIONS=$(xargs <<< "${PYTHON_VERSIONS}")
+
 # Versions can be restricted by passing them in as arguments to the script
 # For example,
 # macpython-build-wheels.sh 3.9
-if [[ $# -eq 0 ]]; then
+if [[ -n "${PYTHON_VERSIONS}" ]]; then
   PYBINARIES=(${MACPYTHON_PY_PREFIX}/*)
 else
   PYBINARIES=()
-  for version in "$@"; do
+  for version in "$PYTHON_VERSIONS"; do
     PYBINARIES+=(${MACPYTHON_PY_PREFIX}/*${version}*)
   done
 fi

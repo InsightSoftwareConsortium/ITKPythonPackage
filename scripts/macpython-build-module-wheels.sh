@@ -72,6 +72,7 @@ for VENV in "${VENVS[@]}"; do
       -DBUILD_TESTING:BOOL=OFF \
       -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
       -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+      ${CMAKE_OPTIONS} \
     || exit 1
     # ${Python3_EXECUTABLE} setup.py clean    # Permission denied
 done
