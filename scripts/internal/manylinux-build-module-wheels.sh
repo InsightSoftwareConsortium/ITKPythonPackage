@@ -101,7 +101,6 @@ for PYBIN in "${PYBINARIES[@]}"; do
       -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
       ${CMAKE_OPTIONS} \
     || exit 1
-    ${PYBIN}/python setup.py clean
 done
 
 if test "${ARCH}" == "x64"; then
