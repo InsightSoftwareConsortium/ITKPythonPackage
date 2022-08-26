@@ -4,15 +4,17 @@
 # downloaded by the external module build scripts and used to build their
 # Python package on GitHub CI services.
 
+tbb_contents="ITKPythonPackage/oneTBB*"
 arch_postfix=""
 if test $(arch) == "arm64"; then
   arch_postfix="-arm64"
+  tbb_contents=""
 fi
 
 pushd /Users/svc-dashboard/D/P > /dev/null
 tar -cf ITKPythonBuilds-macosx${arch_postfix}.tar \
   ITKPythonPackage/ITK-* \
-  ITKPythonPackage/oneTBB* \
+  ${tbb_contents} \
   ITKPythonPackage/venvs \
   ITKPythonPackageRequiredExtractionDir.txt \
   ITKPythonPackage/scripts

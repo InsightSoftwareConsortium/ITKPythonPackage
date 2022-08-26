@@ -50,6 +50,11 @@ DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
 DELOCATE_PATCH=${VENV}/bin/delocate-patch
 
+if [[ $(arch) == "arm64" ]]; then
+  use_tbb="OFF"
+else
+  use_tbb="ON"
+fi
 # Build standalone project and populate archive cache
 tbb_dir=$PWD/oneTBB-prefix/lib/cmake/TBB
 # So delocate can find the libs
@@ -57,6 +62,7 @@ export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:$PWD/oneTBB-prefix/lib
 mkdir -p ITK-source
 pushd ITK-source > /dev/null 2>&1
   ${CMAKE_EXECUTABLE} -DITKPythonPackage_BUILD_PYTHON:PATH=0 \
+    -DITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
     -G Ninja \
     -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
       ${SCRIPT_DIR}/../
@@ -116,7 +122,7 @@ for VENV in "${VENVS[@]}"; do
         -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
         -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
         -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-        -DModule_ITKTBB:BOOL=ON \
+        -DModule_ITKTBB:BOOL=${use_tbb} \
         -DTBB_DIR:PATH=${tbb_dir} \
         -DITK_WRAP_DOC:BOOL=ON
       # Cleanup
@@ -151,7 +157,7 @@ for VENV in "${VENVS[@]}"; do
           -DITK_LEGACY_SILENT:BOOL=ON \
           -DITK_WRAP_PYTHON:BOOL=ON \
           -DITK_WRAP_DOC:BOOL=ON \
-          -DModule_ITKTBB:BOOL=ON \
+          -DModule_ITKTBB:BOOL=${use_tbb} \
           -DTBB_DIR:PATH=${tbb_dir} \
           -G Ninja \
           ${source_path} \
@@ -169,6 +175,7 @@ for VENV in "${VENVS[@]}"; do
           -DITK_BINARY_DIR:PATH=${build_path} \
           -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
           -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
+          -DITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
           -DITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
           -DITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
           -DITK_WRAP_unsigned_short:BOOL=ON \
