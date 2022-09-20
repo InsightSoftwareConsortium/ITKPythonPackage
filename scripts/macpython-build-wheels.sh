@@ -124,7 +124,8 @@ for VENV in "${VENVS[@]}"; do
         -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
         -DModule_ITKTBB:BOOL=${use_tbb} \
         -DTBB_DIR:PATH=${tbb_dir} \
-        -DITK_WRAP_DOC:BOOL=ON
+        -DITK_WRAP_DOC:BOOL=ON \
+        ${CMAKE_OPTIONS}
       # Cleanup
       ${Python3_EXECUTABLE} setup.py clean
 
@@ -159,6 +160,7 @@ for VENV in "${VENVS[@]}"; do
           -DITK_WRAP_DOC:BOOL=ON \
           -DModule_ITKTBB:BOOL=${use_tbb} \
           -DTBB_DIR:PATH=${tbb_dir} \
+          ${CMAKE_OPTIONS} \
           -G Ninja \
           ${source_path} \
         && ninja\
@@ -185,6 +187,7 @@ for VENV in "${VENVS[@]}"; do
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
           -DITK_WRAP_DOC:BOOL=ON \
+          ${CMAKE_OPTIONS} \
         || exit 1
         # Cleanup
         ${Python3_EXECUTABLE} setup.py clean
