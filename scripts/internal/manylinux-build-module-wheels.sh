@@ -97,6 +97,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
       -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
       -DSWIG_EXECUTABLE:FILEPATH=${itk_build_dir}/Wrapping/Generators/SwigInterface/swig/bin/swig \
       -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
+      -DCMAKE_INSTALL_LIBDIR:STRING=lib \
       -DBUILD_TESTING:BOOL=OFF \
       -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
       -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
