@@ -96,7 +96,7 @@ def rename_wheel_init(py_env, filepath):
     module_version = w.version
 
     dist_dir = os.path.dirname(filepath)
-    wheel_dir = os.path.join(dist_dir, "itk_" + module_name + "-" + module_version)
+    wheel_dir = os.path.join(dist_dir, "itk_" + module_name.replace('-','_') + "-" + module_version)
     init_dir = os.path.join(wheel_dir, "itk")
     init_file = os.path.join(init_dir, "__init__.py")
 
