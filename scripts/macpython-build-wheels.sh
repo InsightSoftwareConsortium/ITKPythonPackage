@@ -95,6 +95,9 @@ for VENV in "${VENVS[@]}"; do
       osx_arch="x86_64"
       build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
     fi
+    if [[ ! -z "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
+      osx_target="${MACOSX_DEPLOYMENT_TARGET}"
+    fi
     source_path=${SCRIPT_DIR}/../ITK-source/ITK
     SETUP_PY_CONFIGURE="${script_dir}/setup_py_configure.py"
 
