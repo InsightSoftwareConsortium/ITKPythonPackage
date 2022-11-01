@@ -56,6 +56,9 @@ for VENV in "${VENVS[@]}"; do
       osx_arch="x86_64"
       build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
     fi
+    if [[ ! -z "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
+      osx_target="${MACOSX_DEPLOYMENT_TARGET}"
+    fi
 
     if [[ -e $PWD/requirements-dev.txt ]]; then
       ${Python3_EXECUTABLE} -m pip install --upgrade -r $PWD/requirements-dev.txt
