@@ -105,6 +105,15 @@ if(ITKPythonPackage_SUPERBUILD)
   endif()
 
   if(ITKPythonPackage_USE_TBB)
+
+    set(tbb_cmake_cache_args)
+    if(CMAKE_OSX_DEPLOYMENT_TARGET)
+      list(APPEND tbb_cmake_cache_args
+        -DCMAKE_CXX_OSX_DEPLOYMENT_TARGET_FLAG:STRING="-mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}"
+        -DCMAKE_C_OSX_DEPLOYMENT_TARGET_FLAG:STRING="-mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}"
+        )
+    endif()
+
     ExternalProject_add(oneTBB
       URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.3.0.tar.gz
       URL_HASH SHA256=8f616561603695bbb83871875d2c6051ea28f8187dbe59299961369904d1d49e
@@ -114,6 +123,7 @@ if(ITKPythonPackage_SUPERBUILD)
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/../oneTBB-prefix
         -DCMAKE_INSTALL_LIBDIR:STRING=lib # Skip default initialization by GNUInstallDirs CMake module
         ${ep_common_cmake_cache_args}
+        ${tbb_cmake_cache_args}
         -DCMAKE_BUILD_TYPE:STRING=Release
       BUILD_BYPRODUCTS "${TBB_DIR}/TBBConfig.cmake"
       USES_TERMINAL_DOWNLOAD 1
