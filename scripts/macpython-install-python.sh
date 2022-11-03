@@ -43,7 +43,7 @@ GET_PIP_URL=https://bootstrap.pypa.io/get-pip.py
 DOWNLOADS_SDIR=downloads
 WORKING_SDIR=working
 
-# As of 5 April 2021 - latest Python of each version with binary download
+# As of 2 November 2022 - latest Python of each version with binary download
 # available.
 # See: https://www.python.org/downloads/mac-osx/
 LATEST_2p7=2.7.18
@@ -51,8 +51,9 @@ LATEST_3p5=3.5.4
 LATEST_3p6=3.6.8
 LATEST_3p7=3.7.9
 LATEST_3p8=3.8.10
-LATEST_3p9=3.9.5
-LATEST_3p10=3.10.0
+LATEST_3p9=3.9.13
+LATEST_3p10=3.10.8
+LATEST_3p11=3.11.0
 
 
 function check_python {
@@ -109,7 +110,9 @@ function fill_pyver {
         echo $ver
     elif [ $ver == 2 ] || [ $ver == "2.7" ]; then
         echo $LATEST_2p7
-    elif [ $ver == 3 ] || [ $ver == "3.10" ]; then
+    elif [ $ver == 3 ] || [ $ver == "3.11" ]; then
+        echo $LATEST_3p11
+    elif [ $ver == "3.10" ]; then
         echo $LATEST_3p10
     elif [ $ver == "3.9" ]; then
         echo $LATEST_3p9
@@ -199,10 +202,10 @@ function pyinst_fname_for_version {
         echo "python-${py_version}-macos11.${inst_ext}"
       fi
     else
-      if [ "$py_version" == "3.10.0" ]; then
-        echo "python-${py_version}-macos${py_osx_ver}.${inst_ext}"
-      else
+      if [ "$py_version" == "3.7.9" ]; then
         echo "python-${py_version}-macosx${py_osx_ver}.${inst_ext}"
+      else
+        echo "python-${py_version}-macos${py_osx_ver}.${inst_ext}"
       fi
     fi
 }
@@ -396,21 +399,22 @@ function make_workon_venv {
 }
 
 # Remove previous versions
-sudo rm -rf ${MACPYTHON_FRAMEWORK}
+#echo "Remove and update Python files at ${MACPYTHON_FRAMEWORK}"
+#sudo rm -rf ${MACPYTHON_FRAMEWORK}
 
 if test "$(arch)" == "arm64"; then
   echo "we are arm"
   PLAT=arm64
-  for pyversion in $LATEST_3p9 $LATEST_3p10; do
+  for pyversion in $LATEST_3p9 $LATEST_3p10 $LATEST_3p11; do
     install_macpython $pyversion 11
     install_virtualenv
   done
 else
-  for pyversion in $LATEST_3p7 $LATEST_3p8 $LATEST_3p9; do
+  for pyversion in $LATEST_3p7; do
     install_macpython $pyversion 10.9
     install_virtualenv
   done
-  for pyversion in $LATEST_3p10; do
+  for pyversion in $LATEST_3p8 $LATEST_3p9 $LATEST_3p10 $LATEST_3p11; do
     install_macpython $pyversion 11
     install_virtualenv
   done
