@@ -16,7 +16,7 @@ usage()
   macpython-build-common
     [ -h | --help ]           show usage
     [ -c | --cmake_options ]  space-separated string of CMake options to forward to the module (e.g. \"-DBUILD_TESTING=OFF\")
-    [ -- python_versions ]        build wheel for a specific python version(s). (e.g. -- cp39 cp310)"
+    [ -- python_versions ]        build wheel for a specific python version(s). (e.g. -- 3.9 3.10)"
   exit 2
 }
 
@@ -49,7 +49,7 @@ PYTHON_VERSIONS=$(xargs <<< "${PYTHON_VERSIONS}")
 # Versions can be restricted by passing them in as arguments to the script
 # For example,
 # macpython-build-wheels.sh 3.9
-if [[ -n "${PYTHON_VERSIONS}" ]]; then
+if [[ -z "${PYTHON_VERSIONS}" ]]; then
   PYBINARIES=(${MACPYTHON_PY_PREFIX}/*)
 else
   PYBINARIES=()

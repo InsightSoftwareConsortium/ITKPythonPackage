@@ -13,7 +13,7 @@
 # For example,
 #
 #   export DYLD_LIBRARY_PATH="/path/to/libs"
-#   scripts/macpython-build-module-wheels.sh cp39
+#   scripts/macpython-build-module-wheels.sh 3.9
 #
 
 # -----------------------------------------------------------------------
