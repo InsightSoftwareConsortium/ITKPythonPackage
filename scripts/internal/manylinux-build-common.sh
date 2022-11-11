@@ -12,7 +12,7 @@ if [[ $# -eq 0 ]]; then
   PYBIN=(/opt/python/*/bin)
   PYBINARIES=()
   for version in "${PYBIN[@]}"; do
-    if [[ ${version} == *"cp37"* || ${version} == *"cp38"* || ${version} == *"cp39"* || ${version} == *"cp310"* ]]; then
+    if [[ ${version} == *"cp37"* || ${version} == *"cp38"* || ${version} == *"cp39"* || ${version} == *"cp310"* || ${version} == *"cp311" ]]; then
       PYBINARIES+=(${version})
     fi
   done
@@ -70,7 +70,7 @@ case $(uname -m) in
 esac
 if ! type ninja > /dev/null 2>&1; then
   if test ! -d ninja; then
-    git clone git://github.com/ninja-build/ninja.git
+    git clone https://github.com/ninja-build/ninja.git
   fi
   pushd ninja
   git checkout release

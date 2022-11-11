@@ -8,7 +8,7 @@
 #   scripts/dockcross-manylinux-build-wheels.sh cp39
 
 MANYLINUX_VERSION=_2_28
-IMAGE_TAG=20220715-9ce3707
+IMAGE_TAG=20221108-102ebcc
 
 # Generate dockcross scripts
 docker run --rm dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > /tmp/dockcross-manylinux-x64

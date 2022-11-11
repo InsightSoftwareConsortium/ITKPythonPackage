@@ -13,7 +13,7 @@
 # For example,
 #
 #   export DYLD_LIBRARY_PATH="/path/to/libs"
-#   scripts/macpython-build-module-wheels.sh cp39
+#   scripts/macpython-build-module-wheels.sh 3.9
 #
 
 # -----------------------------------------------------------------------
@@ -50,11 +50,18 @@ DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
 DELOCATE_PATCH=${VENV}/bin/delocate-patch
 
+build_type="Release"
+
 if [[ $(arch) == "arm64" ]]; then
+  osx_target="11.0"
+  osx_arch="arm64"
   use_tbb="OFF"
 else
+  osx_target="10.9"
+  osx_arch="x86_64"
   use_tbb="ON"
 fi
+
 # Build standalone project and populate archive cache
 tbb_dir=$PWD/oneTBB-prefix/lib/cmake/TBB
 # So delocate can find the libs
@@ -64,7 +71,10 @@ pushd ITK-source > /dev/null 2>&1
   ${CMAKE_EXECUTABLE} -DITKPythonPackage_BUILD_PYTHON:PATH=0 \
     -DITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
     -G Ninja \
+    -DCMAKE_BUILD_TYPE:STRING=${build_type} \
     -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
+    -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+    -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
       ${SCRIPT_DIR}/../
   ${NINJA_EXECUTABLE}
 popd > /dev/null 2>&1
@@ -83,17 +93,15 @@ for VENV in "${VENVS[@]}"; do
 
     ${Python3_EXECUTABLE} -m pip install --upgrade -r ${SCRIPT_DIR}/../requirements-dev.txt
 
-    build_type="Release"
     if [[ $(arch) == "arm64" ]]; then
       plat_name="macosx-11.0-arm64"
-      osx_target="11.0"
-      osx_arch="arm64"
       build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_arm64"
     else
       plat_name="macosx-10.9-x86_64"
-      osx_target="10.9"
-      osx_arch="x86_64"
       build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
+    fi
+    if [[ ! -z "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
+      osx_target="${MACOSX_DEPLOYMENT_TARGET}"
     fi
     source_path=${SCRIPT_DIR}/../ITK-source/ITK
     SETUP_PY_CONFIGURE="${script_dir}/setup_py_configure.py"

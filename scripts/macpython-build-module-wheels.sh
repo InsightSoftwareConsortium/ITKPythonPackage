@@ -56,6 +56,9 @@ for VENV in "${VENVS[@]}"; do
       osx_arch="x86_64"
       build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
     fi
+    if [[ ! -z "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
+      osx_target="${MACOSX_DEPLOYMENT_TARGET}"
+    fi
 
     if [[ -e $PWD/requirements-dev.txt ]]; then
       ${Python3_EXECUTABLE} -m pip install --upgrade -r $PWD/requirements-dev.txt
@@ -64,6 +67,7 @@ for VENV in "${VENVS[@]}"; do
     ${Python3_EXECUTABLE} setup.py bdist_wheel --build-type Release --plat-name ${plat_name} -G Ninja -- \
       -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
       -DITK_DIR:PATH=${itk_build_path} \
+      -DCMAKE_INSTALL_LIBDIR:STRING=lib \
       -DITK_USE_SYSTEM_SWIG:BOOL=ON \
       -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
       -DSWIG_EXECUTABLE:FILEPATH=${itk_build_path}/Wrapping/Generators/SwigInterface/swig/bin/swig \

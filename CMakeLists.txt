@@ -89,8 +89,8 @@ if(ITKPythonPackage_SUPERBUILD)
 
   set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
 
- # ITK master 2022-09-20
-  set(ITK_GIT_TAG "171fb2ba33a87041f99328a2f26612ff33aa9cc8")
+ # ITK master 2022-11-11
+  set(ITK_GIT_TAG "abf5fa10522a36bc51f42f20f426a622f42ed90d")
 
   #-----------------------------------------------------------------------------
   # A separate project is used to download ITK, so that it can reused
@@ -105,6 +105,15 @@ if(ITKPythonPackage_SUPERBUILD)
   endif()
 
   if(ITKPythonPackage_USE_TBB)
+
+    set(tbb_cmake_cache_args)
+    if(CMAKE_OSX_DEPLOYMENT_TARGET)
+      list(APPEND tbb_cmake_cache_args
+        -DCMAKE_CXX_OSX_DEPLOYMENT_TARGET_FLAG:STRING="-mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}"
+        -DCMAKE_C_OSX_DEPLOYMENT_TARGET_FLAG:STRING="-mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}"
+        )
+    endif()
+
     ExternalProject_add(oneTBB
       URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.3.0.tar.gz
       URL_HASH SHA256=8f616561603695bbb83871875d2c6051ea28f8187dbe59299961369904d1d49e
@@ -114,6 +123,7 @@ if(ITKPythonPackage_SUPERBUILD)
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/../oneTBB-prefix
         -DCMAKE_INSTALL_LIBDIR:STRING=lib # Skip default initialization by GNUInstallDirs CMake module
         ${ep_common_cmake_cache_args}
+        ${tbb_cmake_cache_args}
         -DCMAKE_BUILD_TYPE:STRING=Release
       BUILD_BYPRODUCTS "${TBB_DIR}/TBBConfig.cmake"
       USES_TERMINAL_DOWNLOAD 1
