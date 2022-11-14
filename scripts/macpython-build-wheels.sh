@@ -38,7 +38,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
     fi
     py_mm=$(basename ${PYBIN})
     VENV=${SCRIPT_DIR}/../venvs/${py_mm}
-    VIRTUALENV_EXECUTABLE=${PYBIN}/bin/virtualenv
+    VIRTUALENV_EXECUTABLE="${PYBIN}/bin/python3 -m venv"
     ${VIRTUALENV_EXECUTABLE} ${VENV}
     VENVS+=(${VENV})
 done
