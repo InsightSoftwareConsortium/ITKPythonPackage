@@ -35,16 +35,16 @@ do
 done
 # -----------------------------------------------------------------------
 
-# Packages distributed by github are in zstd format, so we need to download that binary to uncompress
-if [[ ! -f zstd-1.2.0-linux.tar.gz ]]; then
-  curl https://data.kitware.com/api/v1/file/592dd8068d777f16d01e1a92/download -o zstd-1.2.0-linux.tar.gz
-  gunzip -d zstd-1.2.0-linux.tar.gz
-  tar xf zstd-1.2.0-linux.tar
-fi
-if [[ ! -f ./zstd-1.2.0-linux/bin/unzstd ]]; then
-  echo "ERROR: can not find required binary './zstd-1.2.0-linux/bin/unzstd'"
+# Verifies that unzstd binary is available to decompress ITK build archives.
+unzstd_exe=`(which unzstd)`
+
+if [[ -z ${unzstd_exe} ]]; then
+  echo "ERROR: can not find required binary 'unzstd' "
   exit 255
 fi
+
+# Expect unzstd > v1.3.2, see discussion in `dockcross-manylinux-build-tarball.sh`
+${unzstd_exe} --version
 
 TARBALL_NAME="ITKPythonBuilds-linux${TARBALL_SPECIALIZATION}.tar"
 
@@ -55,7 +55,7 @@ if [[ ! -f ./${TARBALL_NAME}.zst ]]; then
   echo "ERROR: can not find required binary './${TARBALL_NAME}.zst'"
   exit 255
 fi
-./zstd-1.2.0-linux/bin/unzstd ./${TARBALL_NAME}.zst -o ${TARBALL_NAME}
+${unzstd_exe} --long=31 ./${TARBALL_NAME}.zst -o ${TARBALL_NAME}
 if [ "$#" -lt 1 ]; then
   echo "Extracting all files";
   tar xf ${TARBALL_NAME}
