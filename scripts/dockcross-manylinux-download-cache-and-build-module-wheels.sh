@@ -74,4 +74,8 @@ fi
 cp -a ITKPythonPackage/oneTBB-prefix ./
 
 set -- "${FORWARD_ARGS[@]}"; # Restore initial argument list
-./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh "$@"
+if [[ "${TARBALL_SPECIALIZATION}" = "-manylinux_2_28_aarch64" ]]; then
+  ./ITKPythonPackage/scripts/manylinux_2_28_aarch64-build-module-wheels.sh "$@"
+else
+  ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh "$@"
+fi
