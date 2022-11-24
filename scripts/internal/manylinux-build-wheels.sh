@@ -196,6 +196,10 @@ for itk_wheel in dist/itk*-linux*.whl; do
   rm -rf unpacked_whl packed_whl ${itk_wheel}
 done
 
+for itk_wheel in dist/itk*.whl.whl; do
+  mv $itk_wheel dist/$(basename $itk_wheel .whl)
+done
+
 # Install packages and test
 for PYBIN in "${PYBINARIES[@]}"; do
     ${PYBIN}/pip install --user numpy
