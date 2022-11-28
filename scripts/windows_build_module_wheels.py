@@ -49,7 +49,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
             if os.path.exists(requirements_file):
                 check_call([pip, "install", "--upgrade", "-r", requirements_file])
             check_call([pip, "install", "cmake"])
-            check_call([pip, "install", "scikit_build"])
+            check_call([pip, "install", "scikit_build", "--upgrade"])
             check_call([pip, "install", "ninja"])
             check_call([pip, "install", "delvewheel"])
 
