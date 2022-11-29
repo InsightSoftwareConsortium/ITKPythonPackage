@@ -35,4 +35,4 @@ if [[ -n ${LD_LIBRARY_PATH} ]]; then
 fi
 
 docker run --privileged --rm tonistiigi/binfmt --install all
-docker run --rm -it $DOCKER_ARGS -v $(pwd):/work/ quay.io/pypa/manylinux${MANYLINUX_VERSION}_aarch64:${IMAGE_TAG} "/ITKPythonPackage/scripts/internal/manylinux-aarch64-build-module-wheels.sh" "$@"
+docker run --rm $DOCKER_ARGS -v $(pwd):/work/ quay.io/pypa/manylinux${MANYLINUX_VERSION}_aarch64:${IMAGE_TAG} "/ITKPythonPackage/scripts/internal/manylinux-aarch64-build-module-wheels.sh" "$@"
