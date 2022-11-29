@@ -2,6 +2,17 @@
 
 # This module should be pulled and run from an ITKModule root directory to generate the Linux python wheels of this module,
 # it is used by the azure-pipeline.yml file contained in ITKModuleTemplate: https://github.com/InsightSoftwareConsortium/ITKModuleTemplate
+#
+# Exported variables used in this script:
+# - ITK_PACKAGE_VERSION: Tag for ITKPythonBuilds build archive to use
+# - TARBALL_SPECIALIZATION: manylinux specialization to use
+#     Examples: "-manylinux_2_28", "-manylinux2014", "-manylinux_2_28_aarch64"
+# - ITKPYTHONPACKAGE_TAG: Tag for ITKPythonPackage build scripts to use.
+#     If ITKPYTHONPACKAGE_TAG is empty then the default scripts distributed
+#     with the ITKPythonBuilds archive will be used.
+# - ITKPYTHONPACKAGE_ORG: Github organization or user to use for ITKPythonPackage
+#     build script source. Default is InsightSoftwareConsortium.
+#     Ignored if ITKPYTHONPACKAGE_TAG is empty.
 
 # -----------------------------------------------------------------------
 # Script argument parsing
@@ -67,6 +78,21 @@ else
   tar xf ${TARBALL_NAME} --wildcards ITKPythonPackage/ITK-$1*
 fi
 rm ${TARBALL_NAME}
+
+# Optional: Update build scripts
+if [[ -n ${ITKPYTHONPACKAGE_TAG} ]]; then
+  echo "Updating build scripts to ${ITKPYTHONPACKAGE_ORG:=InsightSoftwareConsortium}/ITKPythonPackage@${ITKPYTHONPACKAGE_TAG}"
+  git clone "https://github.com/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage.git" "IPP-tmp"
+  pushd IPP-tmp/
+  git checkout "${ITKPYTHONPACKAGE_TAG}"
+  git status
+  popd
+  
+  rm -rf ITKPythonPackage/scripts/
+  cp -r IPP-tmp/scripts ITKPythonPackage/
+  rm -rf IPP-tmp/
+fi
+
 if [[ ! -f ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh ]]; then
   echo "ERROR: can not find required binary './ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh'"
   exit 255
