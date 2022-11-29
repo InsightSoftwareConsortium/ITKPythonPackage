@@ -49,7 +49,7 @@ ${unzstd_exe} --version
 TARBALL_NAME="ITKPythonBuilds-linux${TARBALL_SPECIALIZATION}.tar"
 
 if [[ ! -f ${TARBALL_NAME}.zst ]]; then
-  curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.2.0.post1}/${TARBALL_NAME}.zst -O
+  curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.3.0}/${TARBALL_NAME}.zst -O
 fi
 if [[ ! -f ./${TARBALL_NAME}.zst ]]; then
   echo "ERROR: can not find required binary './${TARBALL_NAME}.zst'"
