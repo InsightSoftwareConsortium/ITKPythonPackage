@@ -2,6 +2,21 @@
 
 # This module should be pulled and run from an ITKModule root directory to generate the Linux python wheels of this module,
 # it is used by the azure-pipeline.yml file contained in ITKModuleTemplate: https://github.com/InsightSoftwareConsortium/ITKModuleTemplate
+#
+# Exported variables used in this script:
+# - ITK_PACKAGE_VERSION: Tag for ITKPythonBuilds build archive to use
+#     Examples: "v5.3.0", "v5.2.1.post1"
+#     See available tags at https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/tags
+# - MANYLINUX_VERSION: manylinux specialization to use
+#     Examples: "_2_28", "2014", "_2_28_aarch64"
+#     See https://github.com/dockcross/dockcross
+# - ITKPYTHONPACKAGE_TAG: Tag for ITKPythonPackage build scripts to use.
+#     If ITKPYTHONPACKAGE_TAG is empty then the default scripts distributed
+#     with the ITKPythonBuilds archive will be used.
+# - ITKPYTHONPACKAGE_ORG: Github organization or user to use for ITKPythonPackage
+#     build script source. Default is InsightSoftwareConsortium.
+#     Ignored if ITKPYTHONPACKAGE_TAG is empty.
+#
 
 # -----------------------------------------------------------------------
 # Script argument parsing
@@ -46,9 +61,14 @@ fi
 # Expect unzstd > v1.3.2, see discussion in `dockcross-manylinux-build-tarball.sh`
 ${unzstd_exe} --version
 
+# -----------------------------------------------------------------------
+# Fetch build archive
+
+TARBALL_SPECIALIZATION="-manylinux${MANYLINUX_VERSION:=_2_28}"
 TARBALL_NAME="ITKPythonBuilds-linux${TARBALL_SPECIALIZATION}.tar"
 
 if [[ ! -f ${TARBALL_NAME}.zst ]]; then
+  echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.3.0}/${TARBALL_NAME}.zst"
   curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.3.0}/${TARBALL_NAME}.zst -O
 fi
 if [[ ! -f ./${TARBALL_NAME}.zst ]]; then
@@ -67,14 +87,31 @@ else
   tar xf ${TARBALL_NAME} --wildcards ITKPythonPackage/ITK-$1*
 fi
 rm ${TARBALL_NAME}
+
+# Optional: Update build scripts
+if [[ -n ${ITKPYTHONPACKAGE_TAG} ]]; then
+  echo "Updating build scripts to ${ITKPYTHONPACKAGE_ORG:=InsightSoftwareConsortium}/ITKPythonPackage@${ITKPYTHONPACKAGE_TAG}"
+  git clone "https://github.com/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage.git" "IPP-tmp"
+  pushd IPP-tmp/
+  git checkout "${ITKPYTHONPACKAGE_TAG}"
+  git status
+  popd
+  
+  rm -rf ITKPythonPackage/scripts/
+  cp -r IPP-tmp/scripts ITKPythonPackage/
+  rm -rf IPP-tmp/
+fi
+
 if [[ ! -f ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh ]]; then
   echo "ERROR: can not find required binary './ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh'"
   exit 255
 fi
 cp -a ITKPythonPackage/oneTBB-prefix ./
 
+# -----------------------------------------------------------------------
+
 set -- "${FORWARD_ARGS[@]}"; # Restore initial argument list
-if [[ "${TARBALL_SPECIALIZATION}" = "-manylinux_2_28_aarch64" ]]; then
+if [[ "${MANYLINUX_VERSION}" = "_2_28_aarch64" ]]; then
   ./ITKPythonPackage/scripts/manylinux_2_28_aarch64-build-module-wheels.sh "$@"
 else
   ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh "$@"

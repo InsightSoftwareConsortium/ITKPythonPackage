@@ -15,6 +15,16 @@
 #   DOCKER_ARGS="-v /path/to/lib.so:/usr/local/lib64/lib.so"
 #   /tmp/dockcross-manylinux-x64 -a "$DOCKER_ARGS" manylinux-build-module-wheels.sh
 #
+# The specialized manylinux container version should be set prior to running this script.
+# See https://github.com/dockcross/dockcross for available versions and tags.
+#
+# For example, `docker run -e <var>` can be used to set an environment variable when launching a container:
+#
+#   export MANYLINUX_VERSION=2014
+#   docker run --rm dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > /tmp/dockcross-manylinux-x64
+#   chmod u+x /tmp/dockcross-manylinux-x64
+#   /tmp/dockcross-manylinux-x64 -e MANYLINUX_VERSION manylinux-build-module-wheels.sh cp39
+#
 
 # -----------------------------------------------------------------------
 # Script argument parsing
