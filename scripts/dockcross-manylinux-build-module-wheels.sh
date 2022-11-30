@@ -16,9 +16,19 @@
 #   export LD_LIBRARY_PATH="/path/to/OpenCL.so:/path/to/OpenCL.so.1.2"
 #   scripts/dockcross-manylinux-build-module-wheels.sh cp39
 #
+# A specialized manylinux image and tag can be used by exporting
+# MANYLINUX_VERSION and IMAGE_TAG before running this script.
+# See https://github.com/dockcross/dockcross for available versions and tags.
+#
+# For example,
+#
+#   export MANYLINUX_VERSION=2014
+#   export IMAGE_TAG=20221108-102ebcc
+#   scripts/dockcross-manylinux-build-module-wheels.sh cp39
+#
 
-MANYLINUX_VERSION=_2_28
-IMAGE_TAG=20221128-2024e4b
+MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
+IMAGE_TAG=${IMAGE_TAG:=20221128-2024e4b}
 
 # Generate dockcross scripts
 docker run --rm dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > /tmp/dockcross-manylinux-x64
@@ -31,6 +41,7 @@ chmod 777 $(pwd)/tools
 # Build wheels
 mkdir -p dist
 DOCKER_ARGS="-v $(pwd)/dist:/work/dist/ -v $script_dir/..:/ITKPythonPackage -v $(pwd)/tools:/tools"
+DOCKER_ARGS+=" -e MANYLINUX_VERSION"
 # Mount any shared libraries
 if [[ -n ${LD_LIBRARY_PATH} ]]; then
   for libpath in ${LD_LIBRARY_PATH//:/ }; do
