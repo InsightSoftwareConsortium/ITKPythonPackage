@@ -73,8 +73,4 @@ chmod u+x dockcross-manylinux-download-cache.sh
 
 echo "Building module wheels"
 set -- "${FORWARD_ARGS[@]}"; # Restore initial argument list
-if [[ "${MANYLINUX_VERSION}" = "_2_28_aarch64" ]]; then
-  ./ITKPythonPackage/scripts/manylinux_2_28_aarch64-build-module-wheels.sh "$@"
-else
-  ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh "$@"
-fi
+./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh "$@"

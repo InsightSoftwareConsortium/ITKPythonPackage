@@ -28,13 +28,21 @@
 #   See https://github.com/dockcross/dockcross for available versions and tags.
 #   For instance, `export MANYLINUX_VERSION=2014`
 #
+# `TARGET_ARCH`: Target architecture for which wheels should be built.
+#   For instance, `export MANYLINUX_VERSION=aarch64`
+#
 # `IMAGE_TAG`: Specialized manylinux image tag to use for building.
-#   For instance, `export IMAGE_TAG=20221205-459c9f0`
+#   For instance, `export IMAGE_TAG=20221205-459c9f0`.
+#   Tagged images are available at:
+#   - https://github.com/dockcross/dockcross (x64 architecture)
+#   - https://quay.io/organization/pypa (ARM architecture)
 #
 # `ITK_MODULE_PREQ`: Prerequisite ITK modules that must be built before the requested module.
 #   See notes in `dockcross-manylinux-build-module-deps.sh`.
 #
 # `ITK_MODULE_NO_CLEANUP`: Option to skip cleanup steps.
+#
+# - `NO_SUDO`: Disable the use of superuser permissions for running docker.
 #
 ########################################################################
 
@@ -42,18 +50,14 @@
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/dockcross-manylinux-set-vars.sh"
 
-echo "ITK_MODULE_PREQ ${ITK_MODULE_PREQ}"
 if [[ -n ${ITK_MODULE_PREQ} ]]; then
+  echo "Building module dependencies ${ITK_MODULE_PREQ}"
   source "${script_dir}/dockcross-manylinux-build-module-deps.sh"
 fi
 
-# Generate dockcross scripts
-docker run --rm dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > /tmp/dockcross-manylinux-x64
-chmod u+x /tmp/dockcross-manylinux-x64
-
+# Set up paths and variables for build
 mkdir -p $(pwd)/tools
 chmod 777 $(pwd)/tools
-# Build wheels
 mkdir -p dist
 DOCKER_ARGS="-v $(pwd)/dist:/work/dist/ -v ${script_dir}/..:/ITKPythonPackage -v $(pwd)/tools:/tools"
 DOCKER_ARGS+=" -e MANYLINUX_VERSION"
@@ -64,9 +68,28 @@ if [[ -n ${LD_LIBRARY_PATH} ]]; then
   done
 fi
 
-/tmp/dockcross-manylinux-x64 \
-  -a "$DOCKER_ARGS" \
-  "/ITKPythonPackage/scripts/internal/manylinux-build-module-wheels.sh" "$@"
+if [[ "${TARGET_ARCH}" = "aarch64" ]]; then
+  echo "Install aarch64 architecture emulation tools to perform build for ARM platform"
+
+  if [[ ! ${NO_SUDO} ]]; then
+    docker_prefix="sudo"
+  fi
+
+  ${docker_prefix} docker run --privileged --rm tonistiigi/binfmt --install all
+
+  # Build wheels
+  DOCKER_ARGS+=" -v $(pwd):/work/ --rm"
+  ${docker_prefix} docker run $DOCKER_ARGS ${CONTAINER_SOURCE} "/ITKPythonPackage/scripts/internal/manylinux-aarch64-build-module-wheels.sh" "$@"
+else
+  # Generate dockcross scripts
+  docker run --rm ${CONTAINER_SOURCE} > /tmp/dockcross-manylinux-x64
+  chmod u+x /tmp/dockcross-manylinux-x64
+
+  # Build wheels
+  /tmp/dockcross-manylinux-x64 \
+    -a "$DOCKER_ARGS" \
+    "/ITKPythonPackage/scripts/internal/manylinux-build-module-wheels.sh" "$@"
+fi
 
 if [[ -z ${ITK_MODULE_NO_CLEANUP} ]]; then
   source "${script_dir}/dockcross-manylinux-cleanup.sh"

@@ -34,12 +34,29 @@ ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG:=master}
 #   See https://github.com/dockcross/dockcross for available versions and tags.
 MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
 
+# Target platform architecture (x64, aarch64)
+TARGET_ARCH=${TARGET_ARCH:=x64}
+
 # Specialized manylinux image tag to use for building.
-if [[ ${MANYLINUX_VERSION} == _2_28 ]]; then
+if [[ ${MANYLINUX_VERSION} == _2_28 && ${TARGET_ARCH} == x64 ]]; then
   IMAGE_TAG=${IMAGE_TAG:=20221205-459c9f0}
+elif [[ ${MANYLINUX_VERSION} == _2_28 && ${TARGET_ARCH} == aarch64 ]]; then
+  IMAGE_TAG=${IMAGE_TAG:=2022-11-28-5d13db4}
 elif [[ ${MANYLINUX_VERSION} == 2014 ]]; then
   IMAGE_TAG=${IMAGE_TAG:=20221201-fd49c08}
 else
   echo "Unknown manylinux version ${MANYLINUX_VERSION}"
+  exit 1;
+fi
+
+# Set container for requested version/arch/tag.
+if [[ ${TARGET_ARCH} == x64 ]]; then
+  MANYLINUX_IMAGE_NAME=${MANYLINUX_IMAGE_NAME:="manylinux${MANYLINUX_VERSION}-${TARGET_ARCH}:${IMAGE_TAG}"}
+  CONTAINER_SOURCE="dockcross/${MANYLINUX_IMAGE_NAME}"
+elif [[ ${TARGET_ARCH} == aarch64 ]]; then
+  MANYLINUX_IMAGE_NAME=${MANYLINUX_IMAGE_NAME:="manylinux${MANYLINUX_VERSION}_${TARGET_ARCH}:${IMAGE_TAG}"}
+  CONTAINER_SOURCE="quay.io/pypa/${MANYLINUX_IMAGE_NAME}"
+else
+  echo "Unknown target architecture ${TARGET_ARCH}"
   exit 1;
 fi
