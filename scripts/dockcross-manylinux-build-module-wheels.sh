@@ -23,12 +23,12 @@
 # For example,
 #
 #   export MANYLINUX_VERSION=2014
-#   export IMAGE_TAG=20221108-102ebcc
+#   export IMAGE_TAG=20221205-459c9f0
 #   scripts/dockcross-manylinux-build-module-wheels.sh cp39
 #
 
 MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
-IMAGE_TAG=${IMAGE_TAG:=20221201-fd49c08}
+IMAGE_TAG=${IMAGE_TAG:=20221205-459c9f0}
 
 # Generate dockcross scripts
 docker run --rm dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > /tmp/dockcross-manylinux-x64
