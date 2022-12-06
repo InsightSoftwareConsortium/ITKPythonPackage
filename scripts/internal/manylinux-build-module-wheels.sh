@@ -84,6 +84,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
 
     if [[ -e /work/requirements-dev.txt ]]; then
       ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
+    elif [[ -e /ITKPythonPackage/requirements-dev.txt ]]; then
+      ${PYBIN}/pip install --upgrade -r /ITKPythonPackage/requirements-dev.txt
     fi
     version=$(basename $(dirname ${PYBIN}))
     # Remove "m" -- not present in Python 3.8 and later

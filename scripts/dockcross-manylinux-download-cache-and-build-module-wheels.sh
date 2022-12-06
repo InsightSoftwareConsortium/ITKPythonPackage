@@ -99,6 +99,7 @@ if [[ -n ${ITKPYTHONPACKAGE_TAG} ]]; then
   
   rm -rf ITKPythonPackage/scripts/
   cp -r IPP-tmp/scripts ITKPythonPackage/
+  cp IPP-tmp/requirements-dev.txt ITKPythonPackage/
   rm -rf IPP-tmp/
 fi
 
