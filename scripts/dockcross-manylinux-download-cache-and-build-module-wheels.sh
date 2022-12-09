@@ -48,68 +48,15 @@ do
        usage; break ;;
   esac
 done
-# -----------------------------------------------------------------------
-
-# Verifies that unzstd binary is available to decompress ITK build archives.
-unzstd_exe=`(which unzstd)`
-
-if [[ -z ${unzstd_exe} ]]; then
-  echo "ERROR: can not find required binary 'unzstd' "
-  exit 255
-fi
-
-# Expect unzstd > v1.3.2, see discussion in `dockcross-manylinux-build-tarball.sh`
-${unzstd_exe} --version
 
 # -----------------------------------------------------------------------
-# Fetch build archive
+# Download and extract cache
 
-TARBALL_SPECIALIZATION="-manylinux${MANYLINUX_VERSION:=_2_28}"
-TARBALL_NAME="ITKPythonBuilds-linux${TARBALL_SPECIALIZATION}.tar"
-
-if [[ ! -f ${TARBALL_NAME}.zst ]]; then
-  echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.3.0}/${TARBALL_NAME}.zst"
-  curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.3.0}/${TARBALL_NAME}.zst -O
-fi
-if [[ ! -f ./${TARBALL_NAME}.zst ]]; then
-  echo "ERROR: can not find required binary './${TARBALL_NAME}.zst'"
-  exit 255
-fi
-${unzstd_exe} --long=31 ./${TARBALL_NAME}.zst -o ${TARBALL_NAME}
-if [ "$#" -lt 1 ]; then
-  echo "Extracting all files";
-  tar xf ${TARBALL_NAME}
-else
-  echo "Extracting files relevant for: $1";
-  tar xf ${TARBALL_NAME} ITKPythonPackage/scripts/
-  tar xf ${TARBALL_NAME} ITKPythonPackage/ITK-source/
-  tar xf ${TARBALL_NAME} ITKPythonPackage/oneTBB-prefix/
-  tar xf ${TARBALL_NAME} --wildcards ITKPythonPackage/ITK-$1*
-fi
-rm ${TARBALL_NAME}
-
-# Optional: Update build scripts
-if [[ -n ${ITKPYTHONPACKAGE_TAG} ]]; then
-  echo "Updating build scripts to ${ITKPYTHONPACKAGE_ORG:=InsightSoftwareConsortium}/ITKPythonPackage@${ITKPYTHONPACKAGE_TAG}"
-  git clone "https://github.com/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage.git" "IPP-tmp"
-  pushd IPP-tmp/
-  git checkout "${ITKPYTHONPACKAGE_TAG}"
-  git status
-  popd
-  
-  rm -rf ITKPythonPackage/scripts/
-  cp -r IPP-tmp/scripts ITKPythonPackage/
-  cp IPP-tmp/requirements-dev.txt ITKPythonPackage/
-  rm -rf IPP-tmp/
-fi
-
-if [[ ! -f ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh ]]; then
-  echo "ERROR: can not find required binary './ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh'"
-  exit 255
-fi
-cp -a ITKPythonPackage/oneTBB-prefix ./
+curl -L https://github.com/${ITKPYTHONPACKAGE_ORG:=InsightSoftwareConsortium}/ITKPythonPackage/${ITKPYTHONPACKAGE_TAG:=v5.3.0}/scripts/dockcross-manylinux-download-cache.sh -O
+./dockcross-manylinux-download-cache $1
 
 # -----------------------------------------------------------------------
+# Build module wheels
 
 set -- "${FORWARD_ARGS[@]}"; # Restore initial argument list
 if [[ "${MANYLINUX_VERSION}" = "_2_28_aarch64" ]]; then
