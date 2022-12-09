@@ -21,6 +21,10 @@
 # - $env:ITKPYTHONPACKAGE_ORG: Github organization or user to use for ITKPythonPackage
 #     build script source. Default is InsightSoftwareConsortium.
 #     Ignored if ITKPYTHONPACKAGE_TAG is empty.
+# - $env:ITK_MODULE_PREQ: Delimited list of ITK module dependencies to build before
+#     building the target module.
+#   Format is `<org_name>/<module_name>@<module_tag>:<org_name>/<module_name>@<module_tag>:...`.
+#   For instance, `export ITK_MODULE_PREQ=InsightSoftwareConsortium/ITKMeshToPolyData@v0.10.0`
 #
 
 $pythonArch = "64"
@@ -62,5 +66,31 @@ Invoke-WebRequest -Uri "https://data.kitware.com/api/v1/file/5bbf87ba8d777f06b91
 7z x grep-win.zip -oC:\P\grep -aoa -r
 $env:Path += ";C:\P\grep"
 
+# Build ITK module dependencies, if any
+$build_command = "& `"C:\Python$pythonVersion-x$pythonArch\python.exe`" `"C:\P\IPP\scripts\windows_build_module_wheels.py`" --no-cleanup --py-envs `"3$($args[0])-x64`""
+echo "Build command: $build_command"
+
+echo "ITK_MODULE_PREQ: $env:ITK_MODULE_PREQ $ITK_MODULE_PREQ"
+if ($env:ITK_MODULE_PREQ) {
+  $MODULES_LIST = $env:ITK_MODULE_PREQ.split(":")
+  foreach($MODULE_INFO in $MODULES_LIST) {
+    $MODULE_ORG = $MODULE_INFO.split("/")[0]
+    $MODULE_NAME = $MODULE_INFO.split("@")[0].split("/")[1]
+    $MODULE_TAG = $MODULE_INFO.split("@")[1]
+
+    $MODULE_UPSTREAM = "https://github.com/$MODULE_ORG/$MODULE_NAME.git"
+    echo "Cloning from $MODULE_UPSTREAM"
+    git clone $MODULE_UPSTREAM
+
+    pushd $MODULE_NAME
+    git checkout $MODULE_TAG
+    echo "Building $MODULE_NAME"
+    iex $build_command
+    popd
+
+    Copy-Item $MODULE_NAME/include/* include/
+  }
+}
+
 # Run build scripts
-& "C:\Python$pythonVersion-x$pythonArch\python.exe" C:\P\IPP\scripts\windows_build_module_wheels.py --no-cleanup --py-envs "3$($args[0])-x64"
+iex $build_command

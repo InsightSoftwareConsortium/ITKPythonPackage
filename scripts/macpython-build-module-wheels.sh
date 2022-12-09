@@ -14,6 +14,17 @@
 #   scripts/macpython-build-module-wheels.sh 3.7 3.9
 #
 
+
+# -----------------------------------------------------------------------
+# (Optional) Build ITK module dependencies
+
+script_dir=$(cd $(dirname $0) || exit 1; pwd)
+
+echo "ITK_MODULE_PREQ ${ITK_MODULE_PREQ}"
+if [[ -n ${ITK_MODULE_PREQ} ]]; then
+  source "${script_dir}/macpython-build-module-deps.sh"
+fi
+
 # -----------------------------------------------------------------------
 # These variables are set in common script:
 #
@@ -22,7 +33,6 @@ MACPYTHON_PY_PREFIX=""
 SCRIPT_DIR=""
 VENVS=()
 
-script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/macpython-build-common.sh"
 # -----------------------------------------------------------------------
 

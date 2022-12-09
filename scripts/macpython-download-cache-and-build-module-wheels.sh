@@ -2,7 +2,7 @@
 
 # This module should be pull and run from an ITKModule root directory to generate the Mac python wheels of this module,
 # it is used by the .travis.yml file contained in ITKModuleTemplate: https://github.com/InsightSoftwareConsortium/ITKModuleTemplate
-# 
+#
 # Exported variables used in this script:
 # - ITK_PACKAGE_VERSION: Tag for ITKPythonBuilds build archive to use
 # - ITKPYTHONPACKAGE_TAG: Tag for ITKPythonPackage build scripts to use.
@@ -18,6 +18,7 @@ brew install zstd aria2 gnu-tar doxygen ninja
 brew upgrade cmake
 
 # Fetch ITKPythonBuilds archive containing ITK build artifacts
+echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.3.0}/ITKPythonBuilds-macosx.tar.zst"
 aria2c -c --file-allocation=none -o ITKPythonBuilds-macosx.tar.zst -s 10 -x 10 https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.3.0}/ITKPythonBuilds-macosx.tar.zst
 unzstd --long=31 ITKPythonBuilds-macosx.tar.zst -o ITKPythonBuilds-macosx.tar
 PATH="/usr/local/opt/gnu-tar/libexec/gnubin:$PATH"
@@ -40,6 +41,13 @@ fi
 
 # Run build scripts
 sudo mkdir -p /Users/svc-dashboard/D/P && sudo chown $UID:$GID /Users/svc-dashboard/D/P && mv ITKPythonPackage /Users/svc-dashboard/D/P/
-sudo rm -rf /Library/Frameworks/Python.framework/Versions/*
-/Users/svc-dashboard/D/P/ITKPythonPackage/scripts/macpython-install-python.sh
+
+# Optionally install baseline Python versions
+if [[ ! ${ITK_USE_LOCAL_PYTHON} ]]; then
+  echo "Fetching Python frameworks"
+  sudo rm -rf /Library/Frameworks/Python.framework/Versions/*
+  /Users/svc-dashboard/D/P/ITKPythonPackage/scripts/macpython-install-python.sh
+fi
+
+echo "Building module wheels"
 /Users/svc-dashboard/D/P/ITKPythonPackage/scripts/macpython-build-module-wheels.sh "$@"
