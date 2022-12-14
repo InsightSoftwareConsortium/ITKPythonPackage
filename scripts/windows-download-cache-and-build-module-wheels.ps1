@@ -1,4 +1,4 @@
-# -----------------------------------------------------------------------
+########################################################################
 # Pull build dependencies and build an ITK external module.
 #
 # This script must be run in an x64 Developer Powershell.
@@ -14,18 +14,21 @@
 # -----------------------------------------------------------------------
 # Environment variables used in this script:
 #
-# - $env:ITK_PACKAGE_VERSION: Tag for ITKPythonBuilds build archive to use
-# - $env:ITKPYTHONPACKAGE_TAG: Tag for ITKPythonPackage build scripts to use.
+# `$env:ITK_PACKAGE_VERSION`: Tag for ITKPythonBuilds build archive to use
+#
+# `$env:ITKPYTHONPACKAGE_TAG`: Tag for ITKPythonPackage build scripts to use.
 #     If ITKPYTHONPACKAGE_TAG is empty then the default scripts distributed
 #     with the ITKPythonBuilds archive will be used.
-# - $env:ITKPYTHONPACKAGE_ORG: Github organization or user to use for ITKPythonPackage
+#
+# `$env:ITKPYTHONPACKAGE_ORG`: Github organization or user to use for ITKPythonPackage
 #     build script source. Default is InsightSoftwareConsortium.
 #     Ignored if ITKPYTHONPACKAGE_TAG is empty.
-# - $env:ITK_MODULE_PREQ: Delimited list of ITK module dependencies to build before
-#     building the target module.
+#
+# `$env:ITK_MODULE_PREQ`: Delimited list of ITK module dependencies to build before building the target module.
 #   Format is `<org_name>/<module_name>@<module_tag>:<org_name>/<module_name>@<module_tag>:...`.
 #   For instance, `export ITK_MODULE_PREQ=InsightSoftwareConsortium/ITKMeshToPolyData@v0.10.0`
 #
+########################################################################
 
 $pythonArch = "64"
 $pythonVersion = "3.$($args[0])"

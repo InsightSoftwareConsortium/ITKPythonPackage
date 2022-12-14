@@ -38,7 +38,7 @@ export ITK_MODULE_PREQ=""
 export ITK_USE_LOCAL_PYTHON="ON"
 
 ########################################################################
-echo "Building ITK module dependencies"
+echo "Building ITK module dependencies: ${ITK_MODULE_PREQ_TOPLEVEL}"
 
 for MODULE_INFO in ${ITK_MODULE_PREQ_TOPLEVEL//:/ }; do
   MODULE_ORG=`(echo ${MODULE_INFO} | cut -d'/' -f 1)`

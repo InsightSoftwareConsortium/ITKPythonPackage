@@ -2,8 +2,9 @@
 
 ########################################################################
 # Run this script in an ITK external module directory to clean up
-# build artifacts for prerequisite ITK external modules.
-# Typically required for building multiple module wheels in the same
+# Linux Python build artifacts.
+#
+# Typically required for building multiple types of module wheels in the same
 # directory, such as using different toolsets or targeting different
 # architectures.
 #

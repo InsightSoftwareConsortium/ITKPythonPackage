@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# Run this script to set enviroment variables used in building the 
+########################################################################
+# Run this script to set common enviroment variables used in building the 
 # ITK Python wheel packages for Linux.
 #
 # ENVIRONMENT VARIABLES
@@ -11,6 +12,7 @@
 #   export ITK_PACKAGE_VERSION=v5.3.0
 #   scripts/dockcross-manylinux-set-vars.sh cp39
 #
+########################################################################
 
 ########################################################################
 # ITKPythonBuilds parameters

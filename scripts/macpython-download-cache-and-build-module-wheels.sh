@@ -1,16 +1,41 @@
 #!/bin/bash
 
-# This module should be pull and run from an ITKModule root directory to generate the Mac python wheels of this module,
-# it is used by the .travis.yml file contained in ITKModuleTemplate: https://github.com/InsightSoftwareConsortium/ITKModuleTemplate
+########################################################################
+# This module should be pulled and run from an ITK external module root directory
+# to generate the Mac python wheels of this module.
 #
-# Exported variables used in this script:
-# - ITK_PACKAGE_VERSION: Tag for ITKPythonBuilds build archive to use
-# - ITKPYTHONPACKAGE_TAG: Tag for ITKPythonPackage build scripts to use.
-#     If ITKPYTHONPACKAGE_TAG is empty then the default scripts distributed
-#     with the ITKPythonBuilds archive will be used.
-# - ITKPYTHONPACKAGE_ORG: Github organization or user to use for ITKPythonPackage
-#     build script source. Default is InsightSoftwareConsortium.
-#     Ignored if ITKPYTHONPACKAGE_TAG is empty.
+# ========================================================================
+# PARAMETERS
+#
+# Versions can be restricted by passing them in as arguments to the script.
+# For example,
+#
+#   scripts/macpython-build-module-wheels.sh 3.7 3.9
+# Shared libraries can be included in the wheel by exporting them to DYLD_LIBRARY_PATH before
+# running this script.
+#
+# ===========================================
+# ENVIRONMENT VARIABLES
+#
+# These variables are set with the `export` bash command before calling the script.
+# For example,
+#
+#   export DYLD_LIBRARY_PATH="/path/to/libs"
+#   scripts/macpython-build-module-wheels.sh 3.7 3.9
+#
+# `ITK_PACKAGE_VERSION`: ITKPythonBuilds archive tag to use for ITK build artifacts.
+#   See https://github.com/InsightSoftwareConsortium/ITKPythonBuilds for available tags.
+#   For instance, `export ITK_PACKAGE_VERSION=v5.3.0`.
+#
+# `ITKPYTHONPACKAGE_ORG`: Github organization for fetching ITKPythonPackage build scripts.
+#
+# `ITKPYTHONPACKAGE_TAG`: ITKPythonPackage tag for fetching build scripts.
+#
+# `ITK_USE_LOCAL_PYTHON`: Determine how to get Python framework for build.
+#    - If empty, Python frameworks will be fetched from python.org
+#    - If not empty, frameworks already on machine will be used without fetching.
+#
+########################################################################
 
 # Install dependencies
 brew update

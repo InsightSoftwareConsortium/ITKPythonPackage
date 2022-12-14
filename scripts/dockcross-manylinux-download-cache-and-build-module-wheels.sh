@@ -1,22 +1,33 @@
 #!/bin/bash
 
-# This module should be pulled and run from an ITKModule root directory to generate the Linux python wheels of this module,
-# it is used by the azure-pipeline.yml file contained in ITKModuleTemplate: https://github.com/InsightSoftwareConsortium/ITKModuleTemplate
+########################################################################
+# Pull this script and run from an ITK external module root directory
+# to generate the Linux Python wheels for the external module.
 #
-# Exported variables used in this script:
-# - ITK_PACKAGE_VERSION: Tag for ITKPythonBuilds build archive to use
-#     Examples: "v5.3.0", "v5.2.1.post1"
-#     See available tags at https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/tags
-# - MANYLINUX_VERSION: manylinux specialization to use
-#     Examples: "_2_28", "2014", "_2_28_aarch64"
-#     See https://github.com/dockcross/dockcross
-# - ITKPYTHONPACKAGE_TAG: Tag for ITKPythonPackage build scripts to use.
-#     If ITKPYTHONPACKAGE_TAG is empty then the default scripts distributed
-#     with the ITKPythonBuilds archive will be used.
-# - ITKPYTHONPACKAGE_ORG: Github organization or user to use for ITKPythonPackage
-#     build script source. Default is InsightSoftwareConsortium.
-#     Ignored if ITKPYTHONPACKAGE_TAG is empty.
+# ========================================================================
+# PARAMETERS
 #
+# Versions can be restricted by passing them in as arguments to the script
+# For example,
+#
+#   scripts/dockcross-manylinux-build-module-wheels.sh cp39
+#
+# ===========================================
+# ENVIRONMENT VARIABLES
+#
+# These variables are set with the `export` bash command before calling the script.
+# For example,
+#
+#   export ITK_PACKAGE_VERSION="v5.3.0"
+#   scripts/dockcross-manylinux-build-module-wheels.sh cp39
+#
+# `ITKPYTHONPACKAGE_ORG`: Github organization for fetching ITKPythonPackage build scripts.
+#
+# `ITKPYTHONPACKAGE_TAG`: ITKPythonPackage tag for fetching build scripts.
+#
+# Additional environment variables may be defined in accompanying build scripts.
+#
+########################################################################
 
 # -----------------------------------------------------------------------
 # Script argument parsing

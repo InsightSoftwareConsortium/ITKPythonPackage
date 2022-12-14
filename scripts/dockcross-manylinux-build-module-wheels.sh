@@ -1,5 +1,6 @@
 #!/bin/bash
 
+########################################################################
 # Run this script to build the Python wheel packages for Linux for an ITK
 # external module.
 #
@@ -17,12 +18,8 @@
 # These variables are set with the `export` bash command before calling the script.# 
 # For example,
 #
-#   export ITK_PACKAGE_VERSION="v5.3.0"
+#   export MANYLINUX_VERSION="_2_28"
 #   scripts/dockcross-manylinux-build-module-wheels.sh cp39
-#
-# `ITK_PACKAGE_VERSION`: ITKPythonBuilds archive tag to use for ITK build artifacts.
-#   See https://github.com/InsightSoftwareConsortium/ITKPythonBuilds for available tags.
-#   For instance, `export ITK_PACKAGE_VERSION=v5.3.0`.
 # 
 # `LD_LIBRARY_PATH`: Shared libraries to be included in the resulting wheel.
 #   For instance, `export LD_LIBRARY_PATH="/path/to/OpenCL.so:/path/to/OpenCL.so.1.2"`
@@ -35,15 +32,11 @@
 #   For instance, `export IMAGE_TAG=20221205-459c9f0`
 #
 # `ITK_MODULE_PREQ`: Prerequisite ITK modules that must be built before the requested module.
-#   Format is `<org_name>/<module_name>@<module_tag>:<org_name>/<module_name>@<module_tag>:...`.
-#   For instance, `export ITK_MODULE_PREQ=InsightSoftwareConsortium/ITKMeshToPolyData@v0.10.0`
-#
-# `ITKPYTHONPACKAGE_ORG`: Github organization for fetching ITKPythonPackage build scripts.
-#
-# `ITKPYTHONPACKAGE_TAG`: ITKPythonPackage tag for fetching build scripts.
+#   See notes in `dockcross-manylinux-build-module-deps.sh`.
 #
 # `ITK_MODULE_NO_CLEANUP`: Option to skip cleanup steps.
 #
+########################################################################
 
 # Handle case where the script directory is not the working directory
 script_dir=$(cd $(dirname $0) || exit 1; pwd)

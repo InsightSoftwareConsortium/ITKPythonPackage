@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# -----------------------------------------------------------------------
-#
-# Download ITK build cache and other requirements to prepare for generating Linux Python wheels of the given ITK module.
+########################################################################
+# Download ITK build cache and other requirements to prepare for 
+# generating Linux Python wheels of the given ITK module.
 #
 # Most ITK modules will download and call `dockcross-manylinux-download-cache-and-build-module-wheels.sh` which will
 # subsequently fetch and run this script for getting build artifacts.
@@ -10,20 +10,27 @@
 # custom build workflow. Examples include ITK GPU-based modules that require additional system configuration
 # steps not present in `dockcross-manylinux-download-cache-and-build-module-wheels.sh`.
 #
-# Exported variables used in this script:
-# - ITK_PACKAGE_VERSION: Tag for ITKPythonBuilds build cache to use
+# ===========================================
+# ENVIRONMENT VARIABLES
+#
+# `ITK_PACKAGE_VERSION`: Tag for ITKPythonBuilds build cache to use
 #     Examples: "v5.3.0", "v5.2.1.post1"
 #     See available tags at https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/tags
-# - MANYLINUX_VERSION: manylinux specialization used to build ITK for cache
+#
+# `MANYLINUX_VERSION`: manylinux specialization used to build ITK for cache
 #     Examples: "_2_28", "2014", "_2_28_aarch64"
 #     See https://github.com/dockcross/dockcross
-# - ITKPYTHONPACKAGE_TAG: Tag for ITKPythonPackage build scripts to use.
+#
+# `ITKPYTHONPACKAGE_TAG`: Tag for ITKPythonPackage build scripts to use.
 #     If ITKPYTHONPACKAGE_TAG is empty then the default scripts distributed
 #     with the ITKPythonBuilds archive will be used.
-# - ITKPYTHONPACKAGE_ORG: Github organization or user to use for ITKPythonPackage
+#
+# `ITKPYTHONPACKAGE_ORG`: Github organization or user to use for ITKPythonPackage
 #     build script source. Default is InsightSoftwareConsortium.
 #     Ignored if ITKPYTHONPACKAGE_TAG is empty.
 #
+########################################################################
+
 # -----------------------------------------------------------------------
 # Script argument parsing
 #

@@ -1,18 +1,36 @@
 #!/usr/bin/env bash
 
-# Run this script to build the Python wheel packages for macOS for an ITK
-# external module.
+########################################################################
+# Run this script in an ITK external module directory to build the
+# Python wheel packages for macOS for an ITK external module.
+#
+# ========================================================================
+# PARAMETERS
 #
 # Versions can be restricted by passing them in as arguments to the script.
+# For example,
 #
+#   scripts/macpython-build-module-wheels.sh 3.7 3.9
 # Shared libraries can be included in the wheel by exporting them to DYLD_LIBRARY_PATH before
 # running this script.
 #
+# ===========================================
+# ENVIRONMENT VARIABLES
+#
+# These variables are set with the `export` bash command before calling the script.
 # For example,
 #
 #   export DYLD_LIBRARY_PATH="/path/to/libs"
 #   scripts/macpython-build-module-wheels.sh 3.7 3.9
 #
+# `DYLD_LIBRARY_PATH`: Shared libraries to be included in the resulting wheel.
+#   For instance, `export DYLD_LIBRARY_PATH="/path/to/OpenCL.so:/path/to/OpenCL.so.1.2"`
+#
+# `ITK_MODULE_PREQ`: Prerequisite ITK modules that must be built before the requested module.
+#   Format is `<org_name>/<module_name>@<module_tag>:<org_name>/<module_name>@<module_tag>:...`.
+#   For instance, `export ITK_MODULE_PREQ=InsightSoftwareConsortium/ITKMeshToPolyData@v0.10.0`
+#
+########################################################################
 
 
 # -----------------------------------------------------------------------
@@ -20,7 +38,6 @@
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 
-echo "ITK_MODULE_PREQ ${ITK_MODULE_PREQ}"
 if [[ -n ${ITK_MODULE_PREQ} ]]; then
   source "${script_dir}/macpython-build-module-deps.sh"
 fi
