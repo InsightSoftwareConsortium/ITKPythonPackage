@@ -13,8 +13,8 @@ Installation
 
 To install the ITK Python package:
 
-```
-    $ pip install itk
+```sh
+     pip install itk
 ```
 
 Usage
@@ -22,7 +22,7 @@ Usage
 
 ### Simple example script
 
-```
+```python
     import itk
     import sys
 
