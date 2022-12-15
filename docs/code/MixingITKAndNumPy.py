@@ -22,15 +22,20 @@ itk_image = itk.imread(input_image_filename)
 # Run filters on itk.Image
 
 # View only of itk.Image, pixel data is not copied
-np_view = itk.array_view_from_image(itk_image)
+array_view = itk.array_view_from_image(itk_image)
 
 # Copy of itk.Image, pixel data is copied
-np_copy = itk.array_from_image(itk_image)
+array_copy = itk.array_from_image(itk_image)
 # Equivalent
-np_copy = np.asarray(itk_image)
+array_copy = np.asarray(itk_image)
 
-# Pixel array and image metadata
+# Image metadata
+# Sequences, e.g. spacing, are in zyx (NumPy) indexing order
+metadata = dict(itk_image)
+
+# Pixel array and image metadata together
 # in standard Python data types + NumPy array
+# Sequences, e.g. spacing, are in xyz (ITK) indexing order
 image_dict = itk.dict_from_image(itk_image)
 
 
@@ -38,13 +43,17 @@ image_dict = itk.dict_from_image(itk_image)
 
 
 # Convert back to ITK, view only, data is not copied
-itk_np_view = itk.image_view_from_array(np_copy)
+itk_image_view = itk.image_view_from_array(array_copy)
 
 # Convert back to ITK, data is copied
-itk_np_copy = itk.image_from_array(np_copy)
+itk_image_copy = itk.image_from_array(array_copy)
+
+# Add the metadata
+for k, v in metadata.items():
+    itk_image_view[k] = v
 
 # Save result
-itk.imwrite(itk_np_view, output_image_filename)
+itk.imwrite(itk_image_view, output_image_filename)
 
 # Convert back to itk image data structure
 itk_image = itk.image_from_dict(image_dict)

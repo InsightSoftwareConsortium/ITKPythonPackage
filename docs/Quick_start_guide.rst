@@ -30,22 +30,22 @@ A common use case for using ITK in Python is to mingle NumPy and ITK operations 
 The following script shows how to integrate NumPy and `itk.Image`:
 
 .. literalinclude:: code/MixingITKAndNumPy.py
-   :lines: 16-50
+   :lines: 16-59
 
 NumPy and `itk.Mesh`:
 
 .. literalinclude:: code/MixingITKAndNumPy.py
-   :lines: 53-67
+   :lines: 62-76
 
 NumPy and `itk.Transform`:
 
 .. literalinclude:: code/MixingITKAndNumPy.py
-   :lines: 87-106
+   :lines: 96-115
 
 NumPy and `itk.Matrix`, VNL vectors, and VNL matrices:
 
 .. literalinclude:: code/MixingITKAndNumPy.py
-   :lines: 109-
+   :lines: 118-
 
 ITK and Xarray
 ..............
