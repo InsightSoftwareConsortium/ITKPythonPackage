@@ -36,7 +36,7 @@ can be found in the `ITK Software Guide
 GitHub automated CI package builds
 ==================================
 
-Freely available GitHub Action continous integration (CI) build and test
+Freely available GitHub Actions continous integration (CI) build and test
 services for open source repositories are provided by
 `GitHub <https://github.com/>`_. These services will build and test the C++
 code for your module and also generate Linux, macOS, and Windows Python
@@ -51,6 +51,11 @@ Section.
 
 .. figure:: images/GitHubActionArtifacts.png
   :alt: GitHub Action Artifacts
+
+Reusable workflows available in
+[ITKRemoteModuleBuildTestPackageAction](https://github.com/InsightSoftwareConsortium/ITKRemoteModuleBuildTestPackageAction)
+can be used to handle the build-test-package process
+for a majority of ITK external modules with minimal extra development.
 
 Upload the packages to PyPI
 ----------------------------
@@ -188,7 +193,7 @@ Then, build the wheels::
 Windows
 -------
 
-First, install Microsoft Visual Studio 2015, Git, and CMake, which should be added to the system PATH environmental variable.
+First, install Microsoft Visual Studio 2022, Git, and CMake, which should be added to the system PATH environmental variable.
 
 Open a PowerShell terminal as Administrator, and install Python::
 
@@ -201,3 +206,33 @@ In a PowerShell prompt, run the `windows-build-wheels.ps1` script::
 	PS C:\Windows> cd C:\ITKMyModule
 	PS C:\ITKMyModule> git clone https://github.com/InsightSoftwareConsortium/ITKPythonPackage.git IPP
 	PS C:\ITKMyModule> .\ITKPythonPackage\scripts\windows-download-cache-and-build-module-wheels.ps1
+
+Other Notes
+-----------
+
+ITK modules sometimes depend on third-party libraries. To include third-party libraries
+in development wheels for distribution, first add the library path to `LD_LIBRARY_PATH`
+on Linux, `DYLD_LIBRARY_PATH` on MacOS, or `PATH` on Windows. Then, run the platform
+build script.
+
+ITK modules sometimes depend on other ITK modules. For instance, to build
+[ITKBSplineGradient](https://github.com/InsightSoftwareConsortium/ITKBSplineGradient)
+the user must first build ITK and then [ITKMeshToPolyData](https://github.com/InsightSoftwareConsortium/ITKmeshtopolydata).
+ITKPythonPackage scripts support iterative prerequisite ITK module dependencies with the `ITK_MODULE_PREQ`
+environment variable.
+
+For Python build scripts, the ordered list of ITK module dependencies must be formatted as follows:
+
+```
+ITK_MODULE_PREQ=<module_org>/<module_name>@<module_tag>:<module_org>/<module_name>@<module_tag>:...
+```
+
+Where
+- `module_org` is the name of a Github organization to use to fetch the module, i.e. "InsightSoftwareConsortium";
+- `module_name` is the name of the module, i.e. "ITKMeshToPolyData";
+- `module_tag` is the git tag or commit hash to use to fetch the module, i.e. "v1.0.0"
+
+Module names must be provided in order of dependencies for the build to succeed.
+
+For more information see the
+[build scripts directory](https://github.com/InsightSoftwareConsortium/ITKPythonPackage/tree/master/scripts).
