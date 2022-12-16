@@ -4,6 +4,7 @@ import subprocess
 import sys
 import os
 import tempfile
+import shutil
 
 def add_test(cmd):
     cmd.insert(0, sys.executable)
@@ -12,7 +13,7 @@ def add_test(cmd):
 def cleanup(files):
     for f in files:
         if os.path.isdir(f):
-            os.rmdir(f)
+            shutil.rmtree(f)
         else:
             os.remove(f)
 

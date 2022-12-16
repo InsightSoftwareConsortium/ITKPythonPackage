@@ -27,16 +27,25 @@ ITK and NumPy
 
 A common use case for using ITK in Python is to mingle NumPy and ITK operations on raster data. ITK provides a large number of I/O image formats and several sophisticated image processing algorithms not available in any other packages. The ability to intersperse that with the SciPy ecosystem provides a great tool for rapid prototyping.
 
-The following script shows how to integrate NumPy and ITK:
+The following script shows how to integrate NumPy and `itk.Image`:
 
 .. literalinclude:: code/MixingITKAndNumPy.py
-   :lines: 8-33
+   :lines: 16-59
 
-
-Similar functions are available to work with `itk.Matrix`, VNL vectors and matrices:
+NumPy and `itk.Mesh`:
 
 .. literalinclude:: code/MixingITKAndNumPy.py
-   :lines: 35-
+   :lines: 62-76
+
+NumPy and `itk.Transform`:
+
+.. literalinclude:: code/MixingITKAndNumPy.py
+   :lines: 96-115
+
+NumPy and `itk.Matrix`, VNL vectors, and VNL matrices:
+
+.. literalinclude:: code/MixingITKAndNumPy.py
+   :lines: 118-
 
 ITK and Xarray
 ..............
