@@ -1,54 +1,61 @@
 #!/bin/bash
 
+########################################################################
 # Run this script to build the Python wheel packages for Linux for an ITK
 # external module.
+#
+# ========================================================================
+# PARAMETERS
 #
 # Versions can be restricted by passing them in as arguments to the script
 # For example,
 #
 #   scripts/dockcross-manylinux-build-module-wheels.sh cp39
 #
-# Shared libraries can be included in the wheel by exporting them to LD_LIBRARY_PATH before
-# running this script.
+# ===========================================
+# ENVIRONMENT VARIABLES
+#
+# These variables are set with the `export` bash command before calling the script.# 
+# For example,
+#
+#   export MANYLINUX_VERSION="_2_28"
+#   scripts/dockcross-manylinux-build-module-wheels.sh cp39
 # 
-# For example,
+# `LD_LIBRARY_PATH`: Shared libraries to be included in the resulting wheel.
+#   For instance, `export LD_LIBRARY_PATH="/path/to/OpenCL.so:/path/to/OpenCL.so.1.2"`
 #
-#   export LD_LIBRARY_PATH="/path/to/OpenCL.so:/path/to/OpenCL.so.1.2"
-#   scripts/dockcross-manylinux-build-module-wheels.sh cp39
+# `MANYLINUX_VERSION`: Specialized manylinux image to use for building. Default is _2_28.
+#   See https://github.com/dockcross/dockcross for available versions and tags.
+#   For instance, `export MANYLINUX_VERSION=2014`
 #
-# A specialized manylinux image and tag can be used by exporting
-# MANYLINUX_VERSION and IMAGE_TAG before running this script.
-# See https://github.com/dockcross/dockcross for available versions and tags.
+# `IMAGE_TAG`: Specialized manylinux image tag to use for building.
+#   For instance, `export IMAGE_TAG=20221205-459c9f0`
 #
-# For example,
+# `ITK_MODULE_PREQ`: Prerequisite ITK modules that must be built before the requested module.
+#   See notes in `dockcross-manylinux-build-module-deps.sh`.
 #
-#   export MANYLINUX_VERSION=2014
-#   export IMAGE_TAG=20221205-459c9f0
-#   scripts/dockcross-manylinux-build-module-wheels.sh cp39
+# `ITK_MODULE_NO_CLEANUP`: Option to skip cleanup steps.
 #
+########################################################################
 
-MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
+# Handle case where the script directory is not the working directory
+script_dir=$(cd $(dirname $0) || exit 1; pwd)
+source "${script_dir}/dockcross-manylinux-set-vars.sh"
 
-if [[ ${MANYLINUX_VERSION} == _2_28 ]]; then
-  IMAGE_TAG=${IMAGE_TAG:=20221205-459c9f0}
-elif [[ ${MANYLINUX_VERSION} == 2014 ]]; then
-  IMAGE_TAG=${IMAGE_TAG:=20221201-fd49c08}
-else
-  echo "Unknown manylinux version ${MANYLINUX_VERSION}"
-  exit 1;
+echo "ITK_MODULE_PREQ ${ITK_MODULE_PREQ}"
+if [[ -n ${ITK_MODULE_PREQ} ]]; then
+  source "${script_dir}/dockcross-manylinux-build-module-deps.sh"
 fi
 
 # Generate dockcross scripts
 docker run --rm dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > /tmp/dockcross-manylinux-x64
 chmod u+x /tmp/dockcross-manylinux-x64
 
-script_dir=$(cd $(dirname $0) || exit 1; pwd)
-
 mkdir -p $(pwd)/tools
 chmod 777 $(pwd)/tools
 # Build wheels
 mkdir -p dist
-DOCKER_ARGS="-v $(pwd)/dist:/work/dist/ -v $script_dir/..:/ITKPythonPackage -v $(pwd)/tools:/tools"
+DOCKER_ARGS="-v $(pwd)/dist:/work/dist/ -v ${script_dir}/..:/ITKPythonPackage -v $(pwd)/tools:/tools"
 DOCKER_ARGS+=" -e MANYLINUX_VERSION"
 # Mount any shared libraries
 if [[ -n ${LD_LIBRARY_PATH} ]]; then
@@ -60,3 +67,7 @@ fi
 /tmp/dockcross-manylinux-x64 \
   -a "$DOCKER_ARGS" \
   "/ITKPythonPackage/scripts/internal/manylinux-build-module-wheels.sh" "$@"
+
+if [[ -z ${ITK_MODULE_NO_CLEANUP} ]]; then
+  source "${script_dir}/dockcross-manylinux-cleanup.sh"
+fi
