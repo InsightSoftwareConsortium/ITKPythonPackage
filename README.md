@@ -9,6 +9,13 @@ with an extensive suite of software tools for image analysis.
 More information is available on the [ITK website](https://itk.org/)
 or at the [ITK GitHub homepage](https://github.com/insightSoftwareConsortium/ITK).
 
+## Table of Contents
+
+- [Using ITK Python Packages](#using-itk-python-packages)
+- [Building with ITKPythonPackage](#building-with-itkpythonpackage)
+- [Frequently Asked Questions](#frequently-asked-questions)
+- [Additional Information](#additional-information)
+
 ## Using ITK Python Packages
 
 ITKPythonPackage scripts can be used to produce [Python](https://www.python.org/) packages
@@ -117,7 +124,7 @@ or manually with ITKPythonPackage scripts.
 
 In order to build an ITK external module you must have first built ITK for the same target platform.
 However, building ITK modules and wrapping them for Python can take a very long time!
-To avoid having to rebuilt ITK before building every individual external module,
+To avoid having to rebuild ITK before building every individual external module,
 artifacts from the ITK build process (headers, source files, wrapper outputs, and more) are
 packaged and cached as [ITKPythonBuilds](https://github.com/insightSoftwareConsortium/ITKpythonbuilds)
 releases.
