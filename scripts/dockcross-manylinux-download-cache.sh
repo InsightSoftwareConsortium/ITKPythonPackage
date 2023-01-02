@@ -74,7 +74,17 @@ ${unzstd_exe} --version
 # -----------------------------------------------------------------------
 # Fetch build archive
 
-TARBALL_SPECIALIZATION="-manylinux${MANYLINUX_VERSION:=_2_28}"
+MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
+TARGET_ARCH=${TARGET_ARCH:=x64}
+
+case ${TARGET_ARCH} in
+    x64)
+        TARBALL_SPECIALIZATION="-manylinux${MANYLINUX_VERSION}"
+        ;;
+    *)
+        TARBALL_SPECIALIZATION="-manylinux${MANYLINUX_VERSION}_${TARGET_ARCH}"
+        ;;
+esac
 TARBALL_NAME="ITKPythonBuilds-linux${TARBALL_SPECIALIZATION}.tar"
 
 if [[ ! -f ${TARBALL_NAME}.zst ]]; then
