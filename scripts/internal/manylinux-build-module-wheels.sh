@@ -117,17 +117,16 @@ for PYBIN in "${PYBINARIES[@]}"; do
     || exit 1
 done
 
-if test "${ARCH}" == "x64"; then
-  # Make sure auditwheel is installed for this python exe before importing
-  # it in auditwheel_whitelist_monkeypatch.py
-  sudo ${Python3_EXECUTABLE} -m pip install auditwheel
-  for whl in dist/*linux_$(uname -m).whl; do
-    # Repair wheel using monkey patch to exclude shared libraries provided in whitelist
-    ${Python3_EXECUTABLE} "${script_dir}/auditwheel_whitelist_monkeypatch.py" \
-      repair ${whl} -w /work/dist/ --whitelist "${EXCLUDE_LIBS}"
-    rm ${whl}
-  done
-fi
+# Make sure auditwheel is installed for this python exe before importing
+# it in auditwheel_whitelist_monkeypatch.py
+sudo ${Python3_EXECUTABLE} -m pip install auditwheel
+for whl in dist/*linux*$(uname -m).whl; do
+  # Repair wheel using monkey patch to exclude shared libraries provided in whitelist
+  ${Python3_EXECUTABLE} "${script_dir}/auditwheel_whitelist_monkeypatch.py" \
+    repair ${whl} -w /work/dist/ --whitelist "${EXCLUDE_LIBS}"
+  rm ${whl}
+done
+
 if compgen -G "dist/itk*-linux*.whl" > /dev/null; then
   for itk_wheel in dist/itk*-linux*.whl; do
     mv ${itk_wheel} ${itk_wheel/linux/manylinux${MANYLINUX_VERSION}}
