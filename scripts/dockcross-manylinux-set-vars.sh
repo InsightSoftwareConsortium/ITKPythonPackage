@@ -39,11 +39,11 @@ TARGET_ARCH=${TARGET_ARCH:=x64}
 
 # Specialized manylinux image tag to use for building.
 if [[ ${MANYLINUX_VERSION} == _2_28 && ${TARGET_ARCH} == x64 ]]; then
-  IMAGE_TAG=${IMAGE_TAG:=20221205-459c9f0}
+  IMAGE_TAG=${IMAGE_TAG:=20230106-fff6fd0}
 elif [[ ${MANYLINUX_VERSION} == _2_28 && ${TARGET_ARCH} == aarch64 ]]; then
   IMAGE_TAG=${IMAGE_TAG:=2022-11-19-1b19e81}
 elif [[ ${MANYLINUX_VERSION} == 2014 ]]; then
-  IMAGE_TAG=${IMAGE_TAG:=20221201-fd49c08}
+  IMAGE_TAG=${IMAGE_TAG:=20230106-fff6fd0}
 else
   echo "Unknown manylinux version ${MANYLINUX_VERSION}"
   exit 1;
