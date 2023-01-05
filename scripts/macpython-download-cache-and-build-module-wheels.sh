@@ -44,7 +44,9 @@ brew upgrade cmake
 
 # Fetch ITKPythonBuilds archive containing ITK build artifacts
 echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.3.0}/ITKPythonBuilds-macosx.tar.zst"
-aria2c -c --file-allocation=none -o ITKPythonBuilds-macosx.tar.zst -s 10 -x 10 https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.3.0}/ITKPythonBuilds-macosx.tar.zst
+if [[ ! -f ITKPythonBuilds-macosx.tar.zst ]]; then
+  aria2c -c --file-allocation=none -o ITKPythonBuilds-macosx.tar.zst -s 10 -x 10 https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.3.0}/ITKPythonBuilds-macosx.tar.zst
+fi
 unzstd --long=31 ITKPythonBuilds-macosx.tar.zst -o ITKPythonBuilds-macosx.tar
 PATH="/usr/local/opt/gnu-tar/libexec/gnubin:$PATH"
 tar xf ITKPythonBuilds-macosx.tar --checkpoint=10000 --checkpoint-action=dot

@@ -45,9 +45,11 @@ iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.co
 
 if (-not $env:ITK_PACKAGE_VERSION) { $env:ITK_PACKAGE_VERSION = 'v5.3.0' }
 echo "Fetching build archive $env:ITK_PACKAGE_VERSION"
-Invoke-WebRequest -Uri "https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/$env:ITK_PACKAGE_VERSION/ITKPythonBuilds-windows.zip" -OutFile "ITKPythonBuilds-windows.zip"
 if (Test-Path C:\P) {
   Remove-Item -Recurse -Force C:\P
+}
+if (-not (Test-Path ITKPythonBuilds-windows.zip)) {
+  Invoke-WebRequest -Uri "https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/$env:ITK_PACKAGE_VERSION/ITKPythonBuilds-windows.zip" -OutFile "ITKPythonBuilds-windows.zip"
 }
 7z x ITKPythonBuilds-windows.zip -oC:\P -aoa -r
 
@@ -74,9 +76,13 @@ if ($env:ITKPYTHONPACKAGE_TAG) {
 }
 
 # Get other build dependencies
-Invoke-WebRequest -Uri "https://data.kitware.com/api/v1/file/5c0ad59d8d777f2179dd3e9c/download" -OutFile "doxygen-1.8.11.windows.bin.zip"
+if (-not (Test-Path doxygen-1.8.11.windows.bin.zip)) {
+  Invoke-WebRequest -Uri "https://data.kitware.com/api/v1/file/5c0ad59d8d777f2179dd3e9c/download" -OutFile "doxygen-1.8.11.windows.bin.zip"
+}
 7z x doxygen-1.8.11.windows.bin.zip -oC:\P\doxygen -aoa -r
-Invoke-WebRequest -Uri "https://data.kitware.com/api/v1/file/5bbf87ba8d777f06b91f27d6/download/grep-win.zip" -OutFile "grep-win.zip"
+if (-not (Test-Path grep-win.zip)) {
+  Invoke-WebRequest -Uri "https://data.kitware.com/api/v1/file/5bbf87ba8d777f06b91f27d6/download/grep-win.zip" -OutFile "grep-win.zip"
+}
 7z x grep-win.zip -oC:\P\grep -aoa -r
 $env:Path += ";C:\P\grep"
 
