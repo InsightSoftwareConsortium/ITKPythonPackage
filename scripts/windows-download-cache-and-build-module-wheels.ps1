@@ -46,6 +46,9 @@ iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.co
 if (-not $env:ITK_PACKAGE_VERSION) { $env:ITK_PACKAGE_VERSION = 'v5.3.0' }
 echo "Fetching build archive $env:ITK_PACKAGE_VERSION"
 Invoke-WebRequest -Uri "https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/$env:ITK_PACKAGE_VERSION/ITKPythonBuilds-windows.zip" -OutFile "ITKPythonBuilds-windows.zip"
+if (Test-Path C:\P) {
+  Remove-Item -Recurse -Force C:\P
+}
 7z x ITKPythonBuilds-windows.zip -oC:\P -aoa -r
 
 # Optional: Update ITKPythonPackage build scripts
