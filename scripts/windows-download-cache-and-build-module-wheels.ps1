@@ -11,6 +11,14 @@
 #
 #     > windows-download-cache-and-build-module-wheels.ps1 11
 #
+# - other parameters are passed to setup.py. If one of the parameters is "--",
+#   the following parameters will be passed to cmake.
+#     For instance, for Python 3.11, excluding nvcuda.dll during packaging
+#     and setting RTK_USE_CUDA ON during configuration:
+#
+#     > windows-download-cache-and-build-module-wheels.ps1 11 --exclude-libs nvcuda.dll "--" -DRTK_USE_CUDA:BOOL=ON
+#
+#
 # -----------------------------------------------------------------------
 # Environment variables used in this script:
 #
@@ -37,7 +45,12 @@ iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.co
 
 if (-not $env:ITK_PACKAGE_VERSION) { $env:ITK_PACKAGE_VERSION = 'v5.3.0' }
 echo "Fetching build archive $env:ITK_PACKAGE_VERSION"
-Invoke-WebRequest -Uri "https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/$env:ITK_PACKAGE_VERSION/ITKPythonBuilds-windows.zip" -OutFile "ITKPythonBuilds-windows.zip"
+if (Test-Path C:\P) {
+  Remove-Item -Recurse -Force C:\P
+}
+if (-not (Test-Path ITKPythonBuilds-windows.zip)) {
+  Invoke-WebRequest -Uri "https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/$env:ITK_PACKAGE_VERSION/ITKPythonBuilds-windows.zip" -OutFile "ITKPythonBuilds-windows.zip"
+}
 7z x ITKPythonBuilds-windows.zip -oC:\P -aoa -r
 
 # Optional: Update ITKPythonPackage build scripts
@@ -63,15 +76,26 @@ if ($env:ITKPYTHONPACKAGE_TAG) {
 }
 
 # Get other build dependencies
-Invoke-WebRequest -Uri "https://data.kitware.com/api/v1/file/5c0ad59d8d777f2179dd3e9c/download" -OutFile "doxygen-1.8.11.windows.bin.zip"
+if (-not (Test-Path doxygen-1.8.11.windows.bin.zip)) {
+  Invoke-WebRequest -Uri "https://data.kitware.com/api/v1/file/5c0ad59d8d777f2179dd3e9c/download" -OutFile "doxygen-1.8.11.windows.bin.zip"
+}
 7z x doxygen-1.8.11.windows.bin.zip -oC:\P\doxygen -aoa -r
-Invoke-WebRequest -Uri "https://data.kitware.com/api/v1/file/5bbf87ba8d777f06b91f27d6/download/grep-win.zip" -OutFile "grep-win.zip"
+if (-not (Test-Path grep-win.zip)) {
+  Invoke-WebRequest -Uri "https://data.kitware.com/api/v1/file/5bbf87ba8d777f06b91f27d6/download/grep-win.zip" -OutFile "grep-win.zip"
+}
 7z x grep-win.zip -oC:\P\grep -aoa -r
 $env:Path += ";C:\P\grep"
 
 # Build ITK module dependencies, if any
 $build_command = "& `"C:\Python$pythonVersion-x$pythonArch\python.exe`" `"C:\P\IPP\scripts\windows_build_module_wheels.py`" --no-cleanup --py-envs `"3$($args[0])-x64`""
-echo "Build command: $build_command"
+foreach ($arg in $args[1..$args.length]) {
+  if ($arg.substring(0,2) -eq "--") {
+    $build_command = "$build_command $($arg)"
+  }
+  else {
+    $build_command = "$build_command `"$($arg)`""
+  }
+}
 
 echo "ITK_MODULE_PREQ: $env:ITK_MODULE_PREQ $ITK_MODULE_PREQ"
 if ($env:ITK_MODULE_PREQ) {
