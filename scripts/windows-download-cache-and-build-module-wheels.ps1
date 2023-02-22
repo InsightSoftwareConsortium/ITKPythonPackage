@@ -6,17 +6,24 @@
 #
 # -----------------------------------------------------------------------
 # Positional parameters:
-# - 0th parameter: Python minor version.
+# - 0th parameter or -python_version_minor option: Python minor version.
 #     For instance, for Python 3.11:
-#
 #     > windows-download-cache-and-build-module-wheels.ps1 11
+#     or equivalently:
+#     > windows-download-cache-and-build-module-wheels.ps1 -python_version_minor 11
 #
-# - other parameters are passed to setup.py. If one of the parameters is "--",
-#   the following parameters will be passed to cmake.
+# - 1st parameter or -setup_options: setup.py options.
+#     For instance, for Python 3.11, excluding nvcuda.dll during packaging:
+#     > windows-download-cache-and-build-module-wheels.ps1 11 "--exclude-libs nvcuda.dll"
+#     or equivalently:
+#     > windows-download-cache-and-build-module-wheels.ps1 -python_version_minor 11 -setup_options "--exclude-libs nvcuda.dll"
+#
+# - 2nd parameter or -cmake_options: CMake options passed to setup.py for project configuration.
 #     For instance, for Python 3.11, excluding nvcuda.dll during packaging
 #     and setting RTK_USE_CUDA ON during configuration:
-#
-#     > windows-download-cache-and-build-module-wheels.ps1 11 --exclude-libs nvcuda.dll "--" -DRTK_USE_CUDA:BOOL=ON
+#     > windows-download-cache-and-build-module-wheels.ps1 11 "--exclude-libs nvcuda.dll" "-DRTK_USE_CUDA:BOOL=ON"
+#     or equivalently:
+#     > windows-download-cache-and-build-module-wheels.ps1 -python_version_minor 11 -setup_options "--exclude-libs nvcuda.dll" -cmake-options "-DRTK_USE_CUDA:BOOL=ON"
 #
 #
 # -----------------------------------------------------------------------
@@ -37,9 +44,14 @@
 #   For instance, `export ITK_MODULE_PREQ=InsightSoftwareConsortium/ITKMeshToPolyData@v0.10.0`
 #
 ########################################################################
+param (
+  [int]$python_version_minor,
+  [string]$setup_options,
+  [string]$cmake_options
+)
 
 $pythonArch = "64"
-$pythonVersion = "3.$($args[0])"
+$pythonVersion = "3.$python_version_minor"
 echo "Pulling Python $pythonVersion-x$pythonArch"
 iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/scikit-build/scikit-ci-addons/master/windows/install-python.ps1'))
 
@@ -87,15 +99,14 @@ if (-not (Test-Path grep-win.zip)) {
 $env:Path += ";C:\P\grep"
 
 # Build ITK module dependencies, if any
-$build_command = "& `"C:\Python$pythonVersion-x$pythonArch\python.exe`" `"C:\P\IPP\scripts\windows_build_module_wheels.py`" --no-cleanup --py-envs `"3$($args[0])-x64`""
-foreach ($arg in $args[1..$args.length]) {
-  if ($arg.substring(0,2) -eq "--") {
-    $build_command = "$build_command $($arg)"
-  }
-  else {
-    $build_command = "$build_command `"$($arg)`""
-  }
+$build_command = "& `"C:\Python$pythonVersion-x$pythonArch\python.exe`" `"C:\P\IPP\scripts\windows_build_module_wheels.py`" --no-cleanup --py-envs `"3$python_version_minor-x64`""
+if ("$setup_options".length -gt 0) {
+  $build_command = "$build_command $setup_options"
 }
+if("$cmake_options".length -gt 0) {
+  $build_command = "$build_command -- `"$cmake_options`""
+}
+echo $build_command
 
 echo "ITK_MODULE_PREQ: $env:ITK_MODULE_PREQ $ITK_MODULE_PREQ"
 if ($env:ITK_MODULE_PREQ) {
