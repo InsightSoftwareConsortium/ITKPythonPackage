@@ -18,7 +18,7 @@
 #   scripts/dockcross-manylinux-build-module-wheels.sh cp39
 #
 
-MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
+MANYLINUX_VERSION=${MANYLINUX_VERSION:=2014}
 
 if [[ ${MANYLINUX_VERSION} == _2_28 ]]; then
   IMAGE_TAG=${IMAGE_TAG:=20230106-1aeaea0}
