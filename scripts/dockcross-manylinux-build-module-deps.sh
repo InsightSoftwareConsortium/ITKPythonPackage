@@ -69,7 +69,7 @@ for MODULE_INFO in ${ITK_MODULE_PREQ_TOPLEVEL//:/ }; do
   fi
 
   echo "Building module dependency ${MODULE_NAME}"
-  ./dockcross-manylinux-download-cache-and-build-module-wheels.sh $@
+  ./dockcross-manylinux-download-cache-and-build-module-wheels.sh "$@"
   popd
 
   echo "Cleaning up module dependency"
