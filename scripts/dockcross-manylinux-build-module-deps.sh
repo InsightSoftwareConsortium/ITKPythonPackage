@@ -69,11 +69,12 @@ for MODULE_INFO in ${ITK_MODULE_PREQ_TOPLEVEL//:/ }; do
   fi
 
   echo "Building module dependency ${MODULE_NAME}"
-  ./dockcross-manylinux-download-cache-and-build-module-wheels.sh $@
+  ./dockcross-manylinux-download-cache-and-build-module-wheels.sh "$@"
   popd
 
   echo "Cleaning up module dependency"
   cp ./${MODULE_NAME}/include/* include/
+  find ${MODULE_NAME}/_skbuild -type f -wholename "**/cmake-build/include/*" -print -exec cp {} include \;
 
   # Cache build archive
   if [[ `(compgen -G ./ITKPythonBuilds-linux*.tar.zst)` ]]; then
