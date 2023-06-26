@@ -115,8 +115,8 @@ if(ITKPythonPackage_SUPERBUILD)
     endif()
 
     ExternalProject_add(oneTBB
-      URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.3.0.tar.gz
-      URL_HASH SHA256=8f616561603695bbb83871875d2c6051ea28f8187dbe59299961369904d1d49e
+      URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.9.0.tar.gz
+      URL_HASH SHA256=1ce48f34dada7837f510735ff1172f6e2c261b09460e3bf773b49791d247d24e
       CMAKE_ARGS
         -DTBB_TEST:BOOL=OFF
         -DCMAKE_BUILD_TYPE:STRING=Release
