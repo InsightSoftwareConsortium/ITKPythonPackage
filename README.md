@@ -85,7 +85,7 @@ documentation for more information on building wheels by hand.
 ITKPythonPackage currently supports building wheels for the following platforms and architectures:
 - Windows 10 x86_64 platforms
 - Windows 11 x86_64 platforms
-- MacOS 10.9+ x86_64 platforms
+- MacOS 11.0+ x86_64 platforms
 - MacOS 11.0+ arm64 platforms
 - Linux glibc 2.17+ (E.g. Ubuntu 18.04+) x86_64 platforms
 - Linux glibc 2.28+ (E.g. Ubuntu 20.04+) aarch64 (ARMv8) platforms
