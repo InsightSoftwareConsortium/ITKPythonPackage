@@ -1,2 +1,2 @@
 ninja==1.11.1
-scikit-build==0.16.2
+scikit-build==0.17.6
