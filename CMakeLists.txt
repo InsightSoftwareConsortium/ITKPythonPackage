@@ -29,6 +29,12 @@ if(ITKPythonPackage_USE_TBB)
     )
 endif()
 
+if(${CMAKE_GENERATOR} STREQUAL "Ninja")
+  include(ProcessorCount)
+  ProcessorCount(n_processors)
+  set(ep_build_command BUILD_COMMAND ${CMAKE_COMMAND} --build <BUILD_DIR> -- -j${n_processors} -l${n_processors})
+endif()
+
 if(ITKPythonPackage_SUPERBUILD)
 
   #-----------------------------------------------------------------------------
@@ -117,6 +123,7 @@ if(ITKPythonPackage_SUPERBUILD)
     ExternalProject_add(oneTBB
       URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.9.0.tar.gz
       URL_HASH SHA256=1ce48f34dada7837f510735ff1172f6e2c261b09460e3bf773b49791d247d24e
+      ${ep_build_command}
       CMAKE_ARGS
         -DTBB_TEST:BOOL=OFF
         -DCMAKE_BUILD_TYPE:STRING=Release
@@ -265,6 +272,7 @@ if(ITKPythonPackage_SUPERBUILD)
 
     ExternalProject_add(ITK
       DOWNLOAD_COMMAND ""
+      ${ep_build_command}
       SOURCE_DIR ${ITK_SOURCE_DIR}
       BINARY_DIR ${ITK_BINARY_DIR}
       PREFIX "ITKp"

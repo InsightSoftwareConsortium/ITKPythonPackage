@@ -63,6 +63,7 @@ fi
 
 # Build standalone project and populate archive cache
 tbb_dir=$PWD/oneTBB-prefix/lib/cmake/TBB
+n_processors=$(sysctl -n hw.ncpu)
 # So delocate can find the libs
 export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:$PWD/oneTBB-prefix/lib
 mkdir -p ITK-source
@@ -75,7 +76,7 @@ pushd ITK-source > /dev/null 2>&1
     -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
     -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
       ${SCRIPT_DIR}/../
-  ${NINJA_EXECUTABLE}
+  ${NINJA_EXECUTABLE} -j$n_processors -l$n_processors
 popd > /dev/null 2>&1
 
 SINGLE_WHEEL=0
@@ -170,7 +171,7 @@ for VENV in "${VENVS[@]}"; do
           ${CMAKE_OPTIONS} \
           -G Ninja \
           ${source_path} \
-        && ninja\
+        && ninja -j$n_processors -l$n_processors \
         || exit 1
       )
 
