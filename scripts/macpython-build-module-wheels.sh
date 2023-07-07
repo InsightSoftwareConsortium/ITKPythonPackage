@@ -72,13 +72,14 @@ for VENV in "${VENVS[@]}"; do
     echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
 
-    osx_target="11.0"
     if [[ $(arch) == "arm64" ]]; then
       plat_name="macosx-11.0-arm64"
+      osx_target="11.0"
       osx_arch="arm64"
       build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_arm64"
     else
-      plat_name="macosx-11.0-x86_64"
+      plat_name="macosx-10.9-x86_64"
+      osx_target="10.9"
       osx_arch="x86_64"
       build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
     fi
