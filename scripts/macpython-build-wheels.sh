@@ -59,7 +59,7 @@ if [[ $(arch) == "arm64" ]]; then
 else
   osx_target="10.9"
   osx_arch="x86_64"
-  use_tbb="ON"
+  use_tbb="OFF"
 fi
 
 # Build standalone project and populate archive cache
