@@ -212,15 +212,8 @@ done
 
 for wheel in dist/*.whl; do
   echo "Delocating $wheel"
-  if [[ $wheel = *itk_core* ]]; then
-    ${DELOCATE_LISTDEPS} $wheel # lists library dependencies
-    ${DELOCATE_WHEEL} $wheel # copies library dependencies into wheel
-  else
-    ${DELOCATE_PATCH} $wheel ${SCRIPT_DIR}/delocate.package.apply.patch # workaround for delocate's need for a package
-    ${DELOCATE_LISTDEPS} $wheel # lists library dependencies
-    ${DELOCATE_WHEEL} $wheel # copies library dependencies into wheel
-    ${DELOCATE_PATCH} $wheel ${SCRIPT_DIR}/delocate.package.revert.patch # workaround for delocate's need for a package
-  fi
+  ${DELOCATE_LISTDEPS} $wheel # lists library dependencies
+  ${DELOCATE_WHEEL} $wheel # copies library dependencies into wheel
 done
 
 # Install packages and test

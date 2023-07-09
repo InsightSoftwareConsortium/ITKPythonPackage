@@ -109,8 +109,6 @@ for VENV in "${VENVS[@]}"; do
 done
 
 for wheel in $PWD/dist/*.whl; do
-  ${DELOCATE_PATCH} $wheel ${script_dir}/delocate.package.apply.patch # workaround for delocate's need for a package
   ${DELOCATE_LISTDEPS} $wheel # lists library dependencies
   ${DELOCATE_WHEEL} $wheel # copies library dependencies into wheel
-  ${DELOCATE_PATCH} $wheel ${script_dir}/delocate.package.revert.patch # workaround for delocate's need for a package
 done
