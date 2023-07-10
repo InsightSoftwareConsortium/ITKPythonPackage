@@ -4,7 +4,8 @@
 # downloaded by the external module build scripts and used to build their
 # Python package on GitHub CI services.
 
-tbb_contents="ITKPythonPackage/oneTBB*"
+#tbb_contents="ITKPythonPackage/oneTBB*"
+tbb_contents=""
 arch_postfix=""
 if test $(arch) == "arm64"; then
   arch_postfix="-arm64"
