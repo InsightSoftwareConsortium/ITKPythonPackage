@@ -45,8 +45,16 @@ fi
 # -----------------------------------------------------------------------
 # These variables are set in common script:
 #
+# * CMAKE_EXECUTABLE
+# * CMAKE_OPTIONS
+# * MACPYTHON_PY_PREFIX
+# * PYBINARIES
+# * PYTHON_VERSIONS
+# * NINJA_EXECUTABLE
+# * SCRIPT_DIR
+# * VENVS=()
+
 MACPYTHON_PY_PREFIX=""
-# PYBINARIES="" # unused
 SCRIPT_DIR=""
 VENVS=()
 
