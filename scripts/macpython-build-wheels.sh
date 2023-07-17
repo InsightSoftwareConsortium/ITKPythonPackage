@@ -19,6 +19,16 @@
 # -----------------------------------------------------------------------
 # These variables are set in common script:
 #
+# * CMAKE_EXECUTABLE
+# * CMAKE_OPTIONS
+# * MACPYTHON_PY_PREFIX
+# * PYBINARIES
+# * PYTHON_VERSIONS
+# * NINJA_EXECUTABLE
+# * SCRIPT_DIR
+# * SKBUILD_DIR
+# * VENVS=()
+
 MACPYTHON_PY_PREFIX=""
 PYBINARIES=""
 SCRIPT_DIR=""
@@ -136,7 +146,7 @@ for VENV in "${VENVS[@]}"; do
         -DITK_WRAP_DOC:BOOL=ON \
         ${CMAKE_OPTIONS}
       # Cleanup
-      ${Python3_EXECUTABLE} setup.py clean
+      rm -r ${SKBUILD_DIR}
 
     else
 
@@ -199,7 +209,7 @@ for VENV in "${VENVS[@]}"; do
           ${CMAKE_OPTIONS} \
         || exit 1
         # Cleanup
-        ${Python3_EXECUTABLE} setup.py clean
+        rm -r ${SKBUILD_DIR}
       done
 
     fi

@@ -45,8 +45,17 @@ fi
 # -----------------------------------------------------------------------
 # These variables are set in common script:
 #
+# * CMAKE_EXECUTABLE
+# * CMAKE_OPTIONS
+# * MACPYTHON_PY_PREFIX
+# * PYBINARIES
+# * PYTHON_VERSIONS
+# * NINJA_EXECUTABLE
+# * SCRIPT_DIR
+# * SKBUILD_DIR
+# * VENVS=()
+
 MACPYTHON_PY_PREFIX=""
-# PYBINARIES="" # unused
 SCRIPT_DIR=""
 VENVS=()
 
@@ -105,7 +114,7 @@ for VENV in "${VENVS[@]}"; do
       -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
       ${CMAKE_OPTIONS} \
     || exit 1
-    # ${Python3_EXECUTABLE} setup.py clean    # Permission denied
+    # rm -r ${SKBUILD_DIR} # Permission denied
 done
 
 for wheel in $PWD/dist/*.whl; do
