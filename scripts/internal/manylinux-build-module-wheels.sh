@@ -73,6 +73,9 @@ source "${script_dir}/manylinux-build-common.sh"
 sudo ldconfig
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/oneTBB-prefix/lib:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
 
+# Swig pre-built version from ITK build in ITKPythonPackage
+SWIG_VERSION=4.0.2
+
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
     Python3_EXECUTABLE=${PYBIN}/python
@@ -102,18 +105,20 @@ for PYBIN in "${PYBINARIES[@]}"; do
       echo 'ITK source tree not available!' 1>&2
       exit 1
     fi
+    swig_args=""
+    if [[ "${ARCH}" = "x64" ]]; then
+      swig_args="-DITK_USE_SYSTEM_SWIG:BOOL=ON -DSWIG_VERSION:STRING=${SWIG_VERSION} -DSWIG_EXECUTABLE:FILEPATH=${itk_build_dir}/Wrapping/Generators/SwigInterface/swiglinux-${SWIG_VERSION}/bin/swig -DSWIG_DIR:FILEPATH=${itk_build_dir}/Wrapping/Generators/SwigInterface/swiglinux-${SWIG_VERSION}/share/swig/${SWIG_VERSION}"
+    fi
     ${PYBIN}/python setup.py clean
     ${PYBIN}/python setup.py bdist_wheel --build-type Release -G Ninja -- \
       -DITK_DIR:PATH=${itk_build_dir} \
-      -DITK_USE_SYSTEM_SWIG:BOOL=ON \
       -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
-      -DSWIG_EXECUTABLE:FILEPATH=${itk_build_dir}/Wrapping/Generators/SwigInterface/swig/bin/swig \
       -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
       -DCMAKE_INSTALL_LIBDIR:STRING=lib \
       -DBUILD_TESTING:BOOL=OFF \
       -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
       -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-      ${CMAKE_OPTIONS} \
+      ${swig_args} ${CMAKE_OPTIONS} \
     || exit 1
 done
 
