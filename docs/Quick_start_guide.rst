@@ -73,7 +73,7 @@ ITK and napari
 ..............
 
 An `itk.Image` can be converted to and from a `napari.layers.Image
-<https://napari.org/api/stable/napari.layers.Image.html#napari.layers.Image>`_ while
+<https://napari.org/stable/api/napari.layers.Image.html#napari.layers.Image>`_ while
 preserving metadata with the `itk-napari-conversion package
 <https://github.com/InsightSoftwareConsortium/itk-napari-conversion>`_.
 
@@ -197,7 +197,7 @@ All `itk` functional image filters operate on an `itk.Image` but also:
 - `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_
 - `dask.array.Array <https://docs.dask.org/en/latest/array.html>`_
 
-* Preserves image metadata
+\* Preserves image metadata
 
 Filter parameters
 .................
