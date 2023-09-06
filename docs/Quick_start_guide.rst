@@ -197,7 +197,7 @@ All `itk` functional image filters operate on an `itk.Image` but also:
 - `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_
 - `dask.array.Array <https://docs.dask.org/en/latest/array.html>`_
 
-* Preserves image metadata
+\* Preserves image metadata
 
 Filter parameters
 .................
