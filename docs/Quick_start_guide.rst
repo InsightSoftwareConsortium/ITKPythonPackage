@@ -73,7 +73,7 @@ ITK and napari
 ..............
 
 An `itk.Image` can be converted to and from a `napari.layers.Image
-<https://napari.org/api/stable/napari.layers.Image.html#napari.layers.Image>`_ while
+<https://napari.org/stable/api/napari.layers.Image.html#napari.layers.Image>`_ while
 preserving metadata with the `itk-napari-conversion package
 <https://github.com/InsightSoftwareConsortium/itk-napari-conversion>`_.
 
