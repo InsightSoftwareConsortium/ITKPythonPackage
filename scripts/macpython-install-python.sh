@@ -52,8 +52,9 @@ LATEST_3p6=3.6.8
 LATEST_3p7=3.7.9
 LATEST_3p8=3.8.10
 LATEST_3p9=3.9.13
-LATEST_3p10=3.10.8
-LATEST_3p11=3.11.0
+LATEST_3p10=3.10.11
+LATEST_3p11=3.11.4
+LATEST_3p12=3.12.0
 
 
 function check_python {
@@ -112,6 +113,8 @@ function fill_pyver {
         echo $LATEST_2p7
     elif [ $ver == 3 ] || [ $ver == "3.11" ]; then
         echo $LATEST_3p11
+    elif [ $ver == "3.12" ]; then
+        echo $LATEST_3p12
     elif [ $ver == "3.10" ]; then
         echo $LATEST_3p10
     elif [ $ver == "3.9" ]; then
@@ -405,16 +408,16 @@ function make_workon_venv {
 if test "$(arch)" == "arm64"; then
   echo "we are arm"
   PLAT=arm64
-  for pyversion in $LATEST_3p9 $LATEST_3p10 $LATEST_3p11; do
+  for pyversion in $LATEST_3p9 $LATEST_3p10 $LATEST_3p11 $LATEST_3p12; do
     install_macpython $pyversion 11
     install_virtualenv
   done
 else
-  for pyversion in $LATEST_3p7; do
-    install_macpython $pyversion 10.9
-    install_virtualenv
-  done
-  for pyversion in $LATEST_3p8 $LATEST_3p9 $LATEST_3p10 $LATEST_3p11; do
+  #for pyversion in $LATEST_3p7; do
+    #install_macpython $pyversion 10.9
+    #install_virtualenv
+  #done
+  for pyversion in $LATEST_3p8 $LATEST_3p9 $LATEST_3p10 $LATEST_3p11 $LATEST_3p12; do
     install_macpython $pyversion 11
     install_virtualenv
   done
