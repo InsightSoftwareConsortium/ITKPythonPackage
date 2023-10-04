@@ -413,10 +413,9 @@ if test "$(arch)" == "arm64"; then
     install_virtualenv
   done
 else
-  #for pyversion in $LATEST_3p7; do
-    #install_macpython $pyversion 10.9
-    #install_virtualenv
-  #done
+  # Deployment target requirements:
+  # * 10.9: Python 3.7
+  # * 11: Python >= 3.8
   for pyversion in $LATEST_3p8 $LATEST_3p9 $LATEST_3p10 $LATEST_3p11 $LATEST_3p12; do
     install_macpython $pyversion 11
     install_virtualenv
