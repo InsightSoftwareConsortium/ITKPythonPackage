@@ -21,26 +21,6 @@ function(ipp_ExternalProject_Add_Empty proj depends)
     )
 endfunction()
 
-# ipp_set_itk_groups()
-#
-# Set ``ITK_MODULE_*_GROUP`` variable for each modules.
-#
-macro(ipp_set_itk_groups)
-  include("${}")
-  foreach( group ${group_list} )
-    set( _${group}_module_list )
-    file( GLOB_RECURSE _${group}_module_files ${ITK_SOURCE_DIR}/Modules/${group}/itk-module.cmake )
-    foreach( _module_file ${_${group}_module_files} )
-      file( STRINGS ${_module_file} _module_line REGEX "itk_module[ \n]*\\([ \n]*[A-Za-z0-9]*" )
-      string( REGEX MATCH "(\\([ \n]*)([A-Za-z0-9]*)" _module_name ${_module_line} )
-      set( _module_name ${CMAKE_MATCH_2} )
-      set( _${_module_name}_module_line ${_module_line} )
-      list( APPEND _${group}_module_list ${_module_name} )
-      set(ITK_MODULE_${_module_name}_GROUP ${group})
-    endforeach()
-  endforeach()
-endmacro()
-
 # ipp_get_module_dependees(<itk-module> <output_var>)
 #
 # Collect all modules depending on ``<itk-module>``.
