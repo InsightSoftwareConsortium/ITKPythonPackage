@@ -5,13 +5,13 @@ import argparse
 import sys
 
 from auditwheel.main import main
-from auditwheel.policy import _POLICIES as POLICIES
+from auditwheel.policy import WheelPolicies
 
 
 def exclude_libs(whitelist):
     # Do not include the following libraries when repairing wheels.
     for lib in whitelist.split(';'):
-        for p in POLICIES:
+        for p in WheelPolicies().policies:
             p['lib_whitelist'].append(lib)
 
 if __name__ == "__main__":
