@@ -61,12 +61,18 @@ chmod 777 $(pwd)/tools
 mkdir -p dist
 DOCKER_ARGS="-v $(pwd)/dist:/work/dist/ -v ${script_dir}/..:/ITKPythonPackage -v $(pwd)/tools:/tools"
 DOCKER_ARGS+=" -e MANYLINUX_VERSION"
+DOCKER_ARGS+=" -e LD_LIBRARY_PATH"
 # Mount any shared libraries
 if [[ -n ${LD_LIBRARY_PATH} ]]; then
   for libpath in ${LD_LIBRARY_PATH//:/ }; do
-	  DOCKER_ARGS+=" -v ${libpath}:/usr/lib64/$(basename -- ${libpath})"
+          DOCKER_LIBRARY_PATH="/usr/lib64/$(basename -- ${libpath})"
+	  DOCKER_ARGS+=" -v ${libpath}:${DOCKER_LIBRARY_PATH}"
+          if test -d ${libpath}; then
+              DOCKER_LD_LIBRARY_PATH+="${DOCKER_LIBRARY_PATH}:${DOCKER_LD_LIBRARY_PATH}"
+          fi
   done
 fi
+export LD_LIBRARY_PATH="${DOCKER_LD_LIBRARY_PATH}"
 
 if [[ "${TARGET_ARCH}" = "aarch64" ]]; then
   echo "Install aarch64 architecture emulation tools to perform build for ARM platform"
