@@ -122,13 +122,14 @@ for PYBIN in "${PYBINARIES[@]}"; do
     || exit 1
 done
 
-# Make sure auditwheel is installed for this python exe before importing
-# it in auditwheel_whitelist_monkeypatch.py
+# Convert list of excluded libs in --exclude_libs to auditwheel --exclude options
+if test -n "$EXCLUDE_LIBS"; then
+  AUDITWHEEL_EXCLUDE_ARGS="--exclude ${EXCLUDE_LIBS//;/ --exclude }"
+fi
+
 sudo ${Python3_EXECUTABLE} -m pip install auditwheel
 for whl in dist/*linux*$(uname -m).whl; do
-  # Repair wheel using monkey patch to exclude shared libraries provided in whitelist
-  ${Python3_EXECUTABLE} "${script_dir}/auditwheel_whitelist_monkeypatch.py" \
-    repair ${whl} -w /work/dist/ --whitelist "${EXCLUDE_LIBS}"
+  auditwheel repair ${whl} -w /work/dist/ ${AUDITWHEEL_EXCLUDE_ARGS} 
   rm ${whl}
 done
 
