@@ -30,9 +30,9 @@ ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG:=master}
 ########################################################################
 # Docker image parameters
 
-# Specialized manylinux image to use for building. Default is _2_28.
+# Specialized manylinux image to use for building. Default is 2014.
 #   See https://github.com/dockcross/dockcross for available versions and tags.
-MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
+MANYLINUX_VERSION=${MANYLINUX_VERSION:=2014}
 
 # Target platform architecture (x64, aarch64)
 TARGET_ARCH=${TARGET_ARCH:=x64}
