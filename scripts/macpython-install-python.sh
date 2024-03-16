@@ -37,8 +37,6 @@ set -x
 
 MACPYTHON_URL=https://www.python.org/ftp/python
 MACPYTHON_PY_PREFIX=/Library/Frameworks/Python.framework/Versions
-MACPYTHON_DEFAULT_OSX="10.6"
-MB_PYTHON_OSX_VER=${MB_PYTHON_OSX_VER:-$MACPYTHON_DEFAULT_OSX}
 GET_PIP_URL=https://bootstrap.pypa.io/get-pip.py
 DOWNLOADS_SDIR=downloads
 WORKING_SDIR=working
@@ -246,31 +244,6 @@ function get_macpython_osx_ver {
     else
         echo "Error parsing macOS distutils platform '$distutils_plat'"
         exit 1
-    fi
-}
-
-function macpython_arch_for_version {
-    # echo arch (intel or x86_64) that a version of Python is expected
-    # to be built for
-    # Parameters
-    #   $py_ver     Python version, in the format (major.minor.patch) for
-    #               CPython, or pypy-(major.minor) for PyPy
-    #   $py_osx_ver minimum macOS version the target Python is built for
-    #               (major.minor)
-    local py_ver=$1
-    local py_osx_ver=${2:-$MB_PYTHON_OSX_VER}
-    check_var $1
-    if [[ $(macpython_impl_for_version $py_ver) == "cp" ]]; then
-        if [[ "$py_osx_ver" == "10.6" ]]; then
-            echo "intel"
-        elif [[ "$py_osx_ver" == "10.9" ]]; then
-            echo "x86_64"
-        else
-            echo "Unexpected CPython macOS version: ${py_osx_ver}, supported values: 10.6 and 10.9"
-            exit 1
-        fi
-    else
-        echo "x86_64"
     fi
 }
 
