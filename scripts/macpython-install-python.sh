@@ -55,6 +55,7 @@ LATEST_3p11=3.11.4
 LATEST_3p12=3.12.0
 
 
+
 function check_python {
     if [ -z "$PYTHON_EXE" ]; then
         echo "PYTHON_EXE variable not defined"
@@ -100,15 +101,13 @@ function fill_pyver {
     # Convert major or major.minor format to major.minor.micro
     #
     # Hence:
-    # 2 -> 2.7.11  (depending on LATEST_2p7 value)
-    # 2.7 -> 2.7.11  (depending on LATEST_2p7 value)
+    # 3 -> 3.11.0  (depending on LATEST_3p11 value)
+    # 3.11 -> 3.11.0  (depending on LATEST_3p11 value)
     local ver=$1
     check_var $ver
     if [[ $ver =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
         # Major.minor.micro format already
         echo $ver
-    elif [ $ver == 2 ] || [ $ver == "2.7" ]; then
-        echo $LATEST_2p7
     elif [ $ver == 3 ] || [ $ver == "3.11" ]; then
         echo $LATEST_3p11
     elif [ $ver == "3.12" ]; then
@@ -117,14 +116,6 @@ function fill_pyver {
         echo $LATEST_3p10
     elif [ $ver == "3.9" ]; then
         echo $LATEST_3p9
-    elif [ $ver == "3.8" ]; then
-        echo $LATEST_3p8
-    elif [ $ver == "3.7" ]; then
-        echo $LATEST_3p7
-    elif [ $ver == "3.6" ]; then
-        echo $LATEST_3p6
-    elif [ $ver == "3.5" ]; then
-        echo $LATEST_3p5
     else
         echo "Can't fill version $ver" 1>&2
         exit 1
@@ -144,14 +135,10 @@ function macpython_sdk_list_for_version {
 
     if [ "${PLAT}" = "arm64" ]; then
         _return="11.0"
-    elif [ "$_major" -eq "2" ]; then
-        [ $(lex_ver $_ver) -lt $(lex_ver 2.7.18) ] && _return="10.6"
-        [ $(lex_ver $_ver) -ge $(lex_ver 2.7.15) ] && _return="$_return 10.9"
     elif [ "$_major" -eq "3" ]; then
-        [ $(lex_ver $_ver) -lt $(lex_ver 3.8)    ] && _return="10.6"
-        [ $(lex_ver $_ver) -ge $(lex_ver 3.6.5)  ] && _return="$_return 10.9"
+        [ $(lex_ver $_ver) -ge $(lex_ver 3.9.0)  ] && _return="$_return 10.9"
     else
-        echo "Error version=${_ver}, expecting 2.x or 3.x" 1>&2
+        echo "Error version=${_ver}, expecting 3.9+" 1>&2
         exit 1
     fi
     echo $_return
@@ -173,13 +160,7 @@ function pyinst_ext_for_version {
     check_var $py_version
     py_version=$(fill_pyver $py_version)
     local py_0=${py_version:0:1}
-    if [ $py_0 -eq 2 ]; then
-        if [ "$(lex_ver $py_version)" -ge "$(lex_ver 2.7.9)" ]; then
-            echo "pkg"
-        else
-            echo "dmg"
-        fi
-    elif [ $py_0 -ge 3 ]; then
+    if [ $py_0 -ge 3 ]; then
 		echo "pkg"
     fi
 }
@@ -191,7 +172,7 @@ function pyinst_fname_for_version {
     #   $py_version (Python version in major.minor.extra format)
     #   $py_osx_ver: {major.minor | not defined}
     #       if defined, the minimum macOS SDK version that Python is
-    #       built for, eg: "10.6" or "10.9", if not defined, infers
+    #       built for, eg: "10.9" or "11.0", if not defined, infers
     #       this from $py_version using macpython_sdk_for_version
     local py_version=$1
     local py_osx_ver=${2:-$(macpython_sdk_for_version $py_version)}
@@ -201,12 +182,6 @@ function pyinst_fname_for_version {
         echo "python-${py_version}-macos11.0.${inst_ext}"
       else
         echo "python-${py_version}-macos11.${inst_ext}"
-      fi
-    else
-      if [ "$py_version" == "3.7.9" ]; then
-        echo "python-${py_version}-macosx${py_osx_ver}.${inst_ext}"
-      else
-        echo "python-${py_version}-macos${py_osx_ver}.${inst_ext}"
       fi
     fi
 }
@@ -284,10 +259,10 @@ function install_macpython {
     # Install Python and set $PYTHON_EXE to the installed executable
     # Parameters:
     #     $version : [implementation-]major[.minor[.patch]]
-    #         The Python implementation to install, e.g. "3.6", "pypy-5.4" or "pypy3.6-7.2"
+    #         The Python implementation to install, e.g. "3.10", "pypy-5.4" or "pypy3.6-7.2"
     #     $py_osx_ver: {major.minor | not defined}
     #       if defined, the macOS version that CPython is built for, e.g.
-    #       "10.6" or "10.9". Ignored for PyPy
+    #       "10.9". Ignored for PyPy
     local version=$1
     local py_osx_ver=$2
     local impl=$(macpython_impl_for_version $version)
@@ -307,11 +282,11 @@ function install_mac_cpython {
     # Parameters
     #   $py_version
     #       Version given in major or major.minor or major.minor.micro e.g
-    #       "3" or "3.7" or "3.7.1".
+    #       "3" or "3.9" or "3.9.4".
     #   $py_osx_ver
     #       {major.minor | not defined}
     #       if defined, the macOS version that Python is built for, e.g.
-    #        "10.6" or "10.9"
+    #        "10.9" or "11.0"
     # sets $PYTHON_EXE variable to Python executable
     local py_version=$(fill_pyver $1)
     local py_osx_ver=$2
@@ -381,7 +356,7 @@ function make_workon_venv {
 if test "$(arch)" == "arm64"; then
   echo "we are arm"
   PLAT=arm64
-  for pyversion in $LATEST_3p9 $LATEST_3p10 $LATEST_3p11; do
+  for pyversion in $LATEST_3p9 $LATEST_3p10 $LATEST_3p11 $LATEST_3p12 $LATEST_3p13; do
     install_macpython $pyversion 11
     install_virtualenv
   done
@@ -389,7 +364,7 @@ else
   # Deployment target requirements:
   # * 10.9: Python 3.7
   # * 11: Python >= 3.8
-  for pyversion in $LATEST_3p9 $LATEST_3p10 $LATEST_3p11; do
+  for pyversion in $LATEST_3p9 $LATEST_3p10 $LATEST_3p11 $LATEST_3p12 $LATEST_3p13; do
     install_macpython $pyversion 11
     install_virtualenv
   done
