@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ########################################################################
-# Download ITK build cache and other requirements to prepare for 
+# Download ITK build cache and other requirements to prepare for
 # generating Linux Python wheels of the given ITK module.
 #
 # Most ITK modules will download and call `dockcross-manylinux-download-cache-and-build-module-wheels.sh` which will
@@ -78,7 +78,8 @@ MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
 TARGET_ARCH=${TARGET_ARCH:=x64}
 
 case ${TARGET_ARCH} in
-    x64)
+    x64|x86_64)
+	# tarball name _${TARGET_ARCH} is skipped in these cases
         TARBALL_SPECIALIZATION="-manylinux${MANYLINUX_VERSION}"
         ;;
     *)
@@ -125,7 +126,7 @@ if [[ -n ${ITKPYTHONPACKAGE_TAG} ]]; then
   git checkout "${ITKPYTHONPACKAGE_TAG}"
   git status
   popd
-  
+
   rm -rf ITKPythonPackage/scripts/
   cp -r IPP-tmp/scripts ITKPythonPackage/
   cp IPP-tmp/requirements-dev.txt ITKPythonPackage/
