@@ -17,6 +17,10 @@
 #   export IMAGE_TAG=20221205-459c9f0
 #   scripts/dockcross-manylinux-build-module-wheels.sh cp39
 #
+script_dir=$(cd $(dirname $0) || exit 1; pwd)
+source "${script_dir}/oci_exe.sh"
+
+oci_exe=$(ociExe)
 
 MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
 
@@ -30,10 +34,8 @@ else
 fi
 
 # Generate dockcross scripts
-docker run --rm dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > /tmp/dockcross-manylinux-x64
+$oci_exe run --rm docker.io/dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > /tmp/dockcross-manylinux-x64
 chmod u+x /tmp/dockcross-manylinux-x64
-
-script_dir=$(cd $(dirname $0) || exit 1; pwd)
 
 # Build wheels
 pushd $script_dir/..

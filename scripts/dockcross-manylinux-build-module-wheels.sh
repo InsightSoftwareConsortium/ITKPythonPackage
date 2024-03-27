@@ -49,6 +49,9 @@
 # Handle case where the script directory is not the working directory
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/dockcross-manylinux-set-vars.sh"
+source "${script_dir}/oci_exe.sh"
+
+oci_exe=$(ociExe)
 
 if [[ -n ${ITK_MODULE_PREQ} ]]; then
   echo "Building module dependencies ${ITK_MODULE_PREQ}"
@@ -81,14 +84,14 @@ if [[ "${TARGET_ARCH}" = "aarch64" ]]; then
     docker_prefix="sudo"
   fi
 
-  ${docker_prefix} docker run --privileged --rm tonistiigi/binfmt --install all
+  ${docker_prefix} $oci_exe run --privileged --rm tonistiigi/binfmt --install all
 
   # Build wheels
   DOCKER_ARGS+=" -v $(pwd):/work/ --rm"
-  ${docker_prefix} docker run $DOCKER_ARGS ${CONTAINER_SOURCE} "/ITKPythonPackage/scripts/internal/manylinux-aarch64-build-module-wheels.sh" "$@"
+  ${docker_prefix} $oci_exe run $DOCKER_ARGS ${CONTAINER_SOURCE} "/ITKPythonPackage/scripts/internal/manylinux-aarch64-build-module-wheels.sh" "$@"
 else
   # Generate dockcross scripts
-  docker run --rm ${CONTAINER_SOURCE} > /tmp/dockcross-manylinux-x64
+  $oci_exe run --rm ${CONTAINER_SOURCE} > /tmp/dockcross-manylinux-x64
   chmod u+x /tmp/dockcross-manylinux-x64
 
   # Build wheels

@@ -52,7 +52,7 @@ fi
 # Set container for requested version/arch/tag.
 if [[ ${TARGET_ARCH} == x64 ]]; then
   MANYLINUX_IMAGE_NAME=${MANYLINUX_IMAGE_NAME:="manylinux${MANYLINUX_VERSION}-${TARGET_ARCH}:${IMAGE_TAG}"}
-  CONTAINER_SOURCE="dockcross/${MANYLINUX_IMAGE_NAME}"
+  CONTAINER_SOURCE="docker.io/dockcross/${MANYLINUX_IMAGE_NAME}"
 elif [[ ${TARGET_ARCH} == aarch64 ]]; then
   MANYLINUX_IMAGE_NAME=${MANYLINUX_IMAGE_NAME:="manylinux${MANYLINUX_VERSION}_${TARGET_ARCH}:${IMAGE_TAG}"}
   CONTAINER_SOURCE="quay.io/pypa/${MANYLINUX_IMAGE_NAME}"
