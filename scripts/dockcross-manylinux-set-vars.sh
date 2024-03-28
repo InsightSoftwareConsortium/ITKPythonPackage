@@ -39,11 +39,11 @@ TARGET_ARCH=${TARGET_ARCH:=x64}
 
 # Specialized manylinux image tag to use for building.
 if [[ ${MANYLINUX_VERSION} == _2_28 && ${TARGET_ARCH} == x64 ]]; then
-  IMAGE_TAG=${IMAGE_TAG:=20230926-9eb419c}
+  IMAGE_TAG=${IMAGE_TAG:=20240304-9e57d2b}
 elif [[ ${MANYLINUX_VERSION} == _2_28 && ${TARGET_ARCH} == aarch64 ]]; then
-  IMAGE_TAG=${IMAGE_TAG:=2022-11-19-1b19e81}
+  IMAGE_TAG=${IMAGE_TAG:=2024-03-25-9206bd9}
 elif [[ ${MANYLINUX_VERSION} == 2014 ]]; then
-  IMAGE_TAG=${IMAGE_TAG:=20230926-9eb419c}
+  IMAGE_TAG=${IMAGE_TAG:=20240304-9e57d2b}
 else
   echo "Unknown manylinux version ${MANYLINUX_VERSION}"
   exit 1;
@@ -52,7 +52,7 @@ fi
 # Set container for requested version/arch/tag.
 if [[ ${TARGET_ARCH} == x64 ]]; then
   MANYLINUX_IMAGE_NAME=${MANYLINUX_IMAGE_NAME:="manylinux${MANYLINUX_VERSION}-${TARGET_ARCH}:${IMAGE_TAG}"}
-  CONTAINER_SOURCE="dockcross/${MANYLINUX_IMAGE_NAME}"
+  CONTAINER_SOURCE="docker.io/dockcross/${MANYLINUX_IMAGE_NAME}"
 elif [[ ${TARGET_ARCH} == aarch64 ]]; then
   MANYLINUX_IMAGE_NAME=${MANYLINUX_IMAGE_NAME:="manylinux${MANYLINUX_VERSION}_${TARGET_ARCH}:${IMAGE_TAG}"}
   CONTAINER_SOURCE="quay.io/pypa/${MANYLINUX_IMAGE_NAME}"

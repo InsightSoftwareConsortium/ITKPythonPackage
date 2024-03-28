@@ -87,10 +87,10 @@ if(ITKPythonPackage_SUPERBUILD)
   #-----------------------------------------------------------------------------
   include(ExternalProject)
 
-  set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
+  set(ITK_REPOSITORY "https://github.com/thewtex/ITK.git")
 
- # ITK release 2023-10-11
-  set(ITK_GIT_TAG "v5.4rc02")
+ # python-limited-api branch
+  set(ITK_GIT_TAG "0465baf43aa900bef58fa14726a545b7d1745fe5")
 
   #-----------------------------------------------------------------------------
   # A separate project is used to download ITK, so that it can reused
@@ -114,6 +114,11 @@ if(ITKPythonPackage_SUPERBUILD)
         )
     endif()
 
+    if(${CMAKE_VERSION} VERSION_LESS 3.24)
+      set(download_extract_timestamp_flag)
+    else()
+      set(download_extract_timestamp_flag DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+    endif()
     ExternalProject_add(oneTBB
       URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.9.0.tar.gz
       URL_HASH SHA256=1ce48f34dada7837f510735ff1172f6e2c261b09460e3bf773b49791d247d24e
@@ -124,6 +129,7 @@ if(ITKPythonPackage_SUPERBUILD)
         -DCMAKE_INSTALL_LIBDIR:STRING=lib # Skip default initialization by GNUInstallDirs CMake module
         ${ep_common_cmake_cache_args}
         ${tbb_cmake_cache_args}
+        ${download_extract_timestamp_flag}
         -DCMAKE_BUILD_TYPE:STRING=Release
       BUILD_BYPRODUCTS "${TBB_DIR}/TBBConfig.cmake"
       USES_TERMINAL_DOWNLOAD 1
