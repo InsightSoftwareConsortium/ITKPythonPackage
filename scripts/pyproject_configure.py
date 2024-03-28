@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
-"""CLI allowing to configure ``setup.py`` found in ``ITKPythonPackage``
+"""CLI allowing to configure ``pyproject.toml`` found in ``ITKPythonPackage``
 source tree.
 
-Different version of ``setup.py`` can be generated based on the value
+Different version of ``pyproject.toml`` can be generated based on the value
 of the `wheel_name` positional parameter.
 
 Usage::
 
-    setup_py_configure.py [-h] [--output-dir OUTPUT_DIR] wheel_name
+    pyproject_configure.py [-h] [--output-dir OUTPUT_DIR] wheel_name
 
     positional arguments:
       wheel_name
@@ -16,7 +16,7 @@ Usage::
     optional arguments:
       -h, --help            show this help message and exit
       --output-dir OUTPUT_DIR
-                            Output directory for configured 'setup.py' script
+                            Output directory for configured 'pyproject.toml'
                             (default: /work)
 
 
@@ -30,6 +30,7 @@ import re
 import sys
 import textwrap
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 PARAMETER_OPTION_DEFAULTS = {
     'indent': 0,
@@ -39,21 +40,15 @@ PARAMETER_OPTION_DEFAULTS = {
 }
 
 PARAMETER_OPTIONS = {
-    'SETUP_PRE_CODE': {
-        'remove_line_if_empty': True
-    },
-    'SETUP_PY_MODULES': {
+    'PYPROJECT_PY_MODULES': {
         'indent': 8,
         'newline_if_set': True,
         'newline_indent': 4
     },
-    'SETUP_INSTALL_REQUIRES': {
+    'PYPROJECT_DEPENDENCIES': {
         'indent': 8,
         'remove_line_if_empty': True
     },
-    'SETUP_POST_CODE': {
-        'remove_line_if_empty': True
-    }
 }
 
 
@@ -94,7 +89,7 @@ def list_to_str(list_, newline=True):
     sep = ", "
     if newline:
         sep = ",\n"
-    return sep.join(["'%s'" % item for item in list_])
+    return sep.join(['"%s"' % item for item in list_])
 
 
 def configure(template_file, parameters, output_file):
@@ -129,77 +124,93 @@ def configure(template_file, parameters, output_file):
 def from_group_to_wheel(group):
     return "itk-%s" % group.lower()
 
-
 def update_wheel_setup_py_parameters():
-    global SETUP_PY_PARAMETERS
+    global PYPROJECT_PY_PARAMETERS
     for wheel_name in get_wheel_names():
-        params = dict(ITK_SETUP_PY_PARAMETERS)
+        params = dict(ITK_PYPROJECT_PY_PARAMETERS)
 
         # generator
-        params['SETUP_GENERATOR'] = "python %s '%s'" % (SCRIPT_NAME, wheel_name)
+        params['PYPROJECT_GENERATOR'] = "python %s '%s'" % (SCRIPT_NAME, wheel_name)
 
         # name
         if wheel_name == 'itk-meta':
-            params['SETUP_NAME'] = 'itk'
+            params['PYPROJECT_NAME'] = 'itk'
+            params['PYPROJECT_PLATLIB'] = r'false'
         else:
-            params['SETUP_NAME'] = wheel_name
+            params['PYPROJECT_NAME'] = wheel_name
 
 
         # long description
         if wheel_name == 'itk-core':
-            params['SETUP_LONG_DESCRIPTION'] += (r'\n\n'
+            params['PYPROJECT_LONG_DESCRIPTION'] += (r'\n\n'
             'This package contain the toolkit framework used'
             ' by other modules. There are common base classes for data objects and process'
             ' objects, basic data structures such as Image, Mesh, QuadEdgeMesh, and'
             ' SpatialObjects, and common functionality for operations such as finite'
             ' differences, image adaptors, or image transforms.')
         elif wheel_name == 'itk-filtering':
-            params['SETUP_LONG_DESCRIPTION'] += (r'\n\n'
+            params['PYPROJECT_LONG_DESCRIPTION'] += (r'\n\n'
             'These packages contains filters that modify data'
             ' in the ITK pipeline framework.  These filters take an input object, such as an'
             ' Image, and modify it to create an output.  Filters can be chained together to'
             ' create a processing pipeline.')
         elif wheel_name == 'itk-io':
-            params['SETUP_LONG_DESCRIPTION'] += (r'\n\n'
+            params['PYPROJECT_LONG_DESCRIPTION'] += (r'\n\n'
             'This package contains classes for reading and writing images and other data objects.')
         elif wheel_name == 'itk-numerics':
-            params['SETUP_LONG_DESCRIPTION'] += (r'\n\n'
+            params['PYPROJECT_LONG_DESCRIPTION'] += (r'\n\n'
             'This package contains basic numerical tools and algorithms that'
             ' have general applications outside of imaging.')
         elif wheel_name == 'itk-registration':
-            params['SETUP_LONG_DESCRIPTION'] += (r'\n\n'
+            params['PYPROJECT_LONG_DESCRIPTION'] += (r'\n\n'
             'This package addresses the registration problem: '
             ' find the spatial transformation between two images. This is a high'
             ' level package that makes use of many lower level packages.')
         elif wheel_name == 'itk-segmentation':
-            params['SETUP_LONG_DESCRIPTION'] += (r'\n\n'
+            params['PYPROJECT_LONG_DESCRIPTION'] += (r'\n\n'
             'This package addresses the segmentation problem: '
             ' partition the image into classified regions (labels). This is a high'
             ' level package that makes use of many lower level packages.')
 
         # cmake_args
-        params['SETUP_CMAKE_ARGS'] = list_to_str([
+        params['PYPROJECT_CMAKE_ARGS'] = list_to_str([
+            '-DITK_WRAP_unsigned_short:BOOL=ON',
+            '-DITK_WRAP_double:BOOL=ON',
+            '-DITK_WRAP_complex_double:BOOL=ON',
+            '-DITK_WRAP_IMAGE_DIMS:STRING=2;3;4',
+            '-DITK_WRAP_DOC:BOOL=ON',
             '-DITKPythonPackage_WHEEL_NAME:STRING=%s' % wheel_name
-        ])
+        ], True)
 
         # install_requires
         wheel_depends = get_wheel_dependencies()[wheel_name]
 
         # py_modules
         if wheel_name != 'itk-core':
-            params['SETUP_PY_MODULES'] = r''
+            params['PYPROJECT_PY_MODULES'] = r''
         else:
             wheel_depends.append('numpy')
 
-        params['SETUP_INSTALL_REQUIRES'] = list_to_str(wheel_depends)
+        params['PYPROJECT_DEPENDENCIES'] = list_to_str(wheel_depends)
 
-        SETUP_PY_PARAMETERS[wheel_name] = params
+        PYPROJECT_PY_PARAMETERS[wheel_name] = params
 
 
 def get_wheel_names():
     with open(os.path.join(SCRIPT_DIR, 'WHEEL_NAMES.txt'), 'r') as _file:
         return [wheel_name.strip() for wheel_name in _file.readlines()]
 
+def get_version():
+    from itkVersion import get_versions
+    version = get_versions()['package-version']
+    return version
+
+def get_py_api():
+    import sys
+    if sys.version_info < (3, 11):
+        return ""
+    else:
+        return "cp" + str(sys.version_info.major) + str(sys.version_info.minor)
 
 def get_wheel_dependencies():
     """Return a dictionary of ITK wheel dependencies.
@@ -208,9 +219,7 @@ def get_wheel_dependencies():
     regex_group_depends = \
         r'set\s*\(\s*ITK\_GROUP\_([a-zA-Z0-9\_\-]+)\_DEPENDS\s*([a-zA-Z0-9\_\-\s]*)\s*'  # noqa: E501
     pattern = re.compile(regex_group_depends)
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from itkVersion import get_versions
-    version = get_versions()['package-version']
+    version = get_version()
     with open(os.path.join(SCRIPT_DIR, "..", "CMakeLists.txt"), 'r') as file_:
         for line in file_.readlines():
             match = re.search(pattern, line)
@@ -233,18 +242,14 @@ def get_wheel_dependencies():
 SCRIPT_DIR = os.path.dirname(__file__)
 SCRIPT_NAME = os.path.basename(__file__)
 
-ITK_SETUP_PY_PARAMETERS = {
-    'SETUP_GENERATOR': "python %s '%s'" % (SCRIPT_NAME, 'itk'),
-    'SETUP_PRE_CODE': textwrap.dedent(
-        r"""
-        sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-        from itkVersion import get_versions
-        """
-    ),
-    'SETUP_NAME': r'itk',
-    'SETUP_VERSION': r"""get_versions()['package-version']""",
-    'SETUP_CMAKE_ARGS': r'',
-    'SETUP_PY_MODULES': list_to_str([
+ITK_PYPROJECT_PY_PARAMETERS = {
+    'PYPROJECT_GENERATOR': "python %s '%s'" % (SCRIPT_NAME, 'itk'),
+    'PYPROJECT_NAME': r'itk',
+    'PYPROJECT_VERSION': get_version(),
+    'PYPROJECT_CMAKE_ARGS': r'',
+    'PYPROJECT_PY_API': get_py_api(),
+    'PYPROJECT_PLATLIB': r'true',
+    'PYPROJECT_PY_MODULES': list_to_str([
         'itkBase',
         'itkConfig',
         'itkExtras',
@@ -255,28 +260,26 @@ ITK_SETUP_PY_PARAMETERS = {
         'itkVersion',
         'itkBuildOptions'
     ]),
-    'SETUP_DOWNLOAD_URL': r'https://itk.org/ITK/resources/software.html',
-    'SETUP_DESCRIPTION': r'ITK is an open-source toolkit for multidimensional image analysis',  # noqa: E501
-    'SETUP_LONG_DESCRIPTION': r'ITK is an open-source, cross-platform library that '
+    'PYPROJECT_DOWNLOAD_URL': r'https://github.com/InsightSoftwareConsortium/ITK/releases',
+    'PYPROJECT_DESCRIPTION': r'ITK is an open-source toolkit for multidimensional image analysis',  # noqa: E501
+    'PYPROJECT_LONG_DESCRIPTION': r'ITK is an open-source, cross-platform library that '
                      'provides developers with an extensive suite of software '
                      'tools for image analysis. Developed through extreme '
                      'programming methodologies, ITK employs leading-edge '
                      'algorithms for registering and segmenting '
                      'multidimensional scientific images.',
-    'SETUP_EXTRA_KEYWORDS': r'segmentation registration image imaging',
-    'SETUP_INSTALL_REQUIRES': r'',
-    'SETUP_POST_CODE': r''
+    'PYPROJECT_EXTRA_KEYWORDS': r'"scientific", "medical", "image", "imaging"',
+    'PYPROJECT_DEPENDENCIES': r'',
 }
 
-SETUP_PY_PARAMETERS = {
-    'itk': ITK_SETUP_PY_PARAMETERS
+PYPROJECT_PY_PARAMETERS = {
+    'itk': ITK_PYPROJECT_PY_PARAMETERS
 }
 
 update_wheel_setup_py_parameters()
 
 
 def main():
-
     # Defaults
     default_output_dir = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
 
@@ -287,18 +290,18 @@ def main():
     parser.add_argument("wheel_name")
     parser.add_argument(
         "--output-dir", type=str,
-        help="Output directory for configured 'setup.py' script",
+        help="Output directory for configured 'pyproject.toml'",
         default=default_output_dir
         )
     args = parser.parse_args()
-    template = os.path.join(SCRIPT_DIR, "setup.py.in")
-    if args.wheel_name not in SETUP_PY_PARAMETERS.keys():
+    template = os.path.join(SCRIPT_DIR, "pyproject.toml.in")
+    if args.wheel_name not in PYPROJECT_PY_PARAMETERS.keys():
         print("Unknown wheel name '%s'" % args.wheel_name)
         sys.exit(1)
 
     # Configure 'setup.py'
-    output_file = os.path.join(args.output_dir, 'setup.py')
-    configure(template, SETUP_PY_PARAMETERS[args.wheel_name], output_file)
+    output_file = os.path.join(args.output_dir, 'pyproject.toml')
+    configure(template, PYPROJECT_PY_PARAMETERS[args.wheel_name], output_file)
 
     # Configure or remove 'itk/__init__.py'
     init_py = os.path.join(args.output_dir, "itk", "__init__.py")

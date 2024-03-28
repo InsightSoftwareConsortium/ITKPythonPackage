@@ -48,6 +48,11 @@ if(ITKPythonPackage_SUPERBUILD)
       -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
       )
   endif()
+  set(ep_download_extract_timestamp_arg )
+  if(CMAKE_VERSION VERSION_EQUAL "3.24" OR CMAKE_VERSION VERSION_GREATER "3.24")
+    # See https://cmake.org/cmake/help/latest/policy/CMP0135.html
+    set(ep_download_extract_timestamp_arg DOWNLOAD_EXTRACT_TIMESTAMP 1)
+  endif()
 
   #-----------------------------------------------------------------------------
   # Options
@@ -124,6 +129,7 @@ if(ITKPythonPackage_SUPERBUILD)
         -DCMAKE_INSTALL_LIBDIR:STRING=lib # Skip default initialization by GNUInstallDirs CMake module
         ${ep_common_cmake_cache_args}
         ${tbb_cmake_cache_args}
+        ${ep_download_extract_timestamp_arg}
         -DCMAKE_BUILD_TYPE:STRING=Release
       BUILD_BYPRODUCTS "${TBB_DIR}/TBBConfig.cmake"
       USES_TERMINAL_DOWNLOAD 1
@@ -276,11 +282,6 @@ if(ITKPythonPackage_SUPERBUILD)
         -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=${install_component_per_module}
         -DITK_LEGACY_SILENT:BOOL=ON
         -DITK_WRAP_PYTHON:BOOL=ON
-        -DITK_WRAP_unsigned_short:BOOL=ON
-        -DITK_WRAP_double:BOOL=ON
-        -DITK_WRAP_complex_double:BOOL=ON
-        -DITK_WRAP_IMAGE_DIMS:STRING=2;3;4
-        -DITK_WRAP_DOC:BOOL=ON
         -DDOXYGEN_EXECUTABLE:FILEPATH=${DOXYGEN_EXECUTABLE}
         -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR}
         -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY}
@@ -288,6 +289,7 @@ if(ITKPythonPackage_SUPERBUILD)
         ${ep_common_cmake_cache_args}
         ${tbb_args}
         ${ep_itk_cmake_cache_args}
+        ${ep_download_extract_timestamp_arg}
       USES_TERMINAL_DOWNLOAD 1
       USES_TERMINAL_UPDATE 1
       USES_TERMINAL_CONFIGURE 1
