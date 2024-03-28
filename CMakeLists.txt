@@ -114,6 +114,11 @@ if(ITKPythonPackage_SUPERBUILD)
         )
     endif()
 
+    if(${CMAKE_VERSION} VERSION_LESS 3.24)
+      set(download_extract_timestamp_flag)
+    else()
+      set(download_extract_timestamp_flag DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+    endif()
     ExternalProject_add(oneTBB
       URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.9.0.tar.gz
       URL_HASH SHA256=1ce48f34dada7837f510735ff1172f6e2c261b09460e3bf773b49791d247d24e
@@ -124,6 +129,7 @@ if(ITKPythonPackage_SUPERBUILD)
         -DCMAKE_INSTALL_LIBDIR:STRING=lib # Skip default initialization by GNUInstallDirs CMake module
         ${ep_common_cmake_cache_args}
         ${tbb_cmake_cache_args}
+        ${download_extract_timestamp_flag}
         -DCMAKE_BUILD_TYPE:STRING=Release
       BUILD_BYPRODUCTS "${TBB_DIR}/TBBConfig.cmake"
       USES_TERMINAL_DOWNLOAD 1

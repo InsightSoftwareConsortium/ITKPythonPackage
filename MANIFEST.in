@@ -1,8 +1,0 @@
-include CMakeLists.txt
-include cmake/*.cmake
-include README.md
-include itkVersion.py
-include scripts/dockcross-manylinux-build-wheels.sh
-recursive-include scripts/internal *
-include setup.py
-include itk/__init__.py
