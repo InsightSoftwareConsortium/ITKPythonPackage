@@ -87,10 +87,10 @@ if(ITKPythonPackage_SUPERBUILD)
   #-----------------------------------------------------------------------------
   include(ExternalProject)
 
-  set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
+  set(ITK_REPOSITORY "https://github.com/thewtex/ITK.git")
 
- # ITK release 2023-10-11
-  set(ITK_GIT_TAG "v5.4rc02")
+ # python-limited-api branch
+  set(ITK_GIT_TAG "0465baf43aa900bef58fa14726a545b7d1745fe5")
 
   #-----------------------------------------------------------------------------
   # A separate project is used to download ITK, so that it can reused
