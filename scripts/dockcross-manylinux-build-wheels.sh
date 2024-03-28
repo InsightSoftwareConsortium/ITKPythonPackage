@@ -25,9 +25,9 @@ oci_exe=$(ociExe)
 MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
 
 if [[ ${MANYLINUX_VERSION} == _2_28 ]]; then
-  IMAGE_TAG=${IMAGE_TAG:=20230926-9eb419c}
+  IMAGE_TAG=${IMAGE_TAG:=20240304-9e57d2b}
 elif [[ ${MANYLINUX_VERSION} == 2014 ]]; then
-  IMAGE_TAG=${IMAGE_TAG:=20230926-9eb419c}
+  IMAGE_TAG=${IMAGE_TAG:=20240304-9e57d2b}
 else
   echo "Unknown manylinux version ${MANYLINUX_VERSION}"
   exit 1;
