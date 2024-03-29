@@ -299,18 +299,18 @@ def main():
         print("Unknown wheel name '%s'" % args.wheel_name)
         sys.exit(1)
 
-    # Configure 'setup.py'
+    # Configure 'pyproject.toml'
     output_file = os.path.join(args.output_dir, 'pyproject.toml')
     configure(template, PYPROJECT_PY_PARAMETERS[args.wheel_name], output_file)
 
     # Configure or remove 'itk/__init__.py'
-    init_py = os.path.join(args.output_dir, "itk", "__init__.py")
-    if args.wheel_name in ["itk", "itk-core"]:
-        with open(init_py, 'w') as file_:
-            file_.write("# Stub required for setuptools\n")
-    else:
-        if os.path.exists(init_py):
-            os.remove(init_py)
+    # init_py = os.path.join(args.output_dir, "itk", "__init__.py")
+    # if args.wheel_name in ["itk", "itk-core"]:
+        # with open(init_py, 'w') as file_:
+            # file_.write("# Stub required for package\n")
+    # else:
+        # if os.path.exists(init_py):
+            # os.remove(init_py)
 
 if __name__ == "__main__":
     main()
