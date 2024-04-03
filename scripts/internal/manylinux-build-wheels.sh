@@ -116,6 +116,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DITK_SOURCE_DIR:PATH=${source_path} \
           -DITK_BINARY_DIR:PATH=${build_path} \
           -DBUILD_TESTING:BOOL=OFF \
+          -DSKBUILD:BOOL=ON \
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
           -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \

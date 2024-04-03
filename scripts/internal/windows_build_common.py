@@ -4,7 +4,7 @@ from subprocess import check_call
 import os
 import shutil
 
-DEFAULT_PY_ENVS = ["38-x64", "39-x64", "310-x64", "311-x64", "312-x64"]
+DEFAULT_PY_ENVS = ["38-x64", "39-x64", "310-x64", "311-x64"]
 
 SCRIPT_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
@@ -23,7 +23,11 @@ def venv_paths(python_version):
     #     with a given interpreter.
     xy_ver = python_version.split("-")[0]
 
-    python_library = "C:/Python%s/libs/python%s.lib" % (python_version, xy_ver)
+    if int(python_version.split("-")[0][1:]) >= 11:
+        # Stable ABI
+        python_library = "C:/Python%s/libs/python3.lib" % (python_version)
+    else:
+        python_library = "C:/Python%s/libs/python%s.lib" % (python_version, xy_ver)
 
     print("")
     print("Python3_EXECUTABLE: %s" % python_executable)

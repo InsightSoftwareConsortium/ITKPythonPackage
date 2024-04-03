@@ -113,7 +113,7 @@ def fixup_wheel(py_envs, filepath, lib_paths:str='', exclude_libs:str=''):
     print(f'Library paths for fixup: {lib_paths}')
 
     py_env = py_envs[0]
-    
+
     delve_wheel = os.path.join("C:/P/IPP", "venv-" + py_env, "Scripts", "delvewheel.exe")
     check_call([delve_wheel, "repair", "--no-mangle-all", "--add-path",
         lib_paths, "--no-dll", exclude_libs, "--ignore-in-wheel", "-w",
@@ -132,7 +132,7 @@ def fixup_wheels(py_envs, lib_paths:str='', exclude_libs:str=''):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Driver script to build ITK Python module wheels.')
     parser.add_argument('--py-envs', nargs='+', default=DEFAULT_PY_ENVS,
-            help='Target Python environment versions, e.g. "37-x64".')
+            help='Target Python environment versions, e.g. "39-x64".')
     parser.add_argument('--no-cleanup', dest='cleanup', action='store_false', help='Do not clean up temporary build files.')
     parser.add_argument('--lib-paths', nargs=1, default='', help='Add semicolon-delimited library directories for delvewheel to include in the module wheel')
     parser.add_argument('--exclude-libs', nargs=1, default='', help='Add semicolon-delimited library names that must not be included in the module wheel, e.g. "nvcuda.dll"')
