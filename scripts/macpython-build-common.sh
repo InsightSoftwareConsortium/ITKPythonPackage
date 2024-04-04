@@ -70,10 +70,6 @@ for PYBIN in "${PYBINARIES[@]}"; do
 done
 
 # -----------------------------------------------------------------------
-SKBUILD_DIR=_skbuild
-
-
-# -----------------------------------------------------------------------
 # Ensure that requirements are met
 brew update
 brew info doxygen | grep --quiet 'Not installed' && brew install doxygen

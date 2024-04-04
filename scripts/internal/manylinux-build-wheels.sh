@@ -79,7 +79,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
       echo "# Build single ITK wheel"
       echo "#"
 
-      # Configure setup.py
+      # Configure pyproject.toml
       ${PYBIN}/python ${PYPROJECT_CONFIGURE} "itk"
       # Generate wheel
       ${PYBIN}/python -m pip \
@@ -116,7 +116,6 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DITK_SOURCE_DIR:PATH=${source_path} \
           -DITK_BINARY_DIR:PATH=${build_path} \
           -DBUILD_TESTING:BOOL=OFF \
-          -DSKBUILD:BOOL=ON \
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
           -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
@@ -143,7 +142,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
 
       wheel_names=$(cat ${script_dir}/../WHEEL_NAMES.txt)
       for wheel_name in ${wheel_names}; do
-        # Configure setup.py
+        # Configure pyproject.toml
         ${PYBIN}/python ${PYPROJECT_CONFIGURE} ${wheel_name}
         # Generate wheel
         ${PYBIN}/python -m pip \
