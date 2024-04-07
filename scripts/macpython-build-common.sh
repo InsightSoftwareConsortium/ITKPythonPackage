@@ -15,7 +15,7 @@ usage()
   echo "Usage:
   macpython-build-common
     [ -h | --help ]           show usage
-    [ -c | --cmake_options ]  space-separated string of CMake options to forward to the module (e.g. \"-DBUILD_TESTING=OFF\")
+    [ -c | --cmake_options ]  space-separated string of CMake options to forward to the module (e.g. \"--config-setting=cmake.define.BUILD_TESTING=OFF\")
     [ -- python_versions ]        build wheel for a specific python version(s). (e.g. -- 3.9 3.10)"
   exit 2
 }
