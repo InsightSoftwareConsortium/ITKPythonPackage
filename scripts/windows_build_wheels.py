@@ -129,20 +129,21 @@ def build_wheel(python_version, build_type="Release", single_wheel=False,
             # Generate wheel
             check_call([
                python_executable,
-                "-m", "pip",
+                "-m", "build",
                 "--verbose",
-                "wheel",
-                "--wheel-dir", "dist",
-                "--no-deps",
-                "--config-settings=cmake.build-type=%s" % build_type,
-                "--config-settings=cmake.define.ITK_SOURCE_DIR:PATH=%s" % source_path,
-                "--config-settings=cmake.define.ITK_BINARY_DIR:PATH=%s" % build_path,
-                "--config-settings=cmake.define.Python3_EXECUTABLE:FILEPATH=%s" % python_executable,
-                "--config-settings=cmake.define.Python3_INCLUDE_DIR:PATH=%s" % python_include_dir,
-                "--config-settings=cmake.define.Python3_INCLUDE_DIRS:PATH=%s" % python_include_dir,
-                "--config-settings=cmake.define.Python3_LIBRARY:FILEPATH=%s" % python_library,
-                "--config-settings=cmake.define.DOXYGEN_EXECUTABLE:FILEPATH=C:/P/doxygen/doxygen.exe",
-            ] + [o.replace('-D', '--config-settings=cmake.define.') for o in cmake_options] + ['.',])
+                "--wheel",
+                "--outdir", "dist",
+                "--no-isolation",
+                "--skip-dependency-check",
+                "--config-setting=cmake.build-type=%s" % build_type,
+                "--config-setting=cmake.define.ITK_SOURCE_DIR:PATH=%s" % source_path,
+                "--config-setting=cmake.define.ITK_BINARY_DIR:PATH=%s" % build_path,
+                "--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=%s" % python_executable,
+                "--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=%s" % python_include_dir,
+                "--config-setting=cmake.define.Python3_INCLUDE_DIRS:PATH=%s" % python_include_dir,
+                "--config-setting=cmake.define.Python3_LIBRARY:FILEPATH=%s" % python_library,
+                "--config-setting=cmake.define.DOXYGEN_EXECUTABLE:FILEPATH=C:/P/doxygen/doxygen.exe",
+            ] + [o.replace('-D', '--config-setting=cmake.define.') for o in cmake_options] + ['.',])
 
         else:
 
@@ -169,21 +170,22 @@ def build_wheel(python_version, build_type="Release", single_wheel=False,
                 # Generate wheel
                 check_call([
                     python_executable,
-                    "-m", "pip",
+                    "-m", "build",
                     "--verbose",
-                    "wheel",
-                    "--wheel-dir", "dist",
-                    "--no-deps",
-                    "--config-settings=cmake.build-type=%s" % build_type,
-                    "--config-settings=cmake.define.ITK_SOURCE_DIR:PATH=%s" % source_path,
-                    "--config-settings=cmake.define.ITK_BINARY_DIR:PATH=%s" % build_path,
-                    "--config-settings=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON",
-                    "--config-settings=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=%s" % wheel_name,
-                    "--config-settings=cmake.define.Python3_EXECUTABLE:FILEPATH=%s" % python_executable,
-                    "--config-settings=cmake.define.Python3_INCLUDE_DIR:PATH=%s" % python_include_dir,
-                    "--config-settings=cmake.define.Python3_INCLUDE_DIRS:PATH=%s" % python_include_dir,
-                    "--config-settings=cmake.define.Python3_LIBRARY:FILEPATH=%s" % python_library
-                ] + [o.replace('-D', '--config-settings=cmake.define.') for o in cmake_options] + ['.',])
+                    "--wheel",
+                    "--outdir", "dist",
+                    "--no-isolation",
+                    "--skip-dependency-check",
+                    "--config-setting=cmake.build-type=%s" % build_type,
+                    "--config-setting=cmake.define.ITK_SOURCE_DIR:PATH=%s" % source_path,
+                    "--config-setting=cmake.define.ITK_BINARY_DIR:PATH=%s" % build_path,
+                    "--config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON",
+                    "--config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=%s" % wheel_name,
+                    "--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=%s" % python_executable,
+                    "--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=%s" % python_include_dir,
+                    "--config-setting=cmake.define.Python3_INCLUDE_DIRS:PATH=%s" % python_include_dir,
+                    "--config-setting=cmake.define.Python3_LIBRARY:FILEPATH=%s" % python_library
+                ] + [o.replace('-D', '--config-setting=cmake.define.') for o in cmake_options] + ['.',])
 
         # Remove unnecessary files for building against ITK
         if cleanup:

@@ -131,20 +131,21 @@ for VENV in "${VENVS[@]}"; do
       # Configure pyproject.toml
       ${Python3_EXECUTABLE} ${PYPROJECT_CONFIGURE} "itk"
       # Generate wheel
-      ${Python3_EXECUTABLE} -m pip \
+      ${Python3_EXECUTABLE} -m build \
         --verbose \
-        wheel \
-        --wheel-dir dist \
-        --no-deps \
-        --config-settings=cmake.define.CMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
-        --config-settings=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
-        --config-settings=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
-        --config-settings=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
-        --config-settings=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
-        --config-settings=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-        --config-settings=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-        --config-settings=cmake.define.Module_ITKTBB:BOOL=${use_tbb} \
-        --config-settings=cmake.define.TBB_DIR:PATH=${tbb_dir} \
+        --wheel \
+        --outdir dist \
+        --no-isolation \
+        --skip-dependency-check \
+        --config-setting=cmake.define.CMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
+        --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
+        --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
+        --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+        --config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
+        --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+        --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+        --config-setting=cmake.define.Module_ITKTBB:BOOL=${use_tbb} \
+        --config-setting=cmake.define.TBB_DIR:PATH=${tbb_dir} \
         . \
         ${CMAKE_OPTIONS}
 
@@ -191,20 +192,21 @@ for VENV in "${VENVS[@]}"; do
         # Configure pyproject.toml
         ${Python3_EXECUTABLE} ${PYPROJECT_CONFIGURE} ${wheel_name}
         # Generate wheel
-        ${Python3_EXECUTABLE} -m pip \
+        ${Python3_EXECUTABLE} -m build \
           --verbose \
-          wheel \
-          --wheel-dir dist \
-          --no-deps \
-          --config-settings=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
-          --config-settings=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
-          --config-settings=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
-          --config-settings=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
-          --config-settings=cmake.define.ITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
-          --config-settings=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
-          --config-settings=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
-          --config-settings=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-          --config-settings=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+          --wheel \
+          --outdir dist \
+          --no-isolation \
+          --skip-dependency-check \
+          --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
+          --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
+          --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+          --config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
+          --config-setting=cmake.define.ITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
+          --config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
+          --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
+          --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+          --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
           . \
           ${CMAKE_OPTIONS} \
         || exit 1

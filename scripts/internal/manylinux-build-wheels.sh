@@ -71,7 +71,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
     PYPROJECT_CONFIGURE="${script_dir}/../pyproject_configure.py"
 
     # Clean up previous invocations
-    rm -rf ${build_path}
+    # rm -rf ${build_path}
 
     if [[ ${SINGLE_WHEEL} == 1 ]]; then
 
@@ -82,23 +82,24 @@ for PYBIN in "${PYBINARIES[@]}"; do
       # Configure pyproject.toml
       ${PYBIN}/python ${PYPROJECT_CONFIGURE} "itk"
       # Generate wheel
-      ${PYBIN}/python -m pip \
+      ${PYBIN}/python -m build \
             --verbose \
-            wheel \
-            --wheel-dir dist \
-            --no-deps \
-            --config-settings=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
-            --config-settings=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
-            --config-settings=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=OFF \
-            --config-settings=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=itk \
-            --config-settings=cmake.define.CMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
-            "--config-settings=cmake.define.CMAKE_CXX_FLAGS:STRING=$compile_flags" \
-            "--config-settings=cmake.define.CMAKE_C_FLAGS:STRING=$compile_flags" \
-            "--config-settings=cmake.define.CMAKE_BUILD_TYPE:STRING=${build_type}" \
-            --config-settings=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-            --config-settings=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-            --config-settings=cmake.define.Module_ITKTBB:BOOL=ON \
-            --config-settings=cmake.define.TBB_DIR:PATH=${tbb_dir} \
+            --wheel \
+            --outdir dist \
+            --no-isolation \
+            --skip-dependency-check \
+            --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
+            --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
+            --config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=OFF \
+            --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=itk \
+            --config-setting=cmake.define.CMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
+            "--config-setting=cmake.define.CMAKE_CXX_FLAGS:STRING=$compile_flags" \
+            "--config-setting=cmake.define.CMAKE_C_FLAGS:STRING=$compile_flags" \
+            "--config-setting=cmake.define.CMAKE_BUILD_TYPE:STRING=${build_type}" \
+            --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+            --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+            --config-setting=cmake.define.Module_ITKTBB:BOOL=ON \
+            --config-setting=cmake.define.TBB_DIR:PATH=${tbb_dir} \
             .
 
     else
@@ -145,19 +146,20 @@ for PYBIN in "${PYBINARIES[@]}"; do
         # Configure pyproject.toml
         ${PYBIN}/python ${PYPROJECT_CONFIGURE} ${wheel_name}
         # Generate wheel
-        ${PYBIN}/python -m pip \
+        ${PYBIN}/python -m build \
           --verbose \
-          wheel \
-          --wheel-dir dist \
-          --no-deps \
-          --config-settings=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
-          --config-settings=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
-          --config-settings=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
-          --config-settings=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
-          --config-settings=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-          --config-settings=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-          --config-settings=cmake.define.CMAKE_CXX_FLAGS:STRING="${compile_flags}" \
-          --config-settings=cmake.define.CMAKE_C_FLAGS:STRING="${compile_flags}" \
+          --wheel \
+          --outdir dist \
+          --no-isolation \
+          --skip-dependency-check \
+          --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
+          --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
+          --config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
+          --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
+          --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+          --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+          --config-setting=cmake.define.CMAKE_CXX_FLAGS:STRING="${compile_flags}" \
+          --config-setting=cmake.define.CMAKE_C_FLAGS:STRING="${compile_flags}" \
           . \
           || exit 1
       done
