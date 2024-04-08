@@ -43,6 +43,7 @@ lib
 lib64
 MANIFEST
 oneTBB-prefix/
+pyproject.toml
 
 # Installer logs
 pip-log.txt

@@ -34,7 +34,7 @@ usage()
   echo "Usage:
   manylinux-build-module-wheels
     [ -h | --help ]           show usage
-    [ -c | --cmake_options ]  space-separated string of CMake options to forward to the module (e.g. \"-DBUILD_TESTING=OFF\")
+    [ -c | --cmake_options ]  space-separated string of CMake options to forward to the module (e.g. \"--config-setting=cmake.define.BUILD_TESTING=OFF\")
     [ -x | --exclude_libs ]   semicolon-separated library names to exclude when repairing wheel (e.g. \"libcuda.so\")
     [ python_version ]        build wheel for a specific python version. (e.g. cp39)"
   exit 2
@@ -73,8 +73,11 @@ source "${script_dir}/manylinux-build-common.sh"
 sudo ldconfig
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/oneTBB-prefix/lib:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
 
-# Swig pre-built version from ITK build in ITKPythonPackage
-SWIG_VERSION=4.0.2
+if test -e setup.py; then
+  use_skbuild_classic=true
+else
+  use_skbuild_classic=false
+fi
 
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
@@ -84,6 +87,11 @@ for PYBIN in "${PYBINARIES[@]}"; do
     echo ""
     echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
+
+    if $use_skbuild_classic; then
+      # So older remote modules with setup.py continue to work
+      ${Python3_EXECUTABLE} -m pip install --upgrade scikit-build
+    fi
 
     if [[ -e /work/requirements-dev.txt ]]; then
       ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
@@ -105,21 +113,42 @@ for PYBIN in "${PYBINARIES[@]}"; do
       echo 'ITK source tree not available!' 1>&2
       exit 1
     fi
-    swig_args=""
-    if [[ "${ARCH}" = "x64" ]]; then
-      swig_args="-DITK_USE_SYSTEM_SWIG:BOOL=ON -DSWIG_VERSION:STRING=${SWIG_VERSION} -DSWIG_EXECUTABLE:FILEPATH=${itk_build_dir}/Wrapping/Generators/SwigInterface/swiglinux-${SWIG_VERSION}/bin/swig -DSWIG_DIR:FILEPATH=${itk_build_dir}/Wrapping/Generators/SwigInterface/swiglinux-${SWIG_VERSION}/share/swig/${SWIG_VERSION}"
+    if $use_skbuild_classic; then
+      ${PYBIN}/python setup.py clean
+      ${PYBIN}/python setup.py bdist_wheel --build-type Release -G Ninja -- \
+        -DITK_DIR:PATH=${itk_build_dir} \
+        -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
+        -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
+        -DCMAKE_INSTALL_LIBDIR:STRING=lib \
+        -DBUILD_TESTING:BOOL=OFF \
+        -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+        -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+        ${CMAKE_OPTIONS} \
+      || exit 1
+    else
+      py_minor=$(echo $version | cut -d '-' -f 1 | cut -d '3' -f 2)
+      wheel_py_api=""
+      if test $py_minor -ge 11; then
+        wheel_py_api=cp3$py_minor
+      fi
+      ${PYBIN}/python -m build \
+        --verbose \
+        --wheel \
+        --outdir dist \
+        --no-isolation \
+        --skip-dependency-check \
+        --config-setting=cmake.define.ITK_DIR:PATH=${itk_build_dir} \
+        --config-setting=cmake.define.WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
+        --config-setting=cmake.define.CMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
+        --config-setting=cmake.define.CMAKE_INSTALL_LIBDIR:STRING=lib \
+        --config-setting=cmake.define.PY_SITE_PACKAGES_PATH:PATH="." \
+        --config-setting=wheel.py-api=$wheel_py_api \
+        --config-setting=cmake.define.BUILD_TESTING:BOOL=OFF \
+        --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+        --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+        ${CMAKE_OPTIONS} \
+      || exit 1
     fi
-    ${PYBIN}/python setup.py clean
-    ${PYBIN}/python setup.py bdist_wheel --build-type Release -G Ninja -- \
-      -DITK_DIR:PATH=${itk_build_dir} \
-      -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
-      -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
-      -DCMAKE_INSTALL_LIBDIR:STRING=lib \
-      -DBUILD_TESTING:BOOL=OFF \
-      -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-      -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-      ${swig_args} ${CMAKE_OPTIONS} \
-    || exit 1
 done
 
 # Convert list of excluded libs in --exclude_libs to auditwheel --exclude options
@@ -130,7 +159,9 @@ fi
 sudo ${Python3_EXECUTABLE} -m pip install auditwheel
 for whl in dist/*linux*$(uname -m).whl; do
   auditwheel repair ${whl} -w /work/dist/ ${AUDITWHEEL_EXCLUDE_ARGS} 
-  rm ${whl}
+  if $use_skbuild_classic; then
+    rm ${whl}
+  fi
 done
 
 if compgen -G "dist/itk*-linux*.whl" > /dev/null; then

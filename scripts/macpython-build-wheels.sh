@@ -9,7 +9,7 @@
 #
 # Shared libraries can be included in the wheel by exporting them to DYLD_LIBRARY_PATH before
 # running this script.
-# 
+#
 # For example,
 #
 #   export DYLD_LIBRARY_PATH="/path/to/libs"
@@ -26,7 +26,6 @@
 # * PYTHON_VERSIONS
 # * NINJA_EXECUTABLE
 # * SCRIPT_DIR
-# * SKBUILD_DIR
 # * VENVS=()
 
 MACPYTHON_PY_PREFIX=""
@@ -55,6 +54,7 @@ done
 
 VENV="${VENVS[0]}"
 Python3_EXECUTABLE=${VENV}/bin/python3
+${Python3_EXECUTABLE} -m pip install --upgrade pip
 ${Python3_EXECUTABLE} -m pip install --no-cache delocate
 DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
@@ -71,6 +71,8 @@ else
   osx_arch="x86_64"
   use_tbb="OFF"
 fi
+
+export MACOSX_DEPLOYMENT_TARGET=${osx_target}
 
 # Build standalone project and populate archive cache
 tbb_dir=$PWD/oneTBB-prefix/lib/cmake/TBB
@@ -115,7 +117,7 @@ for VENV in "${VENVS[@]}"; do
       osx_target="${MACOSX_DEPLOYMENT_TARGET}"
     fi
     source_path=${SCRIPT_DIR}/../ITK-source/ITK
-    SETUP_PY_CONFIGURE="${script_dir}/setup_py_configure.py"
+    PYPROJECT_CONFIGURE="${script_dir}/pyproject_configure.py"
 
     # Clean up previous invocations
     rm -rf ${build_path}
@@ -126,27 +128,26 @@ for VENV in "${VENVS[@]}"; do
       echo "# Build single ITK wheel"
       echo "#"
 
-      # Configure setup.py
-      ${Python3_EXECUTABLE} ${SETUP_PY_CONFIGURE} "itk"
+      # Configure pyproject.toml
+      ${Python3_EXECUTABLE} ${PYPROJECT_CONFIGURE} "itk"
       # Generate wheel
-      ${Python3_EXECUTABLE} setup.py bdist_wheel --build-type ${build_type} --plat-name ${plat_name} -G Ninja -- \
-        -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
-        -DITK_SOURCE_DIR:PATH=${source_path} \
-        -DITK_BINARY_DIR:PATH=${build_path} \
-        -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
-        -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
-        -DITK_WRAP_unsigned_short:BOOL=ON \
-        -DITK_WRAP_double:BOOL=ON \
-        -DITK_WRAP_complex_double:BOOL=ON \
-        -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
-        -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-        -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-        -DModule_ITKTBB:BOOL=${use_tbb} \
-        -DTBB_DIR:PATH=${tbb_dir} \
-        -DITK_WRAP_DOC:BOOL=ON \
+      ${Python3_EXECUTABLE} -m build \
+        --verbose \
+        --wheel \
+        --outdir dist \
+        --no-isolation \
+        --skip-dependency-check \
+        --config-setting=cmake.define.CMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
+        --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
+        --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
+        --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+        --config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
+        --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+        --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+        --config-setting=cmake.define.Module_ITKTBB:BOOL=${use_tbb} \
+        --config-setting=cmake.define.TBB_DIR:PATH=${tbb_dir} \
+        . \
         ${CMAKE_OPTIONS}
-      # Cleanup
-      rm -r ${SKBUILD_DIR}
 
     else
 
@@ -188,28 +189,27 @@ for VENV in "${VENVS[@]}"; do
 
       wheel_names=$(cat ${SCRIPT_DIR}/WHEEL_NAMES.txt)
       for wheel_name in ${wheel_names}; do
-        # Configure setup.py
-        ${Python3_EXECUTABLE} ${SETUP_PY_CONFIGURE} ${wheel_name}
+        # Configure pyproject.toml
+        ${Python3_EXECUTABLE} ${PYPROJECT_CONFIGURE} ${wheel_name}
         # Generate wheel
-        ${Python3_EXECUTABLE} setup.py bdist_wheel --build-type ${build_type} --plat-name ${plat_name} -G Ninja -- \
-          -DITK_SOURCE_DIR:PATH=${source_path} \
-          -DITK_BINARY_DIR:PATH=${build_path} \
-          -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
-          -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
-          -DITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
-          -DITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
-          -DITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
-          -DITK_WRAP_unsigned_short:BOOL=ON \
-          -DITK_WRAP_double:BOOL=ON \
-          -DITK_WRAP_complex_double:BOOL=ON \
-          -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
-          -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-          -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-          -DITK_WRAP_DOC:BOOL=ON \
+        ${Python3_EXECUTABLE} -m build \
+          --verbose \
+          --wheel \
+          --outdir dist \
+          --no-isolation \
+          --skip-dependency-check \
+          --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
+          --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
+          --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+          --config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
+          --config-setting=cmake.define.ITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
+          --config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
+          --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
+          --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+          --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+          . \
           ${CMAKE_OPTIONS} \
         || exit 1
-        # Cleanup
-        rm -r ${SKBUILD_DIR}
       done
 
     fi
@@ -220,22 +220,19 @@ for VENV in "${VENVS[@]}"; do
     find ${build_path} -name '*.o' -delete
 done
 
-for wheel in dist/*.whl; do
-  echo "Delocating $wheel"
-  ${DELOCATE_LISTDEPS} $wheel # lists library dependencies
-  ${DELOCATE_WHEEL} $wheel # copies library dependencies into wheel
-done
-
-# Install packages and test
-# numpy wheel not currently available for the M1
-# https://github.com/numpy/numpy/issues/17807
 if [[ $(arch) != "arm64" ]]; then
-  for VENV in "${VENVS[@]}"; do
-      ${VENV}/bin/pip install numpy
-      ${VENV}/bin/pip install itk --no-cache-dir --no-index -f ${SCRIPT_DIR}/../dist
-      (cd $HOME && ${VENV}/bin/python -c 'import itk;')
-      (cd $HOME && ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
-      (cd $HOME && ${VENV}/bin/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
-      (cd $HOME && ${VENV}/bin/python ${SCRIPT_DIR}/../docs/code/test.py )
+  for wheel in dist/*.whl; do
+    echo "Delocating $wheel"
+    ${DELOCATE_LISTDEPS} $wheel # lists library dependencies
+    ${DELOCATE_WHEEL} $wheel # copies library dependencies into wheel
   done
 fi
+
+for VENV in "${VENVS[@]}"; do
+  ${VENV}/bin/pip install numpy
+  ${VENV}/bin/pip install itk --no-cache-dir --no-index -f ${SCRIPT_DIR}/../dist
+  (cd $HOME && ${VENV}/bin/python -c 'import itk;')
+  (cd $HOME && ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
+  (cd $HOME && ${VENV}/bin/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
+  (cd $HOME && ${VENV}/bin/python ${SCRIPT_DIR}/../docs/code/test.py )
+done
