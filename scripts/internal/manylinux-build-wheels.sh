@@ -181,13 +181,13 @@ if test "${ARCH}" == "x64"; then
 else
   for whl in dist/itk_*$(uname -m).whl; do
       auditwheel repair ${whl} -w /work/dist/
-      rm ${whl}
   done
 fi
 
 # Install packages and test
 for PYBIN in "${PYBINARIES[@]}"; do
     ${PYBIN}/pip install --user numpy
+    ${PYBIN}/pip install --upgrade pip
     ${PYBIN}/pip install itk --user --no-cache-dir --no-index -f /work/dist
     (cd $HOME && ${PYBIN}/python -c 'from itk import ITKCommon;')
     (cd $HOME && ${PYBIN}/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
