@@ -42,15 +42,20 @@ brew update
 brew install zstd aria2 gnu-tar doxygen ninja
 brew upgrade cmake
 
-# Fetch ITKPythonBuilds archive containing ITK build artifacts
-echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.3.0}/ITKPythonBuilds-macosx.tar.zst"
-if [[ ! -f ITKPythonBuilds-macosx.tar.zst ]]; then
-  aria2c -c --file-allocation=none -o ITKPythonBuilds-macosx.tar.zst -s 10 -x 10 https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.3.0}/ITKPythonBuilds-macosx.tar.zst
+if [[ $(arch) == "arm64" ]]; then
+  tarball_arch="-arm64"
+else
+  tarball_arch=""
 fi
-unzstd --long=31 ITKPythonBuilds-macosx.tar.zst -o ITKPythonBuilds-macosx.tar
-PATH="/usr/local/opt/gnu-tar/libexec/gnubin:$PATH"
-tar xf ITKPythonBuilds-macosx.tar --checkpoint=10000 --checkpoint-action=dot
-rm ITKPythonBuilds-macosx.tar
+# Fetch ITKPythonBuilds archive containing ITK build artifacts
+echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.3.0}/ITKPythonBuilds-macosx${tarball_arch}.tar.zst"
+if [[ ! -f ITKPythonBuilds-macosx${tarball_arch}.tar.zst ]]; then
+  aria2c -c --file-allocation=none -o ITKPythonBuilds-macosx${tarball_arch}.tar.zst -s 10 -x 10 https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.3.0}/ITKPythonBuilds-macosx${tarball_arch}.tar.zst
+fi
+unzstd --long=31 ITKPythonBuilds-macosx${tarball_arch}.tar.zst -o ITKPythonBuilds-macosx${tarball_arch}.tar
+PATH="$(dirname $(brew list gnu-tar | grep gnubin)):$PATH"
+tar xf ITKPythonBuilds-macosx${tarball_arch}.tar --checkpoint=10000 --checkpoint-action=dot
+rm ITKPythonBuilds-macosx${tarball_arch}.tar
 
 # Optional: Update build scripts
 if [[ -n ${ITKPYTHONPACKAGE_TAG} ]]; then
