@@ -221,7 +221,7 @@ for VENV in "${VENVS[@]}"; do
 done
 
 if [[ $(arch) != "arm64" ]]; then
-  for wheel in dist/*.whl; do
+  for wheel in dist/itk_*.whl; do
     echo "Delocating $wheel"
     ${DELOCATE_LISTDEPS} $wheel # lists library dependencies
     ${DELOCATE_WHEEL} $wheel # copies library dependencies into wheel
