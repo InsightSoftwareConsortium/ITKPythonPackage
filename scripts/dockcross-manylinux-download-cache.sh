@@ -14,7 +14,7 @@
 # ENVIRONMENT VARIABLES
 #
 # `ITK_PACKAGE_VERSION`: Tag for ITKPythonBuilds build cache to use
-#     Examples: "v5.3.0", "v5.2.1.post1"
+#     Examples: "v5.4.0", "v5.2.1.post1"
 #     See available tags at https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/tags
 #
 # `MANYLINUX_VERSION`: manylinux specialization used to build ITK for cache
@@ -88,8 +88,8 @@ esac
 TARBALL_NAME="ITKPythonBuilds-linux${TARBALL_SPECIALIZATION}.tar"
 
 if [[ ! -f ${TARBALL_NAME}.zst ]]; then
-  echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.3.0}/${TARBALL_NAME}.zst"
-  curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.3.0}/${TARBALL_NAME}.zst -O
+  echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.4.0}/${TARBALL_NAME}.zst"
+  curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.4.0}/${TARBALL_NAME}.zst -O
 fi
 if [[ ! -f ./${TARBALL_NAME}.zst ]]; then
   echo "ERROR: can not find required binary './${TARBALL_NAME}.zst'"
