@@ -104,7 +104,7 @@ if ("$setup_options".length -gt 0) {
   $build_command = "$build_command $setup_options"
 }
 if("$cmake_options".length -gt 0) {
-  $build_command = "$build_command -- `"$cmake_options`""
+  $build_command = "$build_command -- $cmake_options"
 }
 echo $build_command
 
