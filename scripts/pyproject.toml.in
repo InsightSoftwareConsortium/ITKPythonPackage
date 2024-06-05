@@ -127,7 +127,7 @@ install.components = []
 install.strip = true
 
 # If set, this will provide a method for backward compatibility.
-minimum-version = "0.8.2"
+minimum-version = "0.9.5"
 
 # The build directory. Defaults to a temporary directory, but can be set.
 build-dir = "build/{wheel_tag}"
