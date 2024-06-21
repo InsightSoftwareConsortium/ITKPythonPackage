@@ -50,7 +50,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
                 use_scikit_build_core = False
 
             # Install dependencies
-            check_call([pip, "install", "pip", "--upgrade"])
+            check_call([python_executable, '-m', 'pip', "install", "pip", "--upgrade"])
             requirements_file = os.path.join(ROOT_DIR, "requirements-dev.txt")
             if os.path.exists(requirements_file):
                 check_call([pip, "install", "--upgrade", "-r", requirements_file])
