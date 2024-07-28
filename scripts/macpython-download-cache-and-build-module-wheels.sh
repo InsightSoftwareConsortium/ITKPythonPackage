@@ -39,8 +39,8 @@
 
 # Install dependencies
 brew update
-brew install zstd aria2 gnu-tar doxygen ninja
-brew upgrade cmake
+brew install --quiet zstd aria2 gnu-tar doxygen ninja
+brew upgrade --quiet cmake
 
 if [[ $(arch) == "arm64" ]]; then
   tarball_arch="-arm64"
