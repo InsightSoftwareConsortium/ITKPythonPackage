@@ -48,13 +48,27 @@ else
   tarball_arch=""
 fi
 # Fetch ITKPythonBuilds archive containing ITK build artifacts
+rm -fr ITKPythonPackage
 echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.4.0}/ITKPythonBuilds-macosx${tarball_arch}.tar.zst"
 if [[ ! -f ITKPythonBuilds-macosx${tarball_arch}.tar.zst ]]; then
   aria2c -c --file-allocation=none -o ITKPythonBuilds-macosx${tarball_arch}.tar.zst -s 10 -x 10 https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.4.0}/ITKPythonBuilds-macosx${tarball_arch}.tar.zst
 fi
 unzstd --long=31 ITKPythonBuilds-macosx${tarball_arch}.tar.zst -o ITKPythonBuilds-macosx${tarball_arch}.tar
 PATH="$(dirname $(brew list gnu-tar | grep gnubin)):$PATH"
-gtar xf ITKPythonBuilds-macosx${tarball_arch}.tar --checkpoint=10000 --checkpoint-action=dot
+gtar xf ITKPythonBuilds-macosx${tarball_arch}.tar --checkpoint=10000 --checkpoint-action=dot \
+  ITKPythonPackage/ITK-source \
+  ITKPythonPackageRequiredExtractionDir.txt \
+  ITKPythonPackage/scripts
+
+# Extract subdirectories specific to the compiled python versions
+args=( "$@"  )
+source ITKPythonPackage/scripts/macpython-build-common.sh
+for version in "$PYTHON_VERSIONS"; do
+  gtar xf ITKPythonBuilds-macosx${tarball_arch}.tar --checkpoint=10000 --checkpoint-action=dot \
+    --wildcards "ITKPythonPackage/ITK-${version}-macosx*" \
+    "ITKPythonPackage/venvs/${version}"
+done
+
 rm ITKPythonBuilds-macosx${tarball_arch}.tar
 
 # Optional: Update build scripts
@@ -82,4 +96,4 @@ if [[ ! ${ITK_USE_LOCAL_PYTHON} ]]; then
 fi
 
 echo "Building module wheels"
-/Users/svc-dashboard/D/P/ITKPythonPackage/scripts/macpython-build-module-wheels.sh "$@"
+/Users/svc-dashboard/D/P/ITKPythonPackage/scripts/macpython-build-module-wheels.sh "${args[@]}"
