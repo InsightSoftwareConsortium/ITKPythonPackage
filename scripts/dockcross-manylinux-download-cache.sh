@@ -74,7 +74,7 @@ ${unzstd_exe} --version
 # -----------------------------------------------------------------------
 # Fetch build archive
 
-MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
+MANYLINUX_VERSION=${MANYLINUX_VERSION:=2014}
 TARGET_ARCH=${TARGET_ARCH:=x64}
 
 case ${TARGET_ARCH} in

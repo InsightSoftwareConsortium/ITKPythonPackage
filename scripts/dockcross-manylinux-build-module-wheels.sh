@@ -18,15 +18,15 @@
 # These variables are set with the `export` bash command before calling the script.# 
 # For example,
 #
-#   export MANYLINUX_VERSION="_2_28"
+#   export MANYLINUX_VERSION="2014"
 #   scripts/dockcross-manylinux-build-module-wheels.sh cp39
 # 
 # `LD_LIBRARY_PATH`: Shared libraries to be included in the resulting wheel.
 #   For instance, `export LD_LIBRARY_PATH="/path/to/OpenCL.so:/path/to/OpenCL.so.1.2"`
 #
-# `MANYLINUX_VERSION`: Specialized manylinux image to use for building. Default is _2_28.
+# `MANYLINUX_VERSION`: Specialized manylinux image to use for building. Default is 2014.
 #   See https://github.com/dockcross/dockcross for available versions and tags.
-#   For instance, `export MANYLINUX_VERSION=2014`
+#   For instance, `export MANYLINUX_VERSION=_2_28`
 #
 # `TARGET_ARCH`: Target architecture for which wheels should be built.
 #   For instance, `export MANYLINUX_VERSION=aarch64`
