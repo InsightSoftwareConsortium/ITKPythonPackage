@@ -95,7 +95,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
 
     if [[ -e /work/requirements-dev.txt ]]; then
       ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
-    elif [[ -e /ITKPythonPackage/requirements-dev.txt ]]; then
+    fi
+    if [[ -e /ITKPythonPackage/requirements-dev.txt ]]; then
       ${PYBIN}/pip install --upgrade -r /ITKPythonPackage/requirements-dev.txt
     fi
     version=$(basename $(dirname ${PYBIN}))
