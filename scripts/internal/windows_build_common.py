@@ -4,7 +4,7 @@ from subprocess import check_call
 import os
 import shutil
 
-DEFAULT_PY_ENVS = ["38-x64", "39-x64", "310-x64", "311-x64"]
+DEFAULT_PY_ENVS = ["39-x64", "310-x64", "311-x64"]
 
 SCRIPT_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
