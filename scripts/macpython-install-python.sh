@@ -416,7 +416,7 @@ else
   # Deployment target requirements:
   # * 10.9: Python 3.7
   # * 11: Python >= 3.8
-  for pyversion in $LATEST_3p8 $LATEST_3p9 $LATEST_3p10 $LATEST_3p11; do
+  for pyversion in $LATEST_3p9 $LATEST_3p10 $LATEST_3p11; do
     install_macpython $pyversion 11
     install_virtualenv
   done
