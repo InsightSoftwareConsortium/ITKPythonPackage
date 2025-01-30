@@ -43,19 +43,14 @@ GET_PIP_URL=https://bootstrap.pypa.io/get-pip.py
 DOWNLOADS_SDIR=downloads
 WORKING_SDIR=working
 
-# As of 2 November 2022 - latest Python of each version with binary download
+# As of 2 February 2025 - latest Python of each version with binary download
 # available.
 # See: https://www.python.org/downloads/mac-osx/
-LATEST_2p7=2.7.18
-LATEST_3p5=3.5.4
-LATEST_3p6=3.6.8
-LATEST_3p7=3.7.9
-LATEST_3p8=3.8.10
 LATEST_3p9=3.9.13
 LATEST_3p10=3.10.11
-LATEST_3p11=3.11.4
-LATEST_3p12=3.12.0
-
+LATEST_3p11=3.11.9
+LATEST_3p12=3.12.9
+LATEST_3p13=3.13.2
 
 function check_python {
     if [ -z "$PYTHON_EXE" ]; then

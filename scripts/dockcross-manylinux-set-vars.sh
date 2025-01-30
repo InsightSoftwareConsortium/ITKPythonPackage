@@ -9,8 +9,8 @@
 # if their value is not set with `export` before invocation.
 # For example,
 #
-#   export ITK_PACKAGE_VERSION=v5.4.0
-#   scripts/dockcross-manylinux-set-vars.sh cp39
+#   export ITK_PACKAGE_VERSION=v6.0a03
+#   source scripts/dockcross-manylinux-set-vars.sh
 #
 ########################################################################
 
@@ -18,8 +18,11 @@
 # ITKPythonBuilds parameters
 
 # ITKPythonBuilds archive tag to use for ITK build artifacts.
-#   See https://github.com/insightSoftwareConsortium/ITKpythonbuilds for available tags.
-ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION:=v5.4.0}
+#   See https://github.com/InsightSoftwareConsortium/ITKPythonBuilds for available tags (which should correspond to
+#   tags found in InsightSoftwareConsortium/ITK).
+
+# This content has not changed in 8 years, ITKPythonBuilds is a placeholder for build artifacts.
+ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION:=v6.0a03} # <- This is a tag on the InsightSoftwareConsortium/ITK package
 
 # Github organization for fetching ITKPythonPackage build scripts
 ITKPYTHONPACKAGE_ORG=${ITKPYTHONPACKAGE_ORG:=InsightSoftwareConsortium}

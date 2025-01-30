@@ -18,7 +18,7 @@
 # These variables are set with the `export` bash command before calling the script.
 # For example,
 #
-#   export ITK_PACKAGE_VERSION="v5.4.0"
+#   export ITK_PACKAGE_VERSION="v6.0a03"
 #   scripts/dockcross-manylinux-build-module-wheels.sh cp39
 #
 # `ITKPYTHONPACKAGE_ORG`: Github organization for fetching ITKPythonPackage build scripts.

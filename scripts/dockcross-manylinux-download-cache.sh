@@ -88,8 +88,8 @@ esac
 TARBALL_NAME="ITKPythonBuilds-linux${TARBALL_SPECIALIZATION}.tar"
 
 if [[ ! -f ${TARBALL_NAME}.zst ]]; then
-  echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.4.0}/${TARBALL_NAME}.zst"
-  curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.4.0}/${TARBALL_NAME}.zst -O
+  echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v6.0a03}/${TARBALL_NAME}.zst"
+  curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v6.0a03}/${TARBALL_NAME}.zst -O
 fi
 if [[ ! -f ./${TARBALL_NAME}.zst ]]; then
   echo "ERROR: can not find required binary './${TARBALL_NAME}.zst'"

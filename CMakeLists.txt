@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16.3 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
 
 project(ITKPythonPackage CXX)
 
@@ -48,11 +48,8 @@ if(ITKPythonPackage_SUPERBUILD)
       -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
       )
   endif()
-  set(ep_download_extract_timestamp_arg )
-  if(CMAKE_VERSION VERSION_EQUAL "3.24" OR CMAKE_VERSION VERSION_GREATER "3.24")
-    # See https://cmake.org/cmake/help/latest/policy/CMP0135.html
-    set(ep_download_extract_timestamp_arg DOWNLOAD_EXTRACT_TIMESTAMP 1)
-  endif()
+  # See https://cmake.org/cmake/help/latest/policy/CMP0135.html
+  set(ep_download_extract_timestamp_arg DOWNLOAD_EXTRACT_TIMESTAMP 1)
 
   #-----------------------------------------------------------------------------
   # Options
@@ -95,7 +92,7 @@ if(ITKPythonPackage_SUPERBUILD)
   set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
 
   # master branch, 2024-11-13
-  set(ITK_GIT_TAG "v6.0a01")
+  set(ITK_GIT_TAG "v6.0a03")
 
   #-----------------------------------------------------------------------------
   # A separate project is used to download ITK, so that it can reused
