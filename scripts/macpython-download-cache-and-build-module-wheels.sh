@@ -86,9 +86,6 @@ if [[ -n ${ITKPYTHONPACKAGE_TAG} ]]; then
 fi
 
 # Run build scripts
-if [[ -d /Users/svc-dashboard/D/P/ITKPythonPackage ]]; then
-  sudo rm -rf /Users/svc-dashboard/D/P/ITKPythonPackage
-fi
 sudo mkdir -p /Users/svc-dashboard/D/P && sudo chown $UID:$GID /Users/svc-dashboard/D/P && mv ITKPythonPackage /Users/svc-dashboard/D/P/
 
 # Optionally install baseline Python versions
