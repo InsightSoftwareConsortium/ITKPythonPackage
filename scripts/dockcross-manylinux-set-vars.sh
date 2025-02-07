@@ -14,6 +14,10 @@
 #
 ########################################################################
 
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  echo "${0} is being called directly, this file should only be sourced from other files"
+  exit 255
+fi
 ########################################################################
 # ITKPythonBuilds parameters
 
