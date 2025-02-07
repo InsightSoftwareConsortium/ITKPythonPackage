@@ -1,7 +1,7 @@
 Welcome to ITKPythonPackage's documentation!
 ============================================
 
-This project provides a ``setup.py`` script to build ITK Python wheels and
+This project provides a ``pyproject.toml`` script to build ITK Python wheels and
 infrastructure to build ITK external module Python wheels.
 
 `ITK <https://www.itk.org/>`_ is an open-source, cross-platform system that provides developers with an extensive suite of software tools for image analysis.

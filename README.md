@@ -1,6 +1,6 @@
 # ITK Python Package
 
-This project provides a `setup.py` script to build ITK Python binary
+This project provides a `[pyproject.toml](pyproject.toml)` script to build ITK Python binary
 packages and infrastructure to build ITK external module Python
 packages.
 

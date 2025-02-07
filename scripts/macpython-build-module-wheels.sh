@@ -62,7 +62,7 @@ VENVS=()
 source "${script_dir}/macpython-build-common.sh"
 # -----------------------------------------------------------------------
 
-if test -e setup.py; then
+if test -e pyproject.toml; then
   use_skbuild_classic=true
 else
   use_skbuild_classic=false
@@ -89,7 +89,7 @@ for VENV in "${VENVS[@]}"; do
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
 
     if $use_skbuild_classic; then
-      # So older remote modules with setup.py continue to work
+      # So older remote modules with pyproject.toml continue to work
       ${Python3_EXECUTABLE} -m pip install --upgrade scikit-build
     fi
 
@@ -114,7 +114,7 @@ for VENV in "${VENVS[@]}"; do
     fi
     itk_build_path="${build_path}"
     if $use_skbuild_classic; then
-      ${Python3_EXECUTABLE} setup.py bdist_wheel --build-type Release --plat-name ${plat_name} -G Ninja -- \
+      ${Python3_EXECUTABLE} -m build --build-type Release --plat-name ${plat_name} -G Ninja -- \
         -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
         -DITK_DIR:PATH=${itk_build_path} \
         -DCMAKE_INSTALL_LIBDIR:STRING=lib \

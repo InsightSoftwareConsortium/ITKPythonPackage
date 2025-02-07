@@ -46,7 +46,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
         with push_env(PATH="%s%s%s" % (path, os.pathsep, os.environ["PATH"])):
 
             use_scikit_build_core = True
-            if Path(os.getcwd()).joinpath('setup.py').exists():
+            if Path(os.getcwd()).joinpath('pyproject.toml').exists():
                 use_scikit_build_core = False
 
             # Install dependencies
@@ -107,7 +107,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
                 # Generate wheel
                 check_call([
                     python_executable,
-                    "setup.py", "bdist_wheel",
+                    "-m", "build",
                     "--build-type", build_type, "-G", "Ninja",
                     "--",
                     "-DCMAKE_MAKE_PROGRAM:FILEPATH=%s" % ninja_executable,
@@ -121,9 +121,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
                     "-DPython3_INCLUDE_DIRS:PATH=%s" % python_include_dir,
                     "-DPython3_LIBRARY:FILEPATH=%s" % python_library
                 ] + cmake_options)
-                # Cleanup
-                if cleanup:
-                    check_call([python_executable, "setup.py", "clean"])
+
 
 def rename_wheel_init(py_env, filepath):
     """
