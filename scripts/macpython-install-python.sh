@@ -101,8 +101,8 @@ function fill_pyver {
     # Convert major or major.minor format to major.minor.micro
     #
     # Hence:
-    # 3 -> 3.11.0  (depending on LATEST_3p11 value)
-    # 3.11 -> 3.11.0  (depending on LATEST_3p11 value)
+    # 3 -> $LATEST_3p11  (depending on LATEST_3p11 value)
+    # 3.11 -> $LATEST_3p11  (depending on LATEST_3p11 value)
     local ver=$1
     check_var $ver
     if [[ $ver =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
