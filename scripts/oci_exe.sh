@@ -1,3 +1,9 @@
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  echo "${0} is being called directly, this file should only be sourced from other files"
+  exit 255
+fi
+
+
 function ociExe() {
     # Check for OCI_EXE environmental variable
     if [[ -n "$OCI_EXE" && -x "$OCI_EXE" ]]; then
