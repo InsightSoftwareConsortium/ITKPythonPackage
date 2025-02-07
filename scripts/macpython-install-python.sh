@@ -50,9 +50,6 @@ LATEST_3p11=3.11.9
 LATEST_3p12=3.12.9
 LATEST_3p13=3.13.2
 
-if test "$(arch)" == "arm64"; then
-  PLAT=arm64
-fi
 
 function check_python {
     if [ -z "$PYTHON_EXE" ]; then
@@ -351,7 +348,19 @@ function make_workon_venv {
 #echo "Remove and update Python files at ${MACPYTHON_FRAMEWORK}"
 #sudo rm -rf ${MACPYTHON_FRAMEWORK}
 
-for pyversion in $LATEST_3p9 $LATEST_3p10 $LATEST_3p11 $LATEST_3p12 $LATEST_3p13; do
-  install_macpython $pyversion 11
-  install_virtualenv
-done
+if test "$(arch)" == "arm64"; then
+  echo "we are arm"
+  PLAT=arm64
+  for pyversion in $LATEST_3p9 $LATEST_3p10 $LATEST_3p11 $LATEST_3p12 $LATEST_3p13; do
+    install_macpython $pyversion 11
+    install_virtualenv
+  done
+else
+  # Deployment target requirements:
+  # * 10.9: Python 3.7
+  # * 11: Python >= 3.8
+  for pyversion in $LATEST_3p9 $LATEST_3p10 $LATEST_3p11 $LATEST_3p12 $LATEST_3p13; do
+    install_macpython $pyversion 11
+    install_virtualenv
+  done
+fi
