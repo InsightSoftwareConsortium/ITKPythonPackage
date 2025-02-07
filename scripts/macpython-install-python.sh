@@ -356,15 +356,18 @@ function make_workon_venv {
 if test "$(arch)" == "arm64"; then
   echo "we are arm"
   PLAT=arm64
-  for pyversion in $LATEST_3p9 $LATEST_3p10 $LATEST_3p11 $LATEST_3p12 $LATEST_3p13; do
+  # packages build against 3p11 work on 3p12 and 3p13,
+  # so don't build specific newer versions (too much disk space and time)
+  for pyversion in $LATEST_3p9 $LATEST_3p10 $LATEST_3p11; do
     install_macpython $pyversion 11
     install_virtualenv
   done
 else
   # Deployment target requirements:
-  # * 10.9: Python 3.7
-  # * 11: Python >= 3.8
-  for pyversion in $LATEST_3p9 $LATEST_3p10 $LATEST_3p11 $LATEST_3p12 $LATEST_3p13; do
+  # * 11: Python >= 3.9
+  # packages build against 3p11 work on 3p12 and 3p13,
+  # so don't build specific newer versions (too much disk space and time)
+  for pyversion in $LATEST_3p9 $LATEST_3p10 $LATEST_3p11; do
     install_macpython $pyversion 11
     install_virtualenv
   done
