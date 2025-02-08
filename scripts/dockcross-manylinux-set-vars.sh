@@ -37,6 +37,12 @@ MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
 # Target platform architecture (x64, aarch64)
 TARGET_ARCH=${TARGET_ARCH:=x64}
 
+if  ${TARGET_ARCH} == x86_64 || ${TARGET_ARCH} == amd64 ]; then
+   echo "WARNING:  x86_64 and amd64 are equivalent to x64,"
+   echo "          use x64 as TARGET_ARCH."
+   exit 255
+fi
+
 # Specialized manylinux image tag to use for building.
 if [[ ${MANYLINUX_VERSION} == _2_28 && ${TARGET_ARCH} == x64 ]]; then
   IMAGE_TAG=${IMAGE_TAG:=20240304-9e57d2b}
