@@ -12,7 +12,9 @@ if [[ $# -eq 0 ]]; then
   PYBIN=(/opt/python/*/bin)
   PYBINARIES=()
   for version in "${PYBIN[@]}"; do
-    if [[ ${version} == *"cp39"* || ${version} == *"cp310"* || ${version} == *"cp311"* || ${version} == *"cp312"* || ${version} == *"cp313"*  ]]; then
+    # packages build against 3p11 work on 3p12 and 3p13,
+    # so don't build specific newer versions (too much disk space and time)
+    if [[ ${version} == *"cp39"* || ${version} == *"cp310"* || ${version} == *"cp311"* ]]; then
       PYBINARIES+=(${version})
     fi
   done
