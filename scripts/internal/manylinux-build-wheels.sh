@@ -173,11 +173,26 @@ for PYBIN in "${PYBINARIES[@]}"; do
 done
 
 if test "${ARCH}" == "x64"; then
-  sudo /opt/python/cp39-cp39/bin/pip3 install auditwheel wheel
+  sudo /opt/python/cp311-cp311/bin/pip3 install auditwheel wheel
   # This step will fixup the wheel switching from 'linux' to 'manylinux<version>' tag
   for whl in dist/itk_*linux_*.whl; do
-      /opt/python/cp39-cp39/bin/auditwheel repair --plat manylinux${MANYLINUX_VERSION}_x86_64 ${whl} -w /work/dist/
+      /opt/python/cp311-cp311/bin/auditwheel repair --plat manylinux${MANYLINUX_VERSION}_x86_64 ${whl} -w /work/dist/
   done
+  # auditwheel does not process this "metawheel" correctly since it does not
+  # have any native SO's.
+  mkdir -p metawheel-dist
+  for whl in dist/itk-*linux_*.whl; do
+      /opt/python/cp311-cp311/bin/wheel unpack --dest metawheel ${whl}
+      manylinux_version=manylinux${MANYLINUX_VERSION}
+      new_tag=$(basename ${whl/linux/${manylinux_version}} .whl)
+      sed -i "s/Tag: .*/Tag: ${new_tag}/" metawheel/itk-*/itk*.dist-info/WHEEL
+      /opt/python/cp311-cp311/bin/wheel pack --dest metawheel-dist metawheel/itk-*
+      mv metawheel-dist/*.whl dist/${new_tag}.whl
+      rm -rf metawheel
+  done
+  rm -rf metawheel-dist
+  rm dist/itk-*-linux_*.whl
+  rm dist/itk_*-linux_*.whl
 else
   for whl in dist/itk_*$(uname -m).whl; do
       auditwheel repair ${whl} -w /work/dist/
