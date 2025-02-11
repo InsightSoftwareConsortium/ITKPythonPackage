@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ########################################################################
-# Download ITK build cache and other requirements to prepare for 
+# Download ITK build cache and other requirements to prepare for
 # generating Linux Python wheels of the given ITK module.
 #
 # Most ITK modules will download and call `dockcross-manylinux-download-cache-and-build-module-wheels.sh` which will
@@ -78,7 +78,8 @@ MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
 TARGET_ARCH=${TARGET_ARCH:=x64}
 
 case ${TARGET_ARCH} in
-    x64)
+    x64|x86_64)
+	# tarball name _${TARGET_ARCH} is skipped in these cases
         TARBALL_SPECIALIZATION="-manylinux${MANYLINUX_VERSION}"
         ;;
     *)
@@ -88,8 +89,8 @@ esac
 TARBALL_NAME="ITKPythonBuilds-linux${TARBALL_SPECIALIZATION}.tar"
 
 if [[ ! -f ${TARBALL_NAME}.zst ]]; then
-  echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.4.0}/${TARBALL_NAME}.zst"
-  curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.4.0}/${TARBALL_NAME}.zst -O
+  echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v6.0a03}/${TARBALL_NAME}.zst"
+  curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v6.0a03}/${TARBALL_NAME}.zst -O
 fi
 if [[ ! -f ./${TARBALL_NAME}.zst ]]; then
   echo "ERROR: can not find required binary './${TARBALL_NAME}.zst'"
@@ -125,7 +126,7 @@ if [[ -n ${ITKPYTHONPACKAGE_TAG} ]]; then
   git checkout "${ITKPYTHONPACKAGE_TAG}"
   git status
   popd
-  
+
   rm -rf ITKPythonPackage/scripts/
   cp -r IPP-tmp/scripts ITKPythonPackage/
   cp IPP-tmp/requirements-dev.txt ITKPythonPackage/

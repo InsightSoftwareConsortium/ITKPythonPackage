@@ -9,17 +9,24 @@
 # if their value is not set with `export` before invocation.
 # For example,
 #
-#   export ITK_PACKAGE_VERSION=v5.4.0
-#   scripts/dockcross-manylinux-set-vars.sh cp39
+#   export ITK_PACKAGE_VERSION=v6.0a03
+#   source scripts/dockcross-manylinux-set-vars.sh
 #
 ########################################################################
 
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  echo "${0} is being called directly, this file should only be sourced from other files"
+  exit 255
+fi
 ########################################################################
 # ITKPythonBuilds parameters
 
 # ITKPythonBuilds archive tag to use for ITK build artifacts.
-#   See https://github.com/insightSoftwareConsortium/ITKpythonbuilds for available tags.
-ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION:=v5.4.0}
+#   See https://github.com/InsightSoftwareConsortium/ITKPythonBuilds for available tags (which should correspond to
+#   tags found in InsightSoftwareConsortium/ITK).
+
+# This content has not changed in 8 years, ITKPythonBuilds is a placeholder for build artifacts.
+ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION:=v6.0a03} # <- This is a tag on the InsightSoftwareConsortium/ITK package
 
 # Github organization for fetching ITKPythonPackage build scripts
 ITKPYTHONPACKAGE_ORG=${ITKPYTHONPACKAGE_ORG:=InsightSoftwareConsortium}
@@ -36,6 +43,12 @@ MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
 
 # Target platform architecture (x64, aarch64)
 TARGET_ARCH=${TARGET_ARCH:=x64}
+
+if [ ${TARGET_ARCH} == x86_64 ] || [ ${TARGET_ARCH} == amd64 ]; then
+   echo "WARNING:  x86_64 and amd64 are equivalent to x64,"
+   echo "          use x64 as TARGET_ARCH."
+   exit 255
+fi
 
 # Specialized manylinux image tag to use for building.
 if [[ ${MANYLINUX_VERSION} == _2_28 && ${TARGET_ARCH} == x64 ]]; then

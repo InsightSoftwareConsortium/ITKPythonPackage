@@ -73,7 +73,7 @@ source "${script_dir}/manylinux-build-common.sh"
 sudo ldconfig
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/oneTBB-prefix/lib:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
 
-if test -e setup.py; then
+if test -e pyproject.toml; then
   use_skbuild_classic=true
 else
   use_skbuild_classic=false
@@ -89,7 +89,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
 
     if $use_skbuild_classic; then
-      # So older remote modules with setup.py continue to work
+      # So older remote modules with pyproject.toml continue to work
       ${Python3_EXECUTABLE} -m pip install --upgrade scikit-build
     fi
 
@@ -115,8 +115,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
       exit 1
     fi
     if $use_skbuild_classic; then
-      ${PYBIN}/python setup.py clean
-      ${PYBIN}/python setup.py bdist_wheel --build-type Release -G Ninja -- \
+      ${PYBIN}/python -m build --build-type Release -G Ninja -- \
         -DITK_DIR:PATH=${itk_build_dir} \
         -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
         -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
