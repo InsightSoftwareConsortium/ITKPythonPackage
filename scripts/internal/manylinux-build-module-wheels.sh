@@ -167,6 +167,6 @@ done
 
 if compgen -G "dist/itk*-linux*.whl" > /dev/null; then
   for itk_wheel in dist/itk*-linux*.whl; do
-    mv ${itk_wheel} ${itk_wheel/linux/manylinux${MANYLINUX_VERSION}}
+    rm ${itk_wheel}
   done
 fi
