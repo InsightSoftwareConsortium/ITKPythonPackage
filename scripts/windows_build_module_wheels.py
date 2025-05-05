@@ -147,7 +147,7 @@ def rename_wheel_init(py_env, filepath, add_module_name=True):
     wheel_dir = os.path.join(dist_dir, "itk_" + module_name.replace('-','_') + "-" + module_version)
     init_dir = os.path.join(wheel_dir, "itk")
     init_file = os.path.join(init_dir, "__init__.py")
-    init_file_module = os.path.join(init_dir, "__init_" + module_name + "__.py")
+    init_file_module = os.path.join(init_dir, "__init_" + module_name.split("-")[0] + "__.py")
 
     # Unpack wheel and rename __init__ file if it exists.
     check_call([python_executable, "-m", "wheel", "unpack", filepath, "-d", dist_dir])
