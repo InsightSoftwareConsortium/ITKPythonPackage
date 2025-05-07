@@ -125,13 +125,15 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
                 if cleanup:
                     check_call([python_executable, "setup.py", "clean"])
 
-def rename_wheel_init(py_env, filepath):
+def rename_wheel_init(py_env, filepath, add_module_name=True):
     """
-    Rename module __init__ file in wheel.
-    This is required to prevent modules to override ITK's __init__ file on install.
-    If the module ships its own __init__ file, it is automatically renamed to
-    __init_{module_name}__ by this function. The renamed __init__ file will be executed
-    by ITK's __init__ file when loading ITK.
+    Rename module __init__ (if add_module_name is True) or __init_module__ (if
+    add_module_name is False) file in wheel.  This is required to prevent
+    modules to override ITK's __init__ file on install or to prevent delvewheel
+    to override __init_module__ file.  If the module ships its own __init__
+    file, it is automatically renamed to __init_{module_name}__ by this
+    function. The renamed __init__ file will be executed by ITK's __init__ file
+    when loading ITK.
     """
     python_executable, python_include_dir, python_library, pip, ninja_executable, path = venv_paths(py_env)
 
@@ -145,11 +147,15 @@ def rename_wheel_init(py_env, filepath):
     wheel_dir = os.path.join(dist_dir, "itk_" + module_name.replace('-','_') + "-" + module_version)
     init_dir = os.path.join(wheel_dir, "itk")
     init_file = os.path.join(init_dir, "__init__.py")
+    init_file_module = os.path.join(init_dir, "__init_" + module_name.split("-")[0] + "__.py")
 
     # Unpack wheel and rename __init__ file if it exists.
     check_call([python_executable, "-m", "wheel", "unpack", filepath, "-d", dist_dir])
-    if os.path.isfile(init_file):
-        shutil.move(init_file, os.path.join(init_dir, "__init_" + module_name + "__.py"))
+    if add_module_name and os.path.isfile(init_file):
+        shutil.move(init_file, init_file_module)
+    if not add_module_name and os.path.isfile(init_file_module):
+        shutil.move(init_file_module, init_file)
+
     # Pack wheel and clean wheel folder
     check_call([python_executable, "-m", "wheel", "pack", wheel_dir, "-d", dist_dir])
     shutil.rmtree(wheel_dir)
@@ -159,6 +165,10 @@ def fixup_wheel(py_envs, filepath, lib_paths:str='', exclude_libs:str=''):
     print(f'Library paths for fixup: {lib_paths}')
 
     py_env = py_envs[0]
+
+    # Make sure the module __init_module__.py file has the expected name for
+    # delvewheel, i.e., __init__.py.
+    rename_wheel_init(py_env, filepath, False)
 
     delve_wheel = os.path.join("C:/P/IPP", "venv-" + py_env, "Scripts", "delvewheel.exe")
     check_call([delve_wheel, "repair", "--no-mangle-all", "--add-path",
