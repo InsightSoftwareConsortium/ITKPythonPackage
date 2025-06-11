@@ -13,6 +13,7 @@ if test $(arch) == "arm64"; then
 fi
 
 pushd /Users/svc-dashboard/D/P > /dev/null
+dot_clean ITKPythonPackage
 tar -cf ITKPythonBuilds-macosx${arch_postfix}.tar \
   ITKPythonPackage/ITK-* \
   ${tbb_contents} \

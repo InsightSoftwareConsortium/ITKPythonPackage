@@ -55,7 +55,7 @@ if [[ ! -f ITKPythonBuilds-macosx${tarball_arch}.tar.zst ]]; then
 fi
 unzstd --long=31 ITKPythonBuilds-macosx${tarball_arch}.tar.zst -o ITKPythonBuilds-macosx${tarball_arch}.tar
 PATH="$(dirname $(brew list gnu-tar | grep gnubin)):$PATH"
-gtar xf ITKPythonBuilds-macosx${tarball_arch}.tar --checkpoint=10000 --checkpoint-action=dot \
+gtar xf ITKPythonBuilds-macosx${tarball_arch}.tar --warning=no-unknown-keyword --checkpoint=10000 --checkpoint-action=dot \
   ITKPythonPackage/ITK-source \
   ITKPythonPackageRequiredExtractionDir.txt \
   ITKPythonPackage/scripts
@@ -64,7 +64,7 @@ gtar xf ITKPythonBuilds-macosx${tarball_arch}.tar --checkpoint=10000 --checkpoin
 args=( "$@"  )
 source ITKPythonPackage/scripts/macpython-build-common.sh
 for version in "$PYTHON_VERSIONS"; do
-  gtar xf ITKPythonBuilds-macosx${tarball_arch}.tar --checkpoint=10000 --checkpoint-action=dot \
+  gtar xf ITKPythonBuilds-macosx${tarball_arch}.tar --warning=no-unknown-keyword --checkpoint=10000 --checkpoint-action=dot \
     --wildcards "ITKPythonPackage/ITK-${version}-macosx*" \
     "ITKPythonPackage/venvs/${version}"
 done
