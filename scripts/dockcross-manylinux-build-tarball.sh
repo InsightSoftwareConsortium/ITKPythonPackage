@@ -4,16 +4,9 @@
 # downloaded by the external module build scripts and used to build their
 # Python package on GitHub CI services.
 
-if test -d /home/kitware/Packaging; then
-  cd /home/kitware/Packaging
-fi
-
 # -----------------------------------------------------------------------
 
 zstd_exe=`(which zstd)`
-if [[ -z ${zstd_exe} && -e /home/kitware/Support/zstd-build/programs/zstd ]]; then
-  zstd_exe=/home/kitware/Support/zstd-build/programs/zstd
-fi
 
 # Find an appropriately versioned zstd.
 #
