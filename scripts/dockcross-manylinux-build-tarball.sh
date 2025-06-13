@@ -38,11 +38,11 @@ fi
 
 # -----------------------------------------------------------------------
 
-tar -c --to-stdout \
+tar -cf ITKPythonBuilds-linux.tar \
   ITKPythonPackage/ITK-* \
   ITKPythonPackage/oneTBB* \
   ITKPythonPackage/requirements-dev.txt \
-  ITKPythonPackage/scripts > ITKPythonBuilds-linux.tar
+  ITKPythonPackage/scripts
 $zstd_exe -f \
   -10 \
   -T6 \
