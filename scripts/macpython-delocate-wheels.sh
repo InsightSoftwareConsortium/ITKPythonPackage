@@ -53,11 +53,11 @@ DELOCATE_PATCH=${VENV}/bin/delocate-patch
 build_type="Release"
 
 if [[ $(arch) == "arm64" ]]; then
-  osx_target="11.0"
+  osx_target="15.0"
   osx_arch="arm64"
   use_tbb="OFF"
 else
-  osx_target="10.9"
+  osx_target="15.0"
   osx_arch="x86_64"
   use_tbb="OFF"
 fi

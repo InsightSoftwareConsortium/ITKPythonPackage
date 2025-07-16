@@ -63,11 +63,11 @@ DELOCATE_PATCH=${VENV}/bin/delocate-patch
 build_type="Release"
 
 if [[ $(arch) == "arm64" ]]; then
-  osx_target="11.0"
+  osx_target="15.0"
   osx_arch="arm64"
   use_tbb="OFF"
 else
-  osx_target="10.9"
+  osx_target="15.0"
   osx_arch="x86_64"
   use_tbb="OFF"
 fi
@@ -107,10 +107,10 @@ for VENV in "${VENVS[@]}"; do
     ${Python3_EXECUTABLE} -m pip install --upgrade -r ${SCRIPT_DIR}/../requirements-dev.txt
 
     if [[ $(arch) == "arm64" ]]; then
-      plat_name="macosx-11.0-arm64"
+      plat_name="macosx-15.0-arm64"
       build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_arm64"
     else
-      plat_name="macosx-10.9-x86_64"
+      plat_name="macosx-15.0-x86_64"
       build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
     fi
     if [[ ! -z "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
