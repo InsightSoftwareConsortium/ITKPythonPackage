@@ -31,7 +31,7 @@ fi
 unlink oneTBB-prefix
 ${rm_prefix} rm -rf ITKPythonPackage/
 ${rm_prefix} rm -rf tools/
-${rm_prefix} rm -rf _skbuild/
+${rm_prefix} rm -rf _skbuild/ build/
 ${rm_prefix} rm -rf ./*.egg-info/
 ${rm_prefix} rm -rf ./ITK-*-manylinux${MANYLINUX_VERSION}_${TARGET_ARCH}/
 ${rm_prefix} rm -rf ./ITKPythonBuilds-linux-manylinux*${MANYLINUX_VERSION}*.tar.zst
