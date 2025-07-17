@@ -40,7 +40,7 @@
 # Install dependencies
 brew update
 brew install --quiet zstd aria2 gnu-tar doxygen ninja
-brew upgrade --quiet cmake
+brew upgrade --quiet cmake rustup
 
 if [[ $(arch) == "arm64" ]]; then
   tarball_arch="-arm64"
