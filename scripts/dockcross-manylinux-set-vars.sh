@@ -25,7 +25,7 @@ ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION:=v6.0b01}
 ITKPYTHONPACKAGE_ORG=${ITKPYTHONPACKAGE_ORG:=InsightSoftwareConsortium}
 
 # ITKPythonPackage tag for fetching build scripts
-ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG:=master}
+ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG:=main}
 
 ########################################################################
 # Docker image parameters
