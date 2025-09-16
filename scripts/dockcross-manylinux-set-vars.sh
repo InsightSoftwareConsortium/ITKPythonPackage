@@ -19,13 +19,13 @@
 
 # ITKPythonBuilds archive tag to use for ITK build artifacts.
 #   See https://github.com/insightSoftwareConsortium/ITKpythonbuilds for available tags.
-ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION:=v5.4.0}
+ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION:=v6.0b01}
 
 # Github organization for fetching ITKPythonPackage build scripts
 ITKPYTHONPACKAGE_ORG=${ITKPYTHONPACKAGE_ORG:=InsightSoftwareConsortium}
 
 # ITKPythonPackage tag for fetching build scripts
-ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG:=master}
+ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG:=main}
 
 ########################################################################
 # Docker image parameters
@@ -39,9 +39,9 @@ TARGET_ARCH=${TARGET_ARCH:=x64}
 
 # Specialized manylinux image tag to use for building.
 if [[ ${MANYLINUX_VERSION} == _2_28 && ${TARGET_ARCH} == x64 ]]; then
-  IMAGE_TAG=${IMAGE_TAG:=20240304-9e57d2b}
+  IMAGE_TAG=${IMAGE_TAG:=20250913-6ea98ba}
 elif [[ ${MANYLINUX_VERSION} == _2_28 && ${TARGET_ARCH} == aarch64 ]]; then
-  IMAGE_TAG=${IMAGE_TAG:=2024-03-25-9206bd9}
+  IMAGE_TAG=${IMAGE_TAG:=2025.08.12-1}
 elif [[ ${MANYLINUX_VERSION} == 2014 ]]; then
   IMAGE_TAG=${IMAGE_TAG:=20240304-9e57d2b}
 else

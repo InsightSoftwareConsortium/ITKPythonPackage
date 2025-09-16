@@ -7,7 +7,7 @@
 #
 #   scripts/dockcross-manylinux-build-wheels.sh cp39
 #
-# A specialized manylinux image and tag can be used by exporting to 
+# A specialized manylinux image and tag can be used by exporting to
 # MANYLINUX_VERSION and IMAGE_TAG before running this script.
 # See https://github.com/dockcross/dockcross for available versions and tags.
 #
@@ -25,7 +25,7 @@ oci_exe=$(ociExe)
 MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
 
 if [[ ${MANYLINUX_VERSION} == _2_28 ]]; then
-  IMAGE_TAG=${IMAGE_TAG:=20240304-9e57d2b}
+  IMAGE_TAG=${IMAGE_TAG:=20250913-6ea98ba}
 elif [[ ${MANYLINUX_VERSION} == 2014 ]]; then
   IMAGE_TAG=${IMAGE_TAG:=20240304-9e57d2b}
 else

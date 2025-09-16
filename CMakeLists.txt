@@ -94,8 +94,8 @@ if(ITKPythonPackage_SUPERBUILD)
 
   set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
 
-  # master branch, 2024-11-13
-  set(ITK_GIT_TAG "v6.0a01")
+  # main branch, 2025-09-08
+  set(ITK_GIT_TAG "b591e1d5e186516bb929d2d19b78bafa1f79f8d0")
 
   #-----------------------------------------------------------------------------
   # A separate project is used to download ITK, so that it can reused
@@ -120,8 +120,8 @@ if(ITKPythonPackage_SUPERBUILD)
     endif()
 
     ExternalProject_add(oneTBB
-      URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2021.9.0.tar.gz
-      URL_HASH SHA256=1ce48f34dada7837f510735ff1172f6e2c261b09460e3bf773b49791d247d24e
+      URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2022.2.0.tar.gz
+      URL_HASH SHA256=f0f78001c8c8edb4bddc3d4c5ee7428d56ae313254158ad1eec49eced57f6a5b
       CMAKE_ARGS
         -DTBB_TEST:BOOL=OFF
         -DCMAKE_BUILD_TYPE:STRING=Release
