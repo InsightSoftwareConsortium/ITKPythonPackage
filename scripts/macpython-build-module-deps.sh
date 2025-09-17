@@ -57,6 +57,8 @@ for MODULE_INFO in ${ITK_MODULE_PREQ_TOPLEVEL//:/ }; do
   popd
 
   cp ./${MODULE_NAME}/include/* include/
+  find ${MODULE_NAME}/wrapping -name '*.in' -print -exec cp {} wrapping \;
+  find ${MODULE_NAME}/wrapping -name '*.init' -print -exec cp {} wrapping \;
   rm -f ./${MODULE_NAME}/ITKPythonBuilds-macosx.tar.zst
 done
 
