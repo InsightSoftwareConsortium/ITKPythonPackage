@@ -74,6 +74,8 @@ for MODULE_INFO in ${ITK_MODULE_PREQ_TOPLEVEL//:/ }; do
 
   echo "Cleaning up module dependency"
   cp ./${MODULE_NAME}/include/* include/
+  find ${MODULE_NAME}/wrapping -name '*.in' -print -exec cp {} wrapping \;
+  find ${MODULE_NAME}/wrapping -name '*.init' -print -exec cp {} wrapping \;
   find ${MODULE_NAME}/*build/*/include -type f -print -exec cp {} include \;
 
   # Cache build archive
