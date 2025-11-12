@@ -15,27 +15,6 @@
 # ===========================================
 # ENVIRONMENT VARIABLES: ITKPYTHONPACKAGE_ORG, ITKPYTHONPACKAGE_TAG
 ########################################################################
-# NEEDED for all subsequent steps
-export MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
-export TARGET_ARCH=${TARGET_ARCH:=x64}
-
-# NEEDED FOR dockcross-manylinux-download-cache.sh Download and extract cache
-export ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION:=5.4.4}
-export ITKPYTHONPACKAGE_ORG=${ITKPYTHONPACKAGE_ORG:=InsightSoftwareConsortium}
-export ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG:=}
-
-# NEEDED FOR dockcross-manylinux-build-module-wheels.sh Build module wheels
-export NO_SUDO=${NO_SUDO:=}
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH:=}
-export IMAGE_TAG=${IMAGE_TAG:=}
-export ITK_MODULE_PREQ=${ITK_MODULE_PREQ:=}
-export ITK_MODULE_PREQ=${ITK_MODULE_PREQ:=}
-export ITK_MODULE_NO_CLEANUP=${ITK_MODULE_NO_CLEANUP:=}
-
-script_dir=${script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
-script_name=$(basename $0)
-source "${script_dir}/dockcross-manylinux-set-vars.sh"
-
 # -----------------------------------------------------------------------
 # Script argument parsing
 #
