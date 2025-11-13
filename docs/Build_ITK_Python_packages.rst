@@ -21,7 +21,7 @@ automated. The following sections outline how to use the associated scripts.
 Linux
 -----
 
-On any linux distribution with docker and bash installed, running the script dockcross-manylinux-build-wheels.sh will create 64-bit wheels for both python 2.x and python 3.x in the dist directory.
+On any linux distribution with docker and bash installed, running the script dockcross-manylinux-build-wheels.sh will create 64-bit wheels for python 3.9+ in the dist directory.
 
 For example::
 
