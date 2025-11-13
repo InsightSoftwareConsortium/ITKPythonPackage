@@ -17,6 +17,18 @@ message(STATUS "SuperBuild - ITKPythonPackage_WHEEL_NAME:${ITKPythonPackage_WHEE
 
 option(ITKPythonPackage_USE_TBB "Build and use oneTBB in the ITK python package" ON)
 
+set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
+if(DEFINED ENV{ITK_SOURCE_DIR})
+   set(ITK_SOURCE_DIR $ENV{ITK_SOURCE_DIR})
+endif()
+
+if(DEFINED ENV{ITK_GIT_TAG})
+  set(ITK_GIT_TAG $ENV{ITK_GIT_TAG})
+else()
+  # main branch, 2025-09-22
+  set(ITK_GIT_TAG "0f93d6c875ab1a053ccb1a27f9f55b8aa2c4c20b")
+endif()
+
 if(ITK_SOURCE_DIR)
   set(TBB_DIR "${ITK_SOURCE_DIR}/../oneTBB-prefix/lib/cmake/TBB")
 else()
@@ -93,11 +105,6 @@ if(ITKPythonPackage_SUPERBUILD)
   #-----------------------------------------------------------------------------
   include(ExternalProject)
 
-  set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
-
-  # main branch, 2025-09-22
-  set(ITK_GIT_TAG "0f93d6c875ab1a053ccb1a27f9f55b8aa2c4c20b")
-
   #-----------------------------------------------------------------------------
   # A separate project is used to download ITK, so that it can reused
   # when building different "flavor" of ITK python packages
@@ -121,8 +128,8 @@ if(ITKPythonPackage_SUPERBUILD)
     endif()
 
     ExternalProject_add(oneTBB
-      URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2022.2.0.tar.gz
-      URL_HASH SHA256=f0f78001c8c8edb4bddc3d4c5ee7428d56ae313254158ad1eec49eced57f6a5b
+      URL https://github.com/oneapi-src/oneTBB/archive/refs/tags/v2022.3.0.tar.gz
+      URL_HASH SHA256=01598a46c1162c27253a0de0236f520fd8ee8166e9ebb84a4243574f88e6e50a
       CMAKE_ARGS
         -DTBB_TEST:BOOL=OFF
         -DCMAKE_BUILD_TYPE:STRING=Release
