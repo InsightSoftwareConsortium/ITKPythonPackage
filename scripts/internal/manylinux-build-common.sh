@@ -40,34 +40,44 @@ case $(uname -m) in
 esac
 
 # Install prerequirements
-export PATH=/work/tools/doxygen-1.8.16/bin:$PATH
-case $(uname -m) in
+# First attempt to install doxygen from pixi
+curl -fsSL https://pixi.sh/install.sh | bash
+export PATH=~/.pixi/bin:$PATH
+if ! type doxygen > /dev/null 2>&1; then
+  pixi global install doxygen
+fi
+
+if ! type doxygen > /dev/null 2>&1; then
+  case $(uname -m) in
     i686)
         ARCH=x86
         ;;
     x86_64)
-        if ! type doxygen > /dev/null 2>&1; then
-          mkdir -p /work/tools
-            pushd /work/tools > /dev/null 2>&1
-            curl https://data.kitware.com/api/v1/file/62c4d615bddec9d0c46cb705/download -o doxygen-1.8.16.linux.bin.tar.gz
-            tar -xvzf doxygen-1.8.16.linux.bin.tar.gz
-          popd > /dev/null 2>&1
-        fi
+        mkdir -p /work/tools
+          pushd /work/tools > /dev/null 2>&1
+          curl https://data.kitware.com/api/v1/file/62c4d615bddec9d0c46cb705/download -o doxygen-1.8.16.linux.bin.tar.gz
+          tar -xvzf doxygen-1.8.16.linux.bin.tar.gz
+          export PATH=/work/tools/doxygen-1.8.16/bin:$PATH
+        popd > /dev/null 2>&1
         ;;
     aarch64)
         ARCH=aarch64
-        if ! type doxygen > /dev/null 2>&1; then
-          mkdir -p /work/tools
-            pushd /work/tools > /dev/null 2>&1
-            curl https://data.kitware.com/api/v1/file/62c4ed58bddec9d0c46f1388/download -o doxygen-1.8.16.linux.aarch64.bin.tar.gz
-            tar -xvzf doxygen-1.8.16.linux.aarch64.bin.tar.gz
-          popd > /dev/null 2>&1
-        fi
+        mkdir -p /work/tools
+          pushd /work/tools > /dev/null 2>&1
+          curl https://data.kitware.com/api/v1/file/62c4ed58bddec9d0c46f1388/download -o doxygen-1.8.16.linux.aarch64.bin.tar.gz
+          tar -xvzf doxygen-1.8.16.linux.aarch64.bin.tar.gz
+          export PATH=/work/tools/doxygen-1.8.16/bin:$PATH
+        popd > /dev/null 2>&1
         ;;
     *)
         die "Unknown architecture $(uname -m)"
         ;;
-esac
+  esac
+fi
+
+if ! type ninja > /dev/null 2>&1; then
+  pixi global install ninja
+fi
 if ! type ninja > /dev/null 2>&1; then
   if test ! -d ninja; then
     git clone https://github.com/ninja-build/ninja.git
@@ -82,4 +92,18 @@ fi
 
 MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
 
+case $(uname -m) in
+    i686)
+        ARCH=x86
+        ;;
+    x86_64)
+        ARCH=x64
+        ;;
+    aarch64)
+        ARCH=aarch64
+        ;;
+    *)
+        die "Unknown architecture $(uname -m)"
+        ;;
+esac
 echo "Building wheels for $ARCH using manylinux${MANYLINUX_VERSION}"
