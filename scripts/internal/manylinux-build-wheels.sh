@@ -41,6 +41,7 @@ DOCKCROSS_MOUNTED_ITKPythonPackage_DIR=/work # <-- This is the location where IT
 # Build standalone project and populate archive cache
 mkdir -p ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source
 pushd ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source > /dev/null 2>&1
+  echo "CMAKE VERSION: $(cmake --version)"
   cmake -DITKPythonPackage_BUILD_PYTHON:PATH=0 -G Ninja ../
   ninja
 popd > /dev/null 2>&1
@@ -112,6 +113,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
       (
         mkdir -p ${build_path} \
         && cd ${build_path} \
+        && echo "CMAKE VERSION: $(cmake --version)" \
         && cmake \
           -DCMAKE_BUILD_TYPE:STRING=${build_type} \
           -DITK_SOURCE_DIR:PATH=${source_path} \

@@ -35,10 +35,6 @@ SCRIPT_DIR=""
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/macpython-build-common.sh"
 
-# -----------------------------------------------------------------------
-# Remove previous virtualenv's
-rm -rf ${SCRIPT_DIR}/../venvs
-# Create virtualenv's
 VENVS=()
 mkdir -p ${SCRIPT_DIR}/../venvs
 for PYBIN in "${PYBINARIES[@]}"; do
@@ -81,6 +77,7 @@ n_processors=$(sysctl -n hw.ncpu)
 export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:$PWD/oneTBB-prefix/lib
 mkdir -p ITK-source
 pushd ITK-source > /dev/null 2>&1
+  echo "CMAKE VERSION: $(${CMAKE_EXECUTABLE} --version)"
   ${CMAKE_EXECUTABLE} -DITKPythonPackage_BUILD_PYTHON:PATH=0 \
     -DITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
     -G Ninja \
@@ -159,6 +156,7 @@ for VENV in "${VENVS[@]}"; do
       (
         mkdir -p ${build_path} \
         && cd ${build_path} \
+        && echo "CMAKE VERSION: $(cmake --version)" \
         && cmake \
           -DCMAKE_BUILD_TYPE:STRING=${build_type} \
           -DITK_SOURCE_DIR:PATH=${source_path} \
