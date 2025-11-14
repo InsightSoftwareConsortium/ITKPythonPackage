@@ -66,11 +66,31 @@ done
 echo "Fetching https://raw.githubusercontent.com/${ITKPYTHONPACKAGE_ORG:=InsightSoftwareConsortium}/ITKPythonPackage/${ITKPYTHONPACKAGE_TAG:=v5.4.0}/scripts/dockcross-manylinux-download-cache.sh"
 curl -L https://raw.githubusercontent.com/${ITKPYTHONPACKAGE_ORG:=InsightSoftwareConsortium}/ITKPythonPackage/${ITKPYTHONPACKAGE_TAG:=v5.4.0}/scripts/dockcross-manylinux-download-cache.sh -O
 chmod u+x dockcross-manylinux-download-cache.sh
+_download_cmd=$(echo \
+ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION} \
+ITKPYTHONPACKAGE_ORG=${ITKPYTHONPACKAGE_ORG} \
+ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG} \
+MANYLINUX_VERSION=${MANYLINUX_VERSION} \
+TARGET_ARCH=${TARGET_ARCH} \
 ./dockcross-manylinux-download-cache.sh $1
+)
+echo "Running: ${_download_cmd}"
+eval ${_download_cmd}
 
 # -----------------------------------------------------------------------
 # Build module wheels
 
 echo "Building module wheels"
 set -- "${FORWARD_ARGS[@]}"; # Restore initial argument list
+
+_bld_cmd=$(echo \
+NO_SUDO=${NO_SUDO} \
+LD_LIBRARY_PATH=${LD_LIBRARY_PATH} \
+IMAGE_TAG=${IMAGE_TAG} \
+ITK_MODULE_PREQ=${ITK_MODULE_PREQ} \
+ITK_MODULE_PREQ=${ITK_MODULE_PREQ} \
+ITK_MODULE_NO_CLEANUP=${ITK_MODULE_NO_CLEANUP} \
 ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh "$@"
+)
+echo "Running: ${_bld_cmd}"
+eval ${_bld_cmd}
