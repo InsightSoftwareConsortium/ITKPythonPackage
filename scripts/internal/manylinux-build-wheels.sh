@@ -136,7 +136,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DModule_ITKTBB:BOOL=ON \
           -DTBB_DIR:PATH=${tbb_dir} \
           -G Ninja \
-          ${source_path} \
+          -S ${source_path} \
+          -B ${build_path} \
         && ninja \
         || exit 1
       )
