@@ -17,21 +17,9 @@
 #   export IMAGE_TAG=20221205-459c9f0
 #   scripts/dockcross-manylinux-build-module-wheels.sh cp39
 #
-script_dir=$(cd $(dirname $0) || exit 1; pwd)
-source "${script_dir}/oci_exe.sh"
-
-oci_exe=$(ociExe)
-
-MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
-
-if [[ ${MANYLINUX_VERSION} == _2_28 ]]; then
-  IMAGE_TAG=${IMAGE_TAG:=20250913-6ea98ba}
-elif [[ ${MANYLINUX_VERSION} == 2014 ]]; then
-  IMAGE_TAG=${IMAGE_TAG:=20240304-9e57d2b}
-else
-  echo "Unknown manylinux version ${MANYLINUX_VERSION}"
-  exit 1;
-fi
+script_dir=${script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
+script_name=$(basename $0)
+source "${script_dir}/dockcross-manylinux-set-vars.sh"
 
 # Generate dockcross scripts
 $oci_exe run --rm docker.io/dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > /tmp/dockcross-manylinux-x64

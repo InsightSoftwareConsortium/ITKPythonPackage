@@ -11,25 +11,12 @@
 # steps not present in `dockcross-manylinux-download-cache-and-build-module-wheels.sh`.
 #
 # ===========================================
-# ENVIRONMENT VARIABLES
-#
-# `ITK_PACKAGE_VERSION`: Tag for ITKPythonBuilds build cache to use
-#     Examples: "v5.4.0", "v5.2.1.post1"
-#     See available tags at https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/tags
-#
-# `MANYLINUX_VERSION`: manylinux specialization used to build ITK for cache
-#     Examples: "_2_28", "2014", "_2_28_aarch64"
-#     See https://github.com/dockcross/dockcross
-#
-# `ITKPYTHONPACKAGE_TAG`: Tag for ITKPythonPackage build scripts to use.
-#     If ITKPYTHONPACKAGE_TAG is empty then the default scripts distributed
-#     with the ITKPythonBuilds archive will be used.
-#
-# `ITKPYTHONPACKAGE_ORG`: Github organization or user to use for ITKPythonPackage
-#     build script source. Default is InsightSoftwareConsortium.
-#     Ignored if ITKPYTHONPACKAGE_TAG is empty.
-#
+# ENVIRONMENT VARIABLES: ITK_PACKAGE_VERSION, MANYLINUX_VERSION, ITKPYTHONPACKAGE_TAG, ITKPYTHONPACKAGE_ORG
 ########################################################################
+
+script_dir=${script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
+script_name=$(basename $0)
+source "${script_dir}/dockcross-manylinux-set-vars.sh"
 
 # -----------------------------------------------------------------------
 # Script argument parsing
@@ -74,9 +61,6 @@ ${unzstd_exe} --version
 # -----------------------------------------------------------------------
 # Fetch build archive
 
-MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
-TARGET_ARCH=${TARGET_ARCH:=x64}
-
 case ${TARGET_ARCH} in
     x64)
         TARBALL_SPECIALIZATION="-manylinux${MANYLINUX_VERSION}"
@@ -88,8 +72,8 @@ esac
 TARBALL_NAME="ITKPythonBuilds-linux${TARBALL_SPECIALIZATION}.tar"
 
 if [[ ! -f ${TARBALL_NAME}.zst ]]; then
-  echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.4.0}/${TARBALL_NAME}.zst"
-  curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.4.0}/${TARBALL_NAME}.zst -O
+  echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION}/${TARBALL_NAME}.zst"
+  curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION}/${TARBALL_NAME}.zst -O
 fi
 if [[ ! -f ./${TARBALL_NAME}.zst ]]; then
   echo "ERROR: can not find required binary './${TARBALL_NAME}.zst'"
@@ -118,7 +102,7 @@ ln -s ITKPythonPackage/oneTBB-prefix ./
 # since the archives were generated.
 
 if [[ -n ${ITKPYTHONPACKAGE_TAG} ]]; then
-  echo "Updating build scripts to ${ITKPYTHONPACKAGE_ORG:=InsightSoftwareConsortium}/ITKPythonPackage@${ITKPYTHONPACKAGE_TAG}"
+  echo "Updating build scripts to ${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage@${ITKPYTHONPACKAGE_TAG}"
   git clone "https://github.com/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage.git" "IPP-tmp"
 
   pushd IPP-tmp/

@@ -90,7 +90,13 @@ if ! type ninja > /dev/null 2>&1; then
   popd
 fi
 
-MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
+if [ -z "${MANYLINUX_VERSION}" ]; then
+  echo "MANYLINUX_VERSION is not set!  This script (internal/manylinux-build-common.sh)"
+  echo "  is only called inside the dockcross environment, which should have already"
+  echo "  declared which MANYLINUX_VERSION it is."
+  printenv
+  exit -1;
+fi
 
 case $(uname -m) in
     i686)

@@ -13,21 +13,12 @@
 #   scripts/dockcross-manylinux-build-module-wheels.sh cp39
 #
 # ===========================================
-# ENVIRONMENT VARIABLES
-#
-# These variables are set with the `export` bash command before calling the script.
-# For example,
-#
-#   export ITK_PACKAGE_VERSION="v5.4.0"
-#   scripts/dockcross-manylinux-build-module-wheels.sh cp39
-#
-# `ITKPYTHONPACKAGE_ORG`: Github organization for fetching ITKPythonPackage build scripts.
-#
-# `ITKPYTHONPACKAGE_TAG`: ITKPythonPackage tag for fetching build scripts.
-#
-# Additional environment variables may be defined in accompanying build scripts.
-#
+# ENVIRONMENT VARIABLES: ITKPYTHONPACKAGE_ORG, ITKPYTHONPACKAGE_TAG
 ########################################################################
+
+script_dir=${script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
+script_name=$(basename $0)
+source "${script_dir}/dockcross-manylinux-set-vars.sh"
 
 # -----------------------------------------------------------------------
 # Script argument parsing
@@ -63,8 +54,8 @@ done
 # -----------------------------------------------------------------------
 # Download and extract cache
 
-echo "Fetching https://raw.githubusercontent.com/${ITKPYTHONPACKAGE_ORG:=InsightSoftwareConsortium}/ITKPythonPackage/${ITKPYTHONPACKAGE_TAG:=v5.4.0}/scripts/dockcross-manylinux-download-cache.sh"
-curl -L https://raw.githubusercontent.com/${ITKPYTHONPACKAGE_ORG:=InsightSoftwareConsortium}/ITKPythonPackage/${ITKPYTHONPACKAGE_TAG:=v5.4.0}/scripts/dockcross-manylinux-download-cache.sh -O
+echo "Fetching https://raw.githubusercontent.com/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage/${ITKPYTHONPACKAGE_TAG}/scripts/dockcross-manylinux-download-cache.sh"
+curl -L https://raw.githubusercontent.com/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage/${ITKPYTHONPACKAGE_TAG}/scripts/dockcross-manylinux-download-cache.sh -O
 chmod u+x dockcross-manylinux-download-cache.sh
 _download_cmd=$(echo \
 ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION} \
