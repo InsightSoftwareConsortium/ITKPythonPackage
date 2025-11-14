@@ -89,27 +89,3 @@ if ! type ninja > /dev/null 2>&1; then
   cp build-cmake/ninja /usr/local/bin/
   popd
 fi
-
-if [ -z "${MANYLINUX_VERSION}" ]; then
-  echo "MANYLINUX_VERSION is not set!  This script (internal/manylinux-build-common.sh)"
-  echo "  is only called inside the dockcross environment, which should have already"
-  echo "  declared which MANYLINUX_VERSION it is."
-  printenv
-  exit -1;
-fi
-
-case $(uname -m) in
-    i686)
-        ARCH=x86
-        ;;
-    x86_64)
-        ARCH=x64
-        ;;
-    aarch64)
-        ARCH=aarch64
-        ;;
-    *)
-        die "Unknown architecture $(uname -m)"
-        ;;
-esac
-echo "Building wheels for $ARCH using manylinux${MANYLINUX_VERSION}"
