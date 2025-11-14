@@ -37,17 +37,17 @@ script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
 
 # -----------------------------------------------------------------------
-
+DOCKCROSS_MOUNTED_ITKPythonPackage_DIR=/work # <-- This is the location where ITKPythonPackage git checkout is mounted inside the dockcross container
 # Build standalone project and populate archive cache
-mkdir -p /work/ITK-source
-pushd /work/ITK-source > /dev/null 2>&1
+mkdir -p ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source
+pushd ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source > /dev/null 2>&1
   cmake -DITKPythonPackage_BUILD_PYTHON:PATH=0 -G Ninja ../
   ninja
 popd > /dev/null 2>&1
-tbb_dir=/work/oneTBB-prefix/lib/cmake/TBB
+tbb_dir=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/oneTBB-prefix/lib/cmake/TBB
 # So auditwheel can find the libs
 sudo ldconfig
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/oneTBB-prefix/lib:/usr/lib:/usr/lib64
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/oneTBB-prefix/lib:/usr/lib:/usr/lib64
 
 # TODO: More work is required to re-enable this feature.
 SINGLE_WHEEL=0
@@ -62,12 +62,12 @@ for PYBIN in "${PYBINARIES[@]}"; do
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
 
     # Install dependencies
-    ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
+    ${PYBIN}/pip install --upgrade -r ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/requirements-dev.txt
 
     build_type="Release"
     compile_flags="-O3 -DNDEBUG"
-    source_path=/work/ITK-source/ITK
-    build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux${MANYLINUX_VERSION}_${ARCH}
+    source_path=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source/ITK
+    build_path=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-$(basename $(dirname ${PYBIN}))-manylinux${MANYLINUX_VERSION}_${ARCH}
     PYPROJECT_CONFIGURE="${script_dir}/../pyproject_configure.py"
 
     # Clean up previous invocations
@@ -177,11 +177,11 @@ sudo /opt/python/cp311-cp311/bin/pip3 install auditwheel wheel
 if test "${ARCH}" == "x64"; then
   # This step will fixup the wheel switching from 'linux' to 'manylinux<version>' tag
   for whl in dist/itk_*linux_*.whl; do
-      /opt/python/cp311-cp311/bin/auditwheel repair --plat manylinux${MANYLINUX_VERSION}_x86_64 ${whl} -w /work/dist/
+      /opt/python/cp311-cp311/bin/auditwheel repair --plat manylinux${MANYLINUX_VERSION}_x86_64 ${whl} -w ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/dist/
   done
 else
   for whl in dist/itk_*$(uname -m).whl; do
-      /opt/python/cp311-cp311/bin/auditwheel repair ${whl} -w /work/dist/
+      /opt/python/cp311-cp311/bin/auditwheel repair ${whl} -w ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/dist/
   done
 fi
 
@@ -205,7 +205,7 @@ rm dist/itk_*-linux_*.whl
 for PYBIN in "${PYBINARIES[@]}"; do
     ${PYBIN}/pip install --user numpy
     ${PYBIN}/pip install --upgrade pip
-    ${PYBIN}/pip install itk --user --no-cache-dir --no-index -f /work/dist
+    ${PYBIN}/pip install itk --user --no-cache-dir --no-index -f ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/dist
     (cd $HOME && ${PYBIN}/python -c 'from itk import ITKCommon;')
     (cd $HOME && ${PYBIN}/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
     (cd $HOME && ${PYBIN}/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
