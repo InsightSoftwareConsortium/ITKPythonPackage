@@ -1,0 +1,130 @@
+#!/bin/bash
+
+########################################################################
+# Run this script to set common enviroment variables used in building the
+# ITK Python wheel packages for Linux.
+#
+# These environment variables will be populated by the script
+# when invoked with `source ${_ipp_dir}/build/package.env`
+# if their value is not set with `export` before invocation.
+# For example,
+#
+#   export ITK_PACKAGE_VERSION=main
+#
+########################################################################
+
+_script_dir=${_script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
+_ipp_dir=${_script_dir}
+_DOCKCROSS_ENV_REPORT=${_ipp_dir}/package.env
+if [ -f "${_DOCKCROSS_ENV_REPORT}" ]; then
+  echo "${_ipp_dir}/package.env already exists, skipping generation."
+  source "${_DOCKCROSS_ENV_REPORT}"
+  exit 0
+fi
+
+# Assume that ITKPythonPackage tags are identical to ITK tags
+_ipp_latest_tag=$(git tag --sort=v:refname | tail -1)
+
+########################################################################
+# ITKPythonBuilds parameters
+ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION:=${_ipp_latest_tag}}
+ITKPYTHONPACKAGE_ORG=${ITKPYTHONPACKAGE_ORG:=InsightSoftwareConsortium}
+ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG:=main}
+
+########################################################################
+# Docker image parameters
+MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28} # <- The primary support target for ITK as of 20251114.  Including upto Python 3.15 builds.
+TARGET_ARCH=${TARGET_ARCH:=x64}
+
+if [[ ${MANYLINUX_VERSION} == _2_34 && ${TARGET_ARCH} == x64 ]]; then
+  # https://hub.docker.com/r/dockcross/manylinux_2_34-x64/tags
+  IMAGE_TAG=${IMAGE_TAG:=latest}  #<- as of 20251114 this should primarily be used for testing
+elif [[ ${MANYLINUX_VERSION} == _2_28 && ${TARGET_ARCH} == x64 ]]; then
+  # https://hub.docker.com/r/dockcross/manylinux_2_28-x64/tags
+  IMAGE_TAG=${IMAGE_TAG:=20251011-8b9ace4}
+elif [[ ${MANYLINUX_VERSION} == _2_28 && ${TARGET_ARCH} == aarch64 ]]; then
+  IMAGE_TAG=${IMAGE_TAG:=2025.08.12-1}
+elif [[ ${MANYLINUX_VERSION} == 2014 ]]; then
+  IMAGE_TAG=${IMAGE_TAG:=20240304-9e57d2b}
+else
+  echo "Unknown manylinux version ${MANYLINUX_VERSION}"
+  exit 1;
+fi
+
+LD_LIBRARY_PATH=${LD_LIBRARY_PATH:=}
+NO_SUDO=${NO_SUDO:=}
+ITK_MODULE_NO_CLEANUP=${ITK_MODULE_NO_CLEANUP:=}
+ITK_MODULE_PREQ=${ITK_MODULE_PREQ:=}
+_script_dir=${_script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
+source "${_script_dir}/oci_exe.sh"
+oci_exe=${oci_exe:=$(ociExe)}
+
+_DOCKCROSS_ENV_REPORT=${_ipp_dir}/build/package.env
+cat > ${_DOCKCROSS_ENV_REPORT} << DEFAULT_ENV_SETTINGS
+################################################
+################################################
+###  ITKPythonPackage Environment Variables  ###
+###  in .env format (KEY=VALUE)              ###
+
+# - `ITK_PACKAGE_VERSION`: Tag/branch/hash for ITKPythonBuilds build cache to use
+#   Which ITK git tag/hash/branch to use as reference for building wheels/modules
+#   https://github.com/InsightSoftwareConsortium/ITK.git@\${ITK_PACKAGE_VERSION}
+#   Examples: "v5.4.0", "v5.2.1.post1" "0ffcaed12552" "my-testing-branch"
+#   See available tags at https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/tags
+ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION}
+
+# - `ITKPYTHONPACKAGE_ORG`: Github organization or user to use for ITKPythonPackage build scripts
+#   Which script version to use in generating python packages
+#   https://github.com/InsightSoftwareConsortium/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage.git@\${ITKPYTHONPACKAGE_TAG}
+#   build script source. Default is InsightSoftwareConsortium.
+#   Ignored if ITKPYTHONPACKAGE_TAG is empty.
+ITKPYTHONPACKAGE_ORG=${ITKPYTHONPACKAGE_ORG}
+
+# - `ITKPYTHONPACKAGE_TAG`: Tag for ITKPythonPackage build scripts to use.
+#   If ITKPYTHONPACKAGE_TAG is empty then the default scripts distributed
+#   with the ITKPythonBuilds archive will be used.
+ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG}
+
+# Which container to use for generating cross compiled packages
+oci_exe=${oci_exe}   # The container run environment
+
+# - `MANYLINUX_VERSION`: Specialized manylinux image to use for building. Default is _2_28.
+#   Examples: "_2_28", "2014"
+#   See https://github.com/dockcross/dockcross for available versions and tags.
+#   For instance, `export MANYLINUX_VERSION=_2_34`
+MANYLINUX_VERSION=${MANYLINUX_VERSION}
+
+# - `TARGET_ARCH`: Target architecture for which wheels should be built.
+#   Target platform architecture (x64, aarch64)
+TARGET_ARCH=${TARGET_ARCH}
+
+# - `IMAGE_TAG`: Specialized manylinux image tag to use for building.
+#   For instance, `export IMAGE_TAG=20221205-459c9f0`.
+#   Tagged images are available at:
+#   - https://github.com/dockcross/dockcross (x64 architecture)
+#   - https://quay.io/organization/pypa (ARM architecture)
+IMAGE_TAG=${IMAGE_TAG}
+
+# Environmental controls impacting dockcross-manylinux-build-module-wheels.sh
+# - `LD_LIBRARY_PATH`: Shared libraries to be included in the resulting wheel.
+#   For instance, `export LD_LIBRARY_PATH="/path/to/OpenCL.so:/path/to/OpenCL.so.1.2"`
+LD_LIBRARY_PATH=${LD_LIBRARY_PATH}
+
+# - `NO_SUDO`:
+#   Disable if running docker does not require sudo priveleges
+#   (set to 1 if your user account can run docker).
+NO_SUDO=${NO_SUDO}
+
+# - `ITK_MODULE_NO_CLEANUP`: Option to skip cleanup steps.
+#   =1 <- Leave tempoary build files in place after completion
+ITK_MODULE_NO_CLEANUP=${ITK_MODULE_NO_CLEANUP}
+
+# - `ITK_MODULE_PREQ`: Prerequisite ITK modules that must be built before the requested module.
+#   Format is `<org_name>/<module_name>@<module_tag>:<org_name>/<module_name>@<module_tag>:...`.
+#   For instance, `export ITK_MODULE_PREQ=InsightSoftwareConsortium/ITKMeshToPolyData@v0.10.0`
+#   See notes in `dockcross-manylinux-build-module-deps.sh`.
+ITK_MODULE_PREQ=${ITK_MODULE_PREQ}
+
+################################################
+DEFAULT_ENV_SETTINGS
+cat ${_DOCKCROSS_ENV_REPORT}

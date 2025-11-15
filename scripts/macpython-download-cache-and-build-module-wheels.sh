@@ -38,8 +38,15 @@
 ########################################################################
 
 script_dir=${script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
-script_name=$(basename $0)
-source "${script_dir}/dockcross-manylinux-set-vars.sh"
+_ipp_dir=$(dirname $0)
+package_env_file=${_ipp_dir}/build/package.env
+if [ ! -f "${_ipp_dir}/build/package.env" ]; then
+  echo "MISSING: ${_ipp_dir}/build/package.env"
+  echo "    RUN: ${_ipp_dir}/review generate_build_environment.sh"
+  exit -1
+fi
+source "${_ipp_dir}/build/package.env"
+
 #
 # Install dependencies
 brew update

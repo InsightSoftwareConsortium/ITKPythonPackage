@@ -13,13 +13,31 @@
 #   scripts/dockcross-manylinux-build-module-wheels.sh cp39
 #
 # ===========================================
-# See dockcross-manylinux-set-vars.sh for description of environmental variable usage
+# See generate_build_environment.sh for description of environmental variable usage
 # ENVIRONMENT VARIABLES: LD_LIBRARY_PATH, MANYLINUX_VERSION, TARGET_ARCH, IMAGE_TAG, ITK_MODULE_PREQ, ITK_MODULE_NO_CLEANUP, NO_SUDO
 ########################################################################
 
 script_dir=${script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
-script_name=$(basename $0)
-source "${script_dir}/dockcross-manylinux-set-vars.sh"
+_ipp_dir=$(dirname $0)
+package_env_file=${_ipp_dir}/build/package.env
+if [ ! -f "${_ipp_dir}/build/package.env" ]; then
+  echo "MISSING: ${_ipp_dir}/build/package.env"
+  echo "    RUN: ${_ipp_dir}/review generate_build_environment.sh"
+  exit -1
+fi
+source "${_ipp_dir}/build/package.env"
+
+# Set container for requested version/arch/tag.
+if [[ ${TARGET_ARCH} == x64 ]]; then
+  MANYLINUX_IMAGE_NAME=${MANYLINUX_IMAGE_NAME:="manylinux${MANYLINUX_VERSION}-${TARGET_ARCH}:${IMAGE_TAG}"}
+  CONTAINER_SOURCE="docker.io/dockcross/${MANYLINUX_IMAGE_NAME}"
+elif [[ ${TARGET_ARCH} == aarch64 ]]; then
+  MANYLINUX_IMAGE_NAME=${MANYLINUX_IMAGE_NAME:="manylinux${MANYLINUX_VERSION}_${TARGET_ARCH}:${IMAGE_TAG}"}
+  CONTAINER_SOURCE="quay.io/pypa/${MANYLINUX_IMAGE_NAME}"
+else
+  echo "Unknown target architecture ${TARGET_ARCH}"
+  exit 1;
+fi
 
 if [[ -n ${ITK_MODULE_PREQ} ]]; then
   echo "Building module dependencies ${ITK_MODULE_PREQ}"
