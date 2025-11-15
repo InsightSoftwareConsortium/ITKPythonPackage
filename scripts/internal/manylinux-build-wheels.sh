@@ -27,13 +27,10 @@
 #
 
 # -----------------------------------------------------------------------
-# These variables are set in common script:
+# These variables are set in common script: ARCH, PYBINARIES, Python3_LIBRARY
 #
-ARCH=""
-PYBINARIES=""
-Python3_LIBRARY=""
-
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
+script_name=$(basename $0)
 source "${script_dir}/manylinux-build-common.sh"
 
 # -----------------------------------------------------------------------

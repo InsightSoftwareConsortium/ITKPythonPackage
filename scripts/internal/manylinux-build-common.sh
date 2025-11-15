@@ -3,6 +3,10 @@
 
 set -e -x
 
+ARCH=""
+PYBINARIES=""
+Python3_LIBRARY=""
+
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 
 # Versions can be restricted by passing them in as arguments to the script

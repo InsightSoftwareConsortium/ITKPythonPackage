@@ -22,7 +22,7 @@ script_name=$(basename $0)
 source "${script_dir}/dockcross-manylinux-set-vars.sh"
 
 # Generate dockcross scripts
-$oci_exe run --rm docker.io/dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > /tmp/dockcross-manylinux-x64
+$oci_exe run --env MANYLINUX_VERSION="${MANYLINUX_VERSION}" --rm docker.io/dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > /tmp/dockcross-manylinux-x64
 chmod u+x /tmp/dockcross-manylinux-x64
 
 # Build wheels

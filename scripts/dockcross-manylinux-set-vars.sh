@@ -19,7 +19,14 @@
 # - `ITK_PACKAGE_VERSION`: Tag/branch/hash for ITKPythonBuilds build cache to use
 #     Examples: "v5.4.0", "v5.2.1.post1" "0ffcaed12552" "my-testing-branch"
 #     See available tags at https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/tags
-ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION:=v6.0b01}
+#ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION:=v6.0b01}
+ITK_PACKAGE_VERSION=modernize-python3-module-build
+if [ "${ITK_PACKAGE_VERSION}" == "v6.0b01" ]; then
+  echo "WRONG : PACKAGE"
+  exit -1
+else
+  echo "XXXXXX : ${ITK_PACKAGE_VERSION}"
+fi
 
 # - `ITKPYTHONPACKAGE_ORG`: Github organization or user to use for ITKPythonPackage build scripts
 #     build script source. Default is InsightSoftwareConsortium.

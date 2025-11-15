@@ -17,36 +17,11 @@
 #
 
 # -----------------------------------------------------------------------
-# These variables are set in common script:
-#
-# * CMAKE_EXECUTABLE
-# * CMAKE_OPTIONS
-# * MACPYTHON_PY_PREFIX
-# * PYBINARIES
-# * PYTHON_VERSIONS
-# * NINJA_EXECUTABLE
-# * SCRIPT_DIR
-# * VENVS=()
-
-MACPYTHON_PY_PREFIX=""
-PYBINARIES=""
-SCRIPT_DIR=""
+# These variables are set in common script:, CMAKE_EXECUTABLE, CMAKE_OPTIONS, MACPYTHON_PY_PREFIX, PYBINARIES, PYTHON_VERSIONS, NINJA_EXECUTABLE, SCRIPT_DIR, VENVS=()
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
+script_name=$(basename $0)
 source "${script_dir}/macpython-build-common.sh"
-
-VENVS=()
-mkdir -p ${SCRIPT_DIR}/../venvs
-for PYBIN in "${PYBINARIES[@]}"; do
-    if [[ $(basename $PYBIN) = "Current" ]]; then
-      continue
-    fi
-    py_mm=$(basename ${PYBIN})
-    VENV=${SCRIPT_DIR}/../venvs/${py_mm}
-    VIRTUALENV_EXECUTABLE="${PYBIN}/bin/python3 -m venv"
-    ${VIRTUALENV_EXECUTABLE} ${VENV}
-    VENVS+=(${VENV})
-done
 
 VENV="${VENVS[0]}"
 Python3_EXECUTABLE=${VENV}/bin/python3
@@ -85,7 +60,8 @@ pushd ITK-source > /dev/null 2>&1
     -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
     -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
     -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
-      ${SCRIPT_DIR}/../
+    -S ${SCRIPT_DIR}/../ \
+    -B $(pwd)
   ${NINJA_EXECUTABLE} -j$n_processors -l$n_processors
 popd > /dev/null 2>&1
 
@@ -180,7 +156,8 @@ for VENV in "${VENVS[@]}"; do
           -DTBB_DIR:PATH=${tbb_dir} \
           ${CMAKE_OPTIONS} \
           -G Ninja \
-          ${source_path} \
+          -S ${source_path} \
+          -B ${build_path} \
         && ninja -j$n_processors -l$n_processors \
         || exit 1
       )
