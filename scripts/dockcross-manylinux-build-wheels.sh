@@ -28,7 +28,8 @@ fi
 source "${_ipp_dir}/build/package.env"
 
 # Generate dockcross scripts
-$oci_exe run --env MANYLINUX_VERSION="${MANYLINUX_VERSION}" --rm docker.io/dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > /tmp/dockcross-manylinux-x64
+$oci_exe run --env-file "${_ipp_dir}/build/package.env" \
+             --rm docker.io/dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > /tmp/dockcross-manylinux-x64
 chmod u+x /tmp/dockcross-manylinux-x64
 
 # Build wheels
