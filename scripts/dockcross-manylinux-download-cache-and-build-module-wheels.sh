@@ -15,6 +15,11 @@
 # ===========================================
 # ENVIRONMENT VARIABLES: ITKPYTHONPACKAGE_ORG, ITKPYTHONPACKAGE_TAG
 ########################################################################
+
+script_dir=${script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
+script_name=$(basename $0)
+source "${script_dir}/dockcross-manylinux-set-vars.sh"
+
 # -----------------------------------------------------------------------
 # Script argument parsing
 #
