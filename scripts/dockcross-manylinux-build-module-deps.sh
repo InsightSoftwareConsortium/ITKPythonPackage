@@ -24,7 +24,7 @@
 # Initialize variables
 
 script_dir=${script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
-_ipp_dir=$(dirname $0)
+_ipp_dir=$(dirname ${script_dir})
 package_env_file=${_ipp_dir}/build/package.env
 if [ ! -f "${_ipp_dir}/build/package.env" ]; then
   echo "MISSING: ${_ipp_dir}/build/package.env"
