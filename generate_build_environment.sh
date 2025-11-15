@@ -13,11 +13,10 @@
 #
 ########################################################################
 
-_script_dir=${_script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
-_ipp_dir=${_script_dir}
-_DOCKCROSS_ENV_REPORT=${_ipp_dir}/package.env
+_ipp_dir=$(cd $(dirname $0) || exit 1; pwd)
+_DOCKCROSS_ENV_REPORT=${_ipp_dir}/build/package.env
 if [ -f "${_DOCKCROSS_ENV_REPORT}" ]; then
-  echo "${_ipp_dir}/package.env already exists, skipping generation."
+  echo "${_ipp_dir}/build/package.env already exists, skipping generation."
   source "${_DOCKCROSS_ENV_REPORT}"
   exit 0
 fi
@@ -29,7 +28,7 @@ _ipp_latest_tag=$(git tag --sort=v:refname | tail -1)
 # ITKPythonBuilds parameters
 ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION:=${_ipp_latest_tag}}
 ITKPYTHONPACKAGE_ORG=${ITKPYTHONPACKAGE_ORG:=InsightSoftwareConsortium}
-ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG:=main}
+ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG:=${_ipp_latest_tag}}
 
 ########################################################################
 # Docker image parameters
@@ -55,11 +54,9 @@ LD_LIBRARY_PATH=${LD_LIBRARY_PATH:=}
 NO_SUDO=${NO_SUDO:=}
 ITK_MODULE_NO_CLEANUP=${ITK_MODULE_NO_CLEANUP:=}
 ITK_MODULE_PREQ=${ITK_MODULE_PREQ:=}
-_script_dir=${_script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
-source "${_script_dir}/oci_exe.sh"
+source "${_ipp_dir}/scripts/oci_exe.sh"
 oci_exe=${oci_exe:=$(ociExe)}
 
-_DOCKCROSS_ENV_REPORT=${_ipp_dir}/build/package.env
 cat > ${_DOCKCROSS_ENV_REPORT} << DEFAULT_ENV_SETTINGS
 ################################################
 ################################################

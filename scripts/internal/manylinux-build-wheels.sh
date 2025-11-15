@@ -30,17 +30,23 @@
 # These variables are set in common script: ARCH, PYBINARIES, Python3_LIBRARY
 #
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
-script_name=$(basename $0)
 source "${script_dir}/manylinux-build-common.sh"
 
 # -----------------------------------------------------------------------
-DOCKCROSS_MOUNTED_ITKPythonPackage_DIR=/work # <-- This is the location where ITKPythonPackage git checkout is mounted inside the dockcross container
+DOCKCROSS_MOUNTED_ITKPythonPackage_DIR=/work # <-- The location where ITKPythonPackage git checkout
+                                             #     is mounted inside the dockcross container
 # Build standalone project and populate archive cache
 mkdir -p ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source
 pushd ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source > /dev/null 2>&1
   echo "CMAKE VERSION: $(cmake --version)"
-  cmake -DITKPythonPackage_BUILD_PYTHON:PATH=0 -G Ninja ../
-  ninja
+  cmake \
+    -DITKPythonPackage_BUILD_PYTHON:PATH=0  \
+    -DITK_SOURCE_DIR:PATH=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source/ITK \
+    -DITK_GIT_TAG:STRING=${ITK_PACKAGE_VERSION} \
+    -G Ninja \
+    -S ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR} \
+    -B $(pwd) \
+  && ninja
 popd > /dev/null 2>&1
 tbb_dir=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/oneTBB-prefix/lib/cmake/TBB
 # So auditwheel can find the libs
