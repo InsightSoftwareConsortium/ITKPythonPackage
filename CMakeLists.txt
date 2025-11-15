@@ -18,15 +18,12 @@ message(STATUS "SuperBuild - ITKPythonPackage_WHEEL_NAME:${ITKPythonPackage_WHEE
 option(ITKPythonPackage_USE_TBB "Build and use oneTBB in the ITK python package" ON)
 
 set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
-if(DEFINED ENV{ITK_SOURCE_DIR})
-   set(ITK_SOURCE_DIR $ENV{ITK_SOURCE_DIR})
+if(NOT DEFINED ITK_SOURCE_DIR)
+   message(FATAL_ERROR "ITK_SOURCE_DIR must be defined when configuring cmake")
 endif()
 
-if(DEFINED ENV{ITK_GIT_TAG})
-  set(ITK_GIT_TAG $ENV{ITK_GIT_TAG})
-else()
-  # main branch, 2025-09-22
-  set(ITK_GIT_TAG "0f93d6c875ab1a053ccb1a27f9f55b8aa2c4c20b")
+if(NOT DEFINED ITK_GIT_TAG)
+  message(FATAL_ERROR "ITK_GIT_TAG must be defined when configuring cmake")
 endif()
 
 if(ITK_SOURCE_DIR)
