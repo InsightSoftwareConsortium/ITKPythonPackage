@@ -30,7 +30,7 @@ import re
 import sys
 import textwrap
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/build")
 
 PARAMETER_OPTION_DEFAULTS = {
     "indent": 0,

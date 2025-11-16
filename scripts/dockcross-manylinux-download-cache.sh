@@ -11,7 +11,7 @@
 # steps not present in `dockcross-manylinux-download-cache-and-build-module-wheels.sh`.
 #
 # ===========================================
-# ENVIRONMENT VARIABLES: ITK_PACKAGE_VERSION, MANYLINUX_VERSION, ITKPYTHONPACKAGE_TAG, ITKPYTHONPACKAGE_ORG
+# ENVIRONMENT VARIABLES: ITK_GIT_TAG, MANYLINUX_VERSION, ITKPYTHONPACKAGE_TAG, ITKPYTHONPACKAGE_ORG
 ########################################################################
 
 script_dir=${script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
@@ -78,8 +78,8 @@ esac
 TARBALL_NAME="ITKPythonBuilds-linux${TARBALL_SPECIALIZATION}.tar"
 
 if [[ ! -f ${TARBALL_NAME}.zst ]]; then
-  echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION}/${TARBALL_NAME}.zst"
-  curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION}/${TARBALL_NAME}.zst -O
+  echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_GIT_TAG}/${TARBALL_NAME}.zst"
+  curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_GIT_TAG}/${TARBALL_NAME}.zst -O
 fi
 if [[ ! -f ./${TARBALL_NAME}.zst ]]; then
   echo "ERROR: can not find required binary './${TARBALL_NAME}.zst'"

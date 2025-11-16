@@ -64,7 +64,7 @@ echo "Fetching https://raw.githubusercontent.com/${ITKPYTHONPACKAGE_ORG}/ITKPyth
 curl -L https://raw.githubusercontent.com/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage/${ITKPYTHONPACKAGE_TAG}/scripts/dockcross-manylinux-download-cache.sh -O
 chmod u+x dockcross-manylinux-download-cache.sh
 _download_cmd=$(echo \
-ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION} \
+ITK_GIT_TAG=${ITK_GIT_TAG} \
 ITKPYTHONPACKAGE_ORG=${ITKPYTHONPACKAGE_ORG} \
 ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG} \
 MANYLINUX_VERSION=${MANYLINUX_VERSION} \

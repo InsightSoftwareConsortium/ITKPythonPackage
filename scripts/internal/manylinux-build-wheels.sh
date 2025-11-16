@@ -35,14 +35,19 @@ source "${script_dir}/manylinux-build-common.sh"
 # -----------------------------------------------------------------------
 DOCKCROSS_MOUNTED_ITKPythonPackage_DIR=/work # <-- The location where ITKPythonPackage git checkout
                                              #     is mounted inside the dockcross container
+printenv
+# Load environmental variables
+source ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/build/package.env
+_DOCCKER_ITK_SOURCE_DIR=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source/ITK
 # Build standalone project and populate archive cache
 mkdir -p ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source
 pushd ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source > /dev/null 2>&1
   echo "CMAKE VERSION: $(cmake --version)"
   cmake \
     -DITKPythonPackage_BUILD_PYTHON:PATH=0  \
-    -DITK_SOURCE_DIR:PATH=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source/ITK \
-    -DITK_GIT_TAG:STRING=${ITK_PACKAGE_VERSION} \
+    -DITK_SOURCE_DIR:PATH=${_DOCCKER_ITK_SOURCE_DIR} \
+    -DITK_GIT_TAG:STRING=${ITK_GIT_TAG} \
+    -DITK_PACKAGE_VERSION:STRING=${ITK_PACKAGE_VERSION} \
     -G Ninja \
     -S ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR} \
     -B $(pwd) \
@@ -70,7 +75,6 @@ for PYBIN in "${PYBINARIES[@]}"; do
 
     build_type="Release"
     compile_flags="-O3 -DNDEBUG"
-    source_path=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source/ITK
     build_path=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-$(basename $(dirname ${PYBIN}))-manylinux${MANYLINUX_VERSION}_${ARCH}
     PYPROJECT_CONFIGURE="${script_dir}/../pyproject_configure.py"
 
@@ -92,7 +96,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
             --outdir dist \
             --no-isolation \
             --skip-dependency-check \
-            --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
+            --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${_DOCCKER_ITK_SOURCE_DIR} \
+            --config-setting=cmake.define.ITK_GIT_TAG:PATH=${ITK_GIT_TAG} \
             --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
             --config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=OFF \
             --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=itk \
@@ -119,7 +124,9 @@ for PYBIN in "${PYBINARIES[@]}"; do
         && echo "CMAKE VERSION: $(cmake --version)" \
         && cmake \
           -DCMAKE_BUILD_TYPE:STRING=${build_type} \
-          -DITK_SOURCE_DIR:PATH=${source_path} \
+          -DITK_SOURCE_DIR:PATH=${_DOCCKER_ITK_SOURCE_DIR} \
+          -DITK_GIT_TAG:STRING=${ITK_GIT_TAG} \
+          -DITK_PACKAGE_VERSION:STRING=${ITK_PACKAGE_VERSION} \
           -DITK_BINARY_DIR:PATH=${build_path} \
           -DBUILD_TESTING:BOOL=OFF \
           -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
@@ -141,7 +148,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DModule_ITKTBB:BOOL=ON \
           -DTBB_DIR:PATH=${tbb_dir} \
           -G Ninja \
-          -S ${source_path} \
+          -S ${_DOCCKER_ITK_SOURCE_DIR} \
           -B ${build_path} \
         && ninja \
         || exit 1
@@ -158,7 +165,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
           --outdir dist \
           --no-isolation \
           --skip-dependency-check \
-          --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
+          --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${_DOCCKER_ITK_SOURCE_DIR} \
+          --config-setting=cmake.define.ITK_GIT_TAG:PATH=${ITK_GIT_TAG} \
           --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
           --config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
           --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \

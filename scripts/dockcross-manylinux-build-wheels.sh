@@ -17,8 +17,8 @@
 #   export IMAGE_TAG=20221205-459c9f0
 #   scripts/dockcross-manylinux-build-module-wheels.sh cp39
 #
-script_dir=${script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
-_ipp_dir=$(dirname ${script_dir})
+_script_dir=${_script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
+_ipp_dir=$(dirname ${_script_dir})
 package_env_file=${_ipp_dir}/build/package.env
 if [ ! -f "${_ipp_dir}/build/package.env" ]; then
   echo "MISSING: ${_ipp_dir}/build/package.env"
@@ -27,17 +27,18 @@ if [ ! -f "${_ipp_dir}/build/package.env" ]; then
 fi
 source "${_ipp_dir}/build/package.env"
 
+
+_local_dockercross_script=${_ipp_dir}/build/runner_dockcross-${MANYLINUX_VERSION}-x64_${IMAGE_TAG}.sh
 # Generate dockcross scripts
 $oci_exe run --env-file "${_ipp_dir}/build/package.env" \
-             --rm docker.io/dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > /tmp/dockcross-manylinux-x64
-chmod u+x /tmp/dockcross-manylinux-x64
+             --rm docker.io/dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > ${_local_dockercross_script}
+chmod u+x ${_local_dockercross_script}
 
 # Build wheels
-pushd $script_dir/..
+pushd ${_ipp_dir}
 mkdir -p dist
-DOCKER_ARGS="-v $(pwd)/dist:/work/dist/"
-DOCKER_ARGS+=" -e MANYLINUX_VERSION"
-/tmp/dockcross-manylinux-x64 \
+DOCKER_ARGS="-v $(pwd)/dist:/work/dist/ --env-file ${package_env_file}"
+${_local_dockercross_script} \
   -a "$DOCKER_ARGS" \
   ./scripts/internal/manylinux-build-wheels.sh "$@"
 popd

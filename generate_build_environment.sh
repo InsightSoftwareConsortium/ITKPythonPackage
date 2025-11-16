@@ -9,7 +9,7 @@
 # if their value is not set with `export` before invocation.
 # For example,
 #
-#   export ITK_PACKAGE_VERSION=main
+#   export ITK_GIT_TAG=main
 #
 ########################################################################
 
@@ -23,10 +23,25 @@ fi
 
 # Assume that ITKPythonPackage tags are identical to ITK tags
 _ipp_latest_tag=$(git tag --sort=v:refname | tail -1)
+if [ "${ITK_GIT_TAG}" != "${_ipp_latest_tag}" ] ;then
+  # Need early checkout to get AUTOVERSION
+  if [ ! -d ${_IPP_ITK_SOURCE_DIR} ]; then
+    git clone https://github.com/InsightSoftwareConsortium/ITK.git ${_IPP_ITK_SOURCE_DIR}
+  fi
+  pushd ${_IPP_ITK_SOURCE_DIR} > /dev/null 2>&1
+    git checkout ${ITK_GIT_TAG}
+    # Get auto generated itk package version
+    _ipp_latest_version=$( git describe --tags --long --dirty --always \
+         | sed -E 's/^([^-]+)-([0-9]+)-g([0-9a-f]+)(-dirty)?$/\1-dev.\2+\3\4/'
+      )
+  popd > /dev/null 2>&1
+fi
+
 
 ########################################################################
 # ITKPythonBuilds parameters
-ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION:=${_ipp_latest_tag}}
+ITK_GIT_TAG=${ITK_GIT_TAG:=${_ipp_latest_tag}}
+ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION:=${_ipp_latest_version}}
 ITKPYTHONPACKAGE_ORG=${ITKPYTHONPACKAGE_ORG:=InsightSoftwareConsortium}
 ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG:=${_ipp_latest_tag}}
 
@@ -63,21 +78,26 @@ cat > ${_DOCKCROSS_ENV_REPORT} << DEFAULT_ENV_SETTINGS
 ###  ITKPythonPackage Environment Variables  ###
 ###  in .env format (KEY=VALUE)              ###
 
-# - `ITK_PACKAGE_VERSION`: Tag/branch/hash for ITKPythonBuilds build cache to use
+# - "ITK_GIT_TAG": Tag/branch/hash for ITKPythonBuilds build cache to use
 #   Which ITK git tag/hash/branch to use as reference for building wheels/modules
-#   https://github.com/InsightSoftwareConsortium/ITK.git@\${ITK_PACKAGE_VERSION}
+#   https://github.com/InsightSoftwareConsortium/ITK.git@\${ITK_GIT_TAG}
 #   Examples: "v5.4.0", "v5.2.1.post1" "0ffcaed12552" "my-testing-branch"
 #   See available tags at https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/tags
+ITK_GIT_TAG=${ITK_GIT_TAG}
+#
+# - : "ITK_PACKAGE_VERSION" A valid versioning formatted tag.  This may be ITK_GIT_TAG for tagged releaseds
+#     Use the keyword 'AUTOVERSION' to have a temporary version automatically created from based on
+#     git hash and the checked out ITK_GIT_TAG
 ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION}
 
-# - `ITKPYTHONPACKAGE_ORG`: Github organization or user to use for ITKPythonPackage build scripts
+# - "ITKPYTHONPACKAGE_ORG": Github organization or user to use for ITKPythonPackage build scripts
 #   Which script version to use in generating python packages
 #   https://github.com/InsightSoftwareConsortium/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage.git@\${ITKPYTHONPACKAGE_TAG}
 #   build script source. Default is InsightSoftwareConsortium.
 #   Ignored if ITKPYTHONPACKAGE_TAG is empty.
 ITKPYTHONPACKAGE_ORG=${ITKPYTHONPACKAGE_ORG}
 
-# - `ITKPYTHONPACKAGE_TAG`: Tag for ITKPythonPackage build scripts to use.
+# - "ITKPYTHONPACKAGE_TAG": Tag for ITKPythonPackage build scripts to use.
 #   If ITKPYTHONPACKAGE_TAG is empty then the default scripts distributed
 #   with the ITKPythonBuilds archive will be used.
 ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG}
@@ -85,41 +105,41 @@ ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG}
 # Which container to use for generating cross compiled packages
 oci_exe=${oci_exe}   # The container run environment
 
-# - `MANYLINUX_VERSION`: Specialized manylinux image to use for building. Default is _2_28.
+# - "MANYLINUX_VERSION": Specialized manylinux image to use for building. Default is _2_28.
 #   Examples: "_2_28", "2014"
 #   See https://github.com/dockcross/dockcross for available versions and tags.
-#   For instance, `export MANYLINUX_VERSION=_2_34`
+#   For instance, "export MANYLINUX_VERSION=_2_34"
 MANYLINUX_VERSION=${MANYLINUX_VERSION}
 
-# - `TARGET_ARCH`: Target architecture for which wheels should be built.
+# - "TARGET_ARCH": Target architecture for which wheels should be built.
 #   Target platform architecture (x64, aarch64)
 TARGET_ARCH=${TARGET_ARCH}
 
-# - `IMAGE_TAG`: Specialized manylinux image tag to use for building.
-#   For instance, `export IMAGE_TAG=20221205-459c9f0`.
+# - "IMAGE_TAG": Specialized manylinux image tag to use for building.
+#   For instance, "export IMAGE_TAG=20221205-459c9f0".
 #   Tagged images are available at:
 #   - https://github.com/dockcross/dockcross (x64 architecture)
 #   - https://quay.io/organization/pypa (ARM architecture)
 IMAGE_TAG=${IMAGE_TAG}
 
 # Environmental controls impacting dockcross-manylinux-build-module-wheels.sh
-# - `LD_LIBRARY_PATH`: Shared libraries to be included in the resulting wheel.
-#   For instance, `export LD_LIBRARY_PATH="/path/to/OpenCL.so:/path/to/OpenCL.so.1.2"`
+# - "LD_LIBRARY_PATH": Shared libraries to be included in the resulting wheel.
+#   For instance, "export LD_LIBRARY_PATH="/path/to/OpenCL.so:/path/to/OpenCL.so.1.2""
 LD_LIBRARY_PATH=${LD_LIBRARY_PATH}
 
-# - `NO_SUDO`:
+# - "NO_SUDO":
 #   Disable if running docker does not require sudo priveleges
 #   (set to 1 if your user account can run docker).
 NO_SUDO=${NO_SUDO}
 
-# - `ITK_MODULE_NO_CLEANUP`: Option to skip cleanup steps.
+# - "ITK_MODULE_NO_CLEANUP": Option to skip cleanup steps.
 #   =1 <- Leave tempoary build files in place after completion
 ITK_MODULE_NO_CLEANUP=${ITK_MODULE_NO_CLEANUP}
 
-# - `ITK_MODULE_PREQ`: Prerequisite ITK modules that must be built before the requested module.
-#   Format is `<org_name>/<module_name>@<module_tag>:<org_name>/<module_name>@<module_tag>:...`.
-#   For instance, `export ITK_MODULE_PREQ=InsightSoftwareConsortium/ITKMeshToPolyData@v0.10.0`
-#   See notes in `dockcross-manylinux-build-module-deps.sh`.
+# - "ITK_MODULE_PREQ": Prerequisite ITK modules that must be built before the requested module.
+#   Format is "<org_name>/<module_name>@<module_tag>:<org_name>/<module_name>@<module_tag>:...".
+#   For instance, "export ITK_MODULE_PREQ=InsightSoftwareConsortium/ITKMeshToPolyData@v0.10.0"
+#   See notes in "dockcross-manylinux-build-module-deps.sh".
 ITK_MODULE_PREQ=${ITK_MODULE_PREQ}
 
 ################################################

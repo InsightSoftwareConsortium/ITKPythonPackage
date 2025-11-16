@@ -23,9 +23,9 @@
 #   export DYLD_LIBRARY_PATH="/path/to/libs"
 #   scripts/macpython-build-module-wheels.sh 3.7 3.9
 #
-# `ITK_PACKAGE_VERSION`: ITKPythonBuilds archive tag to use for ITK build artifacts.
+# `ITK_GIT_TAG`: ITKPythonBuilds archive tag to use for ITK build artifacts.
 #   See https://github.com/InsightSoftwareConsortium/ITKPythonBuilds for available tags.
-#   For instance, `export ITK_PACKAGE_VERSION=v5.4.0`.
+#   For instance, `export ITK_GIT_TAG=v5.4.0`.
 #
 # `ITKPYTHONPACKAGE_ORG`: Github organization for fetching ITKPythonPackage build scripts.
 #
@@ -60,9 +60,9 @@ else
 fi
 # Fetch ITKPythonBuilds archive containing ITK build artifacts
 rm -fr ITKPythonPackage
-echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION}/ITKPythonBuilds-macosx${tarball_arch}.tar.zst"
+echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_GIT_TAG}/ITKPythonBuilds-macosx${tarball_arch}.tar.zst"
 if [[ ! -f ITKPythonBuilds-macosx${tarball_arch}.tar.zst ]]; then
-  aria2c -c --file-allocation=none -o ITKPythonBuilds-macosx${tarball_arch}.tar.zst -s 10 -x 10 https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION}/ITKPythonBuilds-macosx${tarball_arch}.tar.zst
+  aria2c -c --file-allocation=none -o ITKPythonBuilds-macosx${tarball_arch}.tar.zst -s 10 -x 10 https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_GIT_TAG}/ITKPythonBuilds-macosx${tarball_arch}.tar.zst
 fi
 unzstd --long=31 ITKPythonBuilds-macosx${tarball_arch}.tar.zst -o ITKPythonBuilds-macosx${tarball_arch}.tar
 PATH="$(dirname $(brew list gnu-tar | grep gnubin)):$PATH"

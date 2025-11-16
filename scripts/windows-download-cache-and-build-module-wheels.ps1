@@ -29,7 +29,7 @@
 # -----------------------------------------------------------------------
 # Environment variables used in this script:
 #
-# `$env:ITK_PACKAGE_VERSION`: Tag for ITKPythonBuilds build archive to use
+# `$env:ITK_GIT_TAG`: Tag for ITKPythonBuilds build archive to use
 #
 # `$env:ITKPYTHONPACKAGE_TAG`: Tag for ITKPythonPackage build scripts to use.
 #     If ITKPYTHONPACKAGE_TAG is empty then the default scripts distributed
@@ -55,13 +55,13 @@ $pythonVersion = "3.$python_version_minor"
 echo "Pulling Python $pythonVersion-x$pythonArch"
 iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/scikit-build/scikit-ci-addons/master/windows/install-python.ps1'))
 
-if (-not $env:ITK_PACKAGE_VERSION) { $env:ITK_PACKAGE_VERSION = 'v5.4.0' }
-echo "Fetching build archive $env:ITK_PACKAGE_VERSION"
+if (-not $env:ITK_GIT_TAG) { $env:ITK_GIT_TAG = 'v5.4.0' }
+echo "Fetching build archive $env:ITK_GIT_TAG"
 if (Test-Path C:\P) {
   Remove-Item -Recurse -Force C:\P
 }
 if (-not (Test-Path ITKPythonBuilds-windows.zip)) {
-  Invoke-WebRequest -Uri "https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/$env:ITK_PACKAGE_VERSION/ITKPythonBuilds-windows.zip" -OutFile "ITKPythonBuilds-windows.zip"
+  Invoke-WebRequest -Uri "https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/$env:ITK_GIT_TAG/ITKPythonBuilds-windows.zip" -OutFile "ITKPythonBuilds-windows.zip"
 }
 7z x ITKPythonBuilds-windows.zip -oC:\P -aoa -r
 
