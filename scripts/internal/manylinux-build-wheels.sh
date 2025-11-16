@@ -20,7 +20,8 @@
 #
 # For example, `docker run -e <var>` can be used to set an environment variable when launching a container:
 #
-#   export MANYLINUX_VERSION=2014
+#   generate_build_environment.sh # creates default build/package.env
+#   edit build/package.env with desired build elements
 #   docker run --rm dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > /tmp/dockcross-manylinux-x64
 #   chmod u+x /tmp/dockcross-manylinux-x64
 #   /tmp/dockcross-manylinux-x64 -e MANYLINUX_VERSION manylinux-build-module-wheels.sh cp39

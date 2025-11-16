@@ -11,34 +11,22 @@
 # For example,
 #
 #   scripts/macpython-build-module-wheels.sh 3.7 3.9
-# Shared libraries can be included in the wheel by exporting them to DYLD_LIBRARY_PATH before
-# running this script.
+# Shared libraries can be included in the wheel by sertting DYLD_LIBRARY_PATH in build/package.env
 #
 # ===========================================
-# ENVIRONMENT VARIABLES
+# ENVIRONMENT VARIABLES: ITK_GIT_TAG ITKPYTHONPACKAGE_ORG ITK_USE_LOCAL_PYTHON
 #
 # These variables are set with the `export` bash command before calling the script.
 # For example,
 #
-#   export DYLD_LIBRARY_PATH="/path/to/libs"
+#   generate_build_environment.sh # creates default build/package.env
+#   edit build/package.env with desired build elements
 #   scripts/macpython-build-module-wheels.sh 3.7 3.9
-#
-# `ITK_GIT_TAG`: ITKPythonBuilds archive tag to use for ITK build artifacts.
-#   See https://github.com/InsightSoftwareConsortium/ITKPythonBuilds for available tags.
-#   For instance, `export ITK_GIT_TAG=v5.4.0`.
-#
-# `ITKPYTHONPACKAGE_ORG`: Github organization for fetching ITKPythonPackage build scripts.
-#
-# `ITKPYTHONPACKAGE_TAG`: ITKPythonPackage tag for fetching build scripts.
-#
-# `ITK_USE_LOCAL_PYTHON`: Determine how to get Python framework for build.
-#    - If empty, Python frameworks will be fetched from python.org
-#    - If not empty, frameworks already on machine will be used without fetching.
 #
 ########################################################################
 
-script_dir=${script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
-_ipp_dir=$(dirname ${script_dir})
+_script_dir=${_script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
+_ipp_dir=$(dirname ${_script_dir})
 package_env_file=${_ipp_dir}/build/package.env
 if [ ! -f "${_ipp_dir}/build/package.env" ]; then
   echo "MISSING: ${_ipp_dir}/build/package.env"

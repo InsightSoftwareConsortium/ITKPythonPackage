@@ -7,21 +7,30 @@
 #
 #   scripts/macpython-build-wheels.sh 3.9
 #
-# Shared libraries can be included in the wheel by exporting them to DYLD_LIBRARY_PATH before
-# running this script.
+# Shared libraries can be included in the wheel by exporting them to DYLD_LIBRARY_PATH in build/package.env
+#
+# These variables are set in common script:, CMAKE_EXECUTABLE, CMAKE_OPTIONS, MACPYTHON_PY_PREFIX, PYBINARIES, PYTHON_VERSIONS, NINJA_EXECUTABLE, SCRIPT_DIR, VENVS=()
 #
 # For example,
 #
-#   export DYLD_LIBRARY_PATH="/path/to/libs"
+#   generate_build_environment.sh # creates default build/package.env
+#   edit build/package.env with desired build elements
 #   scripts/macpython-build-module-wheels.sh 3.9
 #
 
 # -----------------------------------------------------------------------
-# These variables are set in common script:, CMAKE_EXECUTABLE, CMAKE_OPTIONS, MACPYTHON_PY_PREFIX, PYBINARIES, PYTHON_VERSIONS, NINJA_EXECUTABLE, SCRIPT_DIR, VENVS=()
 
-script_dir=$(cd $(dirname $0) || exit 1; pwd)
-script_name=$(basename $0)
-source "${script_dir}/macpython-build-common.sh"
+_script_dir=${_script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
+_ipp_dir=$(dirname ${_script_dir})
+package_env_file=${_ipp_dir}/build/package.env
+if [ ! -f "${_ipp_dir}/build/package.env" ]; then
+  echo "MISSING: ${_ipp_dir}/build/package.env"
+  echo "    RUN: ${_ipp_dir}/review generate_build_environment.sh"
+  exit -1
+fi
+source "${_ipp_dir}/build/package.env"
+
+source "${_script_dir}/macpython-build-common.sh"
 
 VENV="${VENVS[0]}"
 Python3_EXECUTABLE=${VENV}/bin/python3
@@ -90,7 +99,7 @@ for VENV in "${VENVS[@]}"; do
       osx_target="${MACOSX_DEPLOYMENT_TARGET}"
     fi
     source_path=${SCRIPT_DIR}/../ITK-source/ITK
-    PYPROJECT_CONFIGURE="${script_dir}/pyproject_configure.py"
+    PYPROJECT_CONFIGURE="${_script_dir}/pyproject_configure.py"
 
     # Clean up previous invocations
     rm -rf ${build_path}

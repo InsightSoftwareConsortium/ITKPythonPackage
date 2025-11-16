@@ -143,6 +143,16 @@ ITK_MODULE_NO_CLEANUP=${ITK_MODULE_NO_CLEANUP}
 #   See notes in "dockcross-manylinux-build-module-deps.sh".
 ITK_MODULE_PREQ=${ITK_MODULE_PREQ}
 
+# "[DYLD|LD]_LIBRARY_PATH": Shared libraries to be included in the resulting wheel.
+#   For instance, export [DYLD|LD]_LIBRARY_PATH="/path/to/OpenCL.so:/path/to/OpenCL.so.1.2"
+DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}
+LD_LIBRARY_PATH=${LD_LIBRARY_PATH}
+#
+# "ITK_USE_LOCAL_PYTHON": For APPLE ONLY Determine how to get Python framework for build.
+#    - If empty, Python frameworks will be fetched from python.org
+#    - If not empty, frameworks already on machine will be used without fetching.
+ITK_USE_LOCAL_PYTHON=${ITK_USE_LOCAL_PYTHON}
+
 ################################################
 DEFAULT_ENV_SETTINGS
 cat ${_DOCKCROSS_ENV_REPORT}

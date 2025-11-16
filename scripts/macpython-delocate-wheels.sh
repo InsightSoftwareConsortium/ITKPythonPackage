@@ -7,12 +7,12 @@
 #
 #   scripts/macpython-build-wheels.sh 3.9
 #
-# Shared libraries can be included in the wheel by exporting them to DYLD_LIBRARY_PATH before
-# running this script.
+# Shared libraries can be included in the wheel by setting DYLD_LIBRARY_PATH in build/package.env
 #
 # For example,
 #
-#   export DYLD_LIBRARY_PATH="/path/to/libs"
+#   generate_build_environment.sh # creates default build/package.env
+#   edit build/package.env with desired build elements
 #   scripts/macpython-build-module-wheels.sh 3.9
 #
 
@@ -23,8 +23,16 @@ MACPYTHON_PY_PREFIX=""
 PYBINARIES=""
 SCRIPT_DIR=""
 
-script_dir=$(cd $(dirname $0) || exit 1; pwd)
-source "${script_dir}/macpython-build-common.sh"
+_script_dir=${_script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
+_ipp_dir=$(dirname ${_script_dir})
+package_env_file=${_ipp_dir}/build/package.env
+if [ ! -f "${_ipp_dir}/build/package.env" ]; then
+  echo "MISSING: ${_ipp_dir}/build/package.env"
+  echo "    RUN: ${_ipp_dir}/review generate_build_environment.sh"
+  exit -1
+fi
+source "${_ipp_dir}/build/package.env"
+source "${_script_dir}/macpython-build-common.sh"
 
 # -----------------------------------------------------------------------
 # Remove previous virtualenv's

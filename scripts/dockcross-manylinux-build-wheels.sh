@@ -7,14 +7,12 @@
 #
 #   scripts/dockcross-manylinux-build-wheels.sh cp39
 #
-# A specialized manylinux image and tag can be used by exporting to
-# MANYLINUX_VERSION and IMAGE_TAG before running this script.
-# See https://github.com/dockcross/dockcross for available versions and tags.
+# A specialized manylinux image and tag can be used by setting
+# MANYLINUX_VERSION and IMAGE_TAG in build/package.env before running this script.
 #
 # For example,
-#
-#   export MANYLINUX_VERSION=2014
-#   export IMAGE_TAG=20221205-459c9f0
+#   generate_build_environment.sh # creates default build/package.env
+#   edit build/package.env with desired build elements
 #   scripts/dockcross-manylinux-build-module-wheels.sh cp39
 #
 _script_dir=${_script_dir:=$(cd $(dirname $0) || exit 1; pwd)}

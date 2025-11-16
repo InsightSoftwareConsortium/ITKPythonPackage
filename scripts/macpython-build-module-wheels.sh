@@ -15,20 +15,13 @@
 # running this script.
 #
 # ===========================================
-# ENVIRONMENT VARIABLES
+# ENVIRONMENT VARIABLES: DYLD_LIBRARY_PATH
 #
-# These variables are set with the `export` bash command before calling the script.
+# These variables are set in build/package.env before calling this script.
 # For example,
-#
-#   export DYLD_LIBRARY_PATH="/path/to/libs"
+#   generate_build_environment.sh # creates default build/package.env
+#   edit build/package.env with desired build elements
 #   scripts/macpython-build-module-wheels.sh 3.7 3.9
-#
-# `DYLD_LIBRARY_PATH`: Shared libraries to be included in the resulting wheel.
-#   For instance, `export DYLD_LIBRARY_PATH="/path/to/OpenCL.so:/path/to/OpenCL.so.1.2"`
-#
-# `ITK_MODULE_PREQ`: Prerequisite ITK modules that must be built before the requested module.
-#   Format is `<org_name>/<module_name>@<module_tag>:<org_name>/<module_name>@<module_tag>:...`.
-#   For instance, `export ITK_MODULE_PREQ=InsightSoftwareConsortium/ITKMeshToPolyData@v0.10.0`
 #
 ########################################################################
 
@@ -36,10 +29,18 @@
 # -----------------------------------------------------------------------
 # (Optional) Build ITK module dependencies
 
-script_dir=$(cd $(dirname $0) || exit 1; pwd)
+_script_dir=${_script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
+_ipp_dir=$(dirname ${_script_dir})
+package_env_file=${_ipp_dir}/build/package.env
+if [ ! -f "${_ipp_dir}/build/package.env" ]; then
+  echo "MISSING: ${_ipp_dir}/build/package.env"
+  echo "    RUN: ${_ipp_dir}/review generate_build_environment.sh"
+  exit -1
+fi
+source "${_ipp_dir}/build/package.env"
 
 if [[ -n ${ITK_MODULE_PREQ} ]]; then
-  source "${script_dir}/macpython-build-module-deps.sh"
+  source "${_script_dir}/macpython-build-module-deps.sh"
 fi
 
 # -----------------------------------------------------------------------
@@ -59,7 +60,7 @@ MACPYTHON_PY_PREFIX=""
 SCRIPT_DIR=""
 VENVS=()
 
-source "${script_dir}/macpython-build-common.sh"
+source "${_script_dir}/macpython-build-common.sh"
 # -----------------------------------------------------------------------
 
 if test -e setup.py; then
@@ -77,7 +78,7 @@ DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
 DELOCATE_PATCH=${VENV}/bin/delocate-patch
 # So delocate can find the libs
-export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${script_dir}/../oneTBB-prefix/lib
+export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${_script_dir}/../oneTBB-prefix/lib
 
 # Compile wheels re-using standalone project and archive cache
 for VENV in "${VENVS[@]}"; do

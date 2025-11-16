@@ -19,14 +19,22 @@
 # ===========================================
 # ENVIRONMENT VARIABLES
 #
-# - `ITK_MODULE_PREQ`: Prerequisite ITK modules that must be built before the requested module.
-#   Format is `<org_name>/<module_name>@<module_tag>:<org_name>/<module_name>@<module_tag>:...`.
-#   For instance, `export ITK_MODULE_PREQ=InsightSoftwareConsortium/ITKMeshToPolyData@v0.10.0`
+#   generate_build_environment.sh # creates default build/package.env
+#   edit build/package.env with desired build elements
 #
 ########################################################################
 
-script_dir=$(cd $(dirname $0) || exit 1; pwd)
-if [[ ! -f "${script_dir}/macpython-download-cache-and-build-module-wheels.sh" ]]; then
+_script_dir=${_script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
+_ipp_dir=$(dirname ${_script_dir})
+package_env_file=${_ipp_dir}/build/package.env
+if [ ! -f "${_ipp_dir}/build/package.env" ]; then
+  echo "MISSING: ${_ipp_dir}/build/package.env"
+  echo "    RUN: ${_ipp_dir}/review generate_build_environment.sh"
+  exit -1
+fi
+source "${_ipp_dir}/build/package.env"
+
+if [[ ! -f "${_script_dir}/macpython-download-cache-and-build-module-wheels.sh" ]]; then
   echo "Could not find download script to use for building module dependencies!"
   exit 1
 fi
@@ -51,7 +59,7 @@ for MODULE_INFO in ${ITK_MODULE_PREQ_TOPLEVEL//:/ }; do
 
   pushd ${MODULE_NAME}
   git checkout ${MODULE_TAG}
-  cp ${script_dir}/macpython-download-cache-and-build-module-wheels.sh .
+  cp ${_script_dir}/macpython-download-cache-and-build-module-wheels.sh .
   echo "Building dependency ${MODULE_NAME}"
   ./macpython-download-cache-and-build-module-wheels.sh $@
   popd
