@@ -55,7 +55,8 @@ if [[ ${MANYLINUX_VERSION} == _2_34 && ${TARGET_ARCH} == x64 ]]; then
   IMAGE_TAG=${IMAGE_TAG:=latest}  #<- as of 20251114 this should primarily be used for testing
 elif [[ ${MANYLINUX_VERSION} == _2_28 && ${TARGET_ARCH} == x64 ]]; then
   # https://hub.docker.com/r/dockcross/manylinux_2_28-x64/tags
-  IMAGE_TAG=${IMAGE_TAG:=20251011-8b9ace4}
+  # IMAGE_TAG=${IMAGE_TAG:=20251011-8b9ace4} # <- Incompatible with ITK cast-xml on 2025-11-16
+  IMAGE_TAG=${IMAGE_TAG:=20250913-6ea98ba}
 elif [[ ${MANYLINUX_VERSION} == _2_28 && ${TARGET_ARCH} == aarch64 ]]; then
   IMAGE_TAG=${IMAGE_TAG:=2025.08.12-1}
 elif [[ ${MANYLINUX_VERSION} == 2014 ]]; then
