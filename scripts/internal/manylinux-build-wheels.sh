@@ -42,6 +42,12 @@ _DOCCKER_ITK_SOURCE_DIR=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source/ITK
 # Build standalone project and populate archive cache
 mkdir -p ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source
 pushd ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source > /dev/null 2>&1
+  if [ ! -d ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source ]; then
+     git clone https://github.com/InsightSoftwareConsortium/ITK.git ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source/ITK
+  fi
+  pushd ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source/ITK > /dev/null 2>&1
+     git checkout ${ITK_GIT_TAG}
+  popd > /dev/null 2>&1
   echo "CMAKE VERSION: $(cmake --version)"
   cmake \
     -DITKPythonPackage_BUILD_PYTHON:PATH=0  \
