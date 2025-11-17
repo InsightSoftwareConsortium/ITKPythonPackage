@@ -74,6 +74,10 @@ pushd ${ITK_SOURCE_DIR} > /dev/null 2>&1
   git checkout ${ITK_GIT_TAG}
 popd > /dev/null 2>&1
 
+if [[ ! -z "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
+  osx_target="${MACOSX_DEPLOYMENT_TARGET}"
+fi
+
 echo "CMAKE VERSION: $(${CMAKE_EXECUTABLE} --version)"
 ${CMAKE_EXECUTABLE} -DITKPythonPackage_BUILD_PYTHON:PATH=0 \
   -DITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
@@ -108,19 +112,18 @@ for VENV in "${VENVS[@]}"; do
     ${Python3_EXECUTABLE} -m pip install --upgrade -r ${_ipp_dir}/requirements-dev.txt
 
     if [[ $(arch) == "arm64" ]]; then
-      plat_name="macosx-15.0-arm64"
+      plat_name="macosx-${osx_target}-arm64"
       build_path="${_ipp_dir}/ITK-${py_mm}-macosx_arm64"
     else
-      plat_name="macosx-15.0-x86_64"
+      plat_name="macosx-${osx_target}-x86_64"
       build_path="${_ipp_dir}/ITK-${py_mm}-macosx_x86_64"
-    fi
-    if [[ ! -z "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
-      osx_target="${MACOSX_DEPLOYMENT_TARGET}"
     fi
     PYPROJECT_CONFIGURE="${_script_dir}/pyproject_configure.py"
 
     # Clean up previous invocations
-    rm -rf ${build_path}
+    if [ ${ITK_MODULE_NO_CLEANUP} -eq 1 ]; then
+      rm -rf ${build_path}
+    fi
 
     if [[ ${SINGLE_WHEEL} == 1 ]]; then
 
@@ -226,9 +229,11 @@ for VENV in "${VENVS[@]}"; do
     fi
 
     # Remove unnecessary files for building against ITK
-    find ${build_path} -name '*.cpp' -delete -o -name '*.xml' -delete
-    rm -rf ${build_path}/Wrapping/Generators/castxml*
-    find ${build_path} -name '*.o' -delete
+    if [ ${ITK_MODULE_NO_CLEANUP} -eq 1 ]; then
+      find ${build_path} -name '*.cpp' -delete -o -name '*.xml' -delete
+      rm -rf ${build_path}/Wrapping/Generators/castxml*
+      find ${build_path} -name '*.o' -delete
+    fi
 done
 
 if [[ $(arch) != "arm64" ]]; then

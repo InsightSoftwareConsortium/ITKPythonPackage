@@ -16,19 +16,24 @@
 _ipp_dir=$(cd $(dirname $0) || exit 1; pwd)
 _DOCKCROSS_ENV_REPORT=${_ipp_dir}/build/package.env
 if [ -f "${_DOCKCROSS_ENV_REPORT}" ]; then
-  echo "${_ipp_dir}/build/package.env already exists, skipping generation."
+  # If file exists, generate candidate file instead
+  _candidate_config_filename=${_DOCKCROSS_ENV_REPORT}_$(date +"%y%m%d")
+  echo "${_DOCKCROSS_ENV_REPORT} exists, generating candidate ${_candidate_config_filename} instead"
+
+  # pre-load existing values
   source "${_DOCKCROSS_ENV_REPORT}"
-  exit 0
+  _DOCKCROSS_ENV_REPORT=${_candidate_config_filename}
 fi
 
 # Assume that ITKPythonPackage tags are identical to ITK tags
 _ipp_latest_tag=$(git tag --sort=v:refname | tail -1)
 if [ "${ITK_GIT_TAG}" != "${_ipp_latest_tag}" ] ;then
+  _IPP_ITK_SOURCE_DIR=${_ipp_dir}/ITK-source/ITK
   # Need early checkout to get AUTOVERSION
-  if [ ! -d ${_IPP_ITK_SOURCE_DIR} ]; then
+  if [ ! -d "${_IPP_ITK_SOURCE_DIR}" ]; then
     git clone https://github.com/InsightSoftwareConsortium/ITK.git ${_IPP_ITK_SOURCE_DIR}
   fi
-  pushd ${_IPP_ITK_SOURCE_DIR} > /dev/null 2>&1
+  pushd "${_IPP_ITK_SOURCE_DIR}" > /dev/null 2>&1
     git checkout ${ITK_GIT_TAG}
     # Get auto generated itk package version
     _ipp_latest_version=$( git describe --tags --long --dirty --always \
