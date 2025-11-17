@@ -39,7 +39,8 @@ def prepare_build_env(python_version):
     python_dir = "C:/Python%s" % python_version
     if not os.path.exists(python_dir):
         raise FileNotFoundError(
-            "Aborting. python_dir [%s] does not exist." % python_dir)
+            "Aborting. python_dir [%s] does not exist." % python_dir
+        )
 
     venv = os.path.join(python_dir, "Scripts", "virtualenv.exe")
     venv_dir = os.path.join(ROOT_DIR, "venv-%s" % python_version)
@@ -52,62 +53,85 @@ def prepare_build_env(python_version):
 
 
 def build_wrapped_itk(
-        ninja_executable, build_type, source_path, build_path,
-        python_executable, python_include_dir, python_library):
+    ninja_executable,
+    build_type,
+    source_path,
+    build_path,
+    python_executable,
+    python_include_dir,
+    python_library,
+):
 
-    tbb_dir = os.path.join(ROOT_DIR, 'oneTBB-prefix', 'lib', 'cmake', 'TBB')
+    tbb_dir = os.path.join(ROOT_DIR, "oneTBB-prefix", "lib", "cmake", "TBB")
 
     # Build ITK python
     with push_dir(directory=build_path, make_directory=True):
 
-        check_call([
-            "cmake",
-            "-DCMAKE_MAKE_PROGRAM:FILEPATH=%s" % ninja_executable,
-            "-DCMAKE_BUILD_TYPE:STRING=%s" % build_type,
-            "-DITK_SOURCE_DIR:PATH=%s" % source_path,
-            "-DITK_BINARY_DIR:PATH=%s" % build_path,
-            "-DBUILD_TESTING:BOOL=OFF",
-            "-DSKBUILD:BOOL=ON",
-            "-DPython3_EXECUTABLE:FILEPATH=%s" % python_executable,
-            "-DITK_WRAP_unsigned_short:BOOL=ON",
-            "-DITK_WRAP_double:BOOL=ON",
-            "-DITK_WRAP_complex_double:BOOL=ON",
-            "-DITK_WRAP_IMAGE_DIMS:STRING=2;3;4",
-            "-DPython3_INCLUDE_DIR:PATH=%s" % python_include_dir,
-            "-DPython3_INCLUDE_DIRS:PATH=%s" % python_include_dir,
-            "-DPython3_LIBRARY:FILEPATH=%s" % python_library,
-            "-DPython3_SABI_LIBRARY:FILEPATH=%s" % python_library,
-            "-DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
-            "-DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON",
-            "-DPY_SITE_PACKAGES_PATH:PATH=.",
-            "-DITK_LEGACY_SILENT:BOOL=ON",
-            "-DITK_WRAP_PYTHON:BOOL=ON",
-            "-DITK_WRAP_DOC:BOOL=ON",
-            "-DDOXYGEN_EXECUTABLE:FILEPATH=C:/P/doxygen/doxygen.exe",
-            "-DModule_ITKTBB:BOOL=ON",
-            "-DTBB_DIR:PATH=%s" % tbb_dir,
-            "-G", "Ninja",
-            source_path
-        ])
+        check_call(
+            [
+                "cmake",
+                "-DCMAKE_MAKE_PROGRAM:FILEPATH=%s" % ninja_executable,
+                "-DCMAKE_BUILD_TYPE:STRING=%s" % build_type,
+                "-DITK_SOURCE_DIR:PATH=%s" % source_path,
+                "-DITK_BINARY_DIR:PATH=%s" % build_path,
+                "-DBUILD_TESTING:BOOL=OFF",
+                "-DSKBUILD:BOOL=ON",
+                "-DPython3_EXECUTABLE:FILEPATH=%s" % python_executable,
+                "-DITK_WRAP_unsigned_short:BOOL=ON",
+                "-DITK_WRAP_double:BOOL=ON",
+                "-DITK_WRAP_complex_double:BOOL=ON",
+                "-DITK_WRAP_IMAGE_DIMS:STRING=2;3;4",
+                "-DPython3_INCLUDE_DIR:PATH=%s" % python_include_dir,
+                "-DPython3_INCLUDE_DIRS:PATH=%s" % python_include_dir,
+                "-DPython3_LIBRARY:FILEPATH=%s" % python_library,
+                "-DPython3_SABI_LIBRARY:FILEPATH=%s" % python_library,
+                "-DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
+                "-DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON",
+                "-DPY_SITE_PACKAGES_PATH:PATH=.",
+                "-DITK_LEGACY_SILENT:BOOL=ON",
+                "-DITK_WRAP_PYTHON:BOOL=ON",
+                "-DITK_WRAP_DOC:BOOL=ON",
+                "-DDOXYGEN_EXECUTABLE:FILEPATH=C:/P/doxygen/doxygen.exe",
+                "-DModule_ITKTBB:BOOL=ON",
+                "-DTBB_DIR:PATH=%s" % tbb_dir,
+                "-G",
+                "Ninja",
+                source_path,
+            ]
+        )
         check_call([ninja_executable])
 
 
-def build_wheel(python_version, build_type="Release", single_wheel=False,
-                cleanup=True, wheel_names=None,
-                cmake_options=[]):
+def build_wheel(
+    python_version,
+    build_type="Release",
+    single_wheel=False,
+    cleanup=True,
+    wheel_names=None,
+    cmake_options=[],
+):
 
-    python_executable, \
-            python_include_dir, \
-            python_library, \
-            pip, \
-            ninja_executable, \
-            path = venv_paths(python_version)
+    (
+        python_executable,
+        python_include_dir,
+        python_library,
+        pip,
+        ninja_executable,
+        path,
+    ) = venv_paths(python_version)
 
     with push_env(PATH="%s%s%s" % (path, os.pathsep, os.environ["PATH"])):
 
         # Install dependencies
-        check_call([pip, "install", "--upgrade",
-                    "-r", os.path.join(ROOT_DIR, "requirements-dev.txt")])
+        check_call(
+            [
+                pip,
+                "install",
+                "--upgrade",
+                "-r",
+                os.path.join(ROOT_DIR, "requirements-dev.txt"),
+            ]
+        )
 
         source_path = "%s/ITK" % ITK_SOURCE
         build_path = "%s/ITK-win_%s" % (ROOT_DIR, python_version)
@@ -127,23 +151,39 @@ def build_wheel(python_version, build_type="Release", single_wheel=False,
             check_call([python_executable, pyproject_configure, "itk"])
 
             # Generate wheel
-            check_call([
-               python_executable,
-                "-m", "build",
-                "--verbose",
-                "--wheel",
-                "--outdir", "dist",
-                "--no-isolation",
-                "--skip-dependency-check",
-                "--config-setting=cmake.build-type=%s" % build_type,
-                "--config-setting=cmake.define.ITK_SOURCE_DIR:PATH=%s" % source_path,
-                "--config-setting=cmake.define.ITK_BINARY_DIR:PATH=%s" % build_path,
-                "--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=%s" % python_executable,
-                "--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=%s" % python_include_dir,
-                "--config-setting=cmake.define.Python3_INCLUDE_DIRS:PATH=%s" % python_include_dir,
-                "--config-setting=cmake.define.Python3_LIBRARY:FILEPATH=%s" % python_library,
-                "--config-setting=cmake.define.DOXYGEN_EXECUTABLE:FILEPATH=C:/P/doxygen/doxygen.exe",
-            ] + [o.replace('-D', '--config-setting=cmake.define.') for o in cmake_options] + ['.',])
+            check_call(
+                [
+                    python_executable,
+                    "-m",
+                    "build",
+                    "--verbose",
+                    "--wheel",
+                    "--outdir",
+                    "dist",
+                    "--no-isolation",
+                    "--skip-dependency-check",
+                    "--config-setting=cmake.build-type=%s" % build_type,
+                    "--config-setting=cmake.define.ITK_SOURCE_DIR:PATH=%s"
+                    % source_path,
+                    "--config-setting=cmake.define.ITK_BINARY_DIR:PATH=%s" % build_path,
+                    "--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=%s"
+                    % python_executable,
+                    "--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=%s"
+                    % python_include_dir,
+                    "--config-setting=cmake.define.Python3_INCLUDE_DIRS:PATH=%s"
+                    % python_include_dir,
+                    "--config-setting=cmake.define.Python3_LIBRARY:FILEPATH=%s"
+                    % python_library,
+                    "--config-setting=cmake.define.DOXYGEN_EXECUTABLE:FILEPATH=C:/P/doxygen/doxygen.exe",
+                ]
+                + [
+                    o.replace("-D", "--config-setting=cmake.define.")
+                    for o in cmake_options
+                ]
+                + [
+                    ".",
+                ]
+            )
 
         else:
 
@@ -152,40 +192,63 @@ def build_wheel(python_version, build_type="Release", single_wheel=False,
             print("#")
 
             build_wrapped_itk(
-                ninja_executable, build_type, source_path, build_path,
-                python_executable, python_include_dir, python_library)
+                ninja_executable,
+                build_type,
+                source_path,
+                build_path,
+                python_executable,
+                python_include_dir,
+                python_library,
+            )
 
             # Build wheels
             if wheel_names is None:
-                with open(os.path.join(SCRIPT_DIR, "WHEEL_NAMES.txt"), "r") \
-                        as content:
-                    wheel_names = [wheel_name.strip()
-                                   for wheel_name in content.readlines()]
+                with open(os.path.join(SCRIPT_DIR, "WHEEL_NAMES.txt"), "r") as content:
+                    wheel_names = [
+                        wheel_name.strip() for wheel_name in content.readlines()
+                    ]
 
             for wheel_name in wheel_names:
                 # Configure pyproject.toml
-                check_call([
-                    python_executable, pyproject_configure, wheel_name])
+                check_call([python_executable, pyproject_configure, wheel_name])
 
                 # Generate wheel
-                check_call([
-                    python_executable,
-                    "-m", "build",
-                    "--verbose",
-                    "--wheel",
-                    "--outdir", "dist",
-                    "--no-isolation",
-                    "--skip-dependency-check",
-                    "--config-setting=cmake.build-type=%s" % build_type,
-                    "--config-setting=cmake.define.ITK_SOURCE_DIR:PATH=%s" % source_path,
-                    "--config-setting=cmake.define.ITK_BINARY_DIR:PATH=%s" % build_path,
-                    "--config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON",
-                    "--config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=%s" % wheel_name,
-                    "--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=%s" % python_executable,
-                    "--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=%s" % python_include_dir,
-                    "--config-setting=cmake.define.Python3_INCLUDE_DIRS:PATH=%s" % python_include_dir,
-                    "--config-setting=cmake.define.Python3_LIBRARY:FILEPATH=%s" % python_library
-                ] + [o.replace('-D', '--config-setting=cmake.define.') for o in cmake_options] + ['.',])
+                check_call(
+                    [
+                        python_executable,
+                        "-m",
+                        "build",
+                        "--verbose",
+                        "--wheel",
+                        "--outdir",
+                        "dist",
+                        "--no-isolation",
+                        "--skip-dependency-check",
+                        "--config-setting=cmake.build-type=%s" % build_type,
+                        "--config-setting=cmake.define.ITK_SOURCE_DIR:PATH=%s"
+                        % source_path,
+                        "--config-setting=cmake.define.ITK_BINARY_DIR:PATH=%s"
+                        % build_path,
+                        "--config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON",
+                        "--config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=%s"
+                        % wheel_name,
+                        "--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=%s"
+                        % python_executable,
+                        "--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=%s"
+                        % python_include_dir,
+                        "--config-setting=cmake.define.Python3_INCLUDE_DIRS:PATH=%s"
+                        % python_include_dir,
+                        "--config-setting=cmake.define.Python3_LIBRARY:FILEPATH=%s"
+                        % python_library,
+                    ]
+                    + [
+                        o.replace("-D", "--config-setting=cmake.define.")
+                        for o in cmake_options
+                    ]
+                    + [
+                        ".",
+                    ]
+                )
 
         # Remove unnecessary files for building against ITK
         if cleanup:
@@ -194,23 +257,33 @@ def build_wheel(python_version, build_type="Release", single_wheel=False,
                     extension = os.path.splitext(filename)[1]
                     if extension in [".cpp", ".xml", ".obj", ".o"]:
                         os.remove(os.path.join(root, filename))
-            shutil.rmtree(
-                os.path.join(build_path, "Wrapping", "Generators", "CastXML"))
+            shutil.rmtree(os.path.join(build_path, "Wrapping", "Generators", "CastXML"))
 
-def fixup_wheel(py_envs, filepath, lib_paths:str=''):
+
+def fixup_wheel(py_envs, filepath, lib_paths: str = ""):
     lib_paths = lib_paths.strip() if lib_paths.isspace() else lib_paths.strip() + ";"
     lib_paths += "C:/P/IPP/oneTBB-prefix/bin"
-    print(f'Library paths for fixup: {lib_paths}')
+    print(f"Library paths for fixup: {lib_paths}")
 
     py_env = py_envs[0]
 
     delve_wheel = os.path.join(ROOT_DIR, "venv-" + py_env, "Scripts", "delvewheel.exe")
-    check_call([delve_wheel, "repair", "--no-mangle-all", "--add-path",
-        lib_paths, "--ignore-in-wheel", "-w",
-        os.path.join(ROOT_DIR, "dist"), filepath])
+    check_call(
+        [
+            delve_wheel,
+            "repair",
+            "--no-mangle-all",
+            "--add-path",
+            lib_paths,
+            "--ignore-in-wheel",
+            "-w",
+            os.path.join(ROOT_DIR, "dist"),
+            filepath,
+        ]
+    )
 
 
-def fixup_wheels(single_wheel, py_envs, lib_paths:str=''):
+def fixup_wheels(single_wheel, py_envs, lib_paths: str = ""):
     # TBB library fix-up
     tbb_wheel = "itk_core"
     if single_wheel:
@@ -226,21 +299,22 @@ def test_wheels(python_env):
         python_library,
         pip,
         ninja_executable,
-        path
+        path,
     ) = venv_paths(python_env)
-    check_call([pip, 'install', 'numpy'])
-    check_call([pip, 'install', 'itk', '--no-cache-dir', '--no-index',
-        '-f', 'dist'])
-    print('Wheel successfully installed.')
-    check_call([
-        python_executable,
-        os.path.join(ROOT_DIR, "docs/code/test.py")
-    ])
-    print('Documentation tests passed.')
+    check_call([pip, "install", "numpy"])
+    check_call([pip, "install", "itk", "--no-cache-dir", "--no-index", "-f", "dist"])
+    print("Wheel successfully installed.")
+    check_call([python_executable, os.path.join(ROOT_DIR, "docs/code/test.py")])
+    print("Documentation tests passed.")
 
 
-def build_wheels(py_envs=DEFAULT_PY_ENVS, single_wheel=False,
-                 cleanup=False, wheel_names=None, cmake_options=[]):
+def build_wheels(
+    py_envs=DEFAULT_PY_ENVS,
+    single_wheel=False,
+    cleanup=False,
+    wheel_names=None,
+    cmake_options=[],
+):
 
     for py_env in py_envs:
         prepare_build_env(py_env)
@@ -251,48 +325,84 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, single_wheel=False,
 
         cmake_executable = "cmake.exe"
         tools_venv = os.path.join(ROOT_DIR, "venv-" + py_envs[0])
-        ninja_executable = shutil.which('ninja.exe')
+        ninja_executable = shutil.which("ninja.exe")
         if ninja_executable is None:
             pip_install(tools_venv, "ninja")
             ninja_executable = os.path.join(tools_venv, "Scripts", "ninja.exe")
 
         # Build standalone project and populate archive cache
-        check_call([
-            cmake_executable,
-            "-DCMAKE_BUILD_TYPE:STRING=%s" % build_type,
-            "-DITKPythonPackage_BUILD_PYTHON:PATH=0",
-            "-G", "Ninja",
-            "-DCMAKE_MAKE_PROGRAM:FILEPATH=%s" % ninja_executable,
-            ROOT_DIR
-        ])
+        check_call(
+            [
+                cmake_executable,
+                "-DCMAKE_BUILD_TYPE:STRING=%s" % build_type,
+                "-DITKPythonPackage_BUILD_PYTHON:PATH=0",
+                "-G",
+                "Ninja",
+                "-DCMAKE_MAKE_PROGRAM:FILEPATH=%s" % ninja_executable,
+                ROOT_DIR,
+            ]
+        )
 
         check_call([ninja_executable])
 
     # Compile wheels re-using standalone project and archive cache
     for py_env in py_envs:
         tools_venv = os.path.join(ROOT_DIR, "venv-" + py_env)
-        ninja_executable = shutil.which('ninja.exe')
+        ninja_executable = shutil.which("ninja.exe")
         if ninja_executable is None:
             pip_install(tools_venv, "ninja")
-        build_wheel(py_env, build_type, single_wheel=single_wheel,
-            cleanup=cleanup, wheel_names=wheel_names,
-            cmake_options=cmake_options)
+        build_wheel(
+            py_env,
+            build_type,
+            single_wheel=single_wheel,
+            cleanup=cleanup,
+            wheel_names=wheel_names,
+            cmake_options=cmake_options,
+        )
 
 
 def main(wheel_names=None):
-    parser = argparse.ArgumentParser(description='Driver script to build ITK Python wheels.')
-    parser.add_argument('--single-wheel', action='store_true', help='Build a single wheel as opposed to one wheel per ITK module group.')
-    parser.add_argument('--py-envs', nargs='+', default=DEFAULT_PY_ENVS,
-            help='Target Python environment versions, e.g. "39-x64".')
-    parser.add_argument('--no-cleanup', dest='cleanup', action='store_false', help='Do not clean up temporary build files.')
-    parser.add_argument('--lib-paths', nargs=1, default='', help='Add semicolon-delimited library directories for delvewheel to include in the module wheel')
-    parser.add_argument('cmake_options', nargs='*', help='Extra options to pass to CMake, e.g. -DBUILD_SHARED_LIBS:BOOL=OFF')
+    parser = argparse.ArgumentParser(
+        description="Driver script to build ITK Python wheels."
+    )
+    parser.add_argument(
+        "--single-wheel",
+        action="store_true",
+        help="Build a single wheel as opposed to one wheel per ITK module group.",
+    )
+    parser.add_argument(
+        "--py-envs",
+        nargs="+",
+        default=DEFAULT_PY_ENVS,
+        help='Target Python environment versions, e.g. "39-x64".',
+    )
+    parser.add_argument(
+        "--no-cleanup",
+        dest="cleanup",
+        action="store_false",
+        help="Do not clean up temporary build files.",
+    )
+    parser.add_argument(
+        "--lib-paths",
+        nargs=1,
+        default="",
+        help="Add semicolon-delimited library directories for delvewheel to include in the module wheel",
+    )
+    parser.add_argument(
+        "cmake_options",
+        nargs="*",
+        help="Extra options to pass to CMake, e.g. -DBUILD_SHARED_LIBS:BOOL=OFF",
+    )
     args = parser.parse_args()
 
-    build_wheels(single_wheel=args.single_wheel, cleanup=args.cleanup,
-        py_envs=args.py_envs, wheel_names=wheel_names,
-        cmake_options=args.cmake_options)
-    fixup_wheels(args.single_wheel, args.py_envs, ';'.join(args.lib_paths))
+    build_wheels(
+        single_wheel=args.single_wheel,
+        cleanup=args.cleanup,
+        py_envs=args.py_envs,
+        wheel_names=wheel_names,
+        cmake_options=args.cmake_options,
+    )
+    fixup_wheels(args.single_wheel, args.py_envs, ";".join(args.lib_paths))
     for py_env in args.py_envs:
         test_wheels(py_env)
 

@@ -6,9 +6,11 @@ import os
 import tempfile
 import shutil
 
+
 def add_test(cmd):
     cmd.insert(0, sys.executable)
     subprocess.check_call(cmd)
+
 
 def cleanup(files):
     for f in files:
@@ -16,6 +18,7 @@ def cleanup(files):
             shutil.rmtree(f)
         else:
             os.remove(f)
+
 
 # Create temporary folder to save output images
 temp_folder = tempfile.mkdtemp()
