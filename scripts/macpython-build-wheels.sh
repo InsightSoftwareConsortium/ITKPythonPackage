@@ -206,10 +206,13 @@ for VENV in "${VENVS[@]}"; do
           --outdir dist \
           --no-isolation \
           --skip-dependency-check \
-          --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
+          --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${ITK_SOURCE_DIR} \
           --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
           --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
           --config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
+          --config-setting=cmake.define.CMAKE_OSX_SYSROOT:STRING=${SDKROOT} \
+          --config-setting=cmake.define.CMAKE_CXX_COMPILER:STRING=${CXX} \
+          --config-setting=cmake.define.CMAKE_C_COMPILER:STRING=${CC} \
           --config-setting=cmake.define.ITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
           --config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
           --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
