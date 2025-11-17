@@ -60,19 +60,38 @@ n_processors=$(sysctl -n hw.ncpu)
 # So delocate can find the libs
 export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:$PWD/oneTBB-prefix/lib
 mkdir -p ITK-source
-pushd ITK-source > /dev/null 2>&1
-  echo "CMAKE VERSION: $(${CMAKE_EXECUTABLE} --version)"
-  ${CMAKE_EXECUTABLE} -DITKPythonPackage_BUILD_PYTHON:PATH=0 \
-    -DITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
-    -G Ninja \
-    -DCMAKE_BUILD_TYPE:STRING=${build_type} \
-    -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
-    -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
-    -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
-    -S ${SCRIPT_DIR}/../ \
-    -B $(pwd)
-  ${NINJA_EXECUTABLE} -j$n_processors -l$n_processors
+
+# -----------------------------------------------------------------------
+IPP_BUILD_DIR=${_script_dir}/ITK-source
+mkdir -p ${IPP_BUILD_DIR}
+ITK_SOURCE_DIR=${IPP_BUILD_DIR}/ITK
+SDKROOT=${SDKROOT:=$(xcrun --sdk macosx --show-sdk-path)}
+
+if [ ! -d ${ITK_SOURCE_DIR} ]; then
+  git clone https://github.com/InsightSoftwareConsortium/ITK.git ${ITK_SOURCE_DIR}
+fi
+pushd ${ITK_SOURCE_DIR} > /dev/null 2>&1
+  git checkout ${ITK_GIT_TAG}
 popd > /dev/null 2>&1
+
+echo "CMAKE VERSION: $(${CMAKE_EXECUTABLE} --version)"
+${CMAKE_EXECUTABLE} -DITKPythonPackage_BUILD_PYTHON:PATH=0 \
+  -DITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
+  -G Ninja \
+  -DCMAKE_BUILD_TYPE:STRING=${build_type} \
+  -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
+  -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+  -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
+  -DCMAKE_OSX_SYSROOT:STRING="${SDKROOT}" \
+  -DCMAKE_C_COMPILER=${CC} \
+  -DCMAKE_CXX_COMPILER=${CXX} \
+  -DITK_SOURCE_DIR=${ITK_SOURCE_DIR} \
+  -DITK_GIT_TAG:STRING=${ITK_GIT_TAG} \
+  -DITK_PACKAGE_VERSION:STRING=${ITK_PACKAGE_VERSION} \
+  -S ${_ipp_dir} \
+  -B ${IPP_BUILD_DIR} \
+  \
+  && ${NINJA_EXECUTABLE} -C ${IPP_BUILD_DIR} -j$n_processors -l$n_processors
 
 SINGLE_WHEEL=0
 
@@ -120,10 +139,13 @@ for VENV in "${VENVS[@]}"; do
         --no-isolation \
         --skip-dependency-check \
         --config-setting=cmake.define.CMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
-        --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
+        --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${ITK_SOURCE_DIR} \
         --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
         --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
         --config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
+        --config-setting=cmake.define.CMAKE_OSX_SYSROOT:STRING=${SDKROOT} \
+        --config-setting=cmake.define.CMAKE_CXX_COMPILER:STRING=${CXX} \
+        --config-setting=cmake.define.CMAKE_C_COMPILER:STRING=${CC} \
         --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
         --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
         --config-setting=cmake.define.Module_ITKTBB:BOOL=${use_tbb} \
@@ -144,11 +166,14 @@ for VENV in "${VENVS[@]}"; do
         && echo "CMAKE VERSION: $(cmake --version)" \
         && cmake \
           -DCMAKE_BUILD_TYPE:STRING=${build_type} \
-          -DITK_SOURCE_DIR:PATH=${source_path} \
+          -DITK_SOURCE_DIR:PATH=${ITK_SOURCE_DIR} \
           -DITK_BINARY_DIR:PATH=${build_path} \
           -DBUILD_TESTING:BOOL=OFF \
           -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
           -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
+          -DCMAKE_OSX_SYSROOT:STRING=${SDKROOT} \
+          -DCMAKE_CXX_COMPILER:STRING=${CXX} \
+          -DCMAKE_C_COMPILER:STRING=${CC} \
           -DITK_WRAP_unsigned_short:BOOL=ON \
           -DITK_WRAP_double:BOOL=ON \
           -DITK_WRAP_complex_double:BOOL=ON \

@@ -99,11 +99,20 @@ if(ITKPythonPackage_SUPERBUILD)
     list(APPEND ep_common_cmake_cache_args
       -DCMAKE_OSX_ARCHITECTURES:STRING=${CMAKE_OSX_ARCHITECTURES})
   endif()
+  if(CMAKE_OSX_SYSROOT)
+    list(APPEND ep_common_cmake_cache_args
+      -DCMAKE_OSX_SYSROOT:STRING=${CMAKE_OSX_SYSROOT})
+  endif()
 
   if(CMAKE_MAKE_PROGRAM)
     list(APPEND ep_common_cmake_cache_args
       -DCMAKE_MAKE_PROGRAM:FILEPATH=${CMAKE_MAKE_PROGRAM})
   endif()
+  list(APPEND ep_common_cmake_cache_args
+        -DCMAKE_CXX_COMPILER:PATH=${CMAKE_CXX_COMPILER}
+        -DCMAKE_C_COMPILER:PATH=${CMAKE_C_COMPILER}
+        -DCMAKE_BUILD_TYPE:STRING=Release
+  )
 
   #-----------------------------------------------------------------------------
   # compile with multiple processors
@@ -138,13 +147,11 @@ if(ITKPythonPackage_SUPERBUILD)
       URL_HASH SHA256=01598a46c1162c27253a0de0236f520fd8ee8166e9ebb84a4243574f88e6e50a
       CMAKE_ARGS
         -DTBB_TEST:BOOL=OFF
-        -DCMAKE_BUILD_TYPE:STRING=Release
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/../oneTBB-prefix
         -DCMAKE_INSTALL_LIBDIR:STRING=lib # Skip default initialization by GNUInstallDirs CMake module
         ${ep_common_cmake_cache_args}
         ${tbb_cmake_cache_args}
         ${ep_download_extract_timestamp_arg}
-        -DCMAKE_BUILD_TYPE:STRING=Release
       BUILD_BYPRODUCTS "${TBB_DIR}/TBBConfig.cmake"
       USES_TERMINAL_DOWNLOAD 1
       USES_TERMINAL_UPDATE 1

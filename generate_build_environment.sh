@@ -153,6 +153,9 @@ LD_LIBRARY_PATH=${LD_LIBRARY_PATH}
 #    - If not empty, frameworks already on machine will be used without fetching.
 ITK_USE_LOCAL_PYTHON=${ITK_USE_LOCAL_PYTHON}
 
+# CC=$(cmake --system-information| grep "CMAKE_C_COMPILER == " | tr " " "\n" |sed -n "3p")
+# CXX=$(cmake --system-information| grep "CMAKE_CXX_COMPILER == " | tr " " "\n" |sed -n "3p")
+
 ################################################
 DEFAULT_ENV_SETTINGS
 cat ${_DOCKCROSS_ENV_REPORT}
