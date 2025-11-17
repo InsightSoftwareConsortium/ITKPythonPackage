@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ########################################################################
-# Run this script to set common enviroment variables used in building the 
+# Run this script to set common enviroment variables used in building the
 # ITK Python wheel packages for Linux.
 #
 # ENVIRONMENT VARIABLES

@@ -7,9 +7,9 @@
 #
 #   /tmp/dockcross-manylinux-x64 manylinux-build-module-wheels.sh cp39
 #
-# Shared library dependencies can be included in the wheel by mounting them to /usr/lib64 or /usr/local/lib64 
+# Shared library dependencies can be included in the wheel by mounting them to /usr/lib64 or /usr/local/lib64
 # before running this script.
-# 
+#
 # For example,
 #
 #   DOCKER_ARGS="-v /path/to/lib.so:/usr/local/lib64/lib.so"
@@ -159,7 +159,7 @@ fi
 
 sudo ${Python3_EXECUTABLE} -m pip install auditwheel
 for whl in dist/*linux*$(uname -m).whl; do
-  auditwheel repair ${whl} -w /work/dist/ ${AUDITWHEEL_EXCLUDE_ARGS} 
+  auditwheel repair ${whl} -w /work/dist/ ${AUDITWHEEL_EXCLUDE_ARGS}
   if $use_skbuild_classic; then
     rm ${whl}
   fi

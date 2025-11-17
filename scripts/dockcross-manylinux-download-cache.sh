@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ########################################################################
-# Download ITK build cache and other requirements to prepare for 
+# Download ITK build cache and other requirements to prepare for
 # generating Linux Python wheels of the given ITK module.
 #
 # Most ITK modules will download and call `dockcross-manylinux-download-cache-and-build-module-wheels.sh` which will
@@ -125,7 +125,7 @@ if [[ -n ${ITKPYTHONPACKAGE_TAG} ]]; then
   git checkout "${ITKPYTHONPACKAGE_TAG}"
   git status
   popd
-  
+
   rm -rf ITKPythonPackage/scripts/
   cp -r IPP-tmp/scripts ITKPythonPackage/
   cp IPP-tmp/requirements-dev.txt ITKPythonPackage/

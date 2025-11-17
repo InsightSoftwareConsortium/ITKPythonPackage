@@ -79,7 +79,7 @@ if [[ -n ${ITKPYTHONPACKAGE_TAG} ]]; then
   git checkout "${ITKPYTHONPACKAGE_TAG}"
   git status
   popd
-  
+
   rm -rf ITKPythonPackage/scripts/
   cp -r IPP-tmp/scripts ITKPythonPackage/
   rm -rf IPP-tmp/
