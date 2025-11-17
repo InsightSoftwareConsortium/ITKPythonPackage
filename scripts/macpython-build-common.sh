@@ -79,16 +79,18 @@ done
 
 # -----------------------------------------------------------------------
 # Ensure that requirements are met
-brew update
 if ! type doxygen > /dev/null 2>&1; then
+  brew update
   brew info doxygen | grep --quiet 'Not installed' && brew install doxygen
 fi
 DOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE:=$(which doxygen)}
 if ! type ninja > /dev/null 2>&1; then
+  brew update
   brew info ninja | grep --quiet 'Not installed' && brew install ninja
 fi
 NINJA_EXECUTABLE=${NINJA_EXECUTABLE:=$(which ninja)}
 if ! type cmake > /dev/null 2>&1; then
+  brew update
   brew info cmake | grep --quiet 'Not installed' && brew install cmake
 fi
 CMAKE_EXECUTABLE=${CMAKE_EXECUTABLE:=$(which cmake)}
