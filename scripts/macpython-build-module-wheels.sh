@@ -52,12 +52,10 @@ fi
 # * PYBINARIES
 # * PYTHON_VERSIONS
 # * NINJA_EXECUTABLE
-# * SCRIPT_DIR
 # * SKBUILD_DIR
 # * VENVS=()
 
 MACPYTHON_PY_PREFIX=""
-SCRIPT_DIR=""
 VENVS=()
 
 source "${_script_dir}/macpython-build-common.sh"
@@ -78,7 +76,7 @@ DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
 DELOCATE_PATCH=${VENV}/bin/delocate-patch
 # So delocate can find the libs
-export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${_script_dir}/../oneTBB-prefix/lib
+export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${_ipp_dir}/oneTBB-prefix/lib
 
 # Compile wheels re-using standalone project and archive cache
 for VENV in "${VENVS[@]}"; do
@@ -99,12 +97,12 @@ for VENV in "${VENVS[@]}"; do
       plat_name="macosx-15.0-arm64"
       osx_target="15.0"
       osx_arch="arm64"
-      build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_arm64"
+      build_path="${_ipp_dir}/ITK-${py_mm}-macosx_arm64"
     else
       plat_name="macosx-15.0-x86_64"
       osx_target="15.0"
       osx_arch="x86_64"
-      build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
+      build_path="${_ipp_dir}/ITK-${py_mm}-macosx_x86_64"
     fi
     if [[ ! -z "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
       osx_target="${MACOSX_DEPLOYMENT_TARGET}"

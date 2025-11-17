@@ -9,7 +9,7 @@
 #
 # Shared libraries can be included in the wheel by exporting them to DYLD_LIBRARY_PATH in build/package.env
 #
-# These variables are set in common script:, CMAKE_EXECUTABLE, CMAKE_OPTIONS, MACPYTHON_PY_PREFIX, PYBINARIES, PYTHON_VERSIONS, NINJA_EXECUTABLE, SCRIPT_DIR, VENVS=()
+# These variables are set in common script:, CMAKE_EXECUTABLE, CMAKE_OPTIONS, MACPYTHON_PY_PREFIX, PYBINARIES, PYTHON_VERSIONS, NINJA_EXECUTABLE, VENVS=()
 #
 # For example,
 #
@@ -105,19 +105,18 @@ for VENV in "${VENVS[@]}"; do
     echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
 
-    ${Python3_EXECUTABLE} -m pip install --upgrade -r ${SCRIPT_DIR}/../requirements-dev.txt
+    ${Python3_EXECUTABLE} -m pip install --upgrade -r ${_ipp_dir}/requirements-dev.txt
 
     if [[ $(arch) == "arm64" ]]; then
       plat_name="macosx-15.0-arm64"
-      build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_arm64"
+      build_path="${_ipp_dir}/ITK-${py_mm}-macosx_arm64"
     else
       plat_name="macosx-15.0-x86_64"
-      build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
+      build_path="${_ipp_dir}/ITK-${py_mm}-macosx_x86_64"
     fi
     if [[ ! -z "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
       osx_target="${MACOSX_DEPLOYMENT_TARGET}"
     fi
-    source_path=${SCRIPT_DIR}/../ITK-source/ITK
     PYPROJECT_CONFIGURE="${_script_dir}/pyproject_configure.py"
 
     # Clean up previous invocations
@@ -190,13 +189,13 @@ for VENV in "${VENVS[@]}"; do
           -DTBB_DIR:PATH=${tbb_dir} \
           ${CMAKE_OPTIONS} \
           -G Ninja \
-          -S ${source_path} \
+          -S ${ITK_SOURCE_DIR} \
           -B ${build_path} \
         && ninja -j$n_processors -l$n_processors \
         || exit 1
       )
 
-      wheel_names=$(cat ${SCRIPT_DIR}/WHEEL_NAMES.txt)
+      wheel_names=$(cat ${_script_dir}/WHEEL_NAMES.txt)
       for wheel_name in ${wheel_names}; do
         # Configure pyproject.toml
         ${Python3_EXECUTABLE} ${PYPROJECT_CONFIGURE} ${wheel_name}
@@ -239,9 +238,9 @@ fi
 
 for VENV in "${VENVS[@]}"; do
   ${VENV}/bin/pip install numpy
-  ${VENV}/bin/pip install itk --no-cache-dir --no-index -f ${SCRIPT_DIR}/../dist
+  ${VENV}/bin/pip install itk --no-cache-dir --no-index -f ${_ipp_dir}/dist
   (cd $HOME && ${VENV}/bin/python -c 'import itk;')
   (cd $HOME && ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
   (cd $HOME && ${VENV}/bin/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
-  (cd $HOME && ${VENV}/bin/python ${SCRIPT_DIR}/../docs/code/test.py )
+  (cd $HOME && ${VENV}/bin/python ${_ipp_dir}/docs/code/test.py )
 done

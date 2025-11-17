@@ -3,9 +3,9 @@
 set -e
 set -o pipefail
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+_script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-pushd $SCRIPT_DIR > /dev/null
+pushd ${_script_dir} > /dev/null
 
 docker run --rm -it \
 	--name df-shellcheck \

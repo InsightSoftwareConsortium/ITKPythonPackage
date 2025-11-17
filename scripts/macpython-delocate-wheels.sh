@@ -21,7 +21,6 @@
 #
 MACPYTHON_PY_PREFIX=""
 PYBINARIES=""
-SCRIPT_DIR=""
 
 _script_dir=${_script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
 _ipp_dir=$(dirname ${_script_dir})
@@ -36,16 +35,16 @@ source "${_script_dir}/macpython-build-common.sh"
 
 # -----------------------------------------------------------------------
 # Remove previous virtualenv's
-rm -rf ${SCRIPT_DIR}/../venvs
+rm -rf ${_ipp_dir}/venvs
 # Create virtualenv's
 VENVS=()
-mkdir -p ${SCRIPT_DIR}/../venvs
+mkdir -p ${_ipp_dir}/venvs
 for PYBIN in "${PYBINARIES[@]}"; do
     if [[ $(basename $PYBIN) = "Current" ]]; then
       continue
     fi
     py_mm=$(basename ${PYBIN})
-    VENV=${SCRIPT_DIR}/../venvs/${py_mm}
+    VENV=${_ipp_dir}/venvs/${py_mm}
     VIRTUALENV_EXECUTABLE="${PYBIN}/bin/python3 -m venv"
     ${VIRTUALENV_EXECUTABLE} ${VENV}
     VENVS+=(${VENV})
@@ -76,10 +75,10 @@ for wheel in dist/*.whl; do
     ${DELOCATE_LISTDEPS} $wheel # lists library dependencies
     ${DELOCATE_WHEEL} $wheel # copies library dependencies into wheel
   #else
-    #${DELOCATE_PATCH} $wheel ${SCRIPT_DIR}/delocate.package.apply.patch # workaround for delocate's need for a package
+    #${DELOCATE_PATCH} $wheel ${_script_dir}/delocate.package.apply.patch # workaround for delocate's need for a package
     #${DELOCATE_LISTDEPS} $wheel # lists library dependencies
     #${DELOCATE_WHEEL} $wheel # copies library dependencies into wheel
-    #${DELOCATE_PATCH} $wheel ${SCRIPT_DIR}/delocate.package.revert.patch # workaround for delocate's need for a package
+    #${DELOCATE_PATCH} $wheel ${_script_dir}/delocate.package.revert.patch # workaround for delocate's need for a package
   #fi
 done
 
@@ -89,10 +88,10 @@ done
 if [[ $(arch) != "arm64" ]]; then
   for VENV in "${VENVS[@]}"; do
       ${VENV}/bin/pip install numpy
-      ${VENV}/bin/pip install itk --no-cache-dir --no-index -f ${SCRIPT_DIR}/../dist
+      ${VENV}/bin/pip install itk --no-cache-dir --no-index -f ${_ipp_dir}/dist
       (cd $HOME && ${VENV}/bin/python -c 'import itk;')
       (cd $HOME && ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
       (cd $HOME && ${VENV}/bin/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
-      (cd $HOME && ${VENV}/bin/python ${SCRIPT_DIR}/../docs/code/test.py )
+      (cd $HOME && ${VENV}/bin/python ${_ipp_dir}/docs/code/test.py )
   done
 fi
