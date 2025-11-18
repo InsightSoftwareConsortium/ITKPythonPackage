@@ -188,9 +188,9 @@ def update_wheel_setup_py_parameters():
         # cmake_args
         params["PYPROJECT_CMAKE_ARGS"] = list_to_str(
             [
-                f"-DITK_SOURCE_DIR={package_env_config["ITK_SOURCE_DIR"]}",
-                f"-DITK_GIT_TAG:STRING={package_env_config["ITK_GIT_TAG"]}",
-                f"-DITK_PACKAGE_VERSION:STRING={package_env_config["ITK_PACKAGE_VERSION"]}",
+                f"-DITK_SOURCE_DIR={package_env_config['ITK_SOURCE_DIR']}",
+                f"-DITK_GIT_TAG:STRING={package_env_config['ITK_GIT_TAG']}",
+                f"-DITK_PACKAGE_VERSION:STRING={package_env_config['ITK_PACKAGE_VERSION']}",
                 "-DITK_WRAP_unsigned_short:BOOL=ON",
                 "-DITK_WRAP_double:BOOL=ON",
                 "-DITK_WRAP_complex_double:BOOL=ON",
