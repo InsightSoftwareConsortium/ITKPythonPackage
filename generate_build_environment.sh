@@ -79,6 +79,11 @@ ITK_MODULE_PREQ=${ITK_MODULE_PREQ:=}
 source "${_ipp_dir}/scripts/oci_exe.sh"
 oci_exe=${oci_exe:=$(ociExe)}
 
+# Setup system dependant compiler options
+if [[ "$(uname)" == "Darwin" ]]; then
+  cmake --system-information > build/cmake_system_information 2>&1
+fi
+
 cat > ${_DOCKCROSS_ENV_REPORT} << DEFAULT_ENV_SETTINGS
 ################################################
 ################################################
@@ -165,11 +170,8 @@ LD_LIBRARY_PATH=${LD_LIBRARY_PATH}
 #    - If not empty, frameworks already on machine will be used without fetching.
 ITK_USE_LOCAL_PYTHON=${ITK_USE_LOCAL_PYTHON}
 
-if [[ "$(uname)" == "Darwin" ]]; then
-  cmake --system-information > build/cmake_system_information 2>&1
 # CC=$( cat build/cmake_system_information| grep "CMAKE_C_COMPILER == " | tr " " "\n" |sed -n "3p")
 # CXX=$(cat build/cmake_system_information| grep "CMAKE_CXX_COMPILER == " | tr " " "\n" |sed -n "3p")
-fi
 
 ################################################
 DEFAULT_ENV_SETTINGS
