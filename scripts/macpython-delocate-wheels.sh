@@ -19,18 +19,17 @@
 # -----------------------------------------------------------------------
 # These variables are set in common script:
 #
-MACPYTHON_PY_PREFIX=""
 PYBINARIES=""
 
-_script_dir=${_script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
+_script_dir=${_script_dir:=$(cd "$(dirname $0)" || exit 1; pwd)}
 _ipp_dir=$(dirname ${_script_dir})
 package_env_file=${_ipp_dir}/build/package.env
-if [ ! -f "${_ipp_dir}/build/package.env" ]; then
-  echo "MISSING: ${_ipp_dir}/build/package.env"
-  echo "    RUN: ${_ipp_dir}/review generate_build_environment.sh"
-  exit -1
+if [ ! -f "${package_env_file}" ]; then
+  echo "MISSING: ${package_env_file}"
+  echo "    RUN: ${_ipp_dir}/generate_build_environment.sh.sh"
+  exit 1
 fi
-source "${_ipp_dir}/build/package.env"
+source "${package_env_file}"
 source "${_script_dir}/macpython-build-common.sh"
 
 # -----------------------------------------------------------------------
@@ -52,10 +51,9 @@ done
 
 VENV="${VENVS[0]}"
 Python3_EXECUTABLE=${VENV}/bin/python3
-${Python3_EXECUTABLE} -m pip install --no-cache delocate
+${Python3_EXECUTABLE} -m pip install --no-cache-dir delocate
 DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
-DELOCATE_PATCH=${VENV}/bin/delocate-patch
 
 build_type="Release"
 
@@ -74,12 +72,7 @@ for wheel in dist/*.whl; do
   #if [[ $wheel = *itk_core* ]]; then
     ${DELOCATE_LISTDEPS} $wheel # lists library dependencies
     ${DELOCATE_WHEEL} $wheel # copies library dependencies into wheel
-  #else
-    #${DELOCATE_PATCH} $wheel ${_script_dir}/delocate.package.apply.patch # workaround for delocate's need for a package
-    #${DELOCATE_LISTDEPS} $wheel # lists library dependencies
-    #${DELOCATE_WHEEL} $wheel # copies library dependencies into wheel
-    #${DELOCATE_PATCH} $wheel ${_script_dir}/delocate.package.revert.patch # workaround for delocate's need for a package
-  #fi
+   #fi
 done
 
 # Install packages and test

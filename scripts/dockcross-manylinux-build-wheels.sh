@@ -18,12 +18,12 @@
 _script_dir=${_script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
 _ipp_dir=$(dirname ${_script_dir})
 package_env_file=${_ipp_dir}/build/package.env
-if [ ! -f "${_ipp_dir}/build/package.env" ]; then
-  echo "MISSING: ${_ipp_dir}/build/package.env"
-  echo "    RUN: ${_ipp_dir}/review generate_build_environment.sh"
-  exit -1
+if [ ! -f "${package_env_file}" ]; then
+  echo "MISSING: ${package_env_file}"
+  echo "    RUN: ${_ipp_dir}/generate_build_environment.sh.sh"
+  exit 1
 fi
-source "${_ipp_dir}/build/package.env"
+source "${package_env_file}"
 
 
 _local_dockercross_script=${_ipp_dir}/build/runner_dockcross-${MANYLINUX_VERSION}-x64_${IMAGE_TAG}.sh
