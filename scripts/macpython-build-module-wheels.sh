@@ -32,12 +32,12 @@
 _script_dir=${_script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
 _ipp_dir=$(dirname ${_script_dir})
 package_env_file=${_ipp_dir}/build/package.env
-if [ ! -f "${_ipp_dir}/build/package.env" ]; then
-  echo "MISSING: ${_ipp_dir}/build/package.env"
-  echo "    RUN: ${_ipp_dir}/review generate_build_environment.sh"
-  exit -1
+if [ ! -f "${package_env_file}" ]; then
+  echo "MISSING: ${package_env_file}"
+  echo "    RUN: ${_ipp_dir}/generate_build_environment.sh.sh"
+  exit 1
 fi
-source "${_ipp_dir}/build/package.env"
+source "${package_env_file}"
 
 if [[ -n ${ITK_MODULE_PREQ} ]]; then
   source "${_script_dir}/macpython-build-module-deps.sh"
@@ -74,7 +74,6 @@ dot_clean ${VENV}
 ${Python3_EXECUTABLE} -m pip install --no-cache-dir delocate
 DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
-DELOCATE_PATCH=${VENV}/bin/delocate-patch
 # So delocate can find the libs
 export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${_ipp_dir}/oneTBB-prefix/lib
 
