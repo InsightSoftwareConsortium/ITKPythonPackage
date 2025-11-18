@@ -69,7 +69,6 @@ fi
 # -----------------------------------------------------------------------
 IPP_BUILD_DIR=${_ipp_dir}/ITK-source
 mkdir -p ${IPP_BUILD_DIR}
-ITK_SOURCE_DIR=${IPP_BUILD_DIR}/ITK
 
 if [ ! -d ${ITK_SOURCE_DIR} ]; then
   git clone https://github.com/InsightSoftwareConsortium/ITK.git ${ITK_SOURCE_DIR}
@@ -133,10 +132,7 @@ for VENV in "${VENVS[@]}"; do
       echo "#"
 
       # Configure pyproject.toml
-      ITK_SOURCE_DIR=${ITK_SOURCE_DIR} \
-      ITK_GIT_TAG=${ITK_GIT_TAG} \
-      ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION} \
-        ${Python3_EXECUTABLE} ${PYPROJECT_CONFIGURE} "itk"
+      ${Python3_EXECUTABLE} ${PYPROJECT_CONFIGURE} "itk"
       # Generate wheel
       ${Python3_EXECUTABLE} -m build \
         --verbose \
@@ -204,6 +200,7 @@ for VENV in "${VENVS[@]}"; do
 
       wheel_names=$(cat ${_script_dir}/WHEEL_NAMES.txt)
       for wheel_name in ${wheel_names}; do
+        echo "==building ${wheel_name} in $(pwd)=="
         # Configure pyproject.toml
         ${Python3_EXECUTABLE} ${PYPROJECT_CONFIGURE} ${wheel_name}
         # Generate wheel

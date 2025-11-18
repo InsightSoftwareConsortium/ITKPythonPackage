@@ -17,23 +17,7 @@ message(STATUS "SuperBuild - ITKPythonPackage_WHEEL_NAME:${ITKPythonPackage_WHEE
 
 option(ITKPythonPackage_USE_TBB "Build and use oneTBB in the ITK python package" ON)
 
-if(ITK_SOURCE_DIR)
-  set(TBB_DIR "${ITK_SOURCE_DIR}/../oneTBB-prefix/lib/cmake/TBB")
-else()
-  set(TBB_DIR "${CMAKE_BINARY_DIR}/../oneTBB-prefix/lib/cmake/TBB")
-endif()
-set(tbb_args )
-if(ITKPythonPackage_USE_TBB)
-  set(tbb_args
-    -DModule_ITKTBB:BOOL=ON
-    -DTBB_DIR:PATH=${TBB_DIR}
-    )
-endif()
-
-configure_file(${CMAKE_SOURCE_DIR}/itkVersion.py.in ${CMAKE_SOURCE_DIR}/build/itkVersion.py)
-
 if(ITKPythonPackage_SUPERBUILD)
-
   #-----------------------------------------------------------------------------
   #------------------------------------------------------
   #----------------------------------
@@ -59,13 +43,6 @@ if(ITKPythonPackage_SUPERBUILD)
 
   #-----------------------------------------------------------------------------
   # Options
-
-  # When building different "flavor" of ITK python packages on a given platform,
-  # explicitly setting the following options allow to speed up package generation by
-  # re-using existing resources.
-  #
-  #  ITK_SOURCE_DIR: Path to an existing source directory
-  #
 
   option(ITKPythonPackage_BUILD_PYTHON "Build ITK python module" ON)
   mark_as_advanced(ITKPythonPackage_BUILD_PYTHON)
@@ -111,7 +88,23 @@ if(ITKPythonPackage_SUPERBUILD)
   message(STATUS "SuperBuild -")
   message(STATUS "SuperBuild - ITK-source-download")
 
+  if(NOT DEFINED ITK_SOURCE_DIR)
+     message(FATAL_ERROR "ITK_SOURCE_DIR must be defined when configuring cmake")
+  endif()
+
   if(ITKPythonPackage_USE_TBB)
+    if(ITK_SOURCE_DIR)
+      set(TBB_DIR "${ITK_SOURCE_DIR}/../oneTBB-prefix/lib/cmake/TBB")
+    else()
+      set(TBB_DIR "${CMAKE_BINARY_DIR}/../oneTBB-prefix/lib/cmake/TBB")
+    endif()
+    set(tbb_args )
+    if(ITKPythonPackage_USE_TBB)
+      set(tbb_args
+        -DModule_ITKTBB:BOOL=ON
+        -DTBB_DIR:PATH=${TBB_DIR}
+        )
+    endif()
 
     set(tbb_cmake_cache_args)
     if(CMAKE_OSX_DEPLOYMENT_TARGET)
@@ -146,8 +139,13 @@ if(ITKPythonPackage_SUPERBUILD)
   endif()
 
   set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
-  if(NOT DEFINED ITK_SOURCE_DIR)
-     message(FATAL_ERROR "ITK_SOURCE_DIR must be defined when configuring cmake")
+
+  if(NOT DEFINED ITK_GIT_TAG AND DEFINED ENV{ITK_GIT_TAG})
+    set(ITK_GIT_TAG $ENV{ITK_GIT_TAG})
+  endif()
+
+  if(NOT DEFINED ITK_GIT_TAG)
+    message(FATAL_ERROR "ITK_GIT_TAG must be defined when configuring cmake")
   endif()
 
   if(NOT DEFINED ITK_GIT_TAG AND DEFINED ENV{ITK_GIT_TAG})
@@ -158,7 +156,15 @@ if(ITKPythonPackage_SUPERBUILD)
     message(FATAL_ERROR "ITK_GIT_TAG must be defined when configuring cmake")
   endif()
 
+  if(NOT DEFINED ITK_PACKAGE_VERSION AND DEFINED ENV{ITK_PACKAGE_VERSION})
+    set(ITK_PACKAGE_VERSION $ENV{ITK_PACKAGE_VERSION})
+  endif()
 
+  if(NOT DEFINED ITK_PACKAGE_VERSION)
+    message(FATAL_ERROR "ITK_PACKAGE_VERSION must be defined when configuring cmake")
+  endif()
+  # configure itkVersion.py file with ITK_PACKAGE_VERSION
+  configure_file(${CMAKE_SOURCE_DIR}/itkVersion.py.in ${CMAKE_SOURCE_DIR}/itkVersion.py)
 
   if(NOT EXISTS ${ITK_SOURCE_DIR})
     ExternalProject_add(ITK-source-download

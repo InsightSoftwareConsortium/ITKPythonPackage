@@ -34,6 +34,7 @@ if [ "${ITK_GIT_TAG}" != "${_ipp_latest_tag}" ] ;then
     git clone https://github.com/InsightSoftwareConsortium/ITK.git ${_IPP_ITK_SOURCE_DIR}
   fi
   pushd "${_IPP_ITK_SOURCE_DIR}" > /dev/null 2>&1
+    git fetch --tags
     git checkout ${ITK_GIT_TAG}
     # Get auto generated itk package version
     _ipp_latest_version=$( git describe --tags --long --dirty --always \
@@ -90,6 +91,12 @@ cat > ${_DOCKCROSS_ENV_REPORT} << DEFAULT_ENV_SETTINGS
 #   Examples: "v5.4.0", "v5.2.1.post1" "0ffcaed12552" "my-testing-branch"
 #   See available tags at https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/tags
 ITK_GIT_TAG=${ITK_GIT_TAG}
+
+# - "ITK_SOURCE_DIR":  When building different "flavor" of ITK python packages
+# on a given platform, explicitly setting the ITK_SOURCE_DIR options allow to
+# speed up source-code downloads by re-using an existing repository.
+ITK_SOURCE_DIR=${_ipp_dir}/ITK-source/ITK
+
 #
 # - : "ITK_PACKAGE_VERSION" A valid versioning formatted tag.  This may be ITK_GIT_TAG for tagged releaseds
 #     Use the keyword 'AUTOVERSION' to have a temporary version automatically created from based on
@@ -158,8 +165,11 @@ LD_LIBRARY_PATH=${LD_LIBRARY_PATH}
 #    - If not empty, frameworks already on machine will be used without fetching.
 ITK_USE_LOCAL_PYTHON=${ITK_USE_LOCAL_PYTHON}
 
-# CC=$(cmake --system-information| grep "CMAKE_C_COMPILER == " | tr " " "\n" |sed -n "3p")
-# CXX=$(cmake --system-information| grep "CMAKE_CXX_COMPILER == " | tr " " "\n" |sed -n "3p")
+if [[ "$(uname)" == "Darwin" ]]; then
+  cmake --system-information > build/cmake_system_information 2>&1
+# CC=$( cat build/cmake_system_information| grep "CMAKE_C_COMPILER == " | tr " " "\n" |sed -n "3p")
+# CXX=$(cat build/cmake_system_information| grep "CMAKE_CXX_COMPILER == " | tr " " "\n" |sed -n "3p")
+fi
 
 ################################################
 DEFAULT_ENV_SETTINGS
