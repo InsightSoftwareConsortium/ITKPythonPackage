@@ -18,21 +18,12 @@
 #
 # ===========================================
 # ENVIRONMENT VARIABLES
-#
-#   generate_build_environment.sh # creates default build/package.env
-#   edit build/package.env with desired build elements
-#
 ########################################################################
 
-_script_dir=${_script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
-_ipp_dir=$(dirname ${_script_dir})
-package_env_file=${_ipp_dir}/build/package.env
-if [ ! -f "${package_env_file}" ]; then
-  echo "MISSING: ${package_env_file}"
-  echo "    RUN: ${_ipp_dir}/generate_build_environment.sh.sh"
-  exit 1
+if [ "${BASH_SOURCE[0]}" == "${0}" ]; then
+    echo "ERROR: This script must be sourced with _ipp_dir predefined, not executed as a script."
+    exit 1
 fi
-source "${package_env_file}"
 
 if [[ ! -f "${_script_dir}/macpython-download-cache-and-build-module-wheels.sh" ]]; then
   echo "Could not find download script to use for building module dependencies!"
@@ -42,6 +33,8 @@ fi
 # Temporarily update prerequisite environment variable to prevent infinite recursion.
 ITK_MODULE_PREQ_TOPLEVEL=${ITK_MODULE_PREQ}
 ITK_USE_LOCAL_PYTHON_TOPLEVEL=${ITK_USE_LOCAL_PYTHON}
+
+# Temporary values within script (to be resored at end of the script).
 export ITK_MODULE_PREQ=""
 export ITK_USE_LOCAL_PYTHON="ON"
 
