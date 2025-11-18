@@ -28,9 +28,14 @@ import argparse
 import os
 import re
 import sys
-import textwrap
+from dotenv import dotenv_values
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/build")
+ipp_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+build_dir = os.path.join(ipp_dir, "build")
+package_file = os.path.join(build_dir, "package.env")
+package_env_config = dotenv_values(package_file)
+
+sys.path.append(build_dir)
 
 PARAMETER_OPTION_DEFAULTS = {
     "indent": 0,
@@ -183,6 +188,9 @@ def update_wheel_setup_py_parameters():
         # cmake_args
         params["PYPROJECT_CMAKE_ARGS"] = list_to_str(
             [
+                f"-DITK_SOURCE_DIR={package_env_config["ITK_SOURCE_DIR"]}",
+                f"-DITK_GIT_TAG:STRING={package_env_config["ITK_GIT_TAG"]}",
+                f"-DITK_PACKAGE_VERSION:STRING={package_env_config["ITK_PACKAGE_VERSION"]}",
                 "-DITK_WRAP_unsigned_short:BOOL=ON",
                 "-DITK_WRAP_double:BOOL=ON",
                 "-DITK_WRAP_complex_double:BOOL=ON",
