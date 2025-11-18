@@ -35,7 +35,7 @@ source "${_script_dir}/macpython-build-common.sh"
 VENV="${VENVS[0]}"
 Python3_EXECUTABLE=${VENV}/bin/python3
 ${Python3_EXECUTABLE} -m pip install --upgrade pip
-${Python3_EXECUTABLE} -m pip install --no-cache delocate
+${Python3_EXECUTABLE} -m pip install --no-cache-dir delocate
 DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
 DELOCATE_PATCH=${VENV}/bin/delocate-patch
