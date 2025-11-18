@@ -17,27 +17,6 @@ message(STATUS "SuperBuild - ITKPythonPackage_WHEEL_NAME:${ITKPythonPackage_WHEE
 
 option(ITKPythonPackage_USE_TBB "Build and use oneTBB in the ITK python package" ON)
 
-set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
-if(NOT DEFINED ITK_SOURCE_DIR)
-   message(FATAL_ERROR "ITK_SOURCE_DIR must be defined when configuring cmake")
-endif()
-
-if(NOT DEFINED ITK_GIT_TAG AND DEFINED ENV{ITK_GIT_TAG})
-  set(ITK_GIT_TAG $ENV{ITK_GIT_TAG})
-endif()
-
-if(NOT DEFINED ITK_GIT_TAG)
-  message(FATAL_ERROR "ITK_GIT_TAG must be defined when configuring cmake")
-endif()
-
-if(NOT DEFINED ITK_PACKAGE_VERSION AND DEFINED ENV{ITK_PACKAGE_VERSION})
-  set(ITK_PACKAGE_VERSION $ENV{ITK_PACKAGE_VERSION})
-endif()
-
-if(NOT DEFINED ITK_PACKAGE_VERSION)
-  message(FATAL_ERROR "ITK_PACKAGE_VERSION must be defined when configuring cmake")
-endif()
-
 if(ITK_SOURCE_DIR)
   set(TBB_DIR "${ITK_SOURCE_DIR}/../oneTBB-prefix/lib/cmake/TBB")
 else()
@@ -166,6 +145,19 @@ if(ITKPythonPackage_SUPERBUILD)
     set(tbb_depends oneTBB)
   endif()
 
+  set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
+  if(NOT DEFINED ITK_SOURCE_DIR)
+     message(FATAL_ERROR "ITK_SOURCE_DIR must be defined when configuring cmake")
+  endif()
+
+  if(NOT DEFINED ITK_GIT_TAG AND DEFINED ENV{ITK_GIT_TAG})
+    set(ITK_GIT_TAG $ENV{ITK_GIT_TAG})
+  endif()
+
+  if(NOT DEFINED ITK_GIT_TAG)
+    message(FATAL_ERROR "ITK_GIT_TAG must be defined when configuring cmake")
+  endif()
+
 
 
   if(NOT EXISTS ${ITK_SOURCE_DIR})
@@ -189,7 +181,7 @@ if(ITKPythonPackage_SUPERBUILD)
   endif()
   # Sanity checks
   if(DEFINED ITK_SOURCE_DIR AND NOT EXISTS ${ITK_SOURCE_DIR})
-    message(FATAL_ERROR "ITK_SOURCE_DIR variable is defined but corresponds to nonexistent directory")
+    message(FATAL_ERROR "ITK_SOURCE_DIR variable is defined but corresponds to nonexistent directory:${ITK_SOURCE_DIR}:")
   endif()
 
   message(STATUS "SuperBuild -   ITK_SOURCE_DIR: ${ITK_SOURCE_DIR}")
