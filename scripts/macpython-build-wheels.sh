@@ -23,12 +23,12 @@
 _script_dir=${_script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
 _ipp_dir=$(dirname ${_script_dir})
 package_env_file=${_ipp_dir}/build/package.env
-if [ ! -f "${_ipp_dir}/build/package.env" ]; then
-  echo "MISSING: ${_ipp_dir}/build/package.env"
-  echo "    RUN: ${_ipp_dir}/review generate_build_environment.sh"
-  exit -1
+if [ ! -f "${package_env_file}" ]; then
+  echo "MISSING: ${package_env_file}"
+  echo "    RUN: ${_ipp_dir}/generate_build_environment.sh.sh"
+  exit 1
 fi
-source "${_ipp_dir}/build/package.env"
+source "${package_env_file}"
 
 source "${_script_dir}/macpython-build-common.sh"
 
@@ -38,34 +38,38 @@ ${Python3_EXECUTABLE} -m pip install --upgrade pip
 ${Python3_EXECUTABLE} -m pip install --no-cache-dir delocate
 DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
-DELOCATE_PATCH=${VENV}/bin/delocate-patch
 
 build_type="Release"
+use_ccache=ON
+if [[ ${use_ccache} == "ON" ]];then
+  CCACHE_CONFIG_FLAGS=" -DCMAKE_C_COMPILER_LAUNCHER=$(which ccache)  -DCMAKE_CXX_COMPILER_LAUNCHER=$(which ccache)"
+else
+  CCACHE_CONFIG_FLAGS=""
+fi
+MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET:="15.0"}
+SDKROOT=${SDKROOT:=$(xcrun --sdk macosx --show-sdk-path)}
 
 if [[ $(arch) == "arm64" ]]; then
-  osx_target="15.0"
   osx_arch="arm64"
-  use_tbb="OFF"
 else
-  osx_target="15.0"
   osx_arch="x86_64"
-  use_tbb="OFF"
 fi
 
-export MACOSX_DEPLOYMENT_TARGET=${osx_target}
-
 # Build standalone project and populate archive cache
-tbb_dir=$PWD/oneTBB-prefix/lib/cmake/TBB
 n_processors=$(sysctl -n hw.ncpu)
 # So delocate can find the libs
-export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:$PWD/oneTBB-prefix/lib
-mkdir -p ITK-source
+use_tbb="OFF"
+if [[ "${use_tbb}" -eq "ON" ]]; then
+  tbb_dir=$PWD/oneTBB-prefix/lib/cmake/TBB
+  export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${_ipp_dir}/oneTBB-prefix/lib
+else
+  tbb_dir="NOT-FOUND"
+fi
 
 # -----------------------------------------------------------------------
-IPP_BUILD_DIR=${_script_dir}/ITK-source
+IPP_BUILD_DIR=${_ipp_dir}/ITK-source
 mkdir -p ${IPP_BUILD_DIR}
 ITK_SOURCE_DIR=${IPP_BUILD_DIR}/ITK
-SDKROOT=${SDKROOT:=$(xcrun --sdk macosx --show-sdk-path)}
 
 if [ ! -d ${ITK_SOURCE_DIR} ]; then
   git clone https://github.com/InsightSoftwareConsortium/ITK.git ${ITK_SOURCE_DIR}
@@ -74,21 +78,18 @@ pushd ${ITK_SOURCE_DIR} > /dev/null 2>&1
   git checkout ${ITK_GIT_TAG}
 popd > /dev/null 2>&1
 
-if [[ ! -z "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
-  osx_target="${MACOSX_DEPLOYMENT_TARGET}"
-fi
-
 echo "CMAKE VERSION: $(${CMAKE_EXECUTABLE} --version)"
 ${CMAKE_EXECUTABLE} -DITKPythonPackage_BUILD_PYTHON:PATH=0 \
   -DITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
   -G Ninja \
   -DCMAKE_BUILD_TYPE:STRING=${build_type} \
   -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
-  -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+  -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${MACOSX_DEPLOYMENT_TARGET} \
   -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
   -DCMAKE_OSX_SYSROOT:STRING="${SDKROOT}" \
   -DCMAKE_C_COMPILER=${CC} \
   -DCMAKE_CXX_COMPILER=${CXX} \
+  ${CCACHE_CONFIG_FLAGS} \
   -DITK_SOURCE_DIR=${ITK_SOURCE_DIR} \
   -DITK_GIT_TAG:STRING=${ITK_GIT_TAG} \
   -DITK_PACKAGE_VERSION:STRING=${ITK_PACKAGE_VERSION} \
@@ -112,16 +113,16 @@ for VENV in "${VENVS[@]}"; do
     ${Python3_EXECUTABLE} -m pip install --upgrade -r ${_ipp_dir}/requirements-dev.txt
 
     if [[ $(arch) == "arm64" ]]; then
-      plat_name="macosx-${osx_target}-arm64"
+      plat_name="macosx-${MACOSX_DEPLOYMENT_TARGET}-arm64"
       build_path="${_ipp_dir}/ITK-${py_mm}-macosx_arm64"
     else
-      plat_name="macosx-${osx_target}-x86_64"
+      plat_name="macosx-${MACOSX_DEPLOYMENT_TARGET}-x86_64"
       build_path="${_ipp_dir}/ITK-${py_mm}-macosx_x86_64"
     fi
     PYPROJECT_CONFIGURE="${_script_dir}/pyproject_configure.py"
 
     # Clean up previous invocations
-    if [ ${ITK_MODULE_NO_CLEANUP} -eq 1 ]; then
+    if [  "${ITK_MODULE_NO_CLEANUP:-0}" -eq 0  ]; then
       rm -rf ${build_path}
     fi
 
@@ -132,7 +133,10 @@ for VENV in "${VENVS[@]}"; do
       echo "#"
 
       # Configure pyproject.toml
-      ${Python3_EXECUTABLE} ${PYPROJECT_CONFIGURE} "itk"
+      ITK_SOURCE_DIR=${ITK_SOURCE_DIR} \
+      ITK_GIT_TAG=${ITK_GIT_TAG} \
+      ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION} \
+        ${Python3_EXECUTABLE} ${PYPROJECT_CONFIGURE} "itk"
       # Generate wheel
       ${Python3_EXECUTABLE} -m build \
         --verbose \
@@ -143,7 +147,7 @@ for VENV in "${VENVS[@]}"; do
         --config-setting=cmake.define.CMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
         --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${ITK_SOURCE_DIR} \
         --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
-        --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+        --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${MACOSX_DEPLOYMENT_TARGET} \
         --config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
         --config-setting=cmake.define.CMAKE_OSX_SYSROOT:STRING=${SDKROOT} \
         --config-setting=cmake.define.CMAKE_CXX_COMPILER:STRING=${CXX} \
@@ -171,7 +175,7 @@ for VENV in "${VENVS[@]}"; do
           -DITK_SOURCE_DIR:PATH=${ITK_SOURCE_DIR} \
           -DITK_BINARY_DIR:PATH=${build_path} \
           -DBUILD_TESTING:BOOL=OFF \
-          -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+          -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${MACOSX_DEPLOYMENT_TARGET} \
           -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
           -DCMAKE_OSX_SYSROOT:STRING=${SDKROOT} \
           -DCMAKE_CXX_COMPILER:STRING=${CXX} \
@@ -211,7 +215,7 @@ for VENV in "${VENVS[@]}"; do
           --skip-dependency-check \
           --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${ITK_SOURCE_DIR} \
           --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
-          --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+          --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${MACOSX_DEPLOYMENT_TARGET} \
           --config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
           --config-setting=cmake.define.CMAKE_OSX_SYSROOT:STRING=${SDKROOT} \
           --config-setting=cmake.define.CMAKE_CXX_COMPILER:STRING=${CXX} \
@@ -229,7 +233,7 @@ for VENV in "${VENVS[@]}"; do
     fi
 
     # Remove unnecessary files for building against ITK
-    if [ ${ITK_MODULE_NO_CLEANUP} -eq 1 ]; then
+    if [  "${ITK_MODULE_NO_CLEANUP:-0}" -eq 0  ]; then
       find ${build_path} -name '*.cpp' -delete -o -name '*.xml' -delete
       rm -rf ${build_path}/Wrapping/Generators/castxml*
       find ${build_path} -name '*.o' -delete
