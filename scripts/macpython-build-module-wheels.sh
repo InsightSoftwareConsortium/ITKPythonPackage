@@ -21,7 +21,7 @@
 # For example,
 #   generate_build_environment.sh # creates default build/package.env
 #   edit build/package.env with desired build elements
-#   scripts/macpython-build-module-wheels.sh 3.7 3.9
+#   scripts/macpython-build-module-wheels.sh 3.9
 #
 ########################################################################
 
