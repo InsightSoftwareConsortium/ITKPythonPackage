@@ -15,7 +15,7 @@
 #
 #   generate_build_environment.sh # creates default build/package.env
 #   edit build/package.env with desired build elements
-#   scripts/macpython-build-module-wheels.sh 3.9
+#   scripts/macpython-build-wheels.sh 3.9
 #
 
 # -----------------------------------------------------------------------
@@ -198,20 +198,22 @@ for VENV in "${VENVS[@]}"; do
         || exit 1
       )
 
+      echo "BUILDING ITK Wheels"
       wheel_names=$(cat ${_script_dir}/WHEEL_NAMES.txt)
       for wheel_name in ${wheel_names}; do
         echo "==building ${wheel_name} in $(pwd)=="
         # Configure pyproject.toml
         ${Python3_EXECUTABLE} ${PYPROJECT_CONFIGURE} ${wheel_name}
-        # Generate wheel
+        # Generate wheel (Explicitly set ITK_SOURCE_DIR to NOTFOUND)
         ${Python3_EXECUTABLE} -m build \
           --verbose \
           --wheel \
-          --outdir dist \
+          --outdir ${_ipp_dir}/dist \
           --no-isolation \
           --skip-dependency-check \
           --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${ITK_SOURCE_DIR} \
           --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
+          --config-setting=cmake.define.ITK_DIR:PATH=${build_path} \
           --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${MACOSX_DEPLOYMENT_TARGET} \
           --config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
           --config-setting=cmake.define.CMAKE_OSX_SYSROOT:STRING=${SDKROOT} \
@@ -222,11 +224,10 @@ for VENV in "${VENVS[@]}"; do
           --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
           --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
           --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-          . \
+          ${_ipp_dir} \
           ${CMAKE_OPTIONS} \
         || exit 1
       done
-
     fi
 
     # Remove unnecessary files for building against ITK
@@ -238,7 +239,7 @@ for VENV in "${VENVS[@]}"; do
 done
 
 if [[ $(arch) != "arm64" ]]; then
-  for wheel in dist/itk_*.whl; do
+  for wheel in ${_ipp_dir}/dist/itk_*.whl; do
     echo "Delocating $wheel"
     ${DELOCATE_LISTDEPS} $wheel # lists library dependencies
     ${DELOCATE_WHEEL} $wheel # copies library dependencies into wheel
