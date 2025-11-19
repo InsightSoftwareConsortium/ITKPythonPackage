@@ -26,13 +26,16 @@ if [ -f "${_DOCKCROSS_ENV_REPORT}" ]; then
 fi
 
 # Assume that ITKPythonPackage tags are identical to ITK tags
+# Need early checkout to get AUTOVERSION if none provided
+_IPP_ITK_SOURCE_DIR=${_ipp_dir}/ITK-source/ITK
+if [ ! -d "${_IPP_ITK_SOURCE_DIR}" ]; then
+  git clone https://github.com/InsightSoftwareConsortium/ITK.git ${_IPP_ITK_SOURCE_DIR}
+fi
+pushd ${_IPP_ITK_SOURCE_DIR} > /dev/null 2>&1
+  git checkout ${ITK_GIT_TAG}
+popd >/dev/null 2>&1
 _ipp_latest_tag=$(git tag --sort=v:refname | tail -1)
 if [ "${ITK_GIT_TAG}" != "${_ipp_latest_tag}" ] ;then
-  _IPP_ITK_SOURCE_DIR=${_ipp_dir}/ITK-source/ITK
-  # Need early checkout to get AUTOVERSION
-  if [ ! -d "${_IPP_ITK_SOURCE_DIR}" ]; then
-    git clone https://github.com/InsightSoftwareConsortium/ITK.git ${_IPP_ITK_SOURCE_DIR}
-  fi
   pushd "${_IPP_ITK_SOURCE_DIR}" > /dev/null 2>&1
     git fetch --tags
     git checkout ${ITK_GIT_TAG}
@@ -42,6 +45,7 @@ if [ "${ITK_GIT_TAG}" != "${_ipp_latest_tag}" ] ;then
       )
   popd > /dev/null 2>&1
 fi
+mkdir -p ${_ipp_dir}/build
 
 
 ########################################################################
