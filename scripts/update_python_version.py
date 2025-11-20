@@ -8,6 +8,7 @@ import sys
 import os
 import subprocess
 from datetime import datetime
+from packaging.version import Version
 
 argparser = argparse.ArgumentParser(description=__doc__)
 argparser.add_argument("itkSourceDir")
@@ -61,6 +62,9 @@ if int(numberOfCommits) > 0:
 
 os.chdir(itkPythonPackageDir)
 itkVersionPath = os.path.join(itkPythonPackageDir, "itkVersion.py")
+
+Version(VERSION) # Raise InvalidVersion exception if not PEP 440 compliant
+
 if not os.path.exists(itkVersionPath):
     print("Expected file " + itkVersionPath + " not found!")
     sys.exit(1)
