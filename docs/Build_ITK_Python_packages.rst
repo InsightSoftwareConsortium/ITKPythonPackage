@@ -94,38 +94,39 @@ files are created and deleted quickly, which can result in Access Denied
 errors. Windows 10 ships with an antivirus application, Windows Defender, that
 is enabled by default.
 
-sdist
------
-
-To create source distributions, sdist's, that will be used by pip to compile a wheel for installation if a binary wheel is not available for the current Python version or platform::
-
-	$ python setup.py sdist --formats=gztar,zip
-	[...]
-
-	$ ls -1 dist/
-	itk-4.11.0.dev20170216.tar.gz
-	itk-4.11.0.dev20170216.zip
-
-Manual builds
-=============
-
-Building ITK Python wheels
---------------------------
-
-Build the ITK Python wheel with the following command::
-
-	python3 -m venv build-itk
-	./build-itk/bin/pip install --upgrade pip
-	./build-itk/bin/pip install -r requirements-dev.txt numpy
-	./build-itk/bin/python setup.py bdist_wheel
-
-Build a wheel for a custom version of ITK
------------------------------------------
-
-To build a wheel for a custom version of ITK, point to your ITK git repository
-with the `ITK_SOURCE_DIR` CMake variable::
-
-	./build-itk/bin/python setup.py bdist_wheel -- \
-	  -DITK_SOURCE_DIR:PATH=/path/to/ITKPythonPackage-core-build/ITK
-
-Other CMake variables can also be passed with `-D` after the double dash.
+.. The below instructions are outdated and need to be re-written
+.. sdist
+.. -----
+..
+.. To create source distributions, sdist's, that will be used by pip to compile a wheel for installation if a binary wheel is not available for the current Python version or platform::
+..
+.. 	$ python setup.py sdist --formats=gztar,zip
+.. 	[...]
+..
+.. 	$ ls -1 dist/
+.. 	itk-4.11.0.dev20170216.tar.gz
+.. 	itk-4.11.0.dev20170216.zip
+..
+.. Manual builds
+.. =============
+..
+.. Building ITK Python wheels
+.. --------------------------
+..
+.. Build the ITK Python wheel with the following command::
+..
+.. 	python3 -m venv build-itk
+.. 	./build-itk/bin/pip install --upgrade pip
+.. 	./build-itk/bin/pip install -r requirements-dev.txt numpy
+.. 	./build-itk/bin/python setup.py bdist_wheel
+..
+.. Build a wheel for a custom version of ITK
+.. -----------------------------------------
+..
+.. To build a wheel for a custom version of ITK, point to your ITK git repository
+.. with the `ITK_SOURCE_DIR` CMake variable::
+..
+.. 	./build-itk/bin/python setup.py bdist_wheel -- \
+.. 	  -DITK_SOURCE_DIR:PATH=/path/to/ITKPythonPackage-core-build/ITK
+..
+.. Other CMake variables can also be passed with `-D` after the double dash.

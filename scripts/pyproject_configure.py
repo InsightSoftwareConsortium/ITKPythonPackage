@@ -121,7 +121,7 @@ def from_group_to_wheel(group):
     return "itk-%s" % group.lower()
 
 
-def update_wheel_setup_py_parameters():
+def update_wheel_pyproject_toml_parameters():
     global PYPROJECT_PY_PARAMETERS
     for wheel_name in get_wheel_names():
         params = dict(ITK_PYPROJECT_PY_PARAMETERS)
@@ -291,7 +291,7 @@ ITK_PYPROJECT_PY_PARAMETERS = {
 
 PYPROJECT_PY_PARAMETERS = {"itk": ITK_PYPROJECT_PY_PARAMETERS}
 
-update_wheel_setup_py_parameters()
+update_wheel_pyproject_toml_parameters()
 
 
 def main():

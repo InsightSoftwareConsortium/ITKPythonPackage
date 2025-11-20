@@ -1,8 +1,9 @@
 # ITK Python Package
 
-This project provides a `setup.py` script to build ITK Python binary
-packages and infrastructure to build ITK external module Python
-packages.
+This project configures pyproject.toml files and manages environmental
+variables needed to build ITK Python binary wheels on MacOS, Linux, and Windows platforms.
+Scripts are available for both [ITK infrastructure](https://github.com/insightSoftwareConsortium/ITK) and 
+ITK external module Python packages.
 
 The Insight Toolkit (ITK) is an open-source, cross-platform system that provides developers
 with an extensive suite of software tools for image analysis.
@@ -16,14 +17,14 @@ or at the [ITK GitHub homepage](https://github.com/insightSoftwareConsortium/ITK
 - [Frequently Asked Questions](#frequently-asked-questions)
 - [Additional Information](#additional-information)
 
-## Using ITK Python Packages
+## Using ITK Python Packages (pre-built, or locally built)
 
 ITKPythonPackage scripts can be used to produce [Python](https://www.python.org/) packages
 for ITK and ITK external modules. The resulting packages can be
 hosted on the [Python Package Index (PyPI)](https://pypi.org/)
 for easy distribution.
 
-### Installation
+### Installation of pre-built packages
 
 To install baseline ITK Python packages:
 

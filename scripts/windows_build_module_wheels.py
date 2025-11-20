@@ -50,21 +50,13 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
         ) = venv_paths(py_env)
 
         with push_env(PATH="%s%s%s" % (path, os.pathsep, os.environ["PATH"])):
-
-            use_scikit_build_core = True
-            if Path(os.getcwd()).joinpath("setup.py").exists():
-                use_scikit_build_core = False
-
             # Install dependencies
             check_call([python_executable, "-m", "pip", "install", "pip", "--upgrade"])
             requirements_file = os.path.join(ROOT_DIR, "requirements-dev.txt")
             if os.path.exists(requirements_file):
                 check_call([pip, "install", "--upgrade", "-r", requirements_file])
             check_call([pip, "install", "cmake"])
-            if use_scikit_build_core:
-                check_call([pip, "install", "scikit-build-core", "--upgrade"])
-            else:
-                check_call([pip, "install", "scikit_build", "--upgrade"])
+            check_call([pip, "install", "scikit-build-core", "--upgrade"])
 
             check_call([pip, "install", "ninja", "--upgrade"])
             check_call([pip, "install", "delvewheel"])
@@ -75,92 +67,58 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
             )
             print("ITKDIR: %s" % itk_build_path)
 
-            if use_scikit_build_core:
-                minor_version = py_env.split("-")[0][1:]
-                if int(minor_version) >= 11:
-                    # Stable ABI
-                    wheel_py_api = "cp3%s" % minor_version
-                else:
-                    wheel_py_api = ""
-                # Generate wheel
-                check_call(
-                    [
-                        python_executable,
-                        "-m",
-                        "build",
-                        "--verbose",
-                        "--wheel",
-                        "--outdir",
-                        "dist",
-                        "--no-isolation",
-                        "--skip-dependency-check",
-                        "--config-setting=wheel.py-api=%s" % wheel_py_api,
-                        "--config-setting=cmake.define.SKBUILD:BOOL=ON",
-                        "--config-setting=cmake.define.PY_SITE_PACKAGES_PATH:PATH=.",
-                        "--config-setting=cmake.args=" "-G Ninja" "",
-                        "--config-setting=cmake.define.CMAKE_BUILD_TYPE:STRING="
-                        "Release"
-                        "",
-                        "--config-setting=cmake.define.CMAKE_MAKE_PROGRAM:FILEPATH=%s"
-                        % ninja_executable,
-                        "--config-setting=cmake.define.ITK_DIR:PATH=%s"
-                        % itk_build_path,
-                        "--config-setting=cmake.define.WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
-                        "--config-setting=cmake.define.SWIG_EXECUTABLE:FILEPATH=%s/Wrapping/Generators/SwigInterface/swig/bin/swig.exe"
-                        % itk_build_path,
-                        "--config-setting=cmake.define.BUILD_TESTING:BOOL=OFF",
-                        "--config-setting=cmake.define.CMAKE_INSTALL_LIBDIR:STRING=lib",
-                        "--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=%s"
-                        % python_executable,
-                        "--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=%s"
-                        % python_include_dir,
-                        "--config-setting=cmake.define.Python3_INCLUDE_DIRS:PATH=%s"
-                        % python_include_dir,
-                        "--config-setting=cmake.define.Python3_LIBRARY:FILEPATH=%s"
-                        % python_library,
-                        "--config-setting=cmake.define.Python3_SABI_LIBRARY:FILEPATH=%s"
-                        % python_library,
-                    ]
-                    + [
-                        o.replace("-D", "--config-setting=cmake.define.")
-                        for o in cmake_options
-                    ]
-                    + [
-                        ".",
-                    ]
-                )
+            minor_version = py_env.split("-")[0][1:]
+            if int(minor_version) >= 11:
+                # Stable ABI
+                wheel_py_api = "cp3%s" % minor_version
             else:
-                # scikit-build classic
-                build_type = "Release"
-
-                # Generate wheel
-                check_call(
-                    [
-                        python_executable,
-                        "setup.py",
-                        "bdist_wheel",
-                        "--build-type",
-                        build_type,
-                        "-G",
-                        "Ninja",
-                        "--",
-                        "-DCMAKE_MAKE_PROGRAM:FILEPATH=%s" % ninja_executable,
-                        "-DITK_DIR:PATH=%s" % itk_build_path,
-                        "-DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
-                        "-DSWIG_EXECUTABLE:FILEPATH=%s/Wrapping/Generators/SwigInterface/swig/bin/swig.exe"
-                        % itk_build_path,
-                        "-DBUILD_TESTING:BOOL=OFF",
-                        "-DCMAKE_INSTALL_LIBDIR:STRING=lib",
-                        "-DPython3_EXECUTABLE:FILEPATH=%s" % python_executable,
-                        "-DPython3_INCLUDE_DIR:PATH=%s" % python_include_dir,
-                        "-DPython3_INCLUDE_DIRS:PATH=%s" % python_include_dir,
-                        "-DPython3_LIBRARY:FILEPATH=%s" % python_library,
-                    ]
-                    + cmake_options
-                )
-                # Cleanup
-                if cleanup:
-                    check_call([python_executable, "setup.py", "clean"])
+                wheel_py_api = ""
+            # Generate wheel
+            check_call(
+                [
+                    python_executable,
+                    "-m",
+                    "build",
+                    "--verbose",
+                    "--wheel",
+                    "--outdir",
+                    "dist",
+                    "--no-isolation",
+                    "--skip-dependency-check",
+                    "--config-setting=wheel.py-api=%s" % wheel_py_api,
+                    "--config-setting=cmake.define.SKBUILD:BOOL=ON",
+                    "--config-setting=cmake.define.PY_SITE_PACKAGES_PATH:PATH=.",
+                    "--config-setting=cmake.args=" "-G Ninja" "",
+                    "--config-setting=cmake.define.CMAKE_BUILD_TYPE:STRING="
+                    "Release"
+                    "",
+                    "--config-setting=cmake.define.CMAKE_MAKE_PROGRAM:FILEPATH=%s"
+                    % ninja_executable,
+                    "--config-setting=cmake.define.ITK_DIR:PATH=%s" % itk_build_path,
+                    "--config-setting=cmake.define.WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
+                    "--config-setting=cmake.define.SWIG_EXECUTABLE:FILEPATH=%s/Wrapping/Generators/SwigInterface/swig/bin/swig.exe"
+                    % itk_build_path,
+                    "--config-setting=cmake.define.BUILD_TESTING:BOOL=OFF",
+                    "--config-setting=cmake.define.CMAKE_INSTALL_LIBDIR:STRING=lib",
+                    "--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=%s"
+                    % python_executable,
+                    "--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=%s"
+                    % python_include_dir,
+                    "--config-setting=cmake.define.Python3_INCLUDE_DIRS:PATH=%s"
+                    % python_include_dir,
+                    "--config-setting=cmake.define.Python3_LIBRARY:FILEPATH=%s"
+                    % python_library,
+                    "--config-setting=cmake.define.Python3_SABI_LIBRARY:FILEPATH=%s"
+                    % python_library,
+                ]
+                + [
+                    o.replace("-D", "--config-setting=cmake.define.")
+                    for o in cmake_options
+                ]
+                + [
+                    ".",
+                ]
+            )
 
 
 def rename_wheel_init(py_env, filepath, add_module_name=True):

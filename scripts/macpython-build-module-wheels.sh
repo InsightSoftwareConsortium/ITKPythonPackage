@@ -62,13 +62,6 @@ VENVS=()
 source "${script_dir}/macpython-build-common.sh"
 # -----------------------------------------------------------------------
 
-if test -e setup.py; then
-  use_skbuild_classic=true
-else
-  use_skbuild_classic=false
-fi
-
-
 VENV="${VENVS[0]}"
 Python3_EXECUTABLE=${VENV}/bin/python3
 dot_clean ${VENV}
@@ -88,11 +81,6 @@ for VENV in "${VENVS[@]}"; do
     echo ""
     echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
-
-    if $use_skbuild_classic; then
-      # So older remote modules with setup.py continue to work
-      ${Python3_EXECUTABLE} -m pip install --upgrade scikit-build
-    fi
 
     if [[ $(arch) == "arm64" ]]; then
       plat_name="macosx-15.0-arm64"
@@ -114,45 +102,30 @@ for VENV in "${VENVS[@]}"; do
       ${Python3_EXECUTABLE} -m pip install --upgrade -r $PWD/requirements-dev.txt
     fi
     itk_build_path="${build_path}"
-    if $use_skbuild_classic; then
-      ${Python3_EXECUTABLE} setup.py bdist_wheel --build-type Release --plat-name ${plat_name} -G Ninja -- \
-        -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
-        -DITK_DIR:PATH=${itk_build_path} \
-        -DCMAKE_INSTALL_LIBDIR:STRING=lib \
-        -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
-        -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
-        -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
-        -DBUILD_TESTING:BOOL=OFF \
-        -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-        -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-        ${CMAKE_OPTIONS} \
-      || exit 1
-    else
-      py_minor=$(echo $py_mm | cut -d '.' -f 2)
-      wheel_py_api=""
-      if test $py_minor -ge 11; then
-        wheel_py_api=cp3$py_minor
-      fi
-      ${Python3_EXECUTABLE} -m build \
-        --verbose \
-        --wheel \
-        --outdir dist \
-        --no-isolation \
-        --skip-dependency-check \
-        --config-setting=cmake.define.CMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
-        --config-setting=cmake.define.ITK_DIR:PATH=${itk_build_path} \
-        --config-setting=cmake.define.CMAKE_INSTALL_LIBDIR:STRING=lib \
-        --config-setting=cmake.define.WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
-        --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
-        --config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
-        --config-setting=cmake.define.PY_SITE_PACKAGES_PATH:PATH="." \
-        --config-setting=wheel.py-api=$wheel_py_api \
-        --config-setting=cmake.define.BUILD_TESTING:BOOL=OFF \
-        --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-        --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-        ${CMAKE_OPTIONS//'-D'/'--config-setting=cmake.define.'} \
-      || exit 1
+    py_minor=$(echo $py_mm | cut -d '.' -f 2)
+    wheel_py_api=""
+    if test $py_minor -ge 11; then
+      wheel_py_api=cp3$py_minor
     fi
+    ${Python3_EXECUTABLE} -m build \
+      --verbose \
+      --wheel \
+      --outdir dist \
+      --no-isolation \
+      --skip-dependency-check \
+      --config-setting=cmake.define.CMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
+      --config-setting=cmake.define.ITK_DIR:PATH=${itk_build_path} \
+      --config-setting=cmake.define.CMAKE_INSTALL_LIBDIR:STRING=lib \
+      --config-setting=cmake.define.WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
+      --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+      --config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
+      --config-setting=cmake.define.PY_SITE_PACKAGES_PATH:PATH="." \
+      --config-setting=wheel.py-api=$wheel_py_api \
+      --config-setting=cmake.define.BUILD_TESTING:BOOL=OFF \
+      --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+      --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+      ${CMAKE_OPTIONS//'-D'/'--config-setting=cmake.define.'} \
+    || exit 1
 done
 
 for wheel in $PWD/dist/*.whl; do
