@@ -12,7 +12,7 @@
 #
 #   scripts/macpython-download-cache-and-build-module-wheels.sh 3.9 3.11
 #
-# Shared libraries can be included in the wheel by exporting them to DYLD_LIBRARY_PATH before
+# Shared libraries can be included in the wheel by setting DYLD_LIBRARY_PATH before
 # running this script.
 #
 # ===========================================
