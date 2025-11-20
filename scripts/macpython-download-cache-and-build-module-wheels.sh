@@ -10,7 +10,8 @@
 # Versions can be restricted by passing them in as arguments to the script.
 # For example,
 #
-#   scripts/macpython-build-module-wheels.sh 3.9 3.11
+#   scripts/macpython-download-cache-and-build-module-wheels.sh 3.9 3.11
+#
 # Shared libraries can be included in the wheel by exporting them to DYLD_LIBRARY_PATH before
 # running this script.
 #
@@ -21,7 +22,6 @@
 # For example,
 #
 #   export DYLD_LIBRARY_PATH="/path/to/libs"
-#   scripts/macpython-build-module-wheels.sh 3.7 3.9
 #
 # `ITK_PACKAGE_VERSION`: ITKPythonBuilds archive tag to use for ITK build artifacts.
 #   See https://github.com/InsightSoftwareConsortium/ITKPythonBuilds for available tags.
