@@ -2,4 +2,4 @@
 
 import itk
 
-itk.F == itk.ctype('float') # True
+itk.F == itk.ctype("float")  # True

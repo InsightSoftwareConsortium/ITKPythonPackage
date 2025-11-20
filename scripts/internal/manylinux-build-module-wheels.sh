@@ -7,9 +7,9 @@
 #
 #   /tmp/dockcross-manylinux-x64 manylinux-build-module-wheels.sh cp39
 #
-# Shared library dependencies can be included in the wheel by mounting them to /usr/lib64 or /usr/local/lib64 
+# Shared library dependencies can be included in the wheel by mounting them to /usr/lib64 or /usr/local/lib64
 # before running this script.
-# 
+#
 # For example,
 #
 #   DOCKER_ARGS="-v /path/to/lib.so:/usr/local/lib64/lib.so"
@@ -73,12 +73,6 @@ source "${script_dir}/manylinux-build-common.sh"
 sudo ldconfig
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/oneTBB-prefix/lib:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
 
-if test -e setup.py; then
-  use_skbuild_classic=true
-else
-  use_skbuild_classic=false
-fi
-
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
     Python3_EXECUTABLE=${PYBIN}/python
@@ -87,11 +81,6 @@ for PYBIN in "${PYBINARIES[@]}"; do
     echo ""
     echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
-
-    if $use_skbuild_classic; then
-      # So older remote modules with setup.py continue to work
-      ${Python3_EXECUTABLE} -m pip install --upgrade scikit-build
-    fi
 
     if [[ -e /work/requirements-dev.txt ]]; then
       ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
@@ -114,42 +103,28 @@ for PYBIN in "${PYBINARIES[@]}"; do
       echo 'ITK source tree not available!' 1>&2
       exit 1
     fi
-    if $use_skbuild_classic; then
-      ${PYBIN}/python setup.py clean
-      ${PYBIN}/python setup.py bdist_wheel --build-type Release -G Ninja -- \
-        -DITK_DIR:PATH=${itk_build_dir} \
-        -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
-        -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
-        -DCMAKE_INSTALL_LIBDIR:STRING=lib \
-        -DBUILD_TESTING:BOOL=OFF \
-        -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-        -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-        ${CMAKE_OPTIONS} \
-      || exit 1
-    else
-      py_minor=$(echo $version | cut -d '-' -f 1 | cut -d '3' -f 2)
-      wheel_py_api=""
-      if test $py_minor -ge 11; then
-        wheel_py_api=cp3$py_minor
-      fi
-      ${PYBIN}/python -m build \
-        --verbose \
-        --wheel \
-        --outdir dist \
-        --no-isolation \
-        --skip-dependency-check \
-        --config-setting=cmake.define.ITK_DIR:PATH=${itk_build_dir} \
-        --config-setting=cmake.define.WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
-        --config-setting=cmake.define.CMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
-        --config-setting=cmake.define.CMAKE_INSTALL_LIBDIR:STRING=lib \
-        --config-setting=cmake.define.PY_SITE_PACKAGES_PATH:PATH="." \
-        --config-setting=wheel.py-api=$wheel_py_api \
-        --config-setting=cmake.define.BUILD_TESTING:BOOL=OFF \
-        --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-        --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-        ${CMAKE_OPTIONS//'-D'/'--config-setting=cmake.define.'} \
-      || exit 1
+    py_minor=$(echo $version | cut -d '-' -f 1 | cut -d '3' -f 2)
+    wheel_py_api=""
+    if test $py_minor -ge 11; then
+      wheel_py_api=cp3$py_minor
     fi
+    ${PYBIN}/python -m build \
+      --verbose \
+      --wheel \
+      --outdir dist \
+      --no-isolation \
+      --skip-dependency-check \
+      --config-setting=cmake.define.ITK_DIR:PATH=${itk_build_dir} \
+      --config-setting=cmake.define.WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
+      --config-setting=cmake.define.CMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
+      --config-setting=cmake.define.CMAKE_INSTALL_LIBDIR:STRING=lib \
+      --config-setting=cmake.define.PY_SITE_PACKAGES_PATH:PATH="." \
+      --config-setting=wheel.py-api=$wheel_py_api \
+      --config-setting=cmake.define.BUILD_TESTING:BOOL=OFF \
+      --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+      --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+      ${CMAKE_OPTIONS//'-D'/'--config-setting=cmake.define.'} \
+    || exit 1
 done
 
 # Convert list of excluded libs in --exclude_libs to auditwheel --exclude options
@@ -159,10 +134,7 @@ fi
 
 sudo ${Python3_EXECUTABLE} -m pip install auditwheel
 for whl in dist/*linux*$(uname -m).whl; do
-  auditwheel repair ${whl} -w /work/dist/ ${AUDITWHEEL_EXCLUDE_ARGS} 
-  if $use_skbuild_classic; then
-    rm ${whl}
-  fi
+  auditwheel repair ${whl} -w /work/dist/ ${AUDITWHEEL_EXCLUDE_ARGS}
 done
 
 if compgen -G "dist/itk*-linux*.whl" > /dev/null; then

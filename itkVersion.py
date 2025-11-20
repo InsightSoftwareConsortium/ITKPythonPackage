@@ -1,4 +1,5 @@
-VERSION = '6.0b1'
+VERSION = "6.0b1"
+
 
 def get_versions():
     """Returns versions for the ITK Python package.
@@ -20,6 +21,6 @@ def get_versions():
     get_versions()['package-version']
     """
     versions = {}
-    versions['version'] = VERSION
-    versions['package-version'] = VERSION.split('+')[0]
+    versions["version"] = VERSION
+    versions["package-version"] = VERSION.split("+")[0]
     return versions

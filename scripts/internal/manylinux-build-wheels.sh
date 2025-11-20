@@ -7,9 +7,9 @@
 #
 #   /tmp/dockcross-manylinux-x64 manylinux-build-wheels.sh cp39
 #
-# Shared library dependencies can be included wheels by mounting them to /usr/lib64 or /usr/local/lib64 
+# Shared library dependencies can be included wheels by mounting them to /usr/lib64 or /usr/local/lib64
 # before running this script.
-# 
+#
 # For example,
 #
 #   DOCKER_ARGS="-v /path/to/lib.so:/usr/local/lib64/lib.so"

@@ -1,4 +1,3 @@
-
 """This module provides convenient function facilitating scripting.
 
 These functions have been copied from scikit-build project.
@@ -29,8 +28,7 @@ def mkdir_p(path):
 
 @contextmanager
 def push_env(**kwargs):
-    """This context manager allow to set/unset environment variables.
-    """
+    """This context manager allow to set/unset environment variables."""
     saved_env = dict(os.environ)
     for var, value in kwargs.items():
         if value is not None:
@@ -39,7 +37,7 @@ def push_env(**kwargs):
             del os.environ[var]
     yield
     os.environ.clear()
-    for (saved_var, saved_value) in saved_env.items():
+    for saved_var, saved_value in saved_env.items():
         os.environ[saved_var] = saved_value
 
 
@@ -62,12 +60,13 @@ class ContextDecorator(object):
         def inner(*args, **kwds):  # pylint:disable=missing-docstring
             with self:
                 return func(*args, **kwds)
+
         return inner
 
 
 class push_dir(ContextDecorator):
-    """Context manager to change current directory.
-    """
+    """Context manager to change current directory."""
+
     def __init__(self, directory=None, make_directory=False):
         """
         :param directory:
@@ -81,7 +80,8 @@ class push_dir(ContextDecorator):
         self.make_directory = None
         self.old_cwd = None
         super(push_dir, self).__init__(
-            directory=directory, make_directory=make_directory)
+            directory=directory, make_directory=make_directory
+        )
 
     def __enter__(self):
         self.old_cwd = os.getcwd()

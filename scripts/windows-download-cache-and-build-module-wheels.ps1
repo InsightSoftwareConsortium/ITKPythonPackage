@@ -12,13 +12,13 @@
 #     or equivalently:
 #     > windows-download-cache-and-build-module-wheels.ps1 -python_version_minor 11
 #
-# - 1st parameter or -setup_options: setup.py options.
+# - 1st parameter or -setup_options: pyproject.toml options.
 #     For instance, for Python 3.11, excluding nvcuda.dll during packaging:
 #     > windows-download-cache-and-build-module-wheels.ps1 11 "--exclude-libs nvcuda.dll"
 #     or equivalently:
 #     > windows-download-cache-and-build-module-wheels.ps1 -python_version_minor 11 -setup_options "--exclude-libs nvcuda.dll"
 #
-# - 2nd parameter or -cmake_options: CMake options passed to setup.py for project configuration.
+# - 2nd parameter or -cmake_options: CMake options passed to pyproject.tom for project configuration.
 #     For instance, for Python 3.11, excluding nvcuda.dll during packaging
 #     and setting RTK_USE_CUDA ON during configuration:
 #     > windows-download-cache-and-build-module-wheels.ps1 11 "--exclude-libs nvcuda.dll" "-DRTK_USE_CUDA:BOOL=ON"

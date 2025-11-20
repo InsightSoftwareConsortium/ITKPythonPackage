@@ -3,15 +3,15 @@
 import sys
 from pathlib import Path
 
-data_dir = Path(__file__).parent.resolve() / '..' / 'data'
+data_dir = Path(__file__).parent.resolve() / ".." / "data"
 
 input_image_filename = sys.argv[1]
 temp_dir = Path(input_image_filename).parent
 output_image_filename = sys.argv[2]
-input_mesh_filename = data_dir / 'cow.vtk'
-output_mesh_filename = temp_dir / 'cow.vtk'
-input_transform_filename = data_dir / 'rigid.tfm'
-output_transform_filename = temp_dir / 'rigid.tfm'
+input_mesh_filename = data_dir / "cow.vtk"
+output_mesh_filename = temp_dir / "cow.vtk"
+input_transform_filename = data_dir / "rigid.tfm"
+output_transform_filename = temp_dir / "rigid.tfm"
 
 import itk
 import numpy as np
@@ -116,7 +116,7 @@ itk.transformwrite(itk_transforms, output_transform_filename)
 
 
 # VNL matrix from np.ndarray
-arr = np.zeros([3,3], np.uint8)
+arr = np.zeros([3, 3], np.uint8)
 matrix = itk.vnl_matrix_from_array(arr)
 
 # Array from VNL matrix

@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.16.3 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.26.6 FATAL_ERROR)
+# NOTE: 3.26.6 is the first cmake vesion to support Development.SABIModule
 
 project(ITKPythonPackage CXX)
 

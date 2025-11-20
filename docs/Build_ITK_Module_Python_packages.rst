@@ -100,7 +100,7 @@ Congratulations! Your packages can be installed with the commands::
   python -m pip install itk-<your-short-module-name>
 
 where `itk-<your-short-module-name>` is the short name for your module that is
-specified in your setup.py file.
+specified in the configured `pyproject.toml`  file.
 
 Automate PyPI Package Uploads
 -----------------------------
@@ -118,7 +118,7 @@ and for the scope use::
   itk-<your-short-module-name>
 
 where `<your-short-module-name>` is the short name for your module that is
-specified in your setup.py file. That scope will be available if you have
+specified in your configured `pyproject.toml` file. That scope will be available if you have
 already uploaded a first set of wheels via twine as described above; and that
 is the recommended approach. Otherwise, if you are creating the project at
 this time, choose an unlimited scope, but be careful with the created token.
@@ -137,7 +137,7 @@ individual package as a best practice.
   :alt: GitHub PyPI token secret
 
 To push packages to PyPI, first, make sure to update the `version` for your
-package in the *setup.py* file. The initial version might be `0.1.0` or
+package in the *pyproject.toml* file. The initial version might be `0.1.0` or
 `1.0.0`. Subsequent versions should follow
 `semantic versioning <https://semver.org/>`_.
 

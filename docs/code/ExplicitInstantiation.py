@@ -7,7 +7,7 @@ input_filename = sys.argv[1]
 
 # An apriori ImageType
 PixelType = itk.F
-ImageType = itk.Image[PixelType,2]
+ImageType = itk.Image[PixelType, 2]
 image = itk.imread(input_filename, PixelType)
 
 # An image type dynamically determined from the type on disk
