@@ -17,19 +17,6 @@ message(STATUS "SuperBuild - ITKPythonPackage_WHEEL_NAME:${ITKPythonPackage_WHEE
 
 option(ITKPythonPackage_USE_TBB "Build and use oneTBB in the ITK python package" ON)
 
-if(ITK_SOURCE_DIR)
-  set(TBB_DIR "${ITK_SOURCE_DIR}/../oneTBB-prefix/lib/cmake/TBB")
-else()
-  set(TBB_DIR "${CMAKE_BINARY_DIR}/../oneTBB-prefix/lib/cmake/TBB")
-endif()
-set(tbb_args )
-if(ITKPythonPackage_USE_TBB)
-  set(tbb_args
-    -DModule_ITKTBB:BOOL=ON
-    -DTBB_DIR:PATH=${TBB_DIR}
-    )
-endif()
-
 if(ITKPythonPackage_SUPERBUILD)
 
   #-----------------------------------------------------------------------------
@@ -111,6 +98,18 @@ if(ITKPythonPackage_SUPERBUILD)
   endif()
 
   if(ITKPythonPackage_USE_TBB)
+    if(ITK_SOURCE_DIR)
+      set(TBB_DIR "${ITK_SOURCE_DIR}/../oneTBB-prefix/lib/cmake/TBB")
+    else()
+      set(TBB_DIR "${CMAKE_BINARY_DIR}/../oneTBB-prefix/lib/cmake/TBB")
+    endif()
+    set(tbb_args )
+    if(ITKPythonPackage_USE_TBB)
+      set(tbb_args
+        -DModule_ITKTBB:BOOL=ON
+        -DTBB_DIR:PATH=${TBB_DIR}
+        )
+    endif()
 
     set(tbb_cmake_cache_args)
     if(CMAKE_OSX_DEPLOYMENT_TARGET)

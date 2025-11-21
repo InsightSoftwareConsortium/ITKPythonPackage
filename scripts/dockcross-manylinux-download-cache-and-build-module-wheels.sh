@@ -19,7 +19,8 @@
 # For example,
 #
 #   export ITK_PACKAGE_VERSION="v5.4.0"
-#   scripts/dockcross-manylinux-build-module-wheels.sh cp39
+#   export ITKPYTHONPACKAGE_ORG="InsightSoftwareConsortium"
+#   scripts/dockcross-manylinux-download-cache-and-build-module-wheels cp39
 #
 # `ITKPYTHONPACKAGE_ORG`: Github organization for fetching ITKPythonPackage build scripts.
 #
