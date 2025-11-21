@@ -49,9 +49,6 @@ tbb_dir=/work/oneTBB-prefix/lib/cmake/TBB
 sudo ldconfig
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/oneTBB-prefix/lib:/usr/lib:/usr/lib64
 
-# TODO: More work is required to re-enable this feature.
-SINGLE_WHEEL=0
-
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
     export Python3_EXECUTABLE=${PYBIN}/python3
@@ -73,97 +70,65 @@ for PYBIN in "${PYBINARIES[@]}"; do
     # Clean up previous invocations
     # rm -rf ${build_path}
 
-    if [[ ${SINGLE_WHEEL} == 1 ]]; then
+    echo "#"
+    echo "# Build multiple ITK wheels"
+    echo "#"
 
-      echo "#"
-      echo "# Build single ITK wheel"
-      echo "#"
+    # Build ITK python
+    (
+      mkdir -p ${build_path} \
+      && cd ${build_path} \
+      && cmake \
+        -DCMAKE_BUILD_TYPE:STRING=${build_type} \
+        -DITK_SOURCE_DIR:PATH=${source_path} \
+        -DITK_BINARY_DIR:PATH=${build_path} \
+        -DBUILD_TESTING:BOOL=OFF \
+        -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+        -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+        -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
+        -DCMAKE_CXX_FLAGS:STRING="$compile_flags" \
+        -DCMAKE_C_FLAGS:STRING="$compile_flags" \
+        -DCMAKE_BUILD_TYPE:STRING="${build_type}" \
+        -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
+        -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
+        -DITK_WRAP_unsigned_short:BOOL=ON \
+        -DITK_WRAP_double:BOOL=ON \
+        -DITK_WRAP_complex_double:BOOL=ON \
+        -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
+        -DPY_SITE_PACKAGES_PATH:PATH="." \
+        -DITK_LEGACY_SILENT:BOOL=ON \
+        -DITK_WRAP_PYTHON:BOOL=ON \
+        -DITK_WRAP_DOC:BOOL=ON \
+        -DModule_ITKTBB:BOOL=ON \
+        -DTBB_DIR:PATH=${tbb_dir} \
+        -G Ninja \
+        ${source_path} \
+      && ninja \
+      || exit 1
+    )
 
+    wheel_names=$(cat ${script_dir}/../WHEEL_NAMES.txt)
+    for wheel_name in ${wheel_names}; do
       # Configure pyproject.toml
-      ${PYBIN}/python ${PYPROJECT_CONFIGURE} "itk"
+      ${PYBIN}/python ${PYPROJECT_CONFIGURE} ${wheel_name}
       # Generate wheel
       ${PYBIN}/python -m build \
-            --verbose \
-            --wheel \
-            --outdir dist \
-            --no-isolation \
-            --skip-dependency-check \
-            --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
-            --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
-            --config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=OFF \
-            --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=itk \
-            --config-setting=cmake.define.CMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
-            "--config-setting=cmake.define.CMAKE_CXX_FLAGS:STRING=$compile_flags" \
-            "--config-setting=cmake.define.CMAKE_C_FLAGS:STRING=$compile_flags" \
-            "--config-setting=cmake.define.CMAKE_BUILD_TYPE:STRING=${build_type}" \
-            --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-            --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-            --config-setting=cmake.define.Module_ITKTBB:BOOL=ON \
-            --config-setting=cmake.define.TBB_DIR:PATH=${tbb_dir} \
-            .
-
-    else
-
-      echo "#"
-      echo "# Build multiple ITK wheels"
-      echo "#"
-
-      # Build ITK python
-      (
-        mkdir -p ${build_path} \
-        && cd ${build_path} \
-        && cmake \
-          -DCMAKE_BUILD_TYPE:STRING=${build_type} \
-          -DITK_SOURCE_DIR:PATH=${source_path} \
-          -DITK_BINARY_DIR:PATH=${build_path} \
-          -DBUILD_TESTING:BOOL=OFF \
-          -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-          -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-          -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
-          -DCMAKE_CXX_FLAGS:STRING="$compile_flags" \
-          -DCMAKE_C_FLAGS:STRING="$compile_flags" \
-          -DCMAKE_BUILD_TYPE:STRING="${build_type}" \
-          -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
-          -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
-          -DITK_WRAP_unsigned_short:BOOL=ON \
-          -DITK_WRAP_double:BOOL=ON \
-          -DITK_WRAP_complex_double:BOOL=ON \
-          -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
-          -DPY_SITE_PACKAGES_PATH:PATH="." \
-          -DITK_LEGACY_SILENT:BOOL=ON \
-          -DITK_WRAP_PYTHON:BOOL=ON \
-          -DITK_WRAP_DOC:BOOL=ON \
-          -DModule_ITKTBB:BOOL=ON \
-          -DTBB_DIR:PATH=${tbb_dir} \
-          -G Ninja \
-          ${source_path} \
-        && ninja \
+        --verbose \
+        --wheel \
+        --outdir dist \
+        --no-isolation \
+        --skip-dependency-check \
+        --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
+        --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
+        --config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
+        --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
+        --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+        --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+        --config-setting=cmake.define.CMAKE_CXX_FLAGS:STRING="${compile_flags}" \
+        --config-setting=cmake.define.CMAKE_C_FLAGS:STRING="${compile_flags}" \
+        . \
         || exit 1
-      )
-
-      wheel_names=$(cat ${script_dir}/../WHEEL_NAMES.txt)
-      for wheel_name in ${wheel_names}; do
-        # Configure pyproject.toml
-        ${PYBIN}/python ${PYPROJECT_CONFIGURE} ${wheel_name}
-        # Generate wheel
-        ${PYBIN}/python -m build \
-          --verbose \
-          --wheel \
-          --outdir dist \
-          --no-isolation \
-          --skip-dependency-check \
-          --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
-          --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
-          --config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
-          --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
-          --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-          --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-          --config-setting=cmake.define.CMAKE_CXX_FLAGS:STRING="${compile_flags}" \
-          --config-setting=cmake.define.CMAKE_C_FLAGS:STRING="${compile_flags}" \
-          . \
-          || exit 1
-      done
-    fi
+    done
 
     # Remove unnecessary files for building against ITK
     find ${build_path} -name '*.cpp' -delete -o -name '*.xml' -delete

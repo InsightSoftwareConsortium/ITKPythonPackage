@@ -92,8 +92,6 @@ pushd ITK-source > /dev/null 2>&1
   ${NINJA_EXECUTABLE} -j$n_processors -l$n_processors
 popd > /dev/null 2>&1
 
-SINGLE_WHEEL=0
-
 # Compile wheels re-using standalone project and archive cache
 for VENV in "${VENVS[@]}"; do
     py_mm=$(basename ${VENV})
@@ -122,14 +120,46 @@ for VENV in "${VENVS[@]}"; do
     # Clean up previous invocations
     rm -rf ${build_path}
 
-    if [[ ${SINGLE_WHEEL} == 1 ]]; then
+    echo "#"
+    echo "# Build multiple ITK wheels"
+    echo "#"
 
-      echo "#"
-      echo "# Build single ITK wheel"
-      echo "#"
+    # Build ITK python
+    (
+      mkdir -p ${build_path} \
+      && cd ${build_path} \
+      && cmake \
+        -DCMAKE_BUILD_TYPE:STRING=${build_type} \
+        -DITK_SOURCE_DIR:PATH=${source_path} \
+        -DITK_BINARY_DIR:PATH=${build_path} \
+        -DBUILD_TESTING:BOOL=OFF \
+        -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+        -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
+        -DITK_WRAP_unsigned_short:BOOL=ON \
+        -DITK_WRAP_double:BOOL=ON \
+        -DITK_WRAP_complex_double:BOOL=ON \
+        -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
+        -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+        -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+        -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
+        -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
+        "-DPY_SITE_PACKAGES_PATH:PATH=." \
+        -DITK_LEGACY_SILENT:BOOL=ON \
+        -DITK_WRAP_PYTHON:BOOL=ON \
+        -DITK_WRAP_DOC:BOOL=ON \
+        -DModule_ITKTBB:BOOL=${use_tbb} \
+        -DTBB_DIR:PATH=${tbb_dir} \
+        ${CMAKE_OPTIONS} \
+        -G Ninja \
+        ${source_path} \
+      && ninja -j$n_processors -l$n_processors \
+      || exit 1
+    )
 
+    wheel_names=$(cat ${SCRIPT_DIR}/WHEEL_NAMES.txt)
+    for wheel_name in ${wheel_names}; do
       # Configure pyproject.toml
-      ${Python3_EXECUTABLE} ${PYPROJECT_CONFIGURE} "itk"
+      ${Python3_EXECUTABLE} ${PYPROJECT_CONFIGURE} ${wheel_name}
       # Generate wheel
       ${Python3_EXECUTABLE} -m build \
         --verbose \
@@ -137,82 +167,19 @@ for VENV in "${VENVS[@]}"; do
         --outdir dist \
         --no-isolation \
         --skip-dependency-check \
-        --config-setting=cmake.define.CMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
         --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
         --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
         --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
         --config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
+        --config-setting=cmake.define.ITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
+        --config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
+        --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
         --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
         --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-        --config-setting=cmake.define.Module_ITKTBB:BOOL=${use_tbb} \
-        --config-setting=cmake.define.TBB_DIR:PATH=${tbb_dir} \
         . \
-        ${CMAKE_OPTIONS}
-
-    else
-
-      echo "#"
-      echo "# Build multiple ITK wheels"
-      echo "#"
-
-      # Build ITK python
-      (
-        mkdir -p ${build_path} \
-        && cd ${build_path} \
-        && cmake \
-          -DCMAKE_BUILD_TYPE:STRING=${build_type} \
-          -DITK_SOURCE_DIR:PATH=${source_path} \
-          -DITK_BINARY_DIR:PATH=${build_path} \
-          -DBUILD_TESTING:BOOL=OFF \
-          -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
-          -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
-          -DITK_WRAP_unsigned_short:BOOL=ON \
-          -DITK_WRAP_double:BOOL=ON \
-          -DITK_WRAP_complex_double:BOOL=ON \
-          -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
-          -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-          -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-          -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
-          -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
-          "-DPY_SITE_PACKAGES_PATH:PATH=." \
-          -DITK_LEGACY_SILENT:BOOL=ON \
-          -DITK_WRAP_PYTHON:BOOL=ON \
-          -DITK_WRAP_DOC:BOOL=ON \
-          -DModule_ITKTBB:BOOL=${use_tbb} \
-          -DTBB_DIR:PATH=${tbb_dir} \
-          ${CMAKE_OPTIONS} \
-          -G Ninja \
-          ${source_path} \
-        && ninja -j$n_processors -l$n_processors \
-        || exit 1
-      )
-
-      wheel_names=$(cat ${SCRIPT_DIR}/WHEEL_NAMES.txt)
-      for wheel_name in ${wheel_names}; do
-        # Configure pyproject.toml
-        ${Python3_EXECUTABLE} ${PYPROJECT_CONFIGURE} ${wheel_name}
-        # Generate wheel
-        ${Python3_EXECUTABLE} -m build \
-          --verbose \
-          --wheel \
-          --outdir dist \
-          --no-isolation \
-          --skip-dependency-check \
-          --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
-          --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
-          --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
-          --config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
-          --config-setting=cmake.define.ITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
-          --config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
-          --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
-          --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-          --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-          . \
-          ${CMAKE_OPTIONS} \
-        || exit 1
-      done
-
-    fi
+        ${CMAKE_OPTIONS} \
+      || exit 1
+    done
 
     # Remove unnecessary files for building against ITK
     find ${build_path} -name '*.cpp' -delete -o -name '*.xml' -delete
