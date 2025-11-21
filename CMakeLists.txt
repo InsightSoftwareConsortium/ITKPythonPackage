@@ -80,11 +80,6 @@ if(ITKPythonPackage_SUPERBUILD)
   #-----------------------------------------------------------------------------
   include(ExternalProject)
 
-  set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
-
-  # main branch, 2025-09-22
-  set(ITK_GIT_TAG "0f93d6c875ab1a053ccb1a27f9f55b8aa2c4c20b")
-
   #-----------------------------------------------------------------------------
   # A separate project is used to download ITK, so that it can reused
   # when building different "flavor" of ITK python packages
@@ -145,6 +140,10 @@ if(ITKPythonPackage_SUPERBUILD)
     set(tbb_depends oneTBB)
   endif()
 
+  set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
+
+  # main branch, 2025-09-22
+  set(ITK_GIT_TAG "0f93d6c875ab1a053ccb1a27f9f55b8aa2c4c20b")
 
   if(NOT DEFINED ITK_SOURCE_DIR)
 

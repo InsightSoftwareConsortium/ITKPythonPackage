@@ -58,6 +58,8 @@ else
   done
 fi
 
+# -----------------------------------------------------------------------
+# Remove previous virtualenv's
 VENVS=()
 mkdir -p ${SCRIPT_DIR}/../venvs
 for PYBIN in "${PYBINARIES[@]}"; do
