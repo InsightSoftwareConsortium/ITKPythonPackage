@@ -68,6 +68,11 @@ if(ITKPythonPackage_SUPERBUILD)
     list(APPEND ep_common_cmake_cache_args
       -DCMAKE_MAKE_PROGRAM:FILEPATH=${CMAKE_MAKE_PROGRAM})
   endif()
+  list(APPEND ep_common_cmake_cache_args
+        -DCMAKE_CXX_COMPILER:PATH=${CMAKE_CXX_COMPILER}
+        -DCMAKE_C_COMPILER:PATH=${CMAKE_C_COMPILER}
+        -DCMAKE_BUILD_TYPE:STRING=Release
+  )
 
   #-----------------------------------------------------------------------------
   # compile with multiple processors
@@ -125,7 +130,6 @@ if(ITKPythonPackage_SUPERBUILD)
         ${ep_common_cmake_cache_args}
         ${tbb_cmake_cache_args}
         ${ep_download_extract_timestamp_arg}
-        -DCMAKE_BUILD_TYPE:STRING=Release
       BUILD_BYPRODUCTS "${TBB_DIR}/TBBConfig.cmake"
       USES_TERMINAL_DOWNLOAD 1
       USES_TERMINAL_UPDATE 1

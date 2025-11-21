@@ -83,20 +83,18 @@ for VENV in "${VENVS[@]}"; do
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
 
     if [[ $(arch) == "arm64" ]]; then
-      plat_name="macosx-15.0-arm64"
-      osx_target="15.0"
       osx_arch="arm64"
-      build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_arm64"
     else
-      plat_name="macosx-15.0-x86_64"
-      osx_target="15.0"
       osx_arch="x86_64"
-      build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
     fi
-    if [[ ! -z "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
-      osx_target="${MACOSX_DEPLOYMENT_TARGET}"
+    if [[ -z "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
+      MACOSX_DEPLOYMENT_TARGET=15.0
+    else
+      MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET}"
     fi
-    export MACOSX_DEPLOYMENT_TARGET=${osx_target}
+    export MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET}
+    build_path="${_ipp_dir}/ITK-${py_mm}-macosx_${osx_arch}"
+    plat_name="macosx-${MACOSX_DEPLOYMENT_TARGET}-${osx_arch}"
 
     if [[ -e $PWD/requirements-dev.txt ]]; then
       ${Python3_EXECUTABLE} -m pip install --upgrade -r $PWD/requirements-dev.txt
@@ -110,15 +108,17 @@ for VENV in "${VENVS[@]}"; do
     ${Python3_EXECUTABLE} -m build \
       --verbose \
       --wheel \
-      --outdir dist \
+      --outdir ${_module_dir}/dist \
       --no-isolation \
       --skip-dependency-check \
       --config-setting=cmake.define.CMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
       --config-setting=cmake.define.ITK_DIR:PATH=${itk_build_path} \
       --config-setting=cmake.define.CMAKE_INSTALL_LIBDIR:STRING=lib \
       --config-setting=cmake.define.WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
-      --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+      --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${MACOSX_DEPLOYMENT_TARGET} \
       --config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
+      --config-setting=cmake.define.CMAKE_CXX_COMPILER:STRING=${CXX} \
+      --config-setting=cmake.define.CMAKE_C_COMPILER:STRING=${CC} \
       --config-setting=cmake.define.PY_SITE_PACKAGES_PATH:PATH="." \
       --config-setting=wheel.py-api=$wheel_py_api \
       --config-setting=cmake.define.BUILD_TESTING:BOOL=OFF \
