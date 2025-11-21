@@ -67,8 +67,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
       continue
     fi
     py_mm=$(basename ${PYBIN})
-    VENV=${SCRIPT_DIR}/../venvs/${py_mm}
-    VENVS+=(${VENV})
+    _VENV_DIR=${SCRIPT_DIR}/../venvs/${py_mm}
+    VENVS+=(${_VENV_DIR})
 done
 
 # -----------------------------------------------------------------------
