@@ -70,6 +70,8 @@ DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
 export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${script_dir}/../oneTBB-prefix/lib
 
+_module_dir="$(pwd -P)"
+
 # Compile wheels re-using standalone project and archive cache
 for VENV in "${VENVS[@]}"; do
     py_mm=$(basename ${VENV})
@@ -126,7 +128,7 @@ for VENV in "${VENVS[@]}"; do
     || exit 1
 done
 
-for wheel in $PWD/dist/*.whl; do
+for wheel in ${_module_dir}/dist/*.whl; do
   ${DELOCATE_LISTDEPS} $wheel # lists library dependencies
   ${DELOCATE_WHEEL} $wheel # copies library dependencies into wheel
 done
