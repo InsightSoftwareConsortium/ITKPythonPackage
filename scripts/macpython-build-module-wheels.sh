@@ -68,8 +68,6 @@ dot_clean ${VENV}
 ${Python3_EXECUTABLE} -m pip install --no-cache-dir delocate
 DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
-DELOCATE_PATCH=${VENV}/bin/delocate-patch
-# So delocate can find the libs
 export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${script_dir}/../oneTBB-prefix/lib
 
 # Compile wheels re-using standalone project and archive cache
