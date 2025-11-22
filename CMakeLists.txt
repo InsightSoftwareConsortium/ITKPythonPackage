@@ -124,7 +124,6 @@ if(ITKPythonPackage_SUPERBUILD)
       URL_HASH SHA256=f0f78001c8c8edb4bddc3d4c5ee7428d56ae313254158ad1eec49eced57f6a5b
       CMAKE_ARGS
         -DTBB_TEST:BOOL=OFF
-        -DCMAKE_BUILD_TYPE:STRING=Release
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/../oneTBB-prefix
         -DCMAKE_INSTALL_LIBDIR:STRING=lib # Skip default initialization by GNUInstallDirs CMake module
         ${ep_common_cmake_cache_args}
