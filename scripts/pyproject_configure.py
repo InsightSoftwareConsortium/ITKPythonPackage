@@ -28,8 +28,13 @@ import argparse
 import os
 import re
 import sys
+from dotenv import dotenv_values
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+ipp_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+package_file = os.path.join(ipp_dir, "build", "package.env")
+package_env_config = dotenv_values(package_file)
+
+sys.path.append(ipp_dir)
 
 PARAMETER_OPTION_DEFAULTS = {
     "indent": 0,

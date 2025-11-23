@@ -7,42 +7,33 @@
 #
 #   scripts/dockcross-manylinux-build-wheels.sh cp39
 #
-# A specialized manylinux image and tag can be used by exporting to
-# MANYLINUX_VERSION and IMAGE_TAG before running this script.
-# See https://github.com/dockcross/dockcross for available versions and tags.
+# A specialized manylinux image and tag can be used by setting
+# MANYLINUX_VERSION and IMAGE_TAG in build/package.env before running this script.
 #
 # For example,
-#
-#   export MANYLINUX_VERSION=2014
-#   export IMAGE_TAG=20221205-459c9f0
+#   generate_build_environment.sh # creates default build/package.env
+#   edit build/package.env with desired build elements
 #   scripts/dockcross-manylinux-build-module-wheels.sh cp39
 #
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
-source "${script_dir}/oci_exe.sh"
-
-oci_exe=$(ociExe)
-
-MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
-
-if [[ ${MANYLINUX_VERSION} == _2_28 ]]; then
-  IMAGE_TAG=${IMAGE_TAG:=20250913-6ea98ba}
-elif [[ ${MANYLINUX_VERSION} == 2014 ]]; then
-  IMAGE_TAG=${IMAGE_TAG:=20240304-9e57d2b}
-else
-  echo "Unknown manylinux version ${MANYLINUX_VERSION}"
-  exit 1;
+_ipp_dir=$(dirname ${script_dir})
+package_env_file=${_ipp_dir}/build/package.env
+if [ ! -f "${package_env_file}" ]; then
+  source ${_ipp_dir}/generate_build_environment.sh.sh
 fi
+source "${package_env_file}"
 
+_local_dockercross_script=${_ipp_dir}/build/runner_dockcross-${MANYLINUX_VERSION}-x64_${IMAGE_TAG}.sh
 # Generate dockcross scripts
-$oci_exe run --rm docker.io/dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > /tmp/dockcross-manylinux-x64
-chmod u+x /tmp/dockcross-manylinux-x64
+$oci_exe run --env-file "${_ipp_dir}/build/package.env" \
+             --rm docker.io/dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > ${_local_dockercross_script}
+chmod u+x ${_local_dockercross_script}
 
 # Build wheels
-pushd $script_dir/..
+pushd ${_ipp_dir}
 mkdir -p dist
-DOCKER_ARGS="-v $(pwd)/dist:/work/dist/"
-DOCKER_ARGS+=" -e MANYLINUX_VERSION"
-/tmp/dockcross-manylinux-x64 \
+DOCKER_ARGS="-v $(pwd)/dist:/work/dist/ --env-file ${package_env_file}"
+${_local_dockercross_script} \
   -a "$DOCKER_ARGS" \
   ./scripts/internal/manylinux-build-wheels.sh "$@"
 popd
