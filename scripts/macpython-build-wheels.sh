@@ -17,7 +17,7 @@
 #
 
 # -----------------------------------------------------------------------
-# These variables are set in common script:
+# These variables are set in macpython-build-common.sh script:
 #
 # * CMAKE_EXECUTABLE
 # * CMAKE_OPTIONS
@@ -27,11 +27,6 @@
 # * NINJA_EXECUTABLE
 # * script_dir
 # * VENVS=()
-
-MACPYTHON_PY_PREFIX=""
-PYBINARIES=""
-script_dir=""
-
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 _ipp_dir=$(dirname ${script_dir})
 package_env_file=${_ipp_dir}/build/package.env

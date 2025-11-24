@@ -53,11 +53,6 @@ fi
 # * SCRIPT_DIR
 # * SKBUILD_DIR
 # * VENVS=()
-
-MACPYTHON_PY_PREFIX=""
-SCRIPT_DIR=""
-VENVS=()
-
 source "${script_dir}/macpython-build-common.sh"
 # -----------------------------------------------------------------------
 
