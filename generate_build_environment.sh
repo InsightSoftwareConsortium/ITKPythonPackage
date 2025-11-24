@@ -301,7 +301,7 @@ if [[ "$(uname)" == "Linux" ]]; then
 
 cat >> ${BUILD_ENV_REPORT} << DEFAULT_LINUX_ENV_SETTINGS
 # Which container to use for generating cross compiled packages
-oci_exe=${oci_exe:=$(ociExe)}
+OCI_EXE=${OCI_EXE:=$(ociExe)}
 
 # - "MANYLINUX_VERSION": Specialized manylinux image to use for building. Default is _2_28.
 #   Examples: "_2_28", "2014"

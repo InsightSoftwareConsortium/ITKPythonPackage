@@ -68,16 +68,16 @@ if [[ "${TARGET_ARCH}" = "aarch64" ]]; then
     docker_prefix="sudo"
   fi
 
-  ${docker_prefix} $oci_exe run --env-file "${_ipp_dir}/build/package.env" \
+  ${docker_prefix} $OCI_EXE run --env-file "${_ipp_dir}/build/package.env" \
                             --privileged --rm tonistiigi/binfmt --install all
 
   # Build wheels
   DOCKER_ARGS+=" -v $(pwd):/work/ --rm"
-  ${docker_prefix} $oci_exe run --env-file "${_ipp_dir}/build/package.env" \
+  ${docker_prefix} $OCI_EXE run --env-file "${_ipp_dir}/build/package.env" \
                                 $DOCKER_ARGS ${CONTAINER_SOURCE} "/ITKPythonPackage/scripts/internal/manylinux-aarch64-build-module-wheels.sh" "$@"
 else
   # Generate dockcross scripts
-  $oci_exe run --env-file "${_ipp_dir}/build/package.env" \
+  $OCI_EXE run --env-file "${_ipp_dir}/build/package.env" \
                --rm ${CONTAINER_SOURCE} > /tmp/dockcross-manylinux-x64
   chmod u+x /tmp/dockcross-manylinux-x64
 

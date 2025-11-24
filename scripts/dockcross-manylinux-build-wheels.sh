@@ -25,7 +25,7 @@ source "${package_env_file}"
 
 _local_dockercross_script=${_ipp_dir}/build/runner_dockcross-${MANYLINUX_VERSION}-x64_${IMAGE_TAG}.sh
 # Generate dockcross scripts
-$oci_exe run --env-file "${_ipp_dir}/build/package.env" \
+$OCI_EXE run --env-file "${_ipp_dir}/build/package.env" \
              --rm docker.io/dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > ${_local_dockercross_script}
 chmod u+x ${_local_dockercross_script}
 
