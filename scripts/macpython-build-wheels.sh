@@ -61,7 +61,6 @@ ${Python3_EXECUTABLE} -m pip install --upgrade pip
 ${Python3_EXECUTABLE} -m pip install --no-cache-dir delocate
 DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
-DELOCATE_PATCH=${VENV}/bin/delocate-patch
 
 build_type="Release"
 
