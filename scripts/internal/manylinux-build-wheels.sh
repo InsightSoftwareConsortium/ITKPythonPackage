@@ -55,6 +55,7 @@ pushd ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source > /dev/null 2>&1
     -DITK_SOURCE_DIR:PATH=${_CONTAINER_ITK_SOURCE_DIR} \
     -DITK_GIT_TAG:STRING=${ITK_GIT_TAG} \
     -DITK_PACKAGE_VERSION:STRING=${ITK_PACKAGE_VERSION} \
+    ${CMAKE_COMPILER_ARGS} \
     -G Ninja \
     -S ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR} \
     -B ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source)
@@ -107,6 +108,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
         -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
         -DCMAKE_CXX_FLAGS:STRING="$compile_flags" \
         -DCMAKE_C_FLAGS:STRING="$compile_flags" \
+        ${CMAKE_COMPILER_ARGS} \
         -DCMAKE_BUILD_TYPE:STRING="${build_type}" \
         -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
         -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \

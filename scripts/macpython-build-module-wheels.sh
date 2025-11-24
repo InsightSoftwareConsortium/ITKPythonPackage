@@ -111,14 +111,13 @@ for VENV in "${VENVS[@]}"; do
       --config-setting=cmake.define.WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
       --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${MACOSX_DEPLOYMENT_TARGET} \
       --config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
-      --config-setting=cmake.define.CMAKE_CXX_COMPILER:STRING=${CXX} \
-      --config-setting=cmake.define.CMAKE_C_COMPILER:STRING=${CC} \
       --config-setting=cmake.define.PY_SITE_PACKAGES_PATH:PATH="." \
       --config-setting=wheel.py-api=$wheel_py_api \
       --config-setting=cmake.define.BUILD_TESTING:BOOL=OFF \
       --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
       --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
       ${CMAKE_OPTIONS//'-D'/'--config-setting=cmake.define.'} \
+      ${CMAKE_COMPILER_ARGS//'-D'/'--config-setting=cmake.define.'} \
     || exit 1
 done
 

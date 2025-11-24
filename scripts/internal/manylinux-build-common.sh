@@ -84,4 +84,14 @@ fi
 
 MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
 
+# -----------------------------------------------------------------------
+# Set cmake flags for compiler if CC or CXX are specified
+CMAKE_COMPILER_ARGS=""
+if [ ! -z "${CXX}" ]; then
+  CMAKE_COMPILER_ARGS="-DCMAKE_CXX_COMPILER:STRING=${CXX}"
+fi
+if [ ! -z "${CC}" ]; then
+  CMAKE_COMPILER_ARGS="${CMAKE_COMPILER_ARGS} -DCMAKE_C_COMPILER:STRING=${CC}"
+fi
+
 echo "Building wheels for $ARCH using manylinux${MANYLINUX_VERSION}"

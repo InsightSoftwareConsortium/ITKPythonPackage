@@ -27,6 +27,7 @@
 # * NINJA_EXECUTABLE
 # * script_dir
 # * VENVS=()
+# * CMAKE_COMPILE_ARGS
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 _ipp_dir=$(dirname ${script_dir})
 package_env_file=${_ipp_dir}/build/package.env
@@ -90,6 +91,7 @@ pushd ITK-source > /dev/null 2>&1
     -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
     -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
     -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
+    ${CMAKE_COMPILER_ARGS} \
       ${script_dir}/../
   ${NINJA_EXECUTABLE} -j$n_processors -l$n_processors
 popd > /dev/null 2>&1

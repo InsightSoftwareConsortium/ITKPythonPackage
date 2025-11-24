@@ -124,6 +124,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
       --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
       --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
       ${CMAKE_OPTIONS//'-D'/'--config-setting=cmake.define.'} \
+      ${CMAKE_COMPILER_ARGS//'-D'/'--config-setting=cmake.define.'} \
     || exit 1
 done
 
