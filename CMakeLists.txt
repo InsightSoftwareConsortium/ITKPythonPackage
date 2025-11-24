@@ -30,12 +30,6 @@ if(ITKPythonPackage_SUPERBUILD)
   # Avoid "Manually-specified variables were not used by the project" warnings.
   ipp_unused_vars(${PYTHON_VERSION_STRING} ${SKBUILD})
 
-  set(ep_common_cmake_cache_args )
-  if(NOT CMAKE_CONFIGURATION_TYPES)
-    list(APPEND ep_common_cmake_cache_args
-      -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-      )
-  endif()
   set(ep_download_extract_timestamp_arg )
   if(CMAKE_VERSION VERSION_EQUAL "3.24" OR CMAKE_VERSION VERSION_GREATER "3.24")
     # See https://cmake.org/cmake/help/latest/policy/CMP0135.html
@@ -55,24 +49,52 @@ if(ITKPythonPackage_SUPERBUILD)
   option(ITKPythonPackage_BUILD_PYTHON "Build ITK python module" ON)
   mark_as_advanced(ITKPythonPackage_BUILD_PYTHON)
 
+  set(ep_common_cmake_cache_args )
+  if(NOT CMAKE_CONFIGURATION_TYPES)
+    if(NOT CMAKE_BUILD_TYPE)
+      set(CMAKE_BUILD_TYPE "Release")
+    endif()
+    list(APPEND ep_common_cmake_cache_args
+      -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+    )
+  endif()
+
   if(CMAKE_OSX_DEPLOYMENT_TARGET)
     list(APPEND ep_common_cmake_cache_args
-      -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${CMAKE_OSX_DEPLOYMENT_TARGET})
+      -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${CMAKE_OSX_DEPLOYMENT_TARGET}
+    )
   endif()
   if(CMAKE_OSX_ARCHITECTURES)
     list(APPEND ep_common_cmake_cache_args
-      -DCMAKE_OSX_ARCHITECTURES:STRING=${CMAKE_OSX_ARCHITECTURES})
+      -DCMAKE_OSX_ARCHITECTURES:STRING=${CMAKE_OSX_ARCHITECTURES}
+    )
   endif()
 
   if(CMAKE_MAKE_PROGRAM)
     list(APPEND ep_common_cmake_cache_args
-      -DCMAKE_MAKE_PROGRAM:FILEPATH=${CMAKE_MAKE_PROGRAM})
+      -DCMAKE_MAKE_PROGRAM:FILEPATH=${CMAKE_MAKE_PROGRAM}
+    )
   endif()
-  list(APPEND ep_common_cmake_cache_args
+
+  if( CMAKE_CXX_COMPILER )
+    list(APPEND ep_common_cmake_cache_args
         -DCMAKE_CXX_COMPILER:PATH=${CMAKE_CXX_COMPILER}
+    )
+  elseif( ENV{CXX} )
+    list(APPEND ep_common_cmake_cache_args
+            -DCMAKE_CXX_COMPILER:PATH=$ENV{CXX}
+    )
+  endif()
+
+  if( CMAKE_C_COMPILER )
+    list(APPEND ep_common_cmake_cache_args
         -DCMAKE_C_COMPILER:PATH=${CMAKE_C_COMPILER}
-        -DCMAKE_BUILD_TYPE:STRING=Release
-  )
+    )
+  elseif( ENV{CC} )
+    list(APPEND ep_common_cmake_cache_args
+            -DCMAKE_C_COMPILER:PATH=$ENV{CC}
+    )
+  endif()
 
   #-----------------------------------------------------------------------------
   # compile with multiple processors
@@ -91,6 +113,10 @@ if(ITKPythonPackage_SUPERBUILD)
 
   message(STATUS "SuperBuild -")
   message(STATUS "SuperBuild - ITK-source-download")
+
+  if( NOT ITK_SOURCE_DIR AND ENV{ITK_SOURCE_DIR})
+      set(ITK_SOURCE_DIR "$ENV{ITK_SOURCE_DIR}")
+  endif()
 
   # Sanity checks
   if(DEFINED ITK_SOURCE_DIR AND NOT EXISTS ${ITK_SOURCE_DIR})
@@ -143,13 +169,15 @@ if(ITKPythonPackage_SUPERBUILD)
     set(tbb_depends oneTBB)
   endif()
 
-  set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
-
-  # main branch, 2025-09-22
-  set(ITK_GIT_TAG "0f93d6c875ab1a053ccb1a27f9f55b8aa2c4c20b")
-
   if(NOT DEFINED ITK_SOURCE_DIR)
+    set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
 
+    if ( ENV{ITK_GIT_TAG} )
+      set(ITK_GIT_TAG "$ENV{ITK_GIT_TAG}")
+    elseif(NOT ITK_GIT_TAG)
+      # main branch, 2025-09-22
+      set(ITK_GIT_TAG "0f93d6c875ab1a053ccb1a27f9f55b8aa2c4c20b")
+    endif()
     set(ITK_SOURCE_DIR ${CMAKE_BINARY_DIR}/ITK)
 
     ExternalProject_add(ITK-source-download

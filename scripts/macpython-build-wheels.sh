@@ -138,6 +138,7 @@ for VENV in "${VENVS[@]}"; do
         -DBUILD_TESTING:BOOL=OFF \
         -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
         -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
+        ${CMAKE_COMPILER_ARGS} \
         -DITK_WRAP_unsigned_short:BOOL=ON \
         -DITK_WRAP_double:BOOL=ON \
         -DITK_WRAP_complex_double:BOOL=ON \
@@ -180,8 +181,9 @@ for VENV in "${VENVS[@]}"; do
         --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
         --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
         --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+        ${CMAKE_OPTIONS//'-D'/'--config-setting=cmake.define.'} \
+        ${CMAKE_COMPILER_ARGS//'-D'/'--config-setting=cmake.define.'} \
         . \
-        ${CMAKE_OPTIONS} \
       || exit 1
     done
 
