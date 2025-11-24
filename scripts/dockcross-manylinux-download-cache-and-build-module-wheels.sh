@@ -64,8 +64,8 @@ done
 # -----------------------------------------------------------------------
 # Download and extract cache
 
-echo "Fetching https://raw.githubusercontent.com/${ITKPYTHONPACKAGE_ORG:=InsightSoftwareConsortium}/ITKPythonPackage/${ITKPYTHONPACKAGE_TAG:=v5.4.0}/scripts/dockcross-manylinux-download-cache.sh"
-curl -L https://raw.githubusercontent.com/${ITKPYTHONPACKAGE_ORG:=InsightSoftwareConsortium}/ITKPythonPackage/${ITKPYTHONPACKAGE_TAG:=v5.4.0}/scripts/dockcross-manylinux-download-cache.sh -O
+echo "Fetching https://raw.githubusercontent.com/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage/${ITKPYTHONPACKAGE_TAG}/scripts/dockcross-manylinux-download-cache.sh"
+curl -L https://raw.githubusercontent.com/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage/${ITKPYTHONPACKAGE_TAG}/scripts/dockcross-manylinux-download-cache.sh -O
 chmod u+x dockcross-manylinux-download-cache.sh
 ./dockcross-manylinux-download-cache.sh $1
 
