@@ -25,7 +25,17 @@ if [ ! -f "${package_env_file}" ]; then
 fi
 source "${package_env_file}"
 
-oci_exe=$(ociExe)
+# Set container for requested version/arch/tag.
+if [[ ${TARGET_ARCH} == x64 ]]; then
+  MANYLINUX_IMAGE_NAME=${MANYLINUX_IMAGE_NAME:="manylinux${MANYLINUX_VERSION}-${TARGET_ARCH}:${IMAGE_TAG}"}
+  CONTAINER_SOURCE="docker.io/dockcross/${MANYLINUX_IMAGE_NAME}"
+elif [[ ${TARGET_ARCH} == aarch64 ]]; then
+  MANYLINUX_IMAGE_NAME=${MANYLINUX_IMAGE_NAME:="manylinux${MANYLINUX_VERSION}_${TARGET_ARCH}:${IMAGE_TAG}"}
+  CONTAINER_SOURCE="quay.io/pypa/${MANYLINUX_IMAGE_NAME}"
+else
+  echo "Unknown target architecture ${TARGET_ARCH}"
+  exit 1;
+fi
 
 if [[ -n ${ITK_MODULE_PREQ} ]]; then
   echo "Building module dependencies ${ITK_MODULE_PREQ}"
@@ -58,14 +68,17 @@ if [[ "${TARGET_ARCH}" = "aarch64" ]]; then
     docker_prefix="sudo"
   fi
 
-  ${docker_prefix} $oci_exe run --privileged --rm tonistiigi/binfmt --install all
+  ${docker_prefix} $oci_exe run --env-file "${_ipp_dir}/build/package.env" \
+                            --privileged --rm tonistiigi/binfmt --install all
 
   # Build wheels
   DOCKER_ARGS+=" -v $(pwd):/work/ --rm"
-  ${docker_prefix} $oci_exe run $DOCKER_ARGS ${CONTAINER_SOURCE} "/ITKPythonPackage/scripts/internal/manylinux-aarch64-build-module-wheels.sh" "$@"
+  ${docker_prefix} $oci_exe run --env-file "${_ipp_dir}/build/package.env" \
+                                $DOCKER_ARGS ${CONTAINER_SOURCE} "/ITKPythonPackage/scripts/internal/manylinux-aarch64-build-module-wheels.sh" "$@"
 else
   # Generate dockcross scripts
-  $oci_exe run --rm ${CONTAINER_SOURCE} > /tmp/dockcross-manylinux-x64
+  $oci_exe run --env-file "${_ipp_dir}/build/package.env" \
+               --rm ${CONTAINER_SOURCE} > /tmp/dockcross-manylinux-x64
   chmod u+x /tmp/dockcross-manylinux-x64
 
   # Build wheels

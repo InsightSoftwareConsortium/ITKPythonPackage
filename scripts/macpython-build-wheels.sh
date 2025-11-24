@@ -25,28 +25,35 @@
 # * PYBINARIES
 # * PYTHON_VERSIONS
 # * NINJA_EXECUTABLE
-# * SCRIPT_DIR
+# * script_dir
 # * VENVS=()
 
 MACPYTHON_PY_PREFIX=""
 PYBINARIES=""
-SCRIPT_DIR=""
+script_dir=""
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
+_ipp_dir=$(dirname ${script_dir})
+package_env_file=${_ipp_dir}/build/package.env
+if [ ! -f "${package_env_file}" ]; then
+  ${_ipp_dir}/generate_build_environment.sh -o ${package_env_file}
+fi
+source "${package_env_file}"
+
 source "${script_dir}/macpython-build-common.sh"
 
 # -----------------------------------------------------------------------
 # Remove previous virtualenv's
-rm -rf ${SCRIPT_DIR}/../venvs
+rm -rf ${script_dir}/../venvs
 # Create virtualenv's
 VENVS=()
-mkdir -p ${SCRIPT_DIR}/../venvs
+mkdir -p ${script_dir}/../venvs
 for PYBIN in "${PYBINARIES[@]}"; do
     if [[ $(basename $PYBIN) = "Current" ]]; then
       continue
     fi
     py_mm=$(basename ${PYBIN})
-    VENV=${SCRIPT_DIR}/../venvs/${py_mm}
+    VENV=${script_dir}/../venvs/${py_mm}
     VIRTUALENV_EXECUTABLE="${PYBIN}/bin/python3 -m venv"
     ${VIRTUALENV_EXECUTABLE} ${VENV}
     VENVS+=(${VENV})
@@ -88,7 +95,7 @@ pushd ITK-source > /dev/null 2>&1
     -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
     -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
     -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
-      ${SCRIPT_DIR}/../
+      ${script_dir}/../
   ${NINJA_EXECUTABLE} -j$n_processors -l$n_processors
 popd > /dev/null 2>&1
 
@@ -102,20 +109,19 @@ for VENV in "${VENVS[@]}"; do
     echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
 
-    ${Python3_EXECUTABLE} -m pip install --upgrade -r ${SCRIPT_DIR}/../requirements-dev.txt
+    ${Python3_EXECUTABLE} -m pip install --upgrade -r ${script_dir}/../requirements-dev.txt
 
     if [[ $(arch) == "arm64" ]]; then
       plat_name="macosx-15.0-arm64"
-      build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_arm64"
+      build_path="${script_dir}/../ITK-${py_mm}-macosx_arm64"
     else
       plat_name="macosx-15.0-x86_64"
-      build_path="${SCRIPT_DIR}/../ITK-${py_mm}-macosx_x86_64"
+      build_path="${script_dir}/../ITK-${py_mm}-macosx_x86_64"
     fi
     if [[ ! -z "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
       osx_target="${MACOSX_DEPLOYMENT_TARGET}"
     fi
-    source_path=${SCRIPT_DIR}/../ITK-source/ITK
-    PYPROJECT_CONFIGURE="${script_dir}/pyproject_configure.py"
+    source_path=${script_dir}/../ITK-source/ITK
 
     # Clean up previous invocations
     rm -rf ${build_path}
@@ -156,10 +162,11 @@ for VENV in "${VENVS[@]}"; do
       || exit 1
     )
 
-    wheel_names=$(cat ${SCRIPT_DIR}/WHEEL_NAMES.txt)
+    PYPROJECT_CONFIGURE="${script_dir}/pyproject_configure.py"
+    wheel_names=$(cat ${script_dir}/WHEEL_NAMES.txt)
     for wheel_name in ${wheel_names}; do
       # Configure pyproject.toml
-      ${Python3_EXECUTABLE} ${PYPROJECT_CONFIGURE} ${wheel_name}
+      ${Python3_EXECUTABLE} ${PYPROJECT_CONFIGURE} --env-file ${package_env_file} ${wheel_name}
       # Generate wheel
       ${Python3_EXECUTABLE} -m build \
         --verbose \
@@ -197,9 +204,9 @@ fi
 
 for VENV in "${VENVS[@]}"; do
   ${VENV}/bin/pip install numpy
-  ${VENV}/bin/pip install itk --no-cache-dir --no-index -f ${SCRIPT_DIR}/../dist
+  ${VENV}/bin/pip install itk --no-cache-dir --no-index -f ${script_dir}/../dist
   (cd $HOME && ${VENV}/bin/python -c 'import itk;')
   (cd $HOME && ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
   (cd $HOME && ${VENV}/bin/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
-  (cd $HOME && ${VENV}/bin/python ${SCRIPT_DIR}/../docs/code/test.py )
+  (cd $HOME && ${VENV}/bin/python ${script_dir}/../docs/code/test.py )
 done

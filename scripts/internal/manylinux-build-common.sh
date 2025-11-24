@@ -3,6 +3,7 @@
 
 set -e -x
 
+
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 
 # Versions can be restricted by passing them in as arguments to the script
@@ -46,6 +47,7 @@ case $(uname -m) in
         ARCH=x86
         ;;
     x86_64)
+        ARCH=x64
         if ! type doxygen > /dev/null 2>&1; then
           mkdir -p /work/tools
             pushd /work/tools > /dev/null 2>&1
@@ -58,7 +60,7 @@ case $(uname -m) in
         ARCH=aarch64
         if ! type doxygen > /dev/null 2>&1; then
           mkdir -p /work/tools
-            pushd /work/tools > /dev/null 2>&1
+          pushd /work/tools > /dev/null 2>&1
             curl https://data.kitware.com/api/v1/file/62c4ed58bddec9d0c46f1388/download -o doxygen-1.8.16.linux.aarch64.bin.tar.gz
             tar -xvzf doxygen-1.8.16.linux.aarch64.bin.tar.gz
           popd > /dev/null 2>&1
@@ -76,7 +78,7 @@ if ! type ninja > /dev/null 2>&1; then
   git checkout release
   cmake -Bbuild-cmake -H.
   cmake --build build-cmake
-  cp build-cmake/ninja /usr/local/bin/
+  sudo cp build-cmake/ninja /usr/local/bin/
   popd
 fi
 

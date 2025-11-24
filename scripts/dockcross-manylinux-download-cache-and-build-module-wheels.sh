@@ -61,11 +61,40 @@ done
 echo "Fetching https://raw.githubusercontent.com/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage/${ITKPYTHONPACKAGE_TAG}/scripts/dockcross-manylinux-download-cache.sh"
 curl -L https://raw.githubusercontent.com/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage/${ITKPYTHONPACKAGE_TAG}/scripts/dockcross-manylinux-download-cache.sh -O
 chmod u+x dockcross-manylinux-download-cache.sh
-./dockcross-manylinux-download-cache.sh $1
+_download_cmd=$(echo \
+ITK_GIT_TAG=${ITK_GIT_TAG} \
+ITKPYTHONPACKAGE_ORG=${ITKPYTHONPACKAGE_ORG} \
+ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG} \
+MANYLINUX_VERSION=${MANYLINUX_VERSION} \
+TARGET_ARCH=${TARGET_ARCH} \
+${download_script_dir}/dockcross-manylinux-download-cache.sh $1
+)
+echo "Running: ${_download_cmd}"
+eval ${_download_cmd}
+
+#NOTE: in this scenerio, untarred_ipp_dir is extracted from tarball
+#      during ${download_script_dir}/dockcross-manylinux-download-cache.sh
+untarred_ipp_dir=${download_script_dir}/ITKPythonPackage
+package_env_file=${untarred_ipp_dir}/build/package.env
+if [ ! -f "${package_env_file}" ]; then
+  source ${untarred_ipp_dir}/generate_build_environment.sh.sh
+fi
+source "${package_env_file}"
+
 
 # -----------------------------------------------------------------------
 # Build module wheels
 
 echo "Building module wheels"
 set -- "${FORWARD_ARGS[@]}"; # Restore initial argument list
-./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh "$@"
+
+_bld_cmd=$(echo \
+NO_SUDO=${NO_SUDO} \
+LD_LIBRARY_PATH=${LD_LIBRARY_PATH} \
+IMAGE_TAG=${IMAGE_TAG} \
+ITK_MODULE_PREQ=${ITK_MODULE_PREQ} \
+ITK_MODULE_NO_CLEANUP=${ITK_MODULE_NO_CLEANUP} \
+${untarred_ipp_dir}/scripts/dockcross-manylinux-build-module-wheels.sh "$@"
+)
+echo "Running: ${_bld_cmd}"
+eval ${_bld_cmd}

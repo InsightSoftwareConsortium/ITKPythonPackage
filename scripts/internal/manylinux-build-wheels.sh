@@ -34,17 +34,40 @@ script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
 
 # -----------------------------------------------------------------------
-
+DOCKCROSS_MOUNTED_ITKPythonPackage_DIR=/work # <-- The location where ITKPythonPackage git checkout
+                                             #     is mounted inside the dockcross container
+CONTAINER_PACKAGE_ENV=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/dist/container_package.env
+# Load environmental variables
+source ${CONTAINER_PACKAGE_ENV}
+_CONTAINER_ITK_SOURCE_DIR=${ITK_SOURCE_DIR}
 # Build standalone project and populate archive cache
-mkdir -p /work/ITK-source
-pushd /work/ITK-source > /dev/null 2>&1
-  cmake -DITKPythonPackage_BUILD_PYTHON:PATH=0 -G Ninja ../
+mkdir -p ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source
+pushd ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source > /dev/null 2>&1
+  if [ ! -d ${_CONTAINER_ITK_SOURCE_DIR} ]; then
+     git clone https://github.com/InsightSoftwareConsortium/ITK.git ${_CONTAINER_ITK_SOURCE_DIR}
+  fi
+  pushd ${_CONTAINER_ITK_SOURCE_DIR} > /dev/null 2>&1
+     git checkout ${ITK_GIT_TAG}
+  popd > /dev/null 2>&1
+  echo "CMAKE VERSION: $(cmake --version)"
+  cmd=$(echo cmake \
+    -DITKPythonPackage_BUILD_PYTHON:PATH=0  \
+    -DITK_SOURCE_DIR:PATH=${_CONTAINER_ITK_SOURCE_DIR} \
+    -DITK_GIT_TAG:STRING=${ITK_GIT_TAG} \
+    -DITK_PACKAGE_VERSION:STRING=${ITK_PACKAGE_VERSION} \
+    -G Ninja \
+    -S ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR} \
+    -B ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source)
+  echo "RUNNING: $cmd"
+  eval $cmd
   ninja
+  echo "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+  echo "================================================================"
 popd > /dev/null 2>&1
-tbb_dir=/work/oneTBB-prefix/lib/cmake/TBB
+tbb_dir=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/oneTBB-prefix/lib/cmake/TBB
 # So auditwheel can find the libs
 sudo ldconfig
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/oneTBB-prefix/lib:/usr/lib:/usr/lib64
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/oneTBB-prefix/lib:/usr/lib:/usr/lib64
 
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
@@ -56,13 +79,11 @@ for PYBIN in "${PYBINARIES[@]}"; do
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
 
     # Install dependencies
-    ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
+    ${PYBIN}/pip install --upgrade -r ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/requirements-dev.txt
 
     build_type="Release"
     compile_flags="-O3 -DNDEBUG"
-    source_path=/work/ITK-source/ITK
-    build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux${MANYLINUX_VERSION}_${ARCH}
-    PYPROJECT_CONFIGURE="${script_dir}/../pyproject_configure.py"
+    build_path=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-$(basename $(dirname ${PYBIN}))-manylinux${MANYLINUX_VERSION}_${ARCH}
 
     # Clean up previous invocations
     # rm -rf ${build_path}
@@ -75,9 +96,10 @@ for PYBIN in "${PYBINARIES[@]}"; do
     (
       mkdir -p ${build_path} \
       && cd ${build_path} \
+      && echo "CMAKE VERSION: $(cmake --version)" \
       && cmake \
         -DCMAKE_BUILD_TYPE:STRING=${build_type} \
-        -DITK_SOURCE_DIR:PATH=${source_path} \
+        -DITK_SOURCE_DIR:PATH=${_CONTAINER_ITK_SOURCE_DIR} \
         -DITK_BINARY_DIR:PATH=${build_path} \
         -DBUILD_TESTING:BOOL=OFF \
         -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
@@ -99,15 +121,17 @@ for PYBIN in "${PYBINARIES[@]}"; do
         -DModule_ITKTBB:BOOL=ON \
         -DTBB_DIR:PATH=${tbb_dir} \
         -G Ninja \
-        ${source_path} \
+        -S ${_CONTAINER_ITK_SOURCE_DIR} \
+        -B ${build_path} \
       && ninja \
       || exit 1
     )
 
     wheel_names=$(cat ${script_dir}/../WHEEL_NAMES.txt)
+    PYPROJECT_CONFIGURE="${script_dir}/../pyproject_configure.py"
     for wheel_name in ${wheel_names}; do
       # Configure pyproject.toml
-      ${PYBIN}/python ${PYPROJECT_CONFIGURE} ${wheel_name}
+      ${PYBIN}/python ${PYPROJECT_CONFIGURE} --env-file ${CONTAINER_PACKAGE_ENV} ${wheel_name}
       # Generate wheel
       ${PYBIN}/python -m build \
         --verbose \
@@ -115,7 +139,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
         --outdir dist \
         --no-isolation \
         --skip-dependency-check \
-        --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
+        --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${_CONTAINER_ITK_SOURCE_DIR} \
         --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
         --config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
         --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
@@ -139,11 +163,11 @@ sudo /opt/python/cp311-cp311/bin/pip3 install auditwheel wheel
 if test "${ARCH}" == "x64"; then
   # This step will fixup the wheel switching from 'linux' to 'manylinux<version>' tag
   for whl in dist/itk_*linux_*.whl; do
-      /opt/python/cp311-cp311/bin/auditwheel repair --plat manylinux${MANYLINUX_VERSION}_x86_64 ${whl} -w /work/dist/
+      /opt/python/cp311-cp311/bin/auditwheel repair --plat manylinux${MANYLINUX_VERSION}_x86_64 ${whl} -w ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/dist/
   done
 else
   for whl in dist/itk_*$(uname -m).whl; do
-      /opt/python/cp311-cp311/bin/auditwheel repair ${whl} -w /work/dist/
+      /opt/python/cp311-cp311/bin/auditwheel repair ${whl} -w ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/dist/
   done
 fi
 
@@ -167,7 +191,7 @@ rm dist/itk_*-linux_*.whl
 for PYBIN in "${PYBINARIES[@]}"; do
     ${PYBIN}/pip install --user numpy
     ${PYBIN}/pip install --upgrade pip
-    ${PYBIN}/pip install itk --user --no-cache-dir --no-index -f /work/dist
+    ${PYBIN}/pip install itk --user --no-cache-dir --no-index -f ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/dist
     (cd $HOME && ${PYBIN}/python -c 'from itk import ITKCommon;')
     (cd $HOME && ${PYBIN}/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
     (cd $HOME && ${PYBIN}/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')

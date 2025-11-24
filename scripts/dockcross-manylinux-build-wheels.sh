@@ -29,11 +29,23 @@ $oci_exe run --env-file "${_ipp_dir}/build/package.env" \
              --rm docker.io/dockcross/manylinux${MANYLINUX_VERSION}-x64:${IMAGE_TAG} > ${_local_dockercross_script}
 chmod u+x ${_local_dockercross_script}
 
-# Build wheels
-pushd ${_ipp_dir}
-mkdir -p dist
-DOCKER_ARGS="-v $(pwd)/dist:/work/dist/ --env-file ${package_env_file}"
-${_local_dockercross_script} \
-  -a "$DOCKER_ARGS" \
-  ./scripts/internal/manylinux-build-wheels.sh "$@"
+# Build wheels in dockcross environment
+pushd ${_ipp_dir} # Must run _local_dockercross_script from the root of the directory with 
+                  # CMakeFile.txt to be processed by ./scripts/internal/manylinux-build-wheels.sh
+
+  CONTAINER_WORK_DIR=/work
+  CONTAINER_PACKAGE_DIST=${CONTAINER_WORK_DIR}/dist
+  CONTAINER_PACKAGE_BUILD_DIR=${CONTAINER_WORK_DIR}/ITK-source
+  CONTAINER_ITK_SOURCE_DIR=${CONTAINER_PACKAGE_BUILD_DIR}/ITK
+  HOST_PACKAGE_DIST=${_ipp_dir}/dist
+  mkdir -p ${HOST_PACKAGE_DIST}
+  HOST_PACKAGE_BUILD_DIR=${_ipp_dir}/ITK-source
+  mkdir -p ${HOST_PACKAGE_BUILD_DIR}
+
+  DOCKER_ARGS="-v ${_ipp_dir}/dist:${CONTAINER_WORK_DIR}/dist/  -v${ITK_SOURCE_DIR}:${CONTAINER_ITK_SOURCE_DIR} --env-file ${package_env_file}"
+  cmd=$(echo bash -x ${_local_dockercross_script} \
+    -a \"$DOCKER_ARGS\" \
+    ${CONTAINER_WORK_DIR}/scripts/internal/manylinux-build-wheels.sh "$@")
+  echo "RUNNING: $cmd"
+  eval $cmd
 popd

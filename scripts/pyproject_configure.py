@@ -8,7 +8,7 @@ of the `wheel_name` positional parameter.
 
 Usage::
 
-    pyproject_configure.py [-h] [--output-dir OUTPUT_DIR] wheel_name
+    pyproject_configure.py [-h] [--output-dir OUTPUT_DIR] [--env-file package.env] wheel_name
 
     positional arguments:
       wheel_name
@@ -18,6 +18,7 @@ Usage::
       --output-dir OUTPUT_DIR
                             Output directory for configured 'pyproject.toml'
                             (default: /work)
+
 
 
 Accepted values for `wheel_name` are ``itk`` and all values read from
@@ -31,10 +32,9 @@ import sys
 from dotenv import dotenv_values
 
 ipp_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-package_file = os.path.join(ipp_dir, "build", "package.env")
-package_env_config = dotenv_values(package_file)
-
 sys.path.append(ipp_dir)
+
+default_env_file = os.path.join(ipp_dir, "build", "package.env")
 
 PARAMETER_OPTION_DEFAULTS = {
     "indent": 0,
@@ -125,7 +125,7 @@ def from_group_to_wheel(group):
     return "itk-%s" % group.lower()
 
 
-def update_wheel_pyproject_toml_parameters():
+def update_wheel_pyproject_toml_parameters(package_env_config: dict):
     global PYPROJECT_PY_PARAMETERS
     for wheel_name in get_wheel_names():
         params = dict(ITK_PYPROJECT_PY_PARAMETERS)
@@ -187,6 +187,9 @@ def update_wheel_pyproject_toml_parameters():
         # cmake_args
         params["PYPROJECT_CMAKE_ARGS"] = list_to_str(
             [
+                f"-DITK_SOURCE_DIR={package_env_config['ITK_SOURCE_DIR']}",
+                f"-DITK_GIT_TAG:STRING={package_env_config['ITK_GIT_TAG']}",
+                f"-DITK_PACKAGE_VERSION:STRING={package_env_config['ITK_PACKAGE_VERSION']}",
                 "-DITK_WRAP_unsigned_short:BOOL=ON",
                 "-DITK_WRAP_double:BOOL=ON",
                 "-DITK_WRAP_complex_double:BOOL=ON",
@@ -295,7 +298,6 @@ ITK_PYPROJECT_PY_PARAMETERS = {
 
 PYPROJECT_PY_PARAMETERS = {"itk": ITK_PYPROJECT_PY_PARAMETERS}
 
-update_wheel_pyproject_toml_parameters()
 
 
 def main():
@@ -313,14 +315,25 @@ def main():
         help="Output directory for configured 'pyproject.toml'",
         default=default_output_dir,
     )
+    parser.add_argument(
+        "--env-file",
+        type=str,
+        help=".env file with parameters used to configured 'pyproject.toml'",
+        default=default_env_file,
+    )
     args = parser.parse_args()
-    template = os.path.join(SCRIPT_DIR, "pyproject.toml.in")
+    print(f"Reading configuration settings from {args.env_file}")
+    package_env_config = dotenv_values(args.env_file)
+    update_wheel_pyproject_toml_parameters(package_env_config)
+
     if args.wheel_name not in PYPROJECT_PY_PARAMETERS.keys():
         print("Unknown wheel name '%s'" % args.wheel_name)
         sys.exit(1)
 
     # Configure 'pyproject.toml'
     output_file = os.path.join(args.output_dir, "pyproject.toml")
+    print(f"Generating: {output_file}")
+    template = os.path.join(SCRIPT_DIR, "pyproject.toml.in")
     configure(template, PYPROJECT_PY_PARAMETERS[args.wheel_name], output_file)
 
     # Configure or remove 'itk/__init__.py'

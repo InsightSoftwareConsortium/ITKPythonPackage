@@ -136,6 +136,7 @@ def build_wheel(
         source_path = "%s/ITK" % ITK_SOURCE
         build_path = "%s/ITK-win_%s" % (ROOT_DIR, python_version)
         pyproject_configure = os.path.join(SCRIPT_DIR, "pyproject_configure.py")
+        env_file=os.path.join(os.path.dirname(SCRIPT_DIR), "build", "package.env")
 
         # Clean up previous invocations
         if cleanup and os.path.exists(build_path):
@@ -148,7 +149,7 @@ def build_wheel(
             print("#")
 
             # Configure pyproject.toml
-            check_call([python_executable, pyproject_configure, "itk"])
+            check_call([python_executable, pyproject_configure, "--env-file", env_file ,"itk"])
 
             # Generate wheel
             check_call(
@@ -208,9 +209,10 @@ def build_wheel(
                         wheel_name.strip() for wheel_name in content.readlines()
                     ]
 
+            env_file=os.path.join(os.path.dirname(SCRIPT_DIR), "build", "package.env")
             for wheel_name in wheel_names:
                 # Configure pyproject.toml
-                check_call([python_executable, pyproject_configure, wheel_name])
+                check_call([python_executable, pyproject_configure, "--env-file", env_file ,wheel_name])
 
                 # Generate wheel
                 check_call(
