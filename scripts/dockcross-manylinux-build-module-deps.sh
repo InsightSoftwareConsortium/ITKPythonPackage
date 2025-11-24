@@ -17,23 +17,24 @@
 # ..
 #
 # ===========================================
-# ENVIRONMENT VARIABLES
-#
-# - `ITK_MODULE_PREQ`: Prerequisite ITK modules that must be built before the requested module.
-#   Format is `<org_name>/<module_name>@<module_tag>:<org_name>/<module_name>@<module_tag>:...`.
-#   For instance, `export ITK_MODULE_PREQ=InsightSoftwareConsortium/ITKMeshToPolyData@v0.10.0`
+# ENVIRONMENT VARIABLES: ITK_MODULE_PREQ
 #
 ########################################################################
 
 # Initialize variables
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
+_ipp_dir=$(dirname ${script_dir})
+package_env_file=${_ipp_dir}/build/package.env
+if [ ! -f "${package_env_file}" ]; then
+  ${_ipp_dir}/generate_build_environment.sh -o ${package_env_file}
+fi
+source "${package_env_file}"
+
 if [[ ! -f "${script_dir}/dockcross-manylinux-download-cache-and-build-module-wheels.sh" ]]; then
   echo "Could not find download script to use for building module dependencies!"
   exit 1
 fi
-
-source "${script_dir}/dockcross-manylinux-set-vars.sh"
 
 # Temporarily update prerequisite environment variable to prevent infinite recursion.
 ITK_MODULE_PREQ_TOPLEVEL=${ITK_MODULE_PREQ}

@@ -13,22 +13,16 @@
 #   scripts/dockcross-manylinux-build-module-wheels.sh cp39
 #
 # ===========================================
-# ENVIRONMENT VARIABLES
-#
-# These variables are set with the `export` bash command before calling the script.
-# For example,
-#
-#   export ITK_PACKAGE_VERSION="v5.4.0"
-#   export ITKPYTHONPACKAGE_ORG="InsightSoftwareConsortium"
-#   scripts/dockcross-manylinux-download-cache-and-build-module-wheels cp39
-#
-# `ITKPYTHONPACKAGE_ORG`: Github organization for fetching ITKPythonPackage build scripts.
-#
-# `ITKPYTHONPACKAGE_TAG`: ITKPythonPackage tag for fetching build scripts.
-#
-# Additional environment variables may be defined in accompanying build scripts.
-#
+# ENVIRONMENT VARIABLES: ITKPYTHONPACKAGE_ORG, ITKPYTHONPACKAGE_TAG
 ########################################################################
+
+script_dir=$(cd $(dirname $0) || exit 1; pwd)
+_ipp_dir=$(dirname ${script_dir})
+package_env_file=${_ipp_dir}/build/package.env
+if [ ! -f "${package_env_file}" ]; then
+  ${_ipp_dir}/generate_build_environment.sh -o ${package_env_file}
+fi
+source "${package_env_file}"
 
 # -----------------------------------------------------------------------
 # Script argument parsing

@@ -9,15 +9,7 @@
 # architectures.
 #
 # ===========================================
-# ENVIRONMENT VARIABLES
-#
-# - `ITK_MODULE_PREQ`: Prerequisite ITK modules that must be built before the requested module.
-#   Format is `<org_name>/<module_name>@<module_tag>:<org_name>/<module_name>@<module_tag>:...`.
-#   For instance, `export ITK_MODULE_PREQ=InsightSoftwareConsortium/ITKMeshToPolyData@v0.10.0`
-#
-# - `NO_SUDO`: Disable the use of superuser permissions for removing directories.
-#    `sudo` is required by default for cleanup on Github Actions runners.
-#
+# ENVIRONMENT VARIABLES: ITK_MODULE_PREQ, NO_SUDO
 ########################################################################
 
 echo "Cleaning up artifacts from module build"

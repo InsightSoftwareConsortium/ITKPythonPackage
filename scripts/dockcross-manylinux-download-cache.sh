@@ -11,24 +11,7 @@
 # steps not present in `dockcross-manylinux-download-cache-and-build-module-wheels.sh`.
 #
 # ===========================================
-# ENVIRONMENT VARIABLES
-#
-# `ITK_PACKAGE_VERSION`: Tag for ITKPythonBuilds build cache to use
-#     Examples: "v5.4.0", "v5.2.1.post1"
-#     See available tags at https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/tags
-#
-# `MANYLINUX_VERSION`: manylinux specialization used to build ITK for cache
-#     Examples: "_2_28", "2014", "_2_28_aarch64"
-#     See https://github.com/dockcross/dockcross
-#
-# `ITKPYTHONPACKAGE_TAG`: Tag for ITKPythonPackage build scripts to use.
-#     If ITKPYTHONPACKAGE_TAG is empty then the default scripts distributed
-#     with the ITKPythonBuilds archive will be used.
-#
-# `ITKPYTHONPACKAGE_ORG`: Github organization or user to use for ITKPythonPackage
-#     build script source. Default is InsightSoftwareConsortium.
-#     Ignored if ITKPYTHONPACKAGE_TAG is empty.
-#
+# ENVIRONMENT VARIABLES: ITK_GIT_TAG, MANYLINUX_VERSION, ITKPYTHONPACKAGE_TAG, ITKPYTHONPACKAGE_ORG
 ########################################################################
 
 # -----------------------------------------------------------------------

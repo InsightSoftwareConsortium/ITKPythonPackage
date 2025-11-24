@@ -19,7 +19,7 @@ script_dir=$(cd $(dirname $0) || exit 1; pwd)
 _ipp_dir=$(dirname ${script_dir})
 package_env_file=${_ipp_dir}/build/package.env
 if [ ! -f "${package_env_file}" ]; then
-  source ${_ipp_dir}/generate_build_environment.sh.sh
+  ${_ipp_dir}/generate_build_environment.sh -o ${package_env_file}
 fi
 source "${package_env_file}"
 

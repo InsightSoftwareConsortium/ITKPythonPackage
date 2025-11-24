@@ -16,24 +16,14 @@
 # running this script.
 #
 # ===========================================
-# ENVIRONMENT VARIABLES
+# ENVIRONMENT VARIABLES: ITK_GIT_TAG ITKPYTHONPACKAGE_ORG ITK_USE_LOCAL_PYTHON
 #
 # These variables are set with the `export` bash command before calling the script.
 # For example,
 #
-#   export DYLD_LIBRARY_PATH="/path/to/libs"
-#
-# `ITK_PACKAGE_VERSION`: ITKPythonBuilds archive tag to use for ITK build artifacts.
-#   See https://github.com/InsightSoftwareConsortium/ITKPythonBuilds for available tags.
-#   For instance, `export ITK_PACKAGE_VERSION=v5.4.0`.
-#
-# `ITKPYTHONPACKAGE_ORG`: Github organization for fetching ITKPythonPackage build scripts.
-#
-# `ITKPYTHONPACKAGE_TAG`: ITKPythonPackage tag for fetching build scripts.
-#
-# `ITK_USE_LOCAL_PYTHON`: Determine how to get Python framework for build.
-#    - If empty, Python frameworks will be fetched from python.org
-#    - If not empty, frameworks already on machine will be used without fetching.
+#   generate_build_environment.sh # creates default build/package.env
+#   edit build/package.env with desired build elements
+#   scripts/macpython-build-module-wheels.sh 3.7 3.9
 #
 ########################################################################
 

@@ -15,20 +15,13 @@
 # running this script.
 #
 # ===========================================
-# ENVIRONMENT VARIABLES
+# ENVIRONMENT VARIABLES: DYLD_LIBRARY_PATH
 #
-# These variables are set with the `export` bash command before calling the script.
+# These variables are set in build/package.env before calling this script.
 # For example,
-#
-#   export DYLD_LIBRARY_PATH="/path/to/libs"
-#   scripts/macpython-build-module-wheels.sh 3.7 3.9
-#
-# `DYLD_LIBRARY_PATH`: Shared libraries to be included in the resulting wheel.
-#   For instance, `export DYLD_LIBRARY_PATH="/path/to/OpenCL.so:/path/to/OpenCL.so.1.2"`
-#
-# `ITK_MODULE_PREQ`: Prerequisite ITK modules that must be built before the requested module.
-#   Format is `<org_name>/<module_name>@<module_tag>:<org_name>/<module_name>@<module_tag>:...`.
-#   For instance, `export ITK_MODULE_PREQ=InsightSoftwareConsortium/ITKMeshToPolyData@v0.10.0`
+#   generate_build_environment.sh # creates default build/package.env
+#   edit build/package.env with desired build elements
+#   scripts/macpython-build-module-wheels.sh 3.9
 #
 ########################################################################
 

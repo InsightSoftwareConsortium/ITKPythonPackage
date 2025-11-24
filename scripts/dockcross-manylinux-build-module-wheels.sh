@@ -13,43 +13,17 @@
 #   scripts/dockcross-manylinux-build-module-wheels.sh cp39
 #
 # ===========================================
-# ENVIRONMENT VARIABLES
-#
-# These variables are set with the `export` bash command before calling the script.#
-# For example,
-#
-#   export MANYLINUX_VERSION="_2_28"
-#   scripts/dockcross-manylinux-build-module-wheels.sh cp39
-#
-# `LD_LIBRARY_PATH`: Shared libraries to be included in the resulting wheel.
-#   For instance, `export LD_LIBRARY_PATH="/path/to/OpenCL.so:/path/to/OpenCL.so.1.2"`
-#
-# `MANYLINUX_VERSION`: Specialized manylinux image to use for building. Default is _2_28.
-#   See https://github.com/dockcross/dockcross for available versions and tags.
-#   For instance, `export MANYLINUX_VERSION=2014`
-#
-# `TARGET_ARCH`: Target architecture for which wheels should be built.
-#   For instance, `export MANYLINUX_VERSION=aarch64`
-#
-# `IMAGE_TAG`: Specialized manylinux image tag to use for building.
-#   For instance, `export IMAGE_TAG=20221205-459c9f0`.
-#   Tagged images are available at:
-#   - https://github.com/dockcross/dockcross (x64 architecture)
-#   - https://quay.io/organization/pypa (ARM architecture)
-#
-# `ITK_MODULE_PREQ`: Prerequisite ITK modules that must be built before the requested module.
-#   See notes in `dockcross-manylinux-build-module-deps.sh`.
-#
-# `ITK_MODULE_NO_CLEANUP`: Option to skip cleanup steps.
-#
-# - `NO_SUDO`: Disable the use of superuser permissions for running docker.
-#
+# See generate_build_environment.sh for description of environmental variable usage
+# ENVIRONMENT VARIABLES: LD_LIBRARY_PATH, MANYLINUX_VERSION, TARGET_ARCH, IMAGE_TAG, ITK_MODULE_PREQ, ITK_MODULE_NO_CLEANUP, NO_SUDO
 ########################################################################
 
-# Handle case where the script directory is not the working directory
-script_dir=$(cd $(dirname $0) || exit 1; pwd)
-source "${script_dir}/dockcross-manylinux-set-vars.sh"
-source "${script_dir}/oci_exe.sh"
+script_dir=${script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
+_ipp_dir=$(dirname ${script_dir})
+package_env_file=${_ipp_dir}/build/package.env
+if [ ! -f "${package_env_file}" ]; then
+  ${_ipp_dir}/generate_build_environment.sh -o ${package_env_file}
+fi
+source "${package_env_file}"
 
 oci_exe=$(ociExe)
 

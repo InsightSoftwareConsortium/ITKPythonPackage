@@ -94,7 +94,7 @@ if(ITKPythonPackage_SUPERBUILD)
 
   # Sanity checks
   if(DEFINED ITK_SOURCE_DIR AND NOT EXISTS ${ITK_SOURCE_DIR})
-    message(FATAL_ERROR "ITK_SOURCE_DIR variable is defined but corresponds to nonexistent directory")
+    message(FATAL_ERROR "Variable is defined but corresponds to nonexistent directory:\nITK_SOURCE_DIR=${ITK_SOURCE_DIR}")
   endif()
 
   if(ITKPythonPackage_USE_TBB)

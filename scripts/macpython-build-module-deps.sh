@@ -18,11 +18,6 @@
 #
 # ===========================================
 # ENVIRONMENT VARIABLES
-#
-# - `ITK_MODULE_PREQ`: Prerequisite ITK modules that must be built before the requested module.
-#   Format is `<org_name>/<module_name>@<module_tag>:<org_name>/<module_name>@<module_tag>:...`.
-#   For instance, `export ITK_MODULE_PREQ=InsightSoftwareConsortium/ITKMeshToPolyData@v0.10.0`
-#
 ########################################################################
 
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
@@ -34,6 +29,8 @@ fi
 # Temporarily update prerequisite environment variable to prevent infinite recursion.
 ITK_MODULE_PREQ_TOPLEVEL=${ITK_MODULE_PREQ}
 ITK_USE_LOCAL_PYTHON_TOPLEVEL=${ITK_USE_LOCAL_PYTHON}
+
+# Temporary values within script (to be resored at end of the script).
 export ITK_MODULE_PREQ=""
 export ITK_USE_LOCAL_PYTHON="ON"
 
