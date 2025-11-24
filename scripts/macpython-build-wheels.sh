@@ -63,18 +63,15 @@ DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
 
 build_type="Release"
+MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET:="15.0"}
 
 if [[ $(arch) == "arm64" ]]; then
-  osx_target="15.0"
   osx_arch="arm64"
   use_tbb="OFF"
 else
-  osx_target="15.0"
   osx_arch="x86_64"
   use_tbb="OFF"
 fi
-
-export MACOSX_DEPLOYMENT_TARGET=${osx_target}
 
 # Build standalone project and populate archive cache
 tbb_dir=$PWD/oneTBB-prefix/lib/cmake/TBB
@@ -88,7 +85,7 @@ pushd ITK-source > /dev/null 2>&1
     -G Ninja \
     -DCMAKE_BUILD_TYPE:STRING=${build_type} \
     -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
-    -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+    -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${MACOSX_DEPLOYMENT_TARGET} \
     -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
     ${CMAKE_COMPILER_ARGS} \
       ${script_dir}/../
@@ -114,9 +111,6 @@ for VENV in "${VENVS[@]}"; do
       plat_name="macosx-15.0-x86_64"
       build_path="${script_dir}/../ITK-${py_mm}-macosx_x86_64"
     fi
-    if [[ ! -z "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
-      osx_target="${MACOSX_DEPLOYMENT_TARGET}"
-    fi
     source_path=${script_dir}/../ITK-source/ITK
 
     # Clean up previous invocations
@@ -135,7 +129,7 @@ for VENV in "${VENVS[@]}"; do
         -DITK_SOURCE_DIR:PATH=${source_path} \
         -DITK_BINARY_DIR:PATH=${build_path} \
         -DBUILD_TESTING:BOOL=OFF \
-        -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+        -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${MACOSX_DEPLOYMENT_TARGET} \
         -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
         ${CMAKE_COMPILER_ARGS} \
         -DITK_WRAP_unsigned_short:BOOL=ON \
@@ -173,7 +167,7 @@ for VENV in "${VENVS[@]}"; do
         --skip-dependency-check \
         --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
         --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
-        --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${osx_target} \
+        --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${MACOSX_DEPLOYMENT_TARGET} \
         --config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
         --config-setting=cmake.define.ITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
         --config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
