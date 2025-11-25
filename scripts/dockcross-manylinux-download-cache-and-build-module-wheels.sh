@@ -16,14 +16,7 @@
 # ENVIRONMENT VARIABLES: ITKPYTHONPACKAGE_ORG, ITKPYTHONPACKAGE_TAG
 ########################################################################
 
-script_dir=$(cd $(dirname $0) || exit 1; pwd)
-_ipp_dir=$(dirname ${script_dir})
-package_env_file=${_ipp_dir}/build/package.env
-if [ ! -f "${package_env_file}" ]; then
-  ${_ipp_dir}/generate_build_environment.sh -o ${package_env_file}
-fi
-source "${package_env_file}"
-
+download_script_dir=$(cd $(dirname $0) || exit 1; pwd)
 # -----------------------------------------------------------------------
 # Script argument parsing
 #
@@ -77,7 +70,7 @@ eval ${_download_cmd}
 untarred_ipp_dir=${download_script_dir}/ITKPythonPackage
 package_env_file=${untarred_ipp_dir}/build/package.env
 if [ ! -f "${package_env_file}" ]; then
-  source ${untarred_ipp_dir}/generate_build_environment.sh.sh
+  source ${untarred_ipp_dir}/generate_build_environment.sh -o ${package_env_file}
 fi
 source "${package_env_file}"
 
