@@ -116,6 +116,7 @@ for VENV in "${VENVS[@]}"; do
     (
       mkdir -p ${build_path} \
       && cd ${build_path} \
+      && echo "CMAKE VERSION: $(cmake --version)" \
       && cmake \
         -DCMAKE_BUILD_TYPE:STRING=${build_type} \
         -DITK_SOURCE_DIR:PATH=${ITK_SOURCE_DIR} \
@@ -146,9 +147,11 @@ for VENV in "${VENVS[@]}"; do
       || exit 1
     )
 
+    echo "BUILDING ITK Wheels"
     PYPROJECT_CONFIGURE="${script_dir}/pyproject_configure.py"
     wheel_names=$(cat ${script_dir}/WHEEL_NAMES.txt)
     for wheel_name in ${wheel_names}; do
+      echo "==building ${wheel_name} in ${build_path} =="
       # Configure pyproject.toml
       ${Python3_EXECUTABLE} ${PYPROJECT_CONFIGURE} --env-file ${package_env_file} ${wheel_name}
       # Generate wheel
