@@ -20,7 +20,11 @@
 # ENVIRONMENT VARIABLES
 ########################################################################
 
-script_dir=$(cd $(dirname $0) || exit 1; pwd)
+if [ "${BASH_SOURCE[0]}" == "${0}" ]; then
+    echo "ERROR: This script must be sourced with _ipp_dir predefined, not executed as a script."
+    exit 1
+fi
+
 if [[ ! -f "${script_dir}/macpython-download-cache-and-build-module-wheels.sh" ]]; then
   echo "Could not find download script to use for building module dependencies!"
   exit 1

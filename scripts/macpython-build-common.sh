@@ -3,7 +3,10 @@
 
 set -e -x
 
-SCRIPT_DIR=$(cd $(dirname $0) || exit 1; pwd)
+if [ "${BASH_SOURCE[0]}" == "${0}" ]; then
+    echo "ERROR: This script must be sourced with _ipp_dir predefined, not executed as a script."
+    exit 1
+fi
 
 MACPYTHON_PY_PREFIX=/Library/Frameworks/Python.framework/Versions
 
@@ -63,13 +66,13 @@ fi
 # Remove previous virtualenv's
 rm -rf ${script_dir}/../venvs
 VENVS=()
-mkdir -p ${SCRIPT_DIR}/../venvs
+mkdir -p ${_ipp_dir}/venvs
 for PYBIN in "${PYBINARIES[@]}"; do
     if [[ $(basename $PYBIN) = "Current" ]]; then
       continue
     fi
     py_mm=$(basename ${PYBIN})
-    _VENV_DIR=${SCRIPT_DIR}/../venvs/${py_mm}
+    _VENV_DIR=${_ipp_dir}/venvs/${py_mm}
     VIRTUALENV_EXECUTABLE="${PYBIN}/bin/python3 -m venv"
     ${VIRTUALENV_EXECUTABLE} ${_VENV_DIR}
     VENVS+=(${_VENV_DIR})
