@@ -28,7 +28,7 @@
 #
 
 # -----------------------------------------------------------------------
-# These variables are set in common script: ARCH, PYBINARIES, Python3_LIBRARY
+# These variables are set in common script: TARGET_ARCH, PYBINARIES, Python3_LIBRARY
 #
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
@@ -97,7 +97,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
 
     build_type="Release"
     compile_flags="-O3 -DNDEBUG"
-    build_path=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-$(basename $(dirname ${PYBIN}))-manylinux${MANYLINUX_VERSION}_${ARCH}
+    build_path=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-$(basename $(dirname ${PYBIN}))-manylinux${MANYLINUX_VERSION}_${TARGET_ARCH}
 
     # Clean up previous invocations
     # rm -rf ${build_path}
@@ -177,7 +177,7 @@ done
 
 sudo /opt/python/cp311-cp311/bin/pip3 install auditwheel wheel
 
-if test "${ARCH}" == "x64"; then
+if test "${TARGET_ARCH}" == "x64"; then
   # This step will fixup the wheel switching from 'linux' to 'manylinux<version>' tag
   for whl in dist/itk_*linux_*.whl; do
       /opt/python/cp311-cp311/bin/auditwheel repair --plat manylinux${MANYLINUX_VERSION}_x86_64 ${whl} -w ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/dist/

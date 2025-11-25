@@ -25,17 +25,6 @@ if [ ! -f "${package_env_file}" ]; then
 fi
 source "${package_env_file}"
 
-# Set container for requested version/arch/tag.
-if [[ ${TARGET_ARCH} == x64 ]]; then
-  MANYLINUX_IMAGE_NAME=${MANYLINUX_IMAGE_NAME:="manylinux${MANYLINUX_VERSION}-${TARGET_ARCH}:${IMAGE_TAG}"}
-  CONTAINER_SOURCE="docker.io/dockcross/${MANYLINUX_IMAGE_NAME}"
-elif [[ ${TARGET_ARCH} == aarch64 ]]; then
-  MANYLINUX_IMAGE_NAME=${MANYLINUX_IMAGE_NAME:="manylinux${MANYLINUX_VERSION}_${TARGET_ARCH}:${IMAGE_TAG}"}
-  CONTAINER_SOURCE="quay.io/pypa/${MANYLINUX_IMAGE_NAME}"
-else
-  echo "Unknown target architecture ${TARGET_ARCH}"
-  exit 1;
-fi
 
 if [[ -n ${ITK_MODULE_PREQ} ]]; then
   echo "Building module dependencies ${ITK_MODULE_PREQ}"

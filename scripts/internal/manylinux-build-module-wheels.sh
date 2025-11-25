@@ -59,12 +59,6 @@ done
 PYTHON_VERSION="$@"
 # -----------------------------------------------------------------------
 
-# -----------------------------------------------------------------------
-# These variables are set in common script:
-#
-ARCH=""
-PYBINARIES=""
-
 script_dir=$(cd $(dirname $0) || exit 1; pwd)
 source "${script_dir}/manylinux-build-common.sh"
 # -----------------------------------------------------------------------
@@ -91,8 +85,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
     version=$(basename $(dirname ${PYBIN}))
     # Remove "m" -- not present in Python 3.8 and later
     version=${version:0:9}
-    itk_build_dir=/work/$(basename /ITKPythonPackage/ITK-${version}*-manylinux${MANYLINUX_VERSION}_${ARCH})
-    ln -fs /ITKPythonPackage/ITK-${version}*-manylinux${MANYLINUX_VERSION}_${ARCH} $itk_build_dir
+    itk_build_dir=/work/$(basename /ITKPythonPackage/ITK-${version}*-manylinux${MANYLINUX_VERSION}_${TARGET_ARCH})
+    ln -fs /ITKPythonPackage/ITK-${version}*-manylinux${MANYLINUX_VERSION}_${TARGET_ARCH} $itk_build_dir
     if [[ ! -d ${itk_build_dir} ]]; then
       echo 'ITK build tree not available!' 1>&2
       exit 1

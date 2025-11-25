@@ -185,10 +185,8 @@ case "$(uname -s)" in
         export PATH=${_ipp_dir}/tools/doxygen-1.8.16/bin:$PATH
         case $(uname -m) in
             i686)
-                ARCH=x86
                 ;;
             x86_64)
-                ARCH=x64
                 if ! type doxygen > /dev/null 2>&1; then
                   mkdir -p ${_ipp_dir}/tools
                     pushd ${_ipp_dir}/tools > /dev/null 2>&1
@@ -199,7 +197,6 @@ case "$(uname -s)" in
                 fi
                 ;;
             aarch64)
-                ARCH=aarch64
                 if ! type doxygen > /dev/null 2>&1; then
                   mkdir -p ${_ipp_dir}/tools
                   pushd ${_ipp_dir}/tools > /dev/null 2>&1
@@ -290,7 +287,20 @@ fi
 ########################################################################
 # Docker image parameters
 MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28} # <- The primary support target for ITK as of 20251114.  Including upto Python 3.15 builds.
-TARGET_ARCH=${TARGET_ARCH:=x64}
+case $(uname -m) in
+    i686)
+        TARGET_ARCH=x86
+        ;;
+    x86_64)
+        TARGET_ARCH=x64
+        ;;
+    aarch64)
+        TARGET_ARCH=aarch64
+        ;;
+    *)
+        die "Unknown architecture $(uname -m)"
+        ;;
+esac
 
 if [[ ${MANYLINUX_VERSION} == _2_34 && ${TARGET_ARCH} == x64 ]]; then
   # https://hub.docker.com/r/dockcross/manylinux_2_34-x64/tags
@@ -305,6 +315,18 @@ elif [[ ${MANYLINUX_VERSION} == 2014 ]]; then
   IMAGE_TAG=${IMAGE_TAG:=20240304-9e57d2b}
 else
   echo "Unknown manylinux version ${MANYLINUX_VERSION}"
+  exit 1;
+fi
+#
+# Set container for requested version/arch/tag.
+if [[ ${TARGET_ARCH} == x64 ]]; then
+  MANYLINUX_IMAGE_NAME=${MANYLINUX_IMAGE_NAME:="manylinux${MANYLINUX_VERSION}-${TARGET_ARCH}:${IMAGE_TAG}"}
+  CONTAINER_SOURCE=${CONTAINER_SOURCE:="docker.io/dockcross/${MANYLINUX_IMAGE_NAME}"}
+elif [[ ${TARGET_ARCH} == aarch64 ]]; then
+  MANYLINUX_IMAGE_NAME=${MANYLINUX_IMAGE_NAME:="manylinux${MANYLINUX_VERSION}_${TARGET_ARCH}:${IMAGE_TAG}"}
+  CONTAINER_SOURCE=${CONTAINER_SOURCE:="quay.io/pypa/${MANYLINUX_IMAGE_NAME}"}
+else
+  echo "Unknown target architecture ${TARGET_ARCH}"
   exit 1;
 fi
 
@@ -413,6 +435,10 @@ IMAGE_TAG=${IMAGE_TAG}
 # - "LD_LIBRARY_PATH": Shared libraries to be included in the resulting wheel.
 #   For instance, "export LD_LIBRARY_PATH="/path/to/OpenCL.so:/path/to/OpenCL.so.1.2""
 LD_LIBRARY_PATH=${LD_LIBRARY_PATH}
+
+# Almost never change MANYLINUX_IMAGE_NAME or CONTAINER_SOURCE, keep in sync with 
+MANYLINUX_IMAGE_NAME=manylinux\${MANYLINUX_VERSION}_\${TARGET_ARCH}:\${IMAGE_TAG}
+CONTAINER_SOURCE=${CONTAINER_SOURCE}
 
 DEFAULT_LINUX_ENV_SETTINGS
 fi

@@ -56,9 +56,6 @@ ${unzstd_exe} --version
 
 # -----------------------------------------------------------------------
 # Fetch build archive
-
-TARGET_ARCH=${TARGET_ARCH:=x64}
-
 case ${TARGET_ARCH} in
     x64)
         TARBALL_SPECIALIZATION="-manylinux${MANYLINUX_VERSION}"
