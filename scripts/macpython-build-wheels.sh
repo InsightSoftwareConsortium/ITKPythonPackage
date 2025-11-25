@@ -65,19 +65,23 @@ else
   tbb_dir="NOT-FOUND"
 fi
 
-mkdir -p ITK-source
-pushd ITK-source > /dev/null 2>&1
-  ${CMAKE_EXECUTABLE} -DITKPythonPackage_BUILD_PYTHON:PATH=0 \
-    -DITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
-    -G Ninja \
-    -DCMAKE_BUILD_TYPE:STRING=${build_type} \
-    -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
-    -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${MACOSX_DEPLOYMENT_TARGET} \
-    -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
-    ${CMAKE_COMPILER_ARGS} \
-      ${script_dir}/../
-  ${NINJA_EXECUTABLE} -j$n_processors -l$n_processors
-popd > /dev/null 2>&1
+# -----------------------------------------------------------------------
+IPP_BUILD_DIR=${_ipp_dir}/ITK-source
+mkdir -p ${IPP_BUILD_DIR}
+echo "CMAKE VERSION: $(${CMAKE_EXECUTABLE} --version)"
+${CMAKE_EXECUTABLE} -DITKPythonPackage_BUILD_PYTHON:PATH=0 \
+  -DITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
+  -G Ninja \
+  -DCMAKE_BUILD_TYPE:STRING=${build_type} \
+  -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
+  -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${MACOSX_DEPLOYMENT_TARGET} \
+  -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
+  -DITK_SOURCE_DIR=${ITK_SOURCE_DIR} \
+  ${CMAKE_COMPILER_ARGS} \
+  -S ${_ipp_dir} \
+  -B ${IPP_BUILD_DIR} \
+  \
+  && ${NINJA_EXECUTABLE} -C ${IPP_BUILD_DIR} -j$n_processors -l$n_processors
 
 # Compile wheels re-using standalone project and archive cache
 for VENV in "${VENVS[@]}"; do
