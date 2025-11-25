@@ -46,7 +46,6 @@ DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
 
 build_type="Release"
-MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET:="15.0"}
 
 if [[ $(arch) == "arm64" ]]; then
   osx_arch="arm64"

@@ -39,9 +39,9 @@ else
 fi
 # Fetch ITKPythonBuilds archive containing ITK build artifacts
 rm -fr ITKPythonPackage
-echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.4.0}/ITKPythonBuilds-macosx${tarball_arch}.tar.zst"
+echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION}/ITKPythonBuilds-macosx${tarball_arch}.tar.zst"
 if [[ ! -f ITKPythonBuilds-macosx${tarball_arch}.tar.zst ]]; then
-  aria2c -c --file-allocation=none -o ITKPythonBuilds-macosx${tarball_arch}.tar.zst -s 10 -x 10 https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION:=v5.4.0}/ITKPythonBuilds-macosx${tarball_arch}.tar.zst
+  aria2c -c --file-allocation=none -o ITKPythonBuilds-macosx${tarball_arch}.tar.zst -s 10 -x 10 https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION}/ITKPythonBuilds-macosx${tarball_arch}.tar.zst
 fi
 unzstd --long=31 ITKPythonBuilds-macosx${tarball_arch}.tar.zst -o ITKPythonBuilds-macosx${tarball_arch}.tar
 PATH="$(dirname $(brew list gnu-tar | grep gnubin)):$PATH"
@@ -63,7 +63,7 @@ rm ITKPythonBuilds-macosx${tarball_arch}.tar
 
 # Optional: Update build scripts
 if [[ -n ${ITKPYTHONPACKAGE_TAG} ]]; then
-  echo "Updating build scripts to ${ITKPYTHONPACKAGE_ORG:=InsightSoftwareConsortium}/ITKPythonPackage@${ITKPYTHONPACKAGE_TAG}"
+  echo "Updating build scripts to ${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage@${ITKPYTHONPACKAGE_TAG}"
   git clone "https://github.com/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage.git" "IPP-tmp"
   pushd IPP-tmp/
   git checkout "${ITKPYTHONPACKAGE_TAG}"

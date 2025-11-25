@@ -17,7 +17,7 @@
 # ENVIRONMENT VARIABLES: LD_LIBRARY_PATH, MANYLINUX_VERSION, TARGET_ARCH, IMAGE_TAG, ITK_MODULE_PREQ, ITK_MODULE_NO_CLEANUP, NO_SUDO
 ########################################################################
 
-script_dir=${script_dir:=$(cd $(dirname $0) || exit 1; pwd)}
+script_dir=$(cd $(dirname $0) || exit 1; pwd)
 _ipp_dir=$(dirname ${script_dir})
 package_env_file=${_ipp_dir}/build/package.env
 if [ ! -f "${package_env_file}" ]; then
