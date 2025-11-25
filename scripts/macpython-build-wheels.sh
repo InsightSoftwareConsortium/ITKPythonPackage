@@ -102,7 +102,6 @@ for VENV in "${VENVS[@]}"; do
       plat_name="macosx-${MACOSX_DEPLOYMENT_TARGET}-x86_64"
       build_path="${_ipp_dir}/ITK-${py_mm}-macosx_x86_64"
     fi
-    source_path=${_ipp_dir}/ITK-source/ITK
 
     # Clean up previous invocations
     if [  "${ITK_MODULE_NO_CLEANUP:-0}" -eq 0  ]; then
@@ -119,7 +118,7 @@ for VENV in "${VENVS[@]}"; do
       && cd ${build_path} \
       && cmake \
         -DCMAKE_BUILD_TYPE:STRING=${build_type} \
-        -DITK_SOURCE_DIR:PATH=${source_path} \
+        -DITK_SOURCE_DIR:PATH=${ITK_SOURCE_DIR} \
         -DITK_BINARY_DIR:PATH=${build_path} \
         -DBUILD_TESTING:BOOL=OFF \
         -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${MACOSX_DEPLOYMENT_TARGET} \
@@ -141,7 +140,7 @@ for VENV in "${VENVS[@]}"; do
         -DTBB_DIR:PATH=${tbb_dir} \
         ${CMAKE_OPTIONS} \
         -G Ninja \
-        ${source_path} \
+        ${ITK_SOURCE_DIR} \
       && ninja -j$n_processors -l$n_processors \
       || exit 1
     )
@@ -158,7 +157,7 @@ for VENV in "${VENVS[@]}"; do
         --outdir ${_ipp_dir}/dist \
         --no-isolation \
         --skip-dependency-check \
-        --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
+        --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${ITK_SOURCE_DIR} \
         --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
         --config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${MACOSX_DEPLOYMENT_TARGET} \
         --config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
