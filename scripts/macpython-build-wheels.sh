@@ -93,16 +93,16 @@ for VENV in "${VENVS[@]}"; do
     echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
     echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
 
-    ${Python3_EXECUTABLE} -m pip install --upgrade -r ${script_dir}/../requirements-dev.txt
+    ${Python3_EXECUTABLE} -m pip install --upgrade -r ${_ipp_dir}/requirements-dev.txt
 
     if [[ $(arch) == "arm64" ]]; then
       plat_name="macosx-15.0-arm64"
-      build_path="${script_dir}/../ITK-${py_mm}-macosx_arm64"
+      build_path="${_ipp_dir}/ITK-${py_mm}-macosx_arm64"
     else
       plat_name="macosx-15.0-x86_64"
-      build_path="${script_dir}/../ITK-${py_mm}-macosx_x86_64"
+      build_path="${_ipp_dir}/ITK-${py_mm}-macosx_x86_64"
     fi
-    source_path=${script_dir}/../ITK-source/ITK
+    source_path=${_ipp_dir}/ITK-source/ITK
 
     # Clean up previous invocations
     rm -rf ${build_path}
@@ -153,7 +153,7 @@ for VENV in "${VENVS[@]}"; do
       ${Python3_EXECUTABLE} -m build \
         --verbose \
         --wheel \
-        --outdir dist \
+        --outdir ${_ipp_dir}/dist \
         --no-isolation \
         --skip-dependency-check \
         --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
@@ -167,7 +167,7 @@ for VENV in "${VENVS[@]}"; do
         --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
         ${CMAKE_OPTIONS//'-D'/'--config-setting=cmake.define.'} \
         ${CMAKE_COMPILER_ARGS//'-D'/'--config-setting=cmake.define.'} \
-        . \
+        ${_ipp_dir} \
       || exit 1
     done
 
@@ -178,7 +178,7 @@ for VENV in "${VENVS[@]}"; do
 done
 
 if [[ $(arch) != "arm64" ]]; then
-  for wheel in dist/itk_*.whl; do
+  for wheel in ${_ipp_dir}/dist/itk_*.whl; do
     echo "Delocating $wheel"
     ${DELOCATE_LISTDEPS} $wheel # lists library dependencies
     ${DELOCATE_WHEEL} $wheel # copies library dependencies into wheel
@@ -187,9 +187,9 @@ fi
 
 for VENV in "${VENVS[@]}"; do
   ${VENV}/bin/pip install numpy
-  ${VENV}/bin/pip install itk --no-cache-dir --no-index -f ${script_dir}/../dist
+  ${VENV}/bin/pip install itk --no-cache-dir --no-index -f ${_ipp_dir}/dist
   (cd $HOME && ${VENV}/bin/python -c 'import itk;')
   (cd $HOME && ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
   (cd $HOME && ${VENV}/bin/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
-  (cd $HOME && ${VENV}/bin/python ${script_dir}/../docs/code/test.py )
+  (cd $HOME && ${VENV}/bin/python ${_ipp_dir}/docs/code/test.py )
 done
