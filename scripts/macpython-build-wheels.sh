@@ -140,8 +140,9 @@ for VENV in "${VENVS[@]}"; do
         -DTBB_DIR:PATH=${tbb_dir} \
         ${CMAKE_OPTIONS} \
         -G Ninja \
-        ${ITK_SOURCE_DIR} \
-      && ninja -j$n_processors -l$n_processors \
+        -S ${ITK_SOURCE_DIR} \
+        -B ${build_path} \
+      && ninja -C ${build_path} -j$n_processors -l$n_processors \
       || exit 1
     )
 
