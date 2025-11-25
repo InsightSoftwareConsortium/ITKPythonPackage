@@ -85,6 +85,12 @@ if [ ! -z "${CC}" ]; then
   CMAKE_COMPILER_ARGS="${CMAKE_COMPILER_ARGS} -DCMAKE_C_COMPILER:STRING=${CC}"
 fi
 
+if [[ ${USE_CCACHE} == "ON" ]];then
+  # CCACHE_BASEDIR allows cache hits when only the base directory changes
+  export CCACHE_BASEDIR=${ITK_SOURCE_DIR}
+  CMAKE_COMPILER_ARGS="${CMAKE_COMPILER_ARGS} -DCMAKE_C_COMPILER_LAUNCHER=$(which ccache)  -DCMAKE_CXX_COMPILER_LAUNCHER=$(which ccache)"
+fi
+
 # -----------------------------------------------------------------------
 # Ensure that requirements are met
 brew update

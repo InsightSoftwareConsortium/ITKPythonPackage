@@ -288,6 +288,9 @@ NO_SUDO=${NO_SUDO:=0}
 #   =1 <- Leave tempoary build files in place after completion, 0 <- remove temporary build files
 ITK_MODULE_NO_CLEANUP=${ITK_MODULE_NO_CLEANUP:=1}
 
+# - "USE_CCACHE": Option to indicate that ccache should be used
+#   =1 <- Set cmake settings to use ccache for acclerating rebuilds, 0 <- no ccache usage
+USE_CCACHE=${USE_CCACHE:=0}
 DEFAULT_ENV_SETTINGS
 
 if [[ "$(uname)" == "Linux" ]]; then
