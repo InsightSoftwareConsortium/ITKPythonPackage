@@ -73,3 +73,6 @@ docs/_build
 # IDE junk
 .idea/*
 *.swp
+# pixi environments
+.pixi/*
+!.pixi/config.toml

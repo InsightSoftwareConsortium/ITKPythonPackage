@@ -1,0 +1,29 @@
+[workspace]
+authors = [
+  "Insight Software Consortium <>",
+  "Matt McCormick <matt@fideus.io>",
+  "Jean-Christophe Fillion-Robin <jchris.fillionr@kitware.com>",
+  "Tom Birdsong <tom.birdsong@kitware.com>",
+  "Hans J. Johnson <hans-johnson@uiowa.edu>",
+  "Dženan Zukić <dzenan.zukic@kitware.com>",
+  "Simon Rit <simon.rit@creatis.insa-lyon.fr>",
+  "Francois Budin <francois.budin@kitware.com>",
+  "LucasGandel <lucas.gandel@gmail.com>",
+  "Davis Marc Vigneault <davis.vigneault@gmail.com>",
+  "Jon Haitz Legarreta Gorroño <jon.haitz.legarreta@gmail.com>",
+  "Lee Newberg <lee.newberg@kitware.com>"
+]
+
+channels = ["conda-forge"]
+name = "ITKPythonPackage"
+platforms = ["linux-64", "linux-aarch64", "win-64", "osx-64", "osx-arm64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+doxygen = ">=1.13.2,<2"
+ninja = ">=1.13.2,<2"
+cmake = ">=4.2.0,<5"
+numpy = ">=2.3.5,<3"
+cxx-compiler = "==1.10.0"
