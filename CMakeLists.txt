@@ -181,18 +181,18 @@ if(ITKPythonPackage_SUPERBUILD)
     set(tbb_depends oneTBB)
   endif()
 
-  set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
-
-  if(NOT DEFINED ITK_GIT_TAG AND DEFINED ENV{ITK_GIT_TAG})
-      set(ITK_GIT_TAG "$ENV{ITK_GIT_TAG}")
-  endif()
-
-  if(NOT DEFINED ITK_GIT_TAG)
-    message(FATAL_ERROR "ITK_GIT_TAG must be defined when configuring cmake")
-  endif()
   # Only add ITK-source-download ExternalProject if directory does not
   # already exist
   if(NOT EXISTS ${ITK_SOURCE_DIR})
+    set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
+
+    if(NOT DEFINED ITK_GIT_TAG AND DEFINED ENV{ITK_GIT_TAG})
+      set(ITK_GIT_TAG "$ENV{ITK_GIT_TAG}")
+    endif()
+
+    if(NOT DEFINED ITK_GIT_TAG)
+      message(FATAL_ERROR "ITK_GIT_TAG must be defined when configuring cmake")
+    endif()
     ExternalProject_add(ITK-source-download
       SOURCE_DIR ${ITK_SOURCE_DIR}
       GIT_REPOSITORY ${ITK_REPOSITORY}
@@ -206,7 +206,8 @@ if(ITKPythonPackage_SUPERBUILD)
     set(proj_status "")
 
   else()
-
+    # Suppress unused variable warning
+    set(_unused "${ITK_GIT_TAG}")
     ipp_ExternalProject_Add_Empty(
       ITK-source-download
       ""
