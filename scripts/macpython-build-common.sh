@@ -57,9 +57,11 @@ else
     PYBINARIES+=(${MACPYTHON_PY_PREFIX}/*${version}*)
   done
 fi
+#
 
 # -----------------------------------------------------------------------
 # Remove previous virtualenv's
+rm -rf ${script_dir}/../venvs
 VENVS=()
 mkdir -p ${SCRIPT_DIR}/../venvs
 for PYBIN in "${PYBINARIES[@]}"; do
@@ -68,6 +70,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
     fi
     py_mm=$(basename ${PYBIN})
     _VENV_DIR=${SCRIPT_DIR}/../venvs/${py_mm}
+    VIRTUALENV_EXECUTABLE="${PYBIN}/bin/python3 -m venv"
+    ${VIRTUALENV_EXECUTABLE} ${_VENV_DIR}
     VENVS+=(${_VENV_DIR})
 done
 

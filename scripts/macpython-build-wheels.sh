@@ -38,23 +38,6 @@ source "${package_env_file}"
 
 source "${script_dir}/macpython-build-common.sh"
 
-# -----------------------------------------------------------------------
-# Remove previous virtualenv's
-rm -rf ${script_dir}/../venvs
-# Create virtualenv's
-VENVS=()
-mkdir -p ${script_dir}/../venvs
-for PYBIN in "${PYBINARIES[@]}"; do
-    if [[ $(basename $PYBIN) = "Current" ]]; then
-      continue
-    fi
-    py_mm=$(basename ${PYBIN})
-    VENV=${script_dir}/../venvs/${py_mm}
-    VIRTUALENV_EXECUTABLE="${PYBIN}/bin/python3 -m venv"
-    ${VIRTUALENV_EXECUTABLE} ${VENV}
-    VENVS+=(${VENV})
-done
-
 VENV="${VENVS[0]}"
 Python3_EXECUTABLE=${VENV}/bin/python3
 ${Python3_EXECUTABLE} -m pip install --upgrade pip
