@@ -96,10 +96,10 @@ for VENV in "${VENVS[@]}"; do
     ${Python3_EXECUTABLE} -m pip install --upgrade -r ${_ipp_dir}/requirements-dev.txt
 
     if [[ $(arch) == "arm64" ]]; then
-      plat_name="macosx-15.0-arm64"
+      plat_name="macosx-${MACOSX_DEPLOYMENT_TARGET}-arm64"
       build_path="${_ipp_dir}/ITK-${py_mm}-macosx_arm64"
     else
-      plat_name="macosx-15.0-x86_64"
+      plat_name="macosx-${MACOSX_DEPLOYMENT_TARGET}-x86_64"
       build_path="${_ipp_dir}/ITK-${py_mm}-macosx_x86_64"
     fi
     source_path=${_ipp_dir}/ITK-source/ITK
