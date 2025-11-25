@@ -105,7 +105,9 @@ for VENV in "${VENVS[@]}"; do
     source_path=${_ipp_dir}/ITK-source/ITK
 
     # Clean up previous invocations
-    rm -rf ${build_path}
+    if [  "${ITK_MODULE_NO_CLEANUP:-0}" -eq 0  ]; then
+      rm -rf ${build_path}
+    fi
 
     echo "#"
     echo "# Build multiple ITK wheels"
@@ -172,9 +174,11 @@ for VENV in "${VENVS[@]}"; do
     done
 
     # Remove unnecessary files for building against ITK
-    find ${build_path} -name '*.cpp' -delete -o -name '*.xml' -delete
-    rm -rf ${build_path}/Wrapping/Generators/castxml*
-    find ${build_path} -name '*.o' -delete
+    if [  "${ITK_MODULE_NO_CLEANUP:-0}" -eq 0  ]; then
+      find ${build_path} -name '*.cpp' -delete -o -name '*.xml' -delete
+      rm -rf ${build_path}/Wrapping/Generators/castxml*
+      find ${build_path} -name '*.o' -delete
+    fi
 done
 
 if [[ $(arch) != "arm64" ]]; then
