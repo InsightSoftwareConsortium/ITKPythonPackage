@@ -36,7 +36,20 @@ source "${script_dir}/manylinux-build-common.sh"
 # -----------------------------------------------------------------------
 DOCKCROSS_MOUNTED_ITKPythonPackage_DIR=/work # <-- The location where ITKPythonPackage git checkout
                                              #     is mounted inside the dockcross container
+
+package_env_file=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/build/package.env
 CONTAINER_PACKAGE_ENV=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/dist/container_package.env
+#Make a new package_env file for the container environment
+#Unset CC and CXX assuming that defaults are correct in dockcross environment
+#give alternative location for ITK_SOURCE_DIR
+${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/generate_build_environment.sh \
+    -i ${package_env_file} -o ${CONTAINER_PACKAGE_ENV} \
+    CC=UNSET CXX=UNSET \
+    DOXYGEN_EXECUTABLE=UNSET CMAKE_EXECUTABLE=UNSET NINJA_EXECUTABLE=UNSET \
+    ITK_SOURCE_DIR=${CONTAINER_ITK_SOURCE_DIR}
+
+export PATH=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/tools/doxygen-1.8.16/bin:$PATH
+
 # Load environmental variables
 source ${CONTAINER_PACKAGE_ENV}
 _CONTAINER_ITK_SOURCE_DIR=${ITK_SOURCE_DIR}
@@ -49,8 +62,8 @@ pushd ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source > /dev/null 2>&1
   pushd ${_CONTAINER_ITK_SOURCE_DIR} > /dev/null 2>&1
      git checkout ${ITK_GIT_TAG}
   popd > /dev/null 2>&1
-  echo "CMAKE VERSION: $(cmake --version)"
-  cmd=$(echo cmake \
+  echo "CMAKE VERSION: $(${CMAKE_EXECUTABLE} --version)"
+  cmd=$(echo ${CMAKE_EXECUTABLE} \
     -DITKPythonPackage_BUILD_PYTHON:PATH=0  \
     -DITK_SOURCE_DIR:PATH=${_CONTAINER_ITK_SOURCE_DIR} \
     -DITK_GIT_TAG:STRING=${ITK_GIT_TAG} \
@@ -61,7 +74,7 @@ pushd ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source > /dev/null 2>&1
     -B ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source)
   echo "RUNNING: $cmd"
   eval $cmd
-  ninja
+  ${NINJA_EXECUTABLE} -C ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source
   echo "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
   echo "================================================================"
 popd > /dev/null 2>&1
@@ -97,8 +110,8 @@ for PYBIN in "${PYBINARIES[@]}"; do
     (
       mkdir -p ${build_path} \
       && cd ${build_path} \
-      && echo "CMAKE VERSION: $(cmake --version)" \
-      && cmake \
+      && echo "CMAKE VERSION: $(${CMAKE_EXECUTABLE} --version)" \
+      && ${CMAKE_EXECUTABLE} \
         -DCMAKE_BUILD_TYPE:STRING=${build_type} \
         -DITK_SOURCE_DIR:PATH=${_CONTAINER_ITK_SOURCE_DIR} \
         -DITK_BINARY_DIR:PATH=${build_path} \
@@ -125,7 +138,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
         -G Ninja \
         -S ${_CONTAINER_ITK_SOURCE_DIR} \
         -B ${build_path} \
-      && ninja \
+      && ${NINJA_EXECUTABLE} -C ${build_path} \
       || exit 1
     )
 

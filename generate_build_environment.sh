@@ -174,6 +174,88 @@ indirect() {
     fi
 }
 
+# -----------------------------------------------------------------------
+# -----------------------------------------------------------------------
+# Install setup platform dependant executables
+# Ensure that required executables are found for each platform
+case "$(uname -s)" in
+    Linux*)
+        OS=linux
+        # Install prerequirements
+        export PATH=${_ipp_dir}/tools/doxygen-1.8.16/bin:$PATH
+        case $(uname -m) in
+            i686)
+                ARCH=x86
+                ;;
+            x86_64)
+                ARCH=x64
+                if ! type doxygen > /dev/null 2>&1; then
+                  mkdir -p ${_ipp_dir}/tools
+                    pushd ${_ipp_dir}/tools > /dev/null 2>&1
+                    curl https://data.kitware.com/api/v1/file/62c4d615bddec9d0c46cb705/download -o doxygen-1.8.16.linux.bin.tar.gz
+                    tar -xvzf doxygen-1.8.16.linux.bin.tar.gz
+                  popd > /dev/null 2>&1
+                  DOXYGEN_EXECUTABLE=${_ipp_dir}/tools/doxygen-1.8.16/bin/doxygen
+                fi
+                ;;
+            aarch64)
+                ARCH=aarch64
+                if ! type doxygen > /dev/null 2>&1; then
+                  mkdir -p ${_ipp_dir}/tools
+                  pushd ${_ipp_dir}/tools > /dev/null 2>&1
+                    curl https://data.kitware.com/api/v1/file/62c4ed58bddec9d0c46f1388/download -o doxygen-1.8.16.linux.aarch64.bin.tar.gz
+                    tar -xvzf doxygen-1.8.16.linux.aarch64.bin.tar.gz
+                  popd > /dev/null 2>&1
+                  DOXYGEN_EXECUTABLE=${_ipp_dir}/tools/doxygen-1.8.16/bin/doxygen
+                fi
+                ;;
+            *)
+                die "Unknown architecture $(uname -m)"
+                ;;
+        esac
+        if ! type ninja > /dev/null 2>&1; then
+          if test ! -d ninja; then
+            git clone https://github.com/ninja-build/ninja.git
+          fi
+          pushd ninja
+          git checkout release
+          cmake -Bbuild-cmake -H.
+          cmake --build build-cmake
+          sudo cp build-cmake/ninja /usr/local/bin/
+          popd
+          NINJA_EXECUTABLE=/usr/local/bin/ninja
+        fi
+        ;;
+    Darwin*)
+        OS=darwin
+        brew info doxygen | grep --quiet 'Not installed' && brew update && brew install doxygen
+        brew info ninja | grep --quiet 'Not installed' && brew update && brew install ninja
+        brew info cmake | grep --quiet 'Not installed' && brew update && brew install cmake
+        ;;
+
+    CYGWIN*|MINGW*|MSYS*)
+        OS=windows
+        echo "WINDOWS NOT SUPPORTED WITH BASH ENVIRONMENTAL VARIABLES"
+        exit 1
+        ;;
+
+    *)
+        echo "Unsupported platform: $(uname -s)" >&2
+        exit 1
+        ;;
+esac
+DOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE:=$(which doxygen)}
+NINJA_EXECUTABLE=${NINJA_EXECUTABLE:=$(which ninja)}
+CMAKE_EXECUTABLE=${CMAKE_EXECUTABLE:=$(which cmake)}
+for required_exec in DOXYGEN_EXECUTABLE NINJA_EXECUTABLE CMAKE_EXECUTABLE; do
+  if [ ! -f "$(indirect $required_exec)" ]; then
+     echo "MISSING: ${required_exec} not found at $(indirect $required_exec)"
+     echo "aborting until required executables can be found"
+     exit 1
+  fi
+done
+# -----------------------------------------------------------------------
+
 ITK_SOURCE_DIR=${ITK_SOURCE_DIR:=${_ipp_dir}/ITK-source/ITK}
 
 # determine the latest tag for ITKPythonPackage (current working directory)
@@ -291,6 +373,10 @@ ITK_MODULE_NO_CLEANUP=${ITK_MODULE_NO_CLEANUP:=1}
 # - "USE_CCACHE": Option to indicate that ccache should be used
 #   =1 <- Set cmake settings to use ccache for acclerating rebuilds, 0 <- no ccache usage
 USE_CCACHE=${USE_CCACHE:=0}
+
+DOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE}
+NINJA_EXECUTABLE=${NINJA_EXECUTABLE}
+CMAKE_EXECUTABLE=${CMAKE_EXECUTABLE}
 DEFAULT_ENV_SETTINGS
 
 if [[ "$(uname)" == "Linux" ]]; then

@@ -116,8 +116,8 @@ for VENV in "${VENVS[@]}"; do
     (
       mkdir -p ${build_path} \
       && cd ${build_path} \
-      && echo "CMAKE VERSION: $(cmake --version)" \
-      && cmake \
+      && echo "CMAKE VERSION: $(${CMAKE_EXECUTABLE} --version)" \
+      && ${CMAKE_EXECUTABLE} \
         -DCMAKE_BUILD_TYPE:STRING=${build_type} \
         -DITK_SOURCE_DIR:PATH=${ITK_SOURCE_DIR} \
         -DITK_BINARY_DIR:PATH=${build_path} \
@@ -143,7 +143,7 @@ for VENV in "${VENVS[@]}"; do
         -G Ninja \
         -S ${ITK_SOURCE_DIR} \
         -B ${build_path} \
-      && ninja -C ${build_path} -j$n_processors -l$n_processors \
+      && ${NINJA_EXECUTABLE} -C ${build_path} -j$n_processors -l$n_processors \
       || exit 1
     )
 

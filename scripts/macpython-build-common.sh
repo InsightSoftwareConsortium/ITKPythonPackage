@@ -93,12 +93,3 @@ if [[ ${USE_CCACHE} == "ON" ]];then
   export CCACHE_BASEDIR=${ITK_SOURCE_DIR}
   CMAKE_COMPILER_ARGS="${CMAKE_COMPILER_ARGS} -DCMAKE_C_COMPILER_LAUNCHER=$(which ccache)  -DCMAKE_CXX_COMPILER_LAUNCHER=$(which ccache)"
 fi
-
-# -----------------------------------------------------------------------
-# Ensure that requirements are met
-brew update
-brew info doxygen | grep --quiet 'Not installed' && brew install doxygen
-brew info ninja | grep --quiet 'Not installed' && brew install ninja
-NINJA_EXECUTABLE=$(which ninja)
-brew info cmake | grep --quiet 'Not installed' && brew install cmake
-CMAKE_EXECUTABLE=$(which cmake)
