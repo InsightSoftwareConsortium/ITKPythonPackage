@@ -120,7 +120,7 @@ if(ITKPythonPackage_SUPERBUILD)
 
   # Sanity checks
   if(DEFINED ITK_SOURCE_DIR AND NOT EXISTS ${ITK_SOURCE_DIR})
-    message(FATAL_ERROR "Variable is defined but corresponds to nonexistent directory:\nITK_SOURCE_DIR=${ITK_SOURCE_DIR}")
+    message(FATAL_ERROR "ITK_SOURCE_DIR variable is defined but corresponds to nonexistent directory")
   endif()
 
   if(ITKPythonPackage_USE_TBB)
@@ -169,17 +169,18 @@ if(ITKPythonPackage_SUPERBUILD)
     set(tbb_depends oneTBB)
   endif()
 
-  if(NOT DEFINED ITK_SOURCE_DIR)
-    set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
+  set(ITK_REPOSITORY "https://github.com/InsightSoftwareConsortium/ITK.git")
 
-    if ( ENV{ITK_GIT_TAG} )
+  if(NOT DEFINED ITK_GIT_TAG AND DEFINED ENV{ITK_GIT_TAG})
       set(ITK_GIT_TAG "$ENV{ITK_GIT_TAG}")
-    elseif(NOT ITK_GIT_TAG)
-      # main branch, 2025-09-22
-      set(ITK_GIT_TAG "0f93d6c875ab1a053ccb1a27f9f55b8aa2c4c20b")
-    endif()
-    set(ITK_SOURCE_DIR ${CMAKE_BINARY_DIR}/ITK)
+  endif()
 
+  if(NOT DEFINED ITK_GIT_TAG)
+    message(FATAL_ERROR "ITK_GIT_TAG must be defined when configuring cmake")
+  endif()
+  # Only add ITK-source-download ExternalProject if directory does not
+  # already exist
+  if(NOT EXISTS ${ITK_SOURCE_DIR})
     ExternalProject_add(ITK-source-download
       SOURCE_DIR ${ITK_SOURCE_DIR}
       GIT_REPOSITORY ${ITK_REPOSITORY}
@@ -199,7 +200,6 @@ if(ITKPythonPackage_SUPERBUILD)
       ""
       )
     set(proj_status " (REUSE)")
-
   endif()
 
   message(STATUS "SuperBuild -   ITK_SOURCE_DIR: ${ITK_SOURCE_DIR}")
