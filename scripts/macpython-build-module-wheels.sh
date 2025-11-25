@@ -62,7 +62,14 @@ dot_clean ${VENV}
 ${Python3_EXECUTABLE} -m pip install --no-cache-dir delocate
 DELOCATE_LISTDEPS=${VENV}/bin/delocate-listdeps
 DELOCATE_WHEEL=${VENV}/bin/delocate-wheel
-export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${script_dir}/../oneTBB-prefix/lib
+
+use_tbb="OFF"
+if [[ "${use_tbb}" -eq "ON" ]]; then
+  tbb_dir=$PWD/oneTBB-prefix/lib/cmake/TBB
+  export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${_ipp_dir}/oneTBB-prefix/lib
+else
+  tbb_dir="NOT-FOUND"
+fi
 
 _module_dir="$(pwd -P)"
 

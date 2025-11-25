@@ -67,17 +67,21 @@ MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET:="15.0"}
 
 if [[ $(arch) == "arm64" ]]; then
   osx_arch="arm64"
-  use_tbb="OFF"
 else
   osx_arch="x86_64"
-  use_tbb="OFF"
 fi
 
 # Build standalone project and populate archive cache
-tbb_dir=$PWD/oneTBB-prefix/lib/cmake/TBB
 n_processors=$(sysctl -n hw.ncpu)
 # So delocate can find the libs
-export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:$PWD/oneTBB-prefix/lib
+use_tbb="OFF"
+if [[ "${use_tbb}" -eq "ON" ]]; then
+  tbb_dir=$PWD/oneTBB-prefix/lib/cmake/TBB
+  export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${_ipp_dir}/oneTBB-prefix/lib
+else
+  tbb_dir="NOT-FOUND"
+fi
+
 mkdir -p ITK-source
 pushd ITK-source > /dev/null 2>&1
   ${CMAKE_EXECUTABLE} -DITKPythonPackage_BUILD_PYTHON:PATH=0 \
