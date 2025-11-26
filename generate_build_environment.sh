@@ -259,79 +259,111 @@ ITK_SOURCE_DIR=${ITK_SOURCE_DIR:=${_ipp_dir}/ITK-source/ITK}
 pushd "${_ipp_dir}" || echo "can not enter ${ipp_dir}"
   _ipp_latest_tag="$(get_git_id)"
 popd
+# Remove a leading v from latest tag only if it’s the first character
+_ipp_latest_pep440_version=${_ipp_latest_tag#v}
+
 if [ ! -d "${ITK_SOURCE_DIR}" ]; then
-  # Need early checkout to get AUTOVERSION if none provided
+  # Need early checkout to get if none provided
   git clone https://github.com/InsightSoftwareConsortium/ITK.git ${ITK_SOURCE_DIR}
 fi
 pushd "${ITK_SOURCE_DIR}" || echo "cannot enter ${ITK_SOURCE_DIR}"
   git checkout ${ITK_GIT_TAG}
 popd
-# If the ITK_GIT_TAG != the ITKPythonPackage latest tag,
+# Try to set ITK_PACKAGE_VERSION automatically:
 # then get a value to auto-generate the python packaging name
 if [ -z "${ITK_PACKAGE_VERSION}" ]; then
-  if [ "${ITK_GIT_TAG}" = "${_ipp_latest_tag}" ]; then
-    ITK_PACKAGE_VERSION=${ITK_GIT_TAG}
-  else
-    # Get auto generated itk package version base semantic versioning
-    # rules for relative versioning based on git commits
-    pushd "${ITK_SOURCE_DIR}" || echo "cannot enter ${ITK_SOURCE_DIR}"
-      git fetch --tags
-      git checkout ${ITK_GIT_TAG}
-      ITK_PACKAGE_VERSION=$( git describe --tags --long --dirty --always \
-             | sed -E 's/^([^-]+)-([0-9]+)-g([0-9a-f]+)(-dirty)?$/\1-dev.\2+\3\4/'
-          )
-    popd
+  # Get auto generated itk package version base semantic versioning
+  # rules for relative versioning based on git commits
+  pushd "${ITK_SOURCE_DIR}" || echo "cannot enter ${ITK_SOURCE_DIR}"
+    git fetch --tags
+    git checkout ${ITK_GIT_TAG}
+    ITK_PACKAGE_VERSION=$( git describe --tags --long --dirty --always \
+           | sed -E 's/^([^-]+)-([0-9]+)-g([0-9a-f]+)(-dirty)?$/\1-dev.\2+\3\4/'
+        )
+    ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION#v} # remove 'v' from prefix
+  popd
+  # attempt to maintain backward compatibility
+  if [ "${ITK_GIT_TAG#v}" = "${_ipp_latest_pep440_version}" ]; then
+    ITK_PACKAGE_VERSION=${ITK_GIT_TAG#v} # remove 'v' from prefix
   fi
 fi
 
 ########################################################################
 # Docker image parameters
 MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28} # <- The primary support target for ITK as of 20251114.  Including upto Python 3.15 builds.
-case $(uname -m) in
-    i686)
-        TARGET_ARCH=x86
+case "$(uname -s)" in
+    Linux*)
+        case $(uname -m) in
+            i686)
+                TARGET_ARCH=x86
+                ;;
+            x86_64)
+                # valid on mac or linux
+                TARGET_ARCH=x64
+                ;;
+            aarch64)
+                TARGET_ARCH=aarch64
+                ;;
+            *)
+                die "Unknown architecture $(uname -m)"
+                ;;
+        esac
+        if [[ ${MANYLINUX_VERSION} == _2_34 && ${TARGET_ARCH} == x64 ]]; then
+                  # https://hub.docker.com/r/dockcross/manylinux_2_34-x64/tags
+          IMAGE_TAG=${IMAGE_TAG:=latest}  #<- as of 20251114 this should primarily be used for testing
+        elif [[ ${MANYLINUX_VERSION} == _2_28 && ${TARGET_ARCH} == x64 ]]; then
+          # https://hub.docker.com/r/dockcross/manylinux_2_28-x64/tags
+          # IMAGE_TAG=${IMAGE_TAG:=20251011-8b9ace4} # <- Incompatible with ITK cast-xml on 2025-11-16
+          IMAGE_TAG=${IMAGE_TAG:=20250913-6ea98ba}
+        elif [[ ${MANYLINUX_VERSION} == _2_28 && ${TARGET_ARCH} == aarch64 ]]; then
+          IMAGE_TAG=${IMAGE_TAG:=2025.08.12-1}
+        elif [[ ${MANYLINUX_VERSION} == 2014 ]]; then
+          IMAGE_TAG=${IMAGE_TAG:=20240304-9e57d2b}
+        else
+          echo "FAILURE:  Unknown manylinux version ${MANYLINUX_VERSION}"
+          exit 1;
+        fi
+        #
+        # Set container for requested version/arch/tag.
+        if [[ ${TARGET_ARCH} == x64 ]]; then
+          MANYLINUX_IMAGE_NAME=${MANYLINUX_IMAGE_NAME:="manylinux${MANYLINUX_VERSION}-${TARGET_ARCH}:${IMAGE_TAG}"}
+          CONTAINER_SOURCE=${CONTAINER_SOURCE:="docker.io/dockcross/${MANYLINUX_IMAGE_NAME}"}
+        elif [[ ${TARGET_ARCH} == aarch64 ]]; then
+          MANYLINUX_IMAGE_NAME=${MANYLINUX_IMAGE_NAME:="manylinux${MANYLINUX_VERSION}_${TARGET_ARCH}:${IMAGE_TAG}"}
+          CONTAINER_SOURCE=${CONTAINER_SOURCE:="quay.io/pypa/${MANYLINUX_IMAGE_NAME}"}
+        else
+          echo "Unknown target architecture ${TARGET_ARCH}"
+          exit 1;
+        fi
+
+        # Configure the oci executable (i.e. docker, containerd, other)
+        source "${_ipp_dir}/scripts/oci_exe.sh"
         ;;
-    x86_64)
-        TARGET_ARCH=x64
+    Darwin*)
+        case $(uname -m) in
+            x86_64)
+                TARGET_ARCH=x64
+                ;;
+            arm64)
+                # valid on mac
+                TARGET_ARCH=arm64
+                ;;
+            *)
+                die "Unknown architecture $(uname -m)"
+                ;;
+        esac
         ;;
-    aarch64)
-        TARGET_ARCH=aarch64
+    CYGWIN*|MINGW*|MSYS*)
+        OS=windows
+        echo "WINDOWS NOT SUPPORTED WITH BASH ENVIRONMENTAL VARIABLES"
+        exit 1
         ;;
     *)
-        die "Unknown architecture $(uname -m)"
+        echo "Unsupported platform: $(uname -s)" >&2
+        exit 1
         ;;
 esac
 
-if [[ ${MANYLINUX_VERSION} == _2_34 && ${TARGET_ARCH} == x64 ]]; then
-  # https://hub.docker.com/r/dockcross/manylinux_2_34-x64/tags
-  IMAGE_TAG=${IMAGE_TAG:=latest}  #<- as of 20251114 this should primarily be used for testing
-elif [[ ${MANYLINUX_VERSION} == _2_28 && ${TARGET_ARCH} == x64 ]]; then
-  # https://hub.docker.com/r/dockcross/manylinux_2_28-x64/tags
-  # IMAGE_TAG=${IMAGE_TAG:=20251011-8b9ace4} # <- Incompatible with ITK cast-xml on 2025-11-16
-  IMAGE_TAG=${IMAGE_TAG:=20250913-6ea98ba}
-elif [[ ${MANYLINUX_VERSION} == _2_28 && ${TARGET_ARCH} == aarch64 ]]; then
-  IMAGE_TAG=${IMAGE_TAG:=2025.08.12-1}
-elif [[ ${MANYLINUX_VERSION} == 2014 ]]; then
-  IMAGE_TAG=${IMAGE_TAG:=20240304-9e57d2b}
-else
-  echo "Unknown manylinux version ${MANYLINUX_VERSION}"
-  exit 1;
-fi
-#
-# Set container for requested version/arch/tag.
-if [[ ${TARGET_ARCH} == x64 ]]; then
-  MANYLINUX_IMAGE_NAME=${MANYLINUX_IMAGE_NAME:="manylinux${MANYLINUX_VERSION}-${TARGET_ARCH}:${IMAGE_TAG}"}
-  CONTAINER_SOURCE=${CONTAINER_SOURCE:="docker.io/dockcross/${MANYLINUX_IMAGE_NAME}"}
-elif [[ ${TARGET_ARCH} == aarch64 ]]; then
-  MANYLINUX_IMAGE_NAME=${MANYLINUX_IMAGE_NAME:="manylinux${MANYLINUX_VERSION}_${TARGET_ARCH}:${IMAGE_TAG}"}
-  CONTAINER_SOURCE=${CONTAINER_SOURCE:="quay.io/pypa/${MANYLINUX_IMAGE_NAME}"}
-else
-  echo "Unknown target architecture ${TARGET_ARCH}"
-  exit 1;
-fi
-
-# Configure the oci executable (i.e. docker, containerd, other)
-source "${_ipp_dir}/scripts/oci_exe.sh"
 
 mkdir -p ${_ipp_dir}/build
 
@@ -356,11 +388,12 @@ ITK_GIT_TAG=${ITK_GIT_TAG:=${_ipp_latest_tag}}
 ITK_SOURCE_DIR=${ITK_SOURCE_DIR}
 
 #
-# - "ITK_PACKAGE_VERSION" A valid versioning formatted tag.  This may be ITK_GIT_TAG for tagged releases
-#   Use the keyword 'AUTOVERSION' to have a temporary version automatically created from based on
-#   git hash and the checked out ITK_GIT_TAG
+# - "ITK_PACKAGE_VERSION" A valid PEP440 python version string.  This should be ITK_GIT_TAG without
+#   the preceeding 'v' for tagged releases.
+#   The default is to have a temporary version automatically created from based on relative
+#   versioning from the latest tagged release.
 #   (in github action ITKRemoteModuleBuildTestPackage itk-wheel-tag is used to set this value)
-ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION:=${_ipp_latest_version}}
+ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION:=${_ipp_latest_pep440_version}}
 
 # - "ITKPYTHONPACKAGE_ORG": Github organization or user to use for ITKPythonPackage build scripts
 #   Which script version to use in generating python packages
@@ -500,7 +533,6 @@ fi
 
     echo "# Standard environmental build flags respected by cmake and other build tools"
     echo "# Autogenerated build environment"
-    echo "# Generated: $(date)"
     echo "# Source this file in bash/zsh/python(dot-env) before builds"
 
     for var in "${BUILD_VARS[@]}"; do
