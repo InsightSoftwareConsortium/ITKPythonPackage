@@ -62,7 +62,7 @@ def list_to_str(list_, newline=True):
     sep = ", "
     if newline:
         sep = ",\n"
-    return sep.join(['"%s"' % item for item in list_])
+    return sep.join([f'"{item}"' for item in list_])
 
 
 def configure(template_file, parameters, output_file):
@@ -88,7 +88,7 @@ def configure(template_file, parameters, output_file):
                 newline_indent = " " * parameter_option(key, "newline_indent")
                 if value.strip() and parameter_option(key, "newline_if_set"):
                     value = f"\n{value}\n{newline_indent}"
-                line = line.replace("@%s@" % key, value)
+                line = line.replace(f"@{key}@", value)
             if append:
                 updated_lines.append(line)
 
@@ -97,7 +97,7 @@ def configure(template_file, parameters, output_file):
 
 
 def from_group_to_wheel(group):
-    return "itk-%s" % group.lower()
+    return f"itk-{group.lower()}"
 
 
 def update_wheel_pyproject_toml_parameters(package_env_config: dict):
@@ -170,7 +170,7 @@ def update_wheel_pyproject_toml_parameters(package_env_config: dict):
                 "-DITK_WRAP_complex_double:BOOL=ON",
                 "-DITK_WRAP_IMAGE_DIMS:STRING=2;3;4",
                 "-DITK_WRAP_DOC:BOOL=ON",
-                "-DITKPythonPackage_WHEEL_NAME:STRING=%s" % wheel_name,
+                f"-DITKPythonPackage_WHEEL_NAME:STRING={wheel_name}",
             ],
             True,
         )
@@ -239,7 +239,7 @@ def init_pyproject_globals(package_env_config):
     global PYPROJECT_PY_PARAMETERS
 
     ITK_PYPROJECT_PY_PARAMETERS = {
-        "PYPROJECT_GENERATOR": "python {} '{}'".format(SCRIPT_NAME, "itk"),
+        "PYPROJECT_GENERATOR": f"python {SCRIPT_NAME} 'itk'",
         "PYPROJECT_NAME": r"itk",
         "PYPROJECT_VERSION": get_version(),
         "PYPROJECT_CMAKE_ARGS": r"",
@@ -329,7 +329,7 @@ Accepted values for `wheel_name` are ``itk`` and all values read from
     update_wheel_pyproject_toml_parameters(package_env_config)
 
     if args.wheel_name not in PYPROJECT_PY_PARAMETERS.keys():
-        print("Unknown wheel name '%s'" % args.wheel_name)
+        print(f"Unknown wheel name '{args.wheel_name}'")
         sys.exit(1)
 
     # Configure 'pyproject.toml'
