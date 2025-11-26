@@ -202,12 +202,10 @@ def get_version():
 
 
 def get_py_api():
-    import sys
-
+    # Return empty for Python < 3.11, otherwise a cp tag like 'cp311'
     if sys.version_info < (3, 11):
         return ""
-    else:
-        return "cp" + str(sys.version_info.major) + str(sys.version_info.minor)
+    return f"cp{sys.version_info.major}{sys.version_info.minor}"
 
 
 def get_wheel_dependencies():
