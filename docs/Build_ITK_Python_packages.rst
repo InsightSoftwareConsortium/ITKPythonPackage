@@ -32,11 +32,11 @@ For example::
 	[...]
 
 	$ ls -1 dist/
-	itk-4.11.0.dev20170218-cp27-cp27m-manylinux2014_x86_64.whl
-	itk-4.11.0.dev20170218-cp27-cp27mu-manylinux2014_x86_64.whl
-	itk-4.11.0.dev20170218-cp34-cp34m-manylinux2014_x86_64.whl
-	itk-4.11.0.dev20170218-cp35-cp35m-manylinux2014_x86_64.whl
-	itk-4.11.0.dev20170218-cp36-cp36m-manylinux2014_x86_64.whl
+	itk-6.0.1.dev20251126-cp39-cp39m-manylinux2014_x86_64.whl
+	itk-6.0.1.dev20251126-cp39-cp39mu-manylinux2014_x86_64.whl
+	itk-6.0.1.dev20251126-cp39-cp39m-manylinux2014_x86_64.whl
+	itk-6.0.1.dev20251126-cp39-cp39m-manylinux2014_x86_64.whl
+	itk-6.0.1.dev20251126-cp39-cp39m-manylinux2014_x86_64.whl
 
 macOS
 -----
@@ -52,10 +52,10 @@ Then, build the wheels::
 	[...]
 
 	$ ls -1 dist/
-	itk-4.11.0.dev20170213-cp27-cp27m-macosx_10_6_x86_64.whl
-	itk-4.11.0.dev20170213-cp34-cp34m-macosx_10_6_x86_64.whl
-	itk-4.11.0.dev20170213-cp35-cp35m-macosx_10_6_x86_64.whl
-	itk-4.11.0.dev20170213-cp36-cp36m-macosx_10_6_x86_64.whl
+	itk-6.0.1.dev20251126-cp39-cp39m-macosx_10_6_x86_64.whl
+	itk-6.0.1.dev20251126-cp39-cp39m-macosx_10_6_x86_64.whl
+	itk-6.0.1.dev20251126-cp39-cp39m-macosx_10_6_x86_64.whl
+	itk-6.0.1.dev20251126-cp39-cp39m-macosx_10_6_x86_64.whl
 
 Windows
 -------
@@ -82,8 +82,8 @@ In a PowerShell prompt::
 
 	    Mode                LastWriteTime         Length Name
 	    ----                -------------         ------ ----
-	    -a----         4/9/2017  11:14 PM       63274441 itk-4.11.0.dev20170407-cp35-cp35m-win_amd64.whl
-	    -a----        4/10/2017   2:08 AM       63257220 itk-4.11.0.dev20170407-cp36-cp36m-win_amd64.whl
+	    -a----         4/9/2017  11:14 PM       63274441 itk-6.0.1.dev20251126-cp39-cp39m-win_amd64.whl
+	    -a----        4/10/2017   2:08 AM       63257220 itk-6.0.1.dev20251126-cp39-cp39m-win_amd64.whl
 
 We need to work in a short directory to avoid path length limitations on
 Windows, so the repository is cloned into C:\IPP.
@@ -104,8 +104,8 @@ is enabled by default.
 .. 	[...]
 ..
 .. 	$ ls -1 dist/
-.. 	itk-4.11.0.dev20170216.tar.gz
-.. 	itk-4.11.0.dev20170216.zip
+.. 	itk-6.0.1.dev20251126.tar.gz
+.. 	itk-6.0.1.dev20251126.zip
 ..
 .. Manual builds (not recommended)
 .. ===============================

@@ -40,11 +40,11 @@ commitDateDashes = datetime.strptime(commitDate, "%a %b %d %H:%M:%S %Y").strftim
 # 20170208
 commitDate = commitDateDashes.replace("-", "")
 
-# v4.11.0-139-g922f2d9
+# v6.0.1-139-g922f2d9
 #
 revision = subprocess.check_output(["git", "describe", "--tags", "--long"])
 revision.strip()
-# 4.11.0-139-g922f2d9
+# 6.0.1-139-g922f2d9
 revision = revision[1:]
 version, numberOfCommits, gHash = revision.split("-")
 version = version.strip()

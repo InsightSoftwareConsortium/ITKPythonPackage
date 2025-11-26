@@ -396,11 +396,11 @@ def get_versions() -> str:
     # character in file names, this does not contain the local version
     # identifier in nightly builds, i.e.
     #
-    #  '4.11.0.dev20170208'
+    #  '6.0.1.dev20251126'
     #
     # instead of
     #
-    #  '4.11.0.dev20170208+139.g922f2d9'
+    #  '6.0.1.dev20251126+139.g922f2d9'
     get_versions()['package-version']
     \"\"\"
 
