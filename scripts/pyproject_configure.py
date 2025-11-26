@@ -260,47 +260,52 @@ def get_wheel_dependencies():
     all_depends["itk-meta"].append("numpy")
     return all_depends
 
+def init_pyproject_globals(package_env_config):
+    global ITK_PYPROJECT_PY_PARAMETERS
+    global PYPROJECT_PY_PARAMETERS
 
-SCRIPT_DIR = os.path.dirname(__file__)
-SCRIPT_NAME = os.path.basename(__file__)
+    ITK_PYPROJECT_PY_PARAMETERS = {
+        "PYPROJECT_GENERATOR": "python %s '%s'" % (SCRIPT_NAME, "itk"),
+        "PYPROJECT_NAME": r"itk",
+        "PYPROJECT_VERSION": get_version(),
+        "PYPROJECT_CMAKE_ARGS": r"",
+        "PYPROJECT_PY_API": get_py_api(),
+        "PYPROJECT_PLATLIB": r"true",
+        "ITK_SOURCE_DIR": package_env_config['ITK_SOURCE_DIR'],
+        "PYPROJECT_PY_MODULES": list_to_str(
+            [
+                "itkBase",
+                "itkConfig",
+                "itkExtras",
+                "itkHelpers",
+                "itkLazy",
+                "itkTemplate",
+                "itkTypes",
+                "itkVersion",
+                "itkBuildOptions",
+            ]
+        ),
+        "PYPROJECT_DOWNLOAD_URL": r"https://github.com/InsightSoftwareConsortium/ITK/releases",
+        "PYPROJECT_DESCRIPTION": r"ITK is an open-source toolkit for multidimensional image analysis",  # noqa: E501
+        "PYPROJECT_LONG_DESCRIPTION": r"ITK is an open-source, cross-platform library that "
+        "provides developers with an extensive suite of software "
+        "tools for image analysis. Developed through extreme "
+        "programming methodologies, ITK employs leading-edge "
+        "algorithms for registering and segmenting "
+        "multidimensional scientific images.",
+        "PYPROJECT_EXTRA_KEYWORDS": r'"scientific", "medical", "image", "imaging"',
+        "PYPROJECT_DEPENDENCIES": r"",
+    }
 
-ITK_PYPROJECT_PY_PARAMETERS = {
-    "PYPROJECT_GENERATOR": "python %s '%s'" % (SCRIPT_NAME, "itk"),
-    "PYPROJECT_NAME": r"itk",
-    "PYPROJECT_VERSION": get_version(),
-    "PYPROJECT_CMAKE_ARGS": r"",
-    "PYPROJECT_PY_API": get_py_api(),
-    "PYPROJECT_PLATLIB": r"true",
-    "PYPROJECT_PY_MODULES": list_to_str(
-        [
-            "itkBase",
-            "itkConfig",
-            "itkExtras",
-            "itkHelpers",
-            "itkLazy",
-            "itkTemplate",
-            "itkTypes",
-            "itkVersion",
-            "itkBuildOptions",
-        ]
-    ),
-    "PYPROJECT_DOWNLOAD_URL": r"https://github.com/InsightSoftwareConsortium/ITK/releases",
-    "PYPROJECT_DESCRIPTION": r"ITK is an open-source toolkit for multidimensional image analysis",  # noqa: E501
-    "PYPROJECT_LONG_DESCRIPTION": r"ITK is an open-source, cross-platform library that "
-    "provides developers with an extensive suite of software "
-    "tools for image analysis. Developed through extreme "
-    "programming methodologies, ITK employs leading-edge "
-    "algorithms for registering and segmenting "
-    "multidimensional scientific images.",
-    "PYPROJECT_EXTRA_KEYWORDS": r'"scientific", "medical", "image", "imaging"',
-    "PYPROJECT_DEPENDENCIES": r"",
-}
-
-PYPROJECT_PY_PARAMETERS = {"itk": ITK_PYPROJECT_PY_PARAMETERS}
-
+    PYPROJECT_PY_PARAMETERS = {"itk": ITK_PYPROJECT_PY_PARAMETERS}
 
 
 def main():
+    global SCRIPT_DIR
+    global SCRIPT_NAME
+
+    SCRIPT_DIR = os.path.dirname(__file__)
+    SCRIPT_NAME = os.path.basename(__file__)
     # Defaults
     default_output_dir = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
 
@@ -324,6 +329,7 @@ def main():
     args = parser.parse_args()
     print(f"Reading configuration settings from {args.env_file}")
     package_env_config = dotenv_values(args.env_file)
+    init_pyproject_globals(package_env_config)
     update_wheel_pyproject_toml_parameters(package_env_config)
 
     if args.wheel_name not in PYPROJECT_PY_PARAMETERS.keys():
