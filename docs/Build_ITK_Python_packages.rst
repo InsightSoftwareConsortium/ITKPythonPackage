@@ -100,15 +100,15 @@ is enabled by default.
 ..
 .. To create source distributions, sdist's, that will be used by pip to compile a wheel for installation if a binary wheel is not available for the current Python version or platform::
 ..
-.. 	$ python setup.py sdist --formats=gztar,zip
+.. 	$ python -m build --sdist
 .. 	[...]
 ..
 .. 	$ ls -1 dist/
 .. 	itk-4.11.0.dev20170216.tar.gz
 .. 	itk-4.11.0.dev20170216.zip
 ..
-.. Manual builds
-.. =============
+.. Manual builds (not recommended)
+.. ===============================
 ..
 .. Building ITK Python wheels
 .. --------------------------
@@ -117,8 +117,8 @@ is enabled by default.
 ..
 .. 	python3 -m venv build-itk
 .. 	./build-itk/bin/pip install --upgrade pip
-.. 	./build-itk/bin/pip install -r requirements-dev.txt numpy
-.. 	./build-itk/bin/python setup.py bdist_wheel
+.. 	./build-itk/bin/pip install -r requirements-dev.txt
+.. 	./build-itk/bin/python -m build
 ..
 .. Build a wheel for a custom version of ITK
 .. -----------------------------------------
@@ -126,7 +126,7 @@ is enabled by default.
 .. To build a wheel for a custom version of ITK, point to your ITK git repository
 .. with the `ITK_SOURCE_DIR` CMake variable::
 ..
-.. 	./build-itk/bin/python setup.py bdist_wheel -- \
+..      ./build-itk/bin/python -m build --wheel -- \
 .. 	  -DITK_SOURCE_DIR:PATH=/path/to/ITKPythonPackage-core-build/ITK
 ..
 .. Other CMake variables can also be passed with `-D` after the double dash.
