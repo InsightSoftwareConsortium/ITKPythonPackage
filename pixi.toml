@@ -25,5 +25,16 @@ version = "0.1.0"
 doxygen = ">=1.13.2,<2"
 ninja = ">=1.13.2,<2"
 cmake = ">=4.2.0,<5"
-numpy = ">=2.3.5,<3"
 cxx-compiler = "==1.10.0"
+
+[feature.python-pkgs.dependencies]
+ninja = ">=1.13.0,<2"
+scikit-build-core = "==0.10.7"
+build = "==1.2.1"
+pyproject-metadata = "*"
+pathspec = "*"
+setuptools_scm = "==8.1.0"
+numpy = ">=1.26"
+python-dotenv = "*"
+
+
