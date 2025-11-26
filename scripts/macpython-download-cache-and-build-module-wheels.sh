@@ -30,6 +30,11 @@
 # Install dependencies
 brew update
 brew install --quiet zstd aria2 gnu-tar doxygen ninja
+#
+# As discussed in issue #282, rustup is not needed for successful packaging
+# but brew eco-system will warn verbosely about it being out of date which
+# makes identifying other errors more difficult. upgrading rustup silences
+# the warnings unrelated to package building for easing developer reviews.
 brew upgrade --quiet cmake rustup
 
 if [[ $(arch) == "arm64" ]]; then
