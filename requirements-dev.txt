@@ -6,3 +6,4 @@ pathspec
 setuptools_scm==8.1.0
 numpy>=1.26   #1.26 is needed to support python3.9
 python-dotenv
+packaging~=25.0 # Needed to test PEP440 compliance of versions
