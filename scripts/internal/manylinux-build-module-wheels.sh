@@ -88,11 +88,11 @@ for PYBIN in "${PYBINARIES[@]}"; do
     itk_build_dir=/work/$(basename /ITKPythonPackage/ITK-${version}*-manylinux${MANYLINUX_VERSION}_${TARGET_ARCH})
     ln -fs /ITKPythonPackage/ITK-${version}*-manylinux${MANYLINUX_VERSION}_${TARGET_ARCH} $itk_build_dir
     if [[ ! -d ${itk_build_dir} ]]; then
-      echo 'ITK build tree not available!' 1>&2
+      echo 'ITK build tree not available! /ITKPythonPackage/ITK-${version}*-manylinux${MANYLINUX_VERSION}_${TARGET_ARCH} is missing' 1>&2
       exit 1
     fi
     itk_source_dir=/work/ITK-source/ITK
-    ln -fs /ITKPythonPackage/ITK-source/ /work/ITK-source
+    ln -fs /ITKPythonPackage/ITK-source/ /work/ITK-source/
     if [[ ! -d ${itk_source_dir} ]]; then
       echo 'ITK source tree not available!' 1>&2
       exit 1

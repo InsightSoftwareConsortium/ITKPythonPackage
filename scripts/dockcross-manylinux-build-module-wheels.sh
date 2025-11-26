@@ -31,11 +31,37 @@ if [[ -n ${ITK_MODULE_PREQ} ]]; then
   source "${script_dir}/dockcross-manylinux-build-module-deps.sh"
 fi
 
+# NOTE: Directory must be in ${MODULE_ROOT_DIR}/ITKPythonPackage/scripts
+#                                     ^        |        ^       |   ^
+#                         HOST_MODULE_DIRECTORY|    _ipp_dir    |scripts_dir
+HOST_MODULE_DIRECTORY=$(dirname ${_ipp_dir})
+
 # Set up paths and variables for build
-mkdir -p $(pwd)/tools
-chmod 777 $(pwd)/tools
-mkdir -p dist
-DOCKER_ARGS="-v $(pwd)/dist:/work/dist/ -v ${script_dir}/..:/ITKPythonPackage -v $(pwd)/tools:/tools"
+HOST_MODULE_TOOLS_DIR=${HOST_MODULE_DIRECTORY}/tools
+mkdir -p  ${HOST_MODULE_TOOLS_DIR}
+chmod 777 ${HOST_MODULE_TOOLS_DIR}
+
+CONTAINER_WORK_DIR=/work
+CONTAINER_PACKAGE_DIST=${CONTAINER_WORK_DIR}/dist
+CONTAINER_PACKAGE_BUILD_DIR=${CONTAINER_WORK_DIR}/ITK-source
+HOST_PACKAGE_BUILD_DIR=${_ipp_dir}/ITK-source
+CONTAINER_ITK_SOURCE_DIR=${CONTAINER_PACKAGE_BUILD_DIR}/ITK
+HOST_PACKAGE_DIST=${HOST_MODULE_DIRECTORY}/dist
+mkdir -p ${HOST_PACKAGE_DIST}
+HOST_PACKAGE_BUILD_DIR=${_ipp_dir}/ITK-source
+mkdir -p ${HOST_PACKAGE_BUILD_DIR}
+CONTAINER_IPP_DIR=/ITKPythonPackage
+CONTAINER_TOOL_DIR=/tools
+HOST_ONETBB_DIR=${_ipp_dir}/oneTBB-prefix
+CONTAINER_ONETBB_DIR=/work/oneTBB-prefix
+
+DOCKER_ARGS="-v ${HOST_MODULE_DIRECTORY}:${CONTAINER_WORK_DIR}"
+DOCKER_ARGS+=" -v ${_ipp_dir}:${CONTAINER_IPP_DIR}"
+DOCKER_ARGS+=" -v ${HOST_MODULE_TOOLS_DIR}:${CONTAINER_TOOL_DIR}"
+DOCKER_ARGS+=" -v ${HOST_ONETBB_DIR}:${CONTAINER_ONETBB_DIR}"
+DOCKER_ARGS+=" -v ${HOST_PACKAGE_BUILD_DIR}:${CONTAINER_PACKAGE_BUILD_DIR}"
+DOCKER_ARGS+=" -v ${ITK_SOURCE_DIR}:${CONTAINER_ITK_SOURCE_DIR}"
+DOCKER_ARGS+=" --env-file ${package_env_file}"
 DOCKER_ARGS+=" -e MANYLINUX_VERSION"
 DOCKER_ARGS+=" -e LD_LIBRARY_PATH"
 # Mount any shared libraries
@@ -61,17 +87,18 @@ if [[ "${TARGET_ARCH}" = "aarch64" ]]; then
                             --privileged --rm tonistiigi/binfmt --install all
 
   # Build wheels
-  DOCKER_ARGS+=" -v $(pwd):/work/ --rm"
+  DOCKER_ARGS+=" --rm"
   ${docker_prefix} $OCI_EXE run --env-file "${_ipp_dir}/build/package.env" \
                                 $DOCKER_ARGS ${CONTAINER_SOURCE} "/ITKPythonPackage/scripts/internal/manylinux-aarch64-build-module-wheels.sh" "$@"
 else
   # Generate dockcross scripts
+  _local_dockercross_script=${_ipp_dir}/build/runner_module_dockcross-${MANYLINUX_VERSION}-x64_${IMAGE_TAG}.sh
   $OCI_EXE run --env-file "${_ipp_dir}/build/package.env" \
-               --rm ${CONTAINER_SOURCE} > /tmp/dockcross-manylinux-x64
-  chmod u+x /tmp/dockcross-manylinux-x64
+               --rm ${CONTAINER_SOURCE} > ${_local_dockercross_script}
+  chmod u+x ${_local_dockercross_script}
 
   # Build wheels
-  /tmp/dockcross-manylinux-x64 \
+  ${_local_dockercross_script} \
     -a "$DOCKER_ARGS" \
     "/ITKPythonPackage/scripts/internal/manylinux-build-module-wheels.sh" "$@"
 fi
