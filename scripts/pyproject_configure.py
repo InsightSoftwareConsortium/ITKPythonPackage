@@ -53,7 +53,7 @@ def indent(text, prefix, predicate=None):
 
     def prefixed_lines():
         for line in text.splitlines(True):
-            yield (prefix + line if predicate(line) else line)
+            yield prefix + line if predicate(line) else line
 
     return "".join(prefixed_lines())
 
@@ -70,7 +70,7 @@ def configure(template_file, parameters, output_file):
     `parameters`.
     """
     updated_lines = []
-    with open(template_file, "r") as file_:
+    with open(template_file) as file_:
         lines = file_.readlines()
         for line in lines:
             append = True
@@ -87,7 +87,7 @@ def configure(template_file, parameters, output_file):
                 value = indent(value, block_indent)
                 newline_indent = " " * parameter_option(key, "newline_indent")
                 if value.strip() and parameter_option(key, "newline_if_set"):
-                    value = "\n%s\n%s" % (value, newline_indent)
+                    value = f"\n{value}\n{newline_indent}"
                 line = line.replace("@%s@" % key, value)
             if append:
                 updated_lines.append(line)
@@ -106,7 +106,7 @@ def update_wheel_pyproject_toml_parameters(package_env_config: dict):
         params = dict(ITK_PYPROJECT_PY_PARAMETERS)
 
         # generator
-        params["PYPROJECT_GENERATOR"] = "python %s '%s'" % (SCRIPT_NAME, wheel_name)
+        params["PYPROJECT_GENERATOR"] = f"python {SCRIPT_NAME} '{wheel_name}'"
 
         # name
         if wheel_name == "itk-meta":
@@ -190,7 +190,7 @@ def update_wheel_pyproject_toml_parameters(package_env_config: dict):
 
 
 def get_wheel_names():
-    with open(os.path.join(SCRIPT_DIR, "WHEEL_NAMES.txt"), "r") as _file:
+    with open(os.path.join(SCRIPT_DIR, "WHEEL_NAMES.txt")) as _file:
         return [wheel_name.strip() for wheel_name in _file.readlines()]
 
 
@@ -216,7 +216,7 @@ def get_wheel_dependencies():
     regex_group_depends = r"set\s*\(\s*ITK\_GROUP\_([a-zA-Z0-9\_\-]+)\_DEPENDS\s*([a-zA-Z0-9\_\-\s]*)\s*"  # noqa: E501
     pattern = re.compile(regex_group_depends)
     version = get_version()
-    with open(os.path.join(SCRIPT_DIR, "..", "CMakeLists.txt"), "r") as file_:
+    with open(os.path.join(SCRIPT_DIR, "..", "CMakeLists.txt")) as file_:
         for line in file_.readlines():
             match = re.search(pattern, line)
             if not match:
@@ -235,18 +235,19 @@ def get_wheel_dependencies():
     all_depends["itk-meta"].append("numpy")
     return all_depends
 
+
 def init_pyproject_globals(package_env_config):
     global ITK_PYPROJECT_PY_PARAMETERS
     global PYPROJECT_PY_PARAMETERS
 
     ITK_PYPROJECT_PY_PARAMETERS = {
-        "PYPROJECT_GENERATOR": "python %s '%s'" % (SCRIPT_NAME, "itk"),
+        "PYPROJECT_GENERATOR": "python {} '{}'".format(SCRIPT_NAME, "itk"),
         "PYPROJECT_NAME": r"itk",
         "PYPROJECT_VERSION": get_version(),
         "PYPROJECT_CMAKE_ARGS": r"",
         "PYPROJECT_PY_API": get_py_api(),
         "PYPROJECT_PLATLIB": r"true",
-        "ITK_SOURCE_DIR": package_env_config['ITK_SOURCE_DIR'],
+        "ITK_SOURCE_DIR": package_env_config["ITK_SOURCE_DIR"],
         "PYPROJECT_PY_MODULES": list_to_str(
             [
                 "itkBase",
