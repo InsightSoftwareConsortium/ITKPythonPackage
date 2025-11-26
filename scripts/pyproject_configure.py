@@ -1,30 +1,5 @@
 #!/usr/bin/env python
 
-"""CLI allowing to configure ``pyproject.toml`` found in ``ITKPythonPackage``
-source tree.
-
-Different version of ``pyproject.toml`` can be generated based on the value
-of the `wheel_name` positional parameter.
-
-Usage::
-
-    pyproject_configure.py [-h] [--output-dir OUTPUT_DIR] [--env-file package.env] wheel_name
-
-    positional arguments:
-      wheel_name
-
-    optional arguments:
-      -h, --help            show this help message and exit
-      --output-dir OUTPUT_DIR
-                            Output directory for configured 'pyproject.toml'
-                            (default: /work)
-
-
-
-Accepted values for `wheel_name` are ``itk`` and all values read from
-``WHEEL_NAMES.txt``.
-"""
-
 import argparse
 import os
 import re
@@ -236,7 +211,7 @@ def get_py_api():
 
 
 def get_wheel_dependencies():
-    """Return a dictionary of ITK wheel dependencies."""
+    """Return a dictionary of the ITK wheel dependencies."""
     all_depends = {}
     regex_group_depends = r"set\s*\(\s*ITK\_GROUP\_([a-zA-Z0-9\_\-]+)\_DEPENDS\s*([a-zA-Z0-9\_\-\s]*)\s*"  # noqa: E501
     pattern = re.compile(regex_group_depends)
@@ -311,7 +286,29 @@ def main():
 
     # Parse arguments
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        description="""CLI allowing to configure ``pyproject.toml`` found in the `` ITKPythonPackage ``
+source tree.
+
+Different versions of ``pyproject.toml`` can be generated based on the value
+of the `wheel_name` positional parameter.
+
+Usage::
+
+    pyproject_configure.py [-h] [--output-dir OUTPUT_DIR] [--env-file package.env] wheel_name
+
+    positional arguments:
+      wheel_name
+
+    optional arguments:
+      -h, --help   show this help message and exit
+      --output-dir OUTPUT_DIR
+                            Output directory for configured 'pyproject.toml'
+                            (default: /work)
+
+Accepted values for `wheel_name` are ``itk`` and all values read from
+``WHEEL_NAMES.txt``.
+"""
     )
     parser.add_argument("wheel_name")
     parser.add_argument(
