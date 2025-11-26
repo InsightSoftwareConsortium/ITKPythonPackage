@@ -37,5 +37,9 @@ pyproject-metadata = "*"
 python-dotenv = "*"
 scikit-build-core = "==0.10.7"
 setuptools_scm = "==8.1.0"
+[target.osx-64.dependencies]
+delocate = "*"
+[target.osx-arm64.dependencies]
+delocate = "*"
 
 
