@@ -1,9 +1,6 @@
-from packaging.version import Version
+VERSION: str = '@ITK_PACKAGE_VERSION@'
 
-# Version needs to be python PEP 440 compliant (no leading v)
-VERSION = '@ITK_PACKAGE_VERSION@'.removeprefix("v")
-
-def get_versions():
+def get_versions() -> str:
     """Returns versions for the ITK Python package.
 
     from itkVersion import get_versions
@@ -22,8 +19,6 @@ def get_versions():
     #  '4.11.0.dev20170208+139.g922f2d9'
     get_versions()['package-version']
     """
-
-    Version(VERSION) # Raise InvalidVersion exception if not PEP 440 compliant
 
     versions = {}
     versions['version'] = VERSION
