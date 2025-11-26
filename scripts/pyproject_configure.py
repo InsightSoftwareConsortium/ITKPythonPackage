@@ -338,10 +338,8 @@ Accepted values for `wheel_name` are ``itk`` and all values read from
         print(f"Please check the ITK_PACKAGE_VERSION environment variable in {args.env_file}.")
         sys.exit(1)
 
-    # Ensure we can import itkVersion from ipp_dir
-    if ipp_dir not in sys.path:
-        sys.path.append(ipp_dir)
-    import itkVersion
+    # Write itkVersion.py file to report ITK version in python.
+    write_itkVersion_py(os.path.join(default_output_dir,"itkVersion.py"), PEP440_VERSION)
 
     base_params = build_base_pyproject_parameters(
         package_env_config, SCRIPT_NAME, PEP440_VERSION
@@ -381,6 +379,38 @@ Accepted values for `wheel_name` are ``itk`` and all values read from
     # else:
     # if os.path.exists(init_py):
     # os.remove(init_py)
+
+def write_itkVersion_py(filename: str, itk_package_version:str):
+    itk_version_python_code=f"""
+VERSION: str = '{itk_package_version}'
+
+def get_versions() -> str:
+    \"\"\"Returns versions for the ITK Python package.
+
+    from itkVersion import get_versions
+
+    # Returns the ITK repository version
+    get_versions()['version']
+
+    # Returns the package version. Since GitHub Releases do not support the '+'
+    # character in file names, this does not contain the local version
+    # identifier in nightly builds, i.e.
+    #
+    #  '4.11.0.dev20170208'
+    #
+    # instead of
+    #
+    #  '4.11.0.dev20170208+139.g922f2d9'
+    get_versions()['package-version']
+    \"\"\"
+
+    versions = {{}}
+    versions['version'] = VERSION
+    versions['package-version'] = VERSION.split('+')[0]
+    return versions
+"""
+    with open(filename,'w') as wfid:
+        wfid.write(itk_version_python_code)
 
 
 if __name__ == "__main__":

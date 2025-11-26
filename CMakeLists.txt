@@ -18,17 +18,6 @@ message(STATUS "SuperBuild - ITKPythonPackage_WHEEL_NAME:${ITKPythonPackage_WHEE
 option(ITKPythonPackage_USE_TBB "Build and use oneTBB in the ITK python package" ON)
 
 
-if(NOT DEFINED ITK_PACKAGE_VERSION AND DEFINED ENV{ITK_PACKAGE_VERSION})
-  set(ITK_PACKAGE_VERSION $ENV{ITK_PACKAGE_VERSION})
-endif()
-
-if(NOT DEFINED ITK_PACKAGE_VERSION)
-  message(FATAL_ERROR "ITK_PACKAGE_VERSION must be defined when configuring cmake")
-endif()
-# configure itkVersion.py file with ITK_PACKAGE_VERSION
-configure_file(${CMAKE_SOURCE_DIR}/itkVersion.py.in ${CMAKE_SOURCE_DIR}/itkVersion.py)
-
-
 if(ITKPythonPackage_SUPERBUILD)
 
   #-----------------------------------------------------------------------------
