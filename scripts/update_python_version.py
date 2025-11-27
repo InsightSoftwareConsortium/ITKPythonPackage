@@ -31,7 +31,7 @@ commitDate = subprocess.check_output(
 commitDate = commitDate.strip()[1:-1]
 # Wed Feb 08 15:21:09 2017
 commitDate = commitDate.split(" ")
-commitDate[2] = "{:02d}".format(int(commitDate[2]))
+commitDate[2] = f"{int(commitDate[2]):02d}"
 commitDate = " ".join(commitDate)
 # 2017-02-08
 commitDateDashes = datetime.strptime(commitDate, "%a %b %d %H:%M:%S %Y").strftime(
@@ -63,12 +63,12 @@ if int(numberOfCommits) > 0:
 os.chdir(itkPythonPackageDir)
 itkVersionPath = os.path.join(itkPythonPackageDir, "itkVersion.py")
 
-Version(VERSION) # Raise InvalidVersion exception if not PEP 440 compliant
+Version(VERSION)  # Raise InvalidVersion exception if not PEP 440 compliant
 
 if not os.path.exists(itkVersionPath):
     print("Expected file " + itkVersionPath + " not found!")
     sys.exit(1)
-with open(itkVersionPath, "r") as fp:
+with open(itkVersionPath) as fp:
     lines = fp.readlines()
 with open(itkVersionPath, "w") as fp:
     for line in lines:
@@ -80,7 +80,7 @@ with open(itkVersionPath, "w") as fp:
             fp.write(line)
 
 
-with open("CMakeLists.txt", "r") as fp:
+with open("CMakeLists.txt") as fp:
     lines = fp.readlines()
 with open("CMakeLists.txt", "w") as fp:
     for line in lines:
