@@ -37,11 +37,11 @@ def prepare_build_env(python_version):
     if not os.path.exists(python_dir):
         raise FileNotFoundError(f"Aborting. python_dir [{python_dir}] does not exist.")
 
-    venv = os.path.join(python_dir, "Scripts", "virtualenv.exe")
+    virtualenv_exe = os.path.join(python_dir, "Scripts", "virtualenv.exe")
     venv_dir = os.path.join(ROOT_DIR, f"venv-{python_version}")
     print(f"Creating python virtual environment: {venv_dir}")
     if not os.path.exists(venv_dir):
-        check_call([venv, venv_dir])
+        check_call([virtualenv_exe, venv_dir])
     pip_install(venv_dir, "scikit-build-core")
     pip_install(venv_dir, "ninja")
     pip_install(venv_dir, "delvewheel")
