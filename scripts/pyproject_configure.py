@@ -238,7 +238,9 @@ def get_wheel_dependencies(SCRIPT_DIR: str, version: str, wheel_names: list):
     return all_depends
 
 
-def build_base_pyproject_parameters(package_env_config: dict, SCRIPT_NAME: str, itk_package_version: str):
+def build_base_pyproject_parameters(
+    package_env_config: dict, SCRIPT_NAME: str, itk_package_version: str
+):
     """Return the base pyproject parameters for 'itk'."""
     return {
         "PYPROJECT_GENERATOR": f"python {SCRIPT_NAME} 'itk'",
@@ -332,14 +334,20 @@ Accepted values for `wheel_name` are ``itk`` and all values read from
     # Version needs to be python PEP 440 compliant (no leading v)
     PEP440_VERSION: str = package_env_config["ITK_PACKAGE_VERSION"].removeprefix("v")
     try:
-        Version(PEP440_VERSION)  # Raise InvalidVersion exception if not PEP 440 compliant
+        Version(
+            PEP440_VERSION
+        )  # Raise InvalidVersion exception if not PEP 440 compliant
     except ValueError:
         print(f"Invalid PEP 440 version: {PEP440_VERSION}")
-        print(f"Please check the ITK_PACKAGE_VERSION environment variable in {args.env_file}.")
+        print(
+            f"Please check the ITK_PACKAGE_VERSION environment variable in {args.env_file}."
+        )
         sys.exit(1)
 
     # Write itkVersion.py file to report ITK version in python.
-    write_itkVersion_py(os.path.join(default_output_dir,"itkVersion.py"), PEP440_VERSION)
+    write_itkVersion_py(
+        os.path.join(default_output_dir, "itkVersion.py"), PEP440_VERSION
+    )
 
     base_params = build_base_pyproject_parameters(
         package_env_config, SCRIPT_NAME, PEP440_VERSION
@@ -380,8 +388,9 @@ Accepted values for `wheel_name` are ``itk`` and all values read from
     # if os.path.exists(init_py):
     # os.remove(init_py)
 
-def write_itkVersion_py(filename: str, itk_package_version:str):
-    itk_version_python_code=f"""
+
+def write_itkVersion_py(filename: str, itk_package_version: str):
+    itk_version_python_code = f"""
 VERSION: str = '{itk_package_version}'
 
 def get_versions() -> str:
@@ -409,7 +418,7 @@ def get_versions() -> str:
     versions['package-version'] = VERSION.split('+')[0]
     return versions
 """
-    with open(filename,'w') as wfid:
+    with open(filename, "w") as wfid:
         wfid.write(itk_version_python_code)
 
 
