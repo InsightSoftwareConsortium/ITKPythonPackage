@@ -5,17 +5,18 @@ import glob
 import os
 import shutil
 import sys
+from dis import IS_OP
 
 from subprocess import check_call
 
 
 SCRIPT_DIR = os.path.dirname(__file__)
-ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
-ITK_SOURCE = os.path.join(ROOT_DIR, "ITK-source")
+IPP_SOURCE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
+IPP_SUPERBUILD_BINARY_DIR = os.path.join(IPP_SOURCE_DIR, "ITK-source")
 
 print(f"SCRIPT_DIR: {SCRIPT_DIR}")
-print(f"ROOT_DIR: {ROOT_DIR}")
-print(f"ITK_SOURCE: {ITK_SOURCE}")
+print(f"ROOT_DIR: {IPP_SOURCE_DIR}")
+print(f"ITK_SOURCE: {IPP_SUPERBUILD_BINARY_DIR}")
 
 sys.path.insert(0, os.path.join(SCRIPT_DIR, "internal"))
 from wheel_builder_utils import push_dir, push_env
@@ -38,7 +39,7 @@ def prepare_build_env(python_version):
         raise FileNotFoundError(f"Aborting. python_dir [{python_dir}] does not exist.")
 
     virtualenv_exe = os.path.join(python_dir, "Scripts", "virtualenv.exe")
-    venv_dir = os.path.join(ROOT_DIR, f"venv-{python_version}")
+    venv_dir = os.path.join(IPP_SOURCE_DIR, f"venv-{python_version}")
     if not os.path.exists(venv_dir):
         print(f"Creating python virtual environment: {venv_dir}")
         check_call([virtualenv_exe, venv_dir])
@@ -57,7 +58,7 @@ def build_wrapped_itk(
     python_library,
 ):
 
-    tbb_dir = os.path.join(ROOT_DIR, "oneTBB-prefix", "lib", "cmake", "TBB")
+    tbb_dir = os.path.join(IPP_SOURCE_DIR, "oneTBB-prefix", "lib", "cmake", "TBB")
 
     # Build ITK python
     with push_dir(directory=build_path, make_directory=True):
@@ -126,12 +127,12 @@ def build_wheel(
                 "install",
                 "--upgrade",
                 "-r",
-                os.path.join(ROOT_DIR, "requirements-dev.txt"),
+                os.path.join(IPP_SOURCE_DIR, "requirements-dev.txt"),
             ]
         )
 
-        source_path = f"{ITK_SOURCE}/ITK"
-        build_path = f"{ROOT_DIR}/ITK-win_{python_version}"
+        source_path = f"{IPP_SUPERBUILD_BINARY_DIR}/ITK"
+        build_path = f"{IPP_SOURCE_DIR}/ITK-win_{python_version}"
         pyproject_configure = os.path.join(SCRIPT_DIR, "pyproject_configure.py")
         env_file = os.path.join(os.path.dirname(SCRIPT_DIR), "build", "package.env")
 
@@ -275,7 +276,7 @@ def fixup_wheel(py_envs, filepath, lib_paths: str = ""):
 
     py_env = py_envs[0]
 
-    delve_wheel = os.path.join(ROOT_DIR, "venv-" + py_env, "Scripts", "delvewheel.exe")
+    delve_wheel = os.path.join(IPP_SOURCE_DIR, "venv-" + py_env, "Scripts", "delvewheel.exe")
     check_call(
         [
             delve_wheel,
@@ -285,7 +286,7 @@ def fixup_wheel(py_envs, filepath, lib_paths: str = ""):
             lib_paths,
             "--ignore-in-wheel",
             "-w",
-            os.path.join(ROOT_DIR, "dist"),
+            os.path.join(IPP_SOURCE_DIR, "dist"),
             filepath,
         ]
     )
@@ -296,7 +297,7 @@ def fixup_wheels(single_wheel, py_envs, lib_paths: str = ""):
     tbb_wheel = "itk_core"
     if single_wheel:
         tbb_wheel = "itk"
-    for wheel in glob.glob(os.path.join(ROOT_DIR, "dist", tbb_wheel + "*.whl")):
+    for wheel in glob.glob(os.path.join(IPP_SOURCE_DIR, "dist", tbb_wheel + "*.whl")):
         fixup_wheel(py_envs, wheel, lib_paths)
 
 
@@ -312,7 +313,7 @@ def test_wheels(python_env):
     check_call([pip, "install", "numpy"])
     check_call([pip, "install", "itk", "--no-cache-dir", "--no-index", "-f", "dist"])
     print("Wheel successfully installed.")
-    check_call([python_executable, os.path.join(ROOT_DIR, "docs/code/test.py")])
+    check_call([python_executable, os.path.join(IPP_SOURCE_DIR, "docs/code/test.py")])
     print("Documentation tests passed.")
 
 
@@ -331,10 +332,10 @@ def build_wheels(
 
     build_type = "Release"
 
-    with push_dir(directory=ITK_SOURCE, make_directory=True):
+    with push_dir(directory=IPP_SUPERBUILD_BINARY_DIR, make_directory=True):
 
         cmake_executable = "cmake.exe"
-        tools_venv = os.path.join(ROOT_DIR, "venv-" + py_envs[0])
+        tools_venv = os.path.join(IPP_SOURCE_DIR, "venv-" + py_envs[0])
         ninja_executable = shutil.which("ninja.exe")
         if ninja_executable is None:
             pip_install(tools_venv, "ninja")
@@ -349,7 +350,8 @@ def build_wheels(
                 "-G",
                 "Ninja",
                 f"-DCMAKE_MAKE_PROGRAM:FILEPATH={ninja_executable}",
-                ROOT_DIR,
+                '-S', IPP_SOURCE_DIR,
+                '-B', IPP_SUPERBUILD_BINARY_DIR
             ]
         )
 
@@ -357,7 +359,7 @@ def build_wheels(
 
     # Compile wheels re-using standalone project and archive cache
     for py_env in py_envs:
-        tools_venv = os.path.join(ROOT_DIR, "venv-" + py_env)
+        tools_venv = os.path.join(IPP_SOURCE_DIR, "venv-" + py_env)
         ninja_executable = shutil.which("ninja.exe")
         if ninja_executable is None:
             pip_install(tools_venv, "ninja")
