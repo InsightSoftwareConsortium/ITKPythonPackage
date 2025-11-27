@@ -39,12 +39,12 @@ def prepare_build_env(python_version):
 
     virtualenv_exe = os.path.join(python_dir, "Scripts", "virtualenv.exe")
     venv_dir = os.path.join(ROOT_DIR, f"venv-{python_version}")
-    print(f"Creating python virtual environment: {venv_dir}")
     if not os.path.exists(venv_dir):
+        print(f"Creating python virtual environment: {venv_dir}")
         check_call([virtualenv_exe, venv_dir])
-    pip_install(venv_dir, "scikit-build-core")
-    pip_install(venv_dir, "ninja")
-    pip_install(venv_dir, "delvewheel")
+        pip_install(venv_dir, "scikit-build-core")
+        pip_install(venv_dir, "ninja")
+        pip_install(venv_dir, "delvewheel")
 
 
 def build_wrapped_itk(
