@@ -2,14 +2,11 @@
 
 import argparse
 import glob
-import json
 import os
 import shutil
 import sys
-import tempfile
-import textwrap
 
-from subprocess import check_call, check_output
+from subprocess import check_call
 
 
 SCRIPT_DIR = os.path.dirname(__file__)
@@ -106,8 +103,10 @@ def build_wheel(
     single_wheel=False,
     cleanup=True,
     wheel_names=None,
-    cmake_options=[],
+    cmake_options=None,
 ):
+    if cmake_options is None:
+        cmake_options = []
 
     (
         python_executable,
@@ -322,8 +321,10 @@ def build_wheels(
     single_wheel=False,
     cleanup=False,
     wheel_names=None,
-    cmake_options=[],
+    cmake_options=None,
 ):
+    if cmake_options is None:
+        cmake_options = []
 
     for py_env in py_envs:
         prepare_build_env(py_env)
@@ -339,7 +340,7 @@ def build_wheels(
             pip_install(tools_venv, "ninja")
             ninja_executable = os.path.join(tools_venv, "Scripts", "ninja.exe")
 
-        # Build standalone project and populate archive cache
+        # Build standalone project and populate the archive cache
         check_call(
             [
                 cmake_executable,
