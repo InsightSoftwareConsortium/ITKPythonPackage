@@ -16,9 +16,9 @@ SCRIPT_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
 ITK_SOURCE = os.path.join(ROOT_DIR, "ITK-source")
 
-print("SCRIPT_DIR: %s" % SCRIPT_DIR)
-print("ROOT_DIR: %s" % ROOT_DIR)
-print("ITK_SOURCE: %s" % ITK_SOURCE)
+print(f"SCRIPT_DIR: {SCRIPT_DIR}")
+print(f"ROOT_DIR: {ROOT_DIR}")
+print(f"ITK_SOURCE: {ITK_SOURCE}")
 
 sys.path.insert(0, os.path.join(SCRIPT_DIR, "internal"))
 from wheel_builder_utils import push_dir, push_env
@@ -27,7 +27,7 @@ from windows_build_common import DEFAULT_PY_ENVS, venv_paths
 
 def pip_install(python_dir, package, upgrade=True):
     pip = os.path.join(python_dir, "Scripts", "pip.exe")
-    print("Installing %s using %s" % (package, pip))
+    print(f"Installing {package} using {pip}")
     args = [pip, "install"]
     if upgrade:
         args.append("--upgrade")
@@ -36,15 +36,13 @@ def pip_install(python_dir, package, upgrade=True):
 
 
 def prepare_build_env(python_version):
-    python_dir = "C:/Python%s" % python_version
+    python_dir = f"C:/Python{python_version}"
     if not os.path.exists(python_dir):
-        raise FileNotFoundError(
-            "Aborting. python_dir [%s] does not exist." % python_dir
-        )
+        raise FileNotFoundError(f"Aborting. python_dir [{python_dir}] does not exist.")
 
     venv = os.path.join(python_dir, "Scripts", "virtualenv.exe")
-    venv_dir = os.path.join(ROOT_DIR, "venv-%s" % python_version)
-    print("Creating python virtual environment: %s" % venv_dir)
+    venv_dir = os.path.join(ROOT_DIR, f"venv-{python_version}")
+    print(f"Creating python virtual environment: {venv_dir}")
     if not os.path.exists(venv_dir):
         check_call([venv, venv_dir])
     pip_install(venv_dir, "scikit-build-core")
@@ -70,21 +68,21 @@ def build_wrapped_itk(
         check_call(
             [
                 "cmake",
-                "-DCMAKE_MAKE_PROGRAM:FILEPATH=%s" % ninja_executable,
-                "-DCMAKE_BUILD_TYPE:STRING=%s" % build_type,
-                "-DITK_SOURCE_DIR:PATH=%s" % source_path,
-                "-DITK_BINARY_DIR:PATH=%s" % build_path,
+                f"-DCMAKE_MAKE_PROGRAM:FILEPATH={ninja_executable}",
+                f"-DCMAKE_BUILD_TYPE:STRING={build_type}",
+                f"-DITK_SOURCE_DIR:PATH={source_path}",
+                f"-DITK_BINARY_DIR:PATH={build_path}",
                 "-DBUILD_TESTING:BOOL=OFF",
                 "-DSKBUILD:BOOL=ON",
-                "-DPython3_EXECUTABLE:FILEPATH=%s" % python_executable,
+                f"-DPython3_EXECUTABLE:FILEPATH={python_executable}",
                 "-DITK_WRAP_unsigned_short:BOOL=ON",
                 "-DITK_WRAP_double:BOOL=ON",
                 "-DITK_WRAP_complex_double:BOOL=ON",
                 "-DITK_WRAP_IMAGE_DIMS:STRING=2;3;4",
-                "-DPython3_INCLUDE_DIR:PATH=%s" % python_include_dir,
-                "-DPython3_INCLUDE_DIRS:PATH=%s" % python_include_dir,
-                "-DPython3_LIBRARY:FILEPATH=%s" % python_library,
-                "-DPython3_SABI_LIBRARY:FILEPATH=%s" % python_library,
+                f"-DPython3_INCLUDE_DIR:PATH={python_include_dir}",
+                f"-DPython3_INCLUDE_DIRS:PATH={python_include_dir}",
+                f"-DPython3_LIBRARY:FILEPATH={python_library}",
+                f"-DPython3_SABI_LIBRARY:FILEPATH={python_library}",
                 "-DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
                 "-DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON",
                 "-DPY_SITE_PACKAGES_PATH:PATH=.",
@@ -93,7 +91,7 @@ def build_wrapped_itk(
                 "-DITK_WRAP_DOC:BOOL=ON",
                 "-DDOXYGEN_EXECUTABLE:FILEPATH=C:/P/doxygen/doxygen.exe",
                 "-DModule_ITKTBB:BOOL=ON",
-                "-DTBB_DIR:PATH=%s" % tbb_dir,
+                f"-DTBB_DIR:PATH={tbb_dir}",
                 "-G",
                 "Ninja",
                 source_path,
@@ -120,7 +118,7 @@ def build_wheel(
         path,
     ) = venv_paths(python_version)
 
-    with push_env(PATH="%s%s%s" % (path, os.pathsep, os.environ["PATH"])):
+    with push_env(PATH=f"{path}{os.pathsep}{os.environ['PATH']}"):
 
         # Install dependencies
         check_call(
@@ -133,10 +131,10 @@ def build_wheel(
             ]
         )
 
-        source_path = "%s/ITK" % ITK_SOURCE
-        build_path = "%s/ITK-win_%s" % (ROOT_DIR, python_version)
+        source_path = f"{ITK_SOURCE}/ITK"
+        build_path = f"{ROOT_DIR}/ITK-win_{python_version}"
         pyproject_configure = os.path.join(SCRIPT_DIR, "pyproject_configure.py")
-        env_file=os.path.join(os.path.dirname(SCRIPT_DIR), "build", "package.env")
+        env_file = os.path.join(os.path.dirname(SCRIPT_DIR), "build", "package.env")
 
         # Clean up previous invocations
         if cleanup and os.path.exists(build_path):
@@ -149,7 +147,9 @@ def build_wheel(
             print("#")
 
             # Configure pyproject.toml
-            check_call([python_executable, pyproject_configure, "--env-file", env_file ,"itk"])
+            check_call(
+                [python_executable, pyproject_configure, "--env-file", env_file, "itk"]
+            )
 
             # Generate wheel
             check_call(
@@ -163,10 +163,9 @@ def build_wheel(
                     "dist",
                     "--no-isolation",
                     "--skip-dependency-check",
-                    "--config-setting=cmake.build-type=%s" % build_type,
-                    "--config-setting=cmake.define.ITK_SOURCE_DIR:PATH=%s"
-                    % source_path,
-                    "--config-setting=cmake.define.ITK_BINARY_DIR:PATH=%s" % build_path,
+                    f"--config-setting=cmake.build-type={build_type}",
+                    f"--config-setting=cmake.define.ITK_SOURCE_DIR:PATH={source_path}",
+                    f"--config-setting=cmake.define.ITK_BINARY_DIR:PATH={build_path}",
                     "--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=%s"
                     % python_executable,
                     "--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=%s"
@@ -204,15 +203,23 @@ def build_wheel(
 
             # Build wheels
             if wheel_names is None:
-                with open(os.path.join(SCRIPT_DIR, "WHEEL_NAMES.txt"), "r") as content:
+                with open(os.path.join(SCRIPT_DIR, "WHEEL_NAMES.txt")) as content:
                     wheel_names = [
                         wheel_name.strip() for wheel_name in content.readlines()
                     ]
 
-            env_file=os.path.join(os.path.dirname(SCRIPT_DIR), "build", "package.env")
+            env_file = os.path.join(os.path.dirname(SCRIPT_DIR), "build", "package.env")
             for wheel_name in wheel_names:
                 # Configure pyproject.toml
-                check_call([python_executable, pyproject_configure, "--env-file", env_file ,wheel_name])
+                check_call(
+                    [
+                        python_executable,
+                        pyproject_configure,
+                        "--env-file",
+                        env_file,
+                        wheel_name,
+                    ]
+                )
 
                 # Generate wheel
                 check_call(
@@ -226,7 +233,7 @@ def build_wheel(
                         "dist",
                         "--no-isolation",
                         "--skip-dependency-check",
-                        "--config-setting=cmake.build-type=%s" % build_type,
+                        f"--config-setting=cmake.build-type={build_type}",
                         "--config-setting=cmake.define.ITK_SOURCE_DIR:PATH=%s"
                         % source_path,
                         "--config-setting=cmake.define.ITK_BINARY_DIR:PATH=%s"
@@ -336,11 +343,11 @@ def build_wheels(
         check_call(
             [
                 cmake_executable,
-                "-DCMAKE_BUILD_TYPE:STRING=%s" % build_type,
+                f"-DCMAKE_BUILD_TYPE:STRING={build_type}",
                 "-DITKPythonPackage_BUILD_PYTHON:PATH=0",
                 "-G",
                 "Ninja",
-                "-DCMAKE_MAKE_PROGRAM:FILEPATH=%s" % ninja_executable,
+                f"-DCMAKE_MAKE_PROGRAM:FILEPATH={ninja_executable}",
                 ROOT_DIR,
             ]
         )

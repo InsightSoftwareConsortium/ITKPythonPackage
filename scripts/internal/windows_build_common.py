@@ -13,12 +13,12 @@ ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
 def venv_paths(python_version):
 
     # Create venv
-    venv_executable = "C:/Python%s/Scripts/virtualenv.exe" % (python_version)
-    venv_dir = os.path.join(ROOT_DIR, "venv-%s" % python_version)
+    venv_executable = f"C:/Python{python_version}/Scripts/virtualenv.exe"
+    venv_dir = os.path.join(ROOT_DIR, f"venv-{python_version}")
     check_call([venv_executable, venv_dir])
 
     python_executable = os.path.join(venv_dir, "Scripts", "python.exe")
-    python_include_dir = "C:/Python%s/include" % (python_version)
+    python_include_dir = f"C:/Python{python_version}/include"
 
     # XXX It should be possible to query skbuild for the library dir associated
     #     with a given interpreter.
@@ -26,21 +26,21 @@ def venv_paths(python_version):
 
     if int(python_version.split("-")[0][1:]) >= 11:
         # Stable ABI
-        python_library = "C:/Python%s/libs/python3.lib" % (python_version)
+        python_library = f"C:/Python{python_version}/libs/python3.lib"
     else:
-        python_library = "C:/Python%s/libs/python%s.lib" % (python_version, xy_ver)
+        python_library = f"C:/Python{python_version}/libs/python{xy_ver}.lib"
 
     print("")
-    print("Python3_EXECUTABLE: %s" % python_executable)
-    print("Python3_INCLUDE_DIR: %s" % python_include_dir)
-    print("Python3_LIBRARY: %s" % python_library)
+    print(f"Python3_EXECUTABLE: {python_executable}")
+    print(f"Python3_INCLUDE_DIR: {python_include_dir}")
+    print(f"Python3_LIBRARY: {python_library}")
 
     pip = os.path.join(venv_dir, "Scripts", "pip.exe")
 
     ninja_executable = os.path.join(venv_dir, "Scripts", "ninja.exe")
     if not os.path.exists(ninja_executable):
         ninja_executable = shutil.which("ninja.exe")
-    print("NINJA_EXECUTABLE:%s" % ninja_executable)
+    print(f"NINJA_EXECUTABLE:{ninja_executable}")
 
     # Update PATH
     path = os.path.join(venv_dir, "Scripts")

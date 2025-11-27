@@ -13,8 +13,8 @@ from pathlib import Path
 SCRIPT_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.abspath(os.getcwd())
 
-print("SCRIPT_DIR: %s" % SCRIPT_DIR)
-print("ROOT_DIR: %s" % ROOT_DIR)
+print(f"SCRIPT_DIR: {SCRIPT_DIR}")
+print(f"ROOT_DIR: {ROOT_DIR}")
 
 sys.path.insert(0, os.path.join(SCRIPT_DIR, "internal"))
 
@@ -49,7 +49,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
             path,
         ) = venv_paths(py_env)
 
-        with push_env(PATH="%s%s%s" % (path, os.pathsep, os.environ["PATH"])):
+        with push_env(PATH=f"{path}{os.pathsep}{os.environ['PATH']}"):
             # Install dependencies
             check_call([python_executable, "-m", "pip", "install", "pip", "--upgrade"])
             requirements_file = os.path.join(ROOT_DIR, "requirements-dev.txt")
@@ -63,14 +63,14 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
 
             source_path = ROOT_DIR
             itk_build_path = os.path.abspath(
-                "%s/ITK-win_%s" % (os.path.join(SCRIPT_DIR, ".."), py_env)
+                f"{os.path.join(SCRIPT_DIR, '..')}/ITK-win_{py_env}"
             )
-            print("ITKDIR: %s" % itk_build_path)
+            print(f"ITKDIR: {itk_build_path}")
 
             minor_version = py_env.split("-")[0][1:]
             if int(minor_version) >= 11:
                 # Stable ABI
-                wheel_py_api = "cp3%s" % minor_version
+                wheel_py_api = f"cp3{minor_version}"
             else:
                 wheel_py_api = ""
             # Generate wheel
@@ -85,7 +85,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
                     "dist",
                     "--no-isolation",
                     "--skip-dependency-check",
-                    "--config-setting=wheel.py-api=%s" % wheel_py_api,
+                    f"--config-setting=wheel.py-api={wheel_py_api}",
                     "--config-setting=cmake.define.SKBUILD:BOOL=ON",
                     "--config-setting=cmake.define.PY_SITE_PACKAGES_PATH:PATH=.",
                     "--config-setting=cmake.args=" "-G Ninja" "",
@@ -94,7 +94,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
                     "",
                     "--config-setting=cmake.define.CMAKE_MAKE_PROGRAM:FILEPATH=%s"
                     % ninja_executable,
-                    "--config-setting=cmake.define.ITK_DIR:PATH=%s" % itk_build_path,
+                    f"--config-setting=cmake.define.ITK_DIR:PATH={itk_build_path}",
                     "--config-setting=cmake.define.WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
                     "--config-setting=cmake.define.SWIG_EXECUTABLE:FILEPATH=%s/Wrapping/Generators/SwigInterface/swig/bin/swig.exe"
                     % itk_build_path,

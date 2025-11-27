@@ -41,7 +41,7 @@ def push_env(**kwargs):
         os.environ[saved_var] = saved_value
 
 
-class ContextDecorator(object):
+class ContextDecorator:
     """A base class or mixin that enables context managers to work as
     decorators."""
 
@@ -79,9 +79,7 @@ class push_dir(ContextDecorator):
         self.directory = None
         self.make_directory = None
         self.old_cwd = None
-        super(push_dir, self).__init__(
-            directory=directory, make_directory=make_directory
-        )
+        super().__init__(directory=directory, make_directory=make_directory)
 
     def __enter__(self):
         self.old_cwd = os.getcwd()
