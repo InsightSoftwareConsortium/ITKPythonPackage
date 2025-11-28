@@ -5,14 +5,16 @@ import glob
 import os
 import shutil
 import sys
-from dis import IS_OP
 
 from subprocess import check_call
+from dotenv import dotenv_values
 
 
 SCRIPT_DIR = os.path.dirname(__file__)
 IPP_SOURCE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
 IPP_SUPERBUILD_BINARY_DIR = os.path.join(IPP_SOURCE_DIR, "ITK-source")
+package_env_config = dotenv_values(os.path.join(IPP_SOURCE_DIR, "build", "package.env"))
+ITK_SOURCE_DIR = package_env_config["ITK_SOURCE_DIR"]
 
 print(f"SCRIPT_DIR: {SCRIPT_DIR}")
 print(f"ROOT_DIR: {IPP_SOURCE_DIR}")
@@ -51,7 +53,7 @@ def prepare_build_env(python_version):
 def build_wrapped_itk(
     ninja_executable,
     build_type,
-    source_path,
+    ITK_SOURCE_DIR,
     build_path,
     python_executable,
     python_include_dir,
@@ -62,40 +64,44 @@ def build_wrapped_itk(
 
     # Build ITK python
     with push_dir(directory=build_path, make_directory=True):
-
-        check_call(
-            [
-                "cmake",
-                f"-DCMAKE_MAKE_PROGRAM:FILEPATH={ninja_executable}",
-                f"-DCMAKE_BUILD_TYPE:STRING={build_type}",
-                f"-DITK_SOURCE_DIR:PATH={source_path}",
-                f"-DITK_BINARY_DIR:PATH={build_path}",
-                "-DBUILD_TESTING:BOOL=OFF",
-                "-DSKBUILD:BOOL=ON",
-                f"-DPython3_EXECUTABLE:FILEPATH={python_executable}",
-                "-DITK_WRAP_unsigned_short:BOOL=ON",
-                "-DITK_WRAP_double:BOOL=ON",
-                "-DITK_WRAP_complex_double:BOOL=ON",
-                "-DITK_WRAP_IMAGE_DIMS:STRING=2;3;4",
-                f"-DPython3_INCLUDE_DIR:PATH={python_include_dir}",
-                f"-DPython3_INCLUDE_DIRS:PATH={python_include_dir}",
-                f"-DPython3_LIBRARY:FILEPATH={python_library}",
-                f"-DPython3_SABI_LIBRARY:FILEPATH={python_library}",
-                "-DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
-                "-DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON",
-                "-DPY_SITE_PACKAGES_PATH:PATH=.",
-                "-DITK_LEGACY_SILENT:BOOL=ON",
-                "-DITK_WRAP_PYTHON:BOOL=ON",
-                "-DITK_WRAP_DOC:BOOL=ON",
-                "-DDOXYGEN_EXECUTABLE:FILEPATH=C:/P/doxygen/doxygen.exe",
-                "-DModule_ITKTBB:BOOL=ON",
-                f"-DTBB_DIR:PATH={tbb_dir}",
-                "-G",
-                "Ninja",
-                source_path,
-            ]
-        )
-        check_call([ninja_executable])
+        use_tbb: str = "ON"
+        cmd = [
+            "cmake",
+            "-G",
+            "Ninja",
+            f"-DCMAKE_MAKE_PROGRAM:FILEPATH={ninja_executable}",
+            f"-DCMAKE_BUILD_TYPE:STRING={build_type}",
+            f"-DITK_SOURCE_DIR:PATH={ITK_SOURCE_DIR}",
+            f"-DITK_BINARY_DIR:PATH={build_path}",
+            "-DBUILD_TESTING:BOOL=OFF",
+            # TODO: CMAKE_PLATFORM OSX_DEPLOYMENT OSX_ARCHITECTURES
+            # TODO: CMAKE_COMPILER_ARGS added here for linux mac to respect CC and CXX env settings
+            "-DSKBUILD:BOOL=ON",  # TODO: IS THIS NEEDED?  It is not used
+            f"-DPython3_EXECUTABLE:FILEPATH={python_executable}",
+            f"-DPython3_INCLUDE_DIR:PATH={python_include_dir}",
+            f"-DPython3_INCLUDE_DIRS:PATH={python_include_dir}",  # TODO: Outdated variable can be removed
+            f"-DPython3_LIBRARY:FILEPATH={python_library}",
+            f"-DPython3_SABI_LIBRARY:FILEPATH={python_library}",
+            "-DITK_WRAP_unsigned_short:BOOL=ON",
+            "-DITK_WRAP_double:BOOL=ON",
+            "-DITK_WRAP_complex_double:BOOL=ON",
+            "-DITK_WRAP_IMAGE_DIMS:STRING=2;3;4",
+            "-DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
+            "-DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON",
+            "-DPY_SITE_PACKAGES_PATH:PATH=.",
+            "-DITK_LEGACY_SILENT:BOOL=ON",
+            "-DITK_WRAP_PYTHON:BOOL=ON",
+            "-DITK_WRAP_DOC:BOOL=ON",
+            f"-DDOXYGEN_EXECUTABLE:FILEPATH={package_env_config['DOXYGEN_EXECUTABLE']}",
+            f"-DModule_ITKTBB:BOOL={use_tbb}",
+            f"-DTBB_DIR:PATH={tbb_dir}",
+            "-S",
+            ITK_SOURCE_DIR,
+            "-B",
+            build_path,
+        ]
+        check_call(cmd)
+        check_call([ninja_executable, "-C", build_path])
 
 
 def build_wheel(
@@ -131,10 +137,10 @@ def build_wheel(
             ]
         )
 
-        source_path = f"{IPP_SUPERBUILD_BINARY_DIR}/ITK"
+        source_path = f"{package_env_config['ITK_SOURCE_DIR']}"
         build_path = f"{IPP_SOURCE_DIR}/ITK-win_{python_version}"
         pyproject_configure = os.path.join(SCRIPT_DIR, "pyproject_configure.py")
-        env_file = os.path.join(os.path.dirname(SCRIPT_DIR), "build", "package.env")
+        env_file = os.path.join(IPP_SOURCE_DIR, "build", "package.env")
 
         # Clean up previous invocations
         if cleanup and os.path.exists(build_path):
@@ -221,6 +227,7 @@ def build_wheel(
                     ]
                 )
 
+                use_tbb: str = "ON"
                 # Generate wheel
                 check_call(
                     [
@@ -230,32 +237,28 @@ def build_wheel(
                         "--verbose",
                         "--wheel",
                         "--outdir",
-                        "dist",
+                        f"{IPP_SOURCE_DIR}/dist",
                         "--no-isolation",
                         "--skip-dependency-check",
-                        f"--config-setting=cmake.build-type={build_type}",
-                        "--config-setting=cmake.define.ITK_SOURCE_DIR:PATH=%s"
-                        % source_path,
-                        "--config-setting=cmake.define.ITK_BINARY_DIR:PATH=%s"
-                        % build_path,
+                        f"--config-setting=cmake.define.ITK_SOURCE_DIR:PATH={ITK_SOURCE_DIR}",
+                        f"--config-setting=cmake.define.ITK_BINARY_DIR:PATH={build_path}",
+                        # TODO: add OSX_DEPLOYMENT OSX_ARCHITECTURES here for linux mac
+                        f"--config-setting=cmake.define.ITKPythonPackage_USE_TBB:BOOL={use_tbb}",  # TODO: May not be needed
                         "--config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON",
-                        "--config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=%s"
-                        % wheel_name,
-                        "--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=%s"
-                        % python_executable,
-                        "--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=%s"
-                        % python_include_dir,
-                        "--config-setting=cmake.define.Python3_INCLUDE_DIRS:PATH=%s"
-                        % python_include_dir,
-                        "--config-setting=cmake.define.Python3_LIBRARY:FILEPATH=%s"
-                        % python_library,
+                        f"--config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING={wheel_name}"
+                        f"--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH={python_executable}",
+                        f"--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH={python_include_dir}",
+                        f"--config-setting=cmake.define.Python3_INCLUDE_DIRS:PATH={python_include_dir}",  # TODO: outdated variable can be removed
+                        f"--config-setting=cmake.define.Python3_LIBRARY:FILEPATH={python_library}",
+                        f"--config-setting=cmake.define.DOXYGEN_EXECUTABLE:FILEPATH={package_env_config['DOXYGEN_EXECUTABLE']}",
+                        f"--config-setting=cmake.build-type={build_type}",
                     ]
                     + [
                         o.replace("-D", "--config-setting=cmake.define.")
                         for o in cmake_options
                     ]
                     + [
-                        ".",
+                        f"{IPP_SOURCE_DIR}",
                     ]
                 )
 
@@ -276,7 +279,9 @@ def fixup_wheel(py_envs, filepath, lib_paths: str = ""):
 
     py_env = py_envs[0]
 
-    delve_wheel = os.path.join(IPP_SOURCE_DIR, "venv-" + py_env, "Scripts", "delvewheel.exe")
+    delve_wheel = os.path.join(
+        IPP_SOURCE_DIR, "venv-" + py_env, "Scripts", "delvewheel.exe"
+    )
     check_call(
         [
             delve_wheel,
@@ -331,9 +336,8 @@ def build_wheels(
         prepare_build_env(py_env)
 
     build_type = "Release"
-
+    use_tbb: str = "ON"
     with push_dir(directory=IPP_SUPERBUILD_BINARY_DIR, make_directory=True):
-
         cmake_executable = "cmake.exe"
         tools_venv = os.path.join(IPP_SOURCE_DIR, "venv-" + py_envs[0])
         ninja_executable = shutil.which("ninja.exe")
@@ -341,26 +345,39 @@ def build_wheels(
             pip_install(tools_venv, "ninja")
             ninja_executable = os.path.join(tools_venv, "Scripts", "ninja.exe")
 
-        # Build standalone project and populate the archive cache
-        check_call(
-            [
-                cmake_executable,
-                f"-DCMAKE_BUILD_TYPE:STRING={build_type}",
-                "-DITKPythonPackage_BUILD_PYTHON:PATH=0",
-                "-G",
-                "Ninja",
-                f"-DCMAKE_MAKE_PROGRAM:FILEPATH={ninja_executable}",
-                '-S', IPP_SOURCE_DIR,
-                '-B', IPP_SUPERBUILD_BINARY_DIR
-            ]
-        )
+        # -----------------------------------------------------------------------
+        # Build required components (optional local ITK source, TBB builds) used to populate the archive cache
+        cmd = [
+            cmake_executable,
+            "-G",
+            "Ninja",
+            "-DITKPythonPackage_BUILD_PYTHON:BOOL=OFF",
+            f"-DITKPythonPackage_USE_TBB:BOOL={use_tbb}",
+            f"-DCMAKE_BUILD_TYPE:STRING={build_type}",
+            f"-DCMAKE_MAKE_PROGRAM:FILEPATH={ninja_executable}",
+            f"-DITK_SOURCE_DIR:PATH={package_env_config['ITK_SOURCE_DIR']}",
+            f"-DITK_GIT_TAG:STRING={package_env_config['ITK_GIT_TAG']}",
+        ]
+        cmd += [
+            # TODO: PLATFORM CMAKE ITEMS HERE when python used for mac and linux OSX_DEPLOYMENT_TARGET OSX_ARCHITECTURES
+            # TODO: ADD CMAKE_COMPILER_ARGS HERE FOR COMPILER PROPAGATION
+        ]
+        cmd += [
+            "-S",
+            IPP_SOURCE_DIR,
+            "-B",
+            IPP_SUPERBUILD_BINARY_DIR,
+        ]
 
-        check_call([ninja_executable])
+        check_call(cmd)
+        check_call([ninja_executable, "-C", IPP_SUPERBUILD_BINARY_DIR])
 
     # Compile wheels re-using standalone project and archive cache
     for py_env in py_envs:
         tools_venv = os.path.join(IPP_SOURCE_DIR, "venv-" + py_env)
-        ninja_executable = shutil.which("ninja.exe")
+        ninja_executable = shutil.which(
+            "ninja.exe"
+        )  # TODO: REMOVE, NINJA ALREADY AVAILABLE!
         if ninja_executable is None:
             pip_install(tools_venv, "ninja")
         build_wheel(

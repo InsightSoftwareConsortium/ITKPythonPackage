@@ -54,31 +54,47 @@ export PATH=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/tools/doxygen-1.8.16/bin:$
 source ${CONTAINER_PACKAGE_ENV}
 _CONTAINER_ITK_SOURCE_DIR=${ITK_SOURCE_DIR}
 # Build standalone project and populate archive cache
-mkdir -p ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source
-pushd ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source > /dev/null 2>&1
-  if [ ! -d ${_CONTAINER_ITK_SOURCE_DIR} ]; then
-     git clone https://github.com/InsightSoftwareConsortium/ITK.git ${_CONTAINER_ITK_SOURCE_DIR}
-  fi
-  pushd ${_CONTAINER_ITK_SOURCE_DIR} > /dev/null 2>&1
-     git checkout ${ITK_GIT_TAG}
-  popd > /dev/null 2>&1
-  echo "CMAKE VERSION: $(${CMAKE_EXECUTABLE} --version)"
-  cmd=$(echo ${CMAKE_EXECUTABLE} \
-    -DITKPythonPackage_BUILD_PYTHON:PATH=0  \
-    -DITK_SOURCE_DIR:PATH=${_CONTAINER_ITK_SOURCE_DIR} \
-    -DITK_GIT_TAG:STRING=${ITK_GIT_TAG} \
-    -DITK_PACKAGE_VERSION:STRING=${ITK_PACKAGE_VERSION} \
-    ${CMAKE_COMPILER_ARGS} \
-    -G Ninja \
-    -S ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR} \
-    -B ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source)
-  echo "RUNNING: $cmd"
-  eval $cmd
-  ${NINJA_EXECUTABLE} -C ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source
-  echo "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
-  echo "================================================================"
+if [ ! -d ${_CONTAINER_ITK_SOURCE_DIR} ]; then
+   git clone https://github.com/InsightSoftwareConsortium/ITK.git ${_CONTAINER_ITK_SOURCE_DIR}
+fi
+pushd ${_CONTAINER_ITK_SOURCE_DIR} > /dev/null 2>&1
+   git checkout ${ITK_GIT_TAG}
 popd > /dev/null 2>&1
-tbb_dir=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/oneTBB-prefix/lib/cmake/TBB
+# -----------------------------------------------------------------------
+# Build required components (optional local ITK source, TBB builds) used to populate the archive cache
+use_tbb="ON"
+if [[ "${use_tbb}" -eq "ON" ]]; then
+  tbb_dir=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/oneTBB-prefix/lib/cmake/TBB
+  export LD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${_ipp_dir}/oneTBB-prefix/lib
+else
+  tbb_dir="NOT-FOUND"
+fi
+IPP_SOURCE_DIR=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}
+IPP_SUPERBUILD_BINARY_DIR=${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source
+mkdir -p ${IPP_SUPERBUILD_BINARY_DIR}
+echo "CMAKE VERSION: $(${CMAKE_EXECUTABLE} --version)"
+cmd=$(echo ${CMAKE_EXECUTABLE} \
+  -G \
+  Ninja \
+  -DITKPythonPackage_BUILD_PYTHON:BOOL=OFF  \
+  -DITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
+  -DCMAKE_BUILD_TYPE:STRING=${build_type} \
+  -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
+  -DITK_SOURCE_DIR:PATH=${_CONTAINER_ITK_SOURCE_DIR} \
+  -DITK_GIT_TAG:STRING=${ITK_GIT_TAG} \
+  ${CMAKE_PLATFORM_COMPILER_ARGS_NOT_DEFINED} \
+  ${CMAKE_COMPILER_ARGS} \
+  -S \
+  ${IPP_SOURCE_DIR} \
+  -B \
+  ${IPP_SUPERBUILD_BINARY_DIR}
+)
+echo "RUNNING: $cmd"
+eval $cmd
+${NINJA_EXECUTABLE} -C ${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/ITK-source
+echo "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+echo "================================================================"
+
 # So auditwheel can find the libs
 sudo ldconfig
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${DOCKCROSS_MOUNTED_ITKPythonPackage_DIR}/oneTBB-prefix/lib:/usr/lib:/usr/lib64
@@ -112,50 +128,56 @@ for PYBIN in "${PYBINARIES[@]}"; do
       && cd ${build_path} \
       && echo "CMAKE VERSION: $(${CMAKE_EXECUTABLE} --version)" \
       && ${CMAKE_EXECUTABLE} \
+        -G Ninja \
+        -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
         -DCMAKE_BUILD_TYPE:STRING=${build_type} \
         -DITK_SOURCE_DIR:PATH=${_CONTAINER_ITK_SOURCE_DIR} \
         -DITK_BINARY_DIR:PATH=${build_path} \
         -DBUILD_TESTING:BOOL=OFF \
-        -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-        -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+        ${CMAKE_PLATFORM_FLAGS_NOT_YET_DEFINED} \
         -DCMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
         -DCMAKE_CXX_FLAGS:STRING="$compile_flags" \
         -DCMAKE_C_FLAGS:STRING="$compile_flags" \
         ${CMAKE_COMPILER_ARGS} \
-        -DCMAKE_BUILD_TYPE:STRING="${build_type}" \
-        -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
-        -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
+        -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+        -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
         -DITK_WRAP_unsigned_short:BOOL=ON \
         -DITK_WRAP_double:BOOL=ON \
         -DITK_WRAP_complex_double:BOOL=ON \
         -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
+        -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
+        -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
         -DPY_SITE_PACKAGES_PATH:PATH="." \
         -DITK_LEGACY_SILENT:BOOL=ON \
         -DITK_WRAP_PYTHON:BOOL=ON \
         -DITK_WRAP_DOC:BOOL=ON \
-        -DModule_ITKTBB:BOOL=ON \
+        -DDOXYGEN_EXECUTABLE:FILEPATH=${DOXYGEN_EXECUTABLE} \
+        -DModule_ITKTBB:BOOL=${use_tbb} \
         -DTBB_DIR:PATH=${tbb_dir} \
-        -G Ninja \
         -S ${_CONTAINER_ITK_SOURCE_DIR} \
-        -B ${build_path} \
-      && ${NINJA_EXECUTABLE} -C ${build_path} \
-      || exit 1
+        -B ${build_path}
+       ${NINJA_EXECUTABLE} -C ${build_path} || exit 1
     )
 
+    echo "BUILDING ITK Wheels"
     wheel_names=$(cat ${script_dir}/../WHEEL_NAMES.txt)
     PYPROJECT_CONFIGURE="${script_dir}/../pyproject_configure.py"
     for wheel_name in ${wheel_names}; do
+      echo "==building ${wheel_name} in ${build_path} =="
       # Configure pyproject.toml
-      ${PYBIN}/python ${PYPROJECT_CONFIGURE} --env-file ${CONTAINER_PACKAGE_ENV} ${wheel_name}
+      ${Python3_EXECUTABLE} ${PYPROJECT_CONFIGURE} --env-file ${CONTAINER_PACKAGE_ENV} ${wheel_name}
       # Generate wheel
-      ${PYBIN}/python -m build \
+      ${Python3_EXECUTABLE} \
+        -m build \
         --verbose \
         --wheel \
-        --outdir dist \
+        --outdir ${IPP_SOURCE_DIR}/dist \
         --no-isolation \
         --skip-dependency-check \
         --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${_CONTAINER_ITK_SOURCE_DIR} \
         --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
+        ${CMAKE_PLATFORM_COMPILER_ARGS_NOT_DEFINED} \
+        --config-setting=cmake.define.ITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
         --config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
         --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
         --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
@@ -164,15 +186,16 @@ for PYBIN in "${PYBINARIES[@]}"; do
         --config-setting=cmake.define.CMAKE_C_FLAGS:STRING="${compile_flags}" \
         ${CMAKE_OPTIONS//'-D'/'--config-setting=cmake.define.'} \
         ${CMAKE_COMPILER_ARGS//'-D'/'--config-setting=cmake.define.'} \
-        . \
+        ${IPP_SOURCE_DIR} \
         || exit 1
     done
 
     # Remove unnecessary files for building against ITK
-    find ${build_path} -name '*.cpp' -delete -o -name '*.xml' -delete
-    rm -rf ${build_path}/Wrapping/Generators/castxml*
-    find ${build_path} -name '*.o' -delete
-
+    if [  "${ITK_MODULE_NO_CLEANUP:-0}" -eq 0  ]; then
+      find ${build_path} -name '*.cpp' -delete -o -name '*.xml' -delete
+      rm -rf ${build_path}/Wrapping/Generators/castxml*
+      find ${build_path} -name '*.o' -delete
+    fi
 done
 
 sudo /opt/python/cp311-cp311/bin/pip3 install auditwheel wheel

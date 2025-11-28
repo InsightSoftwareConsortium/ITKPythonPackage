@@ -56,6 +56,9 @@ fi
 # Build standalone project and populate archive cache
 n_processors=$(sysctl -n hw.ncpu)
 # So delocate can find the libs
+
+# -----------------------------------------------------------------------
+# Build required components (optional local ITK source, TBB builds) used to populate the archive cache
 use_tbb="OFF"
 if [[ "${use_tbb}" -eq "ON" ]]; then
   tbb_dir=$PWD/oneTBB-prefix/lib/cmake/TBB
@@ -63,30 +66,37 @@ if [[ "${use_tbb}" -eq "ON" ]]; then
 else
   tbb_dir="NOT-FOUND"
 fi
-
-# -----------------------------------------------------------------------
-IPP_BUILD_DIR=${_ipp_dir}/ITK-source
-mkdir -p ${IPP_BUILD_DIR}
+IPP_SOURCE_DIR=${_ipp_dir}
+IPP_SUPERBUILD_BINARY_DIR=${_ipp_dir}/ITK-source
+mkdir -p ${IPP_SUPERBUILD_BINARY_DIR}
 echo "CMAKE VERSION: $(${CMAKE_EXECUTABLE} --version)"
-${CMAKE_EXECUTABLE} -DITKPythonPackage_BUILD_PYTHON:PATH=0 \
+  cmd=$(echo ${CMAKE_EXECUTABLE} \
+  -G \
+  Ninja \
+  -DITKPythonPackage_BUILD_PYTHON:BOOL=OFF \
   -DITKPythonPackage_USE_TBB:BOOL=${use_tbb} \
-  -G Ninja \
   -DCMAKE_BUILD_TYPE:STRING=${build_type} \
   -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
-  -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${MACOSX_DEPLOYMENT_TARGET} \
-  -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
   -DITK_SOURCE_DIR=${ITK_SOURCE_DIR} \
   -DITK_GIT_TAG=${ITK_GIT_TAG} \
+  -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${MACOSX_DEPLOYMENT_TARGET} \
+  -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
   ${CMAKE_COMPILER_ARGS} \
-  -S ${_ipp_dir} \
-  -B ${IPP_BUILD_DIR} \
-  \
-  && ${NINJA_EXECUTABLE} -C ${IPP_BUILD_DIR} -j$n_processors -l$n_processors
+  -S \
+  ${IPP_SOURCE_DIR} \
+  -B \
+  ${IPP_SUPERBUILD_BINARY_DIR}
+  )
+  echo "RUNNING: $cmd"
+  eval $cmd
+  ${NINJA_EXECUTABLE} -C ${IPP_SUPERBUILD_BINARY_DIR} -j$n_processors -l$n_processors
+  echo "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+  echo "================================================================"
 
 # Compile wheels re-using standalone project and archive cache
-for VENV in "${VENVS[@]}"; do
-    py_mm=$(basename ${VENV})
-    export Python3_EXECUTABLE=${VENV}/bin/python
+for py_env in "${VENVS[@]}"; do
+    py_mm=$(basename ${py_env})
+    export Python3_EXECUTABLE=${py_env}/bin/python
     Python3_INCLUDE_DIR=$( find -L ${MACPYTHON_PY_PREFIX}/${py_mm}/include -name Python.h -exec dirname {} \; )
 
     echo ""
@@ -112,39 +122,41 @@ for VENV in "${VENVS[@]}"; do
     echo "# Build multiple ITK wheels"
     echo "#"
 
-    # Build ITK python
+    # Build ITK python  -> build_wrapped_itk
     (
       mkdir -p ${build_path} \
       && cd ${build_path} \
       && echo "CMAKE VERSION: $(${CMAKE_EXECUTABLE} --version)" \
       && ${CMAKE_EXECUTABLE} \
+        -G Ninja \
+        -DCMAKE_MAKE_PROGRAM:FILEPATH=${NINJA_EXECUTABLE} \
         -DCMAKE_BUILD_TYPE:STRING=${build_type} \
         -DITK_SOURCE_DIR:PATH=${ITK_SOURCE_DIR} \
         -DITK_BINARY_DIR:PATH=${build_path} \
         -DBUILD_TESTING:BOOL=OFF \
+        ${CMAKE_PLATFORM_FLAGS_NOT_YET_DEFINED} \
         -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${MACOSX_DEPLOYMENT_TARGET} \
         -DCMAKE_OSX_ARCHITECTURES:STRING=${osx_arch} \
         ${CMAKE_COMPILER_ARGS} \
+        -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+        -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
         -DITK_WRAP_unsigned_short:BOOL=ON \
         -DITK_WRAP_double:BOOL=ON \
         -DITK_WRAP_complex_double:BOOL=ON \
         -DITK_WRAP_IMAGE_DIMS:STRING="2;3;4" \
-        -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-        -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
         -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
         -DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON \
-        "-DPY_SITE_PACKAGES_PATH:PATH=." \
+        -DPY_SITE_PACKAGES_PATH:PATH="." \
         -DITK_LEGACY_SILENT:BOOL=ON \
         -DITK_WRAP_PYTHON:BOOL=ON \
         -DITK_WRAP_DOC:BOOL=ON \
+        -DDOXYGEN_EXECUTABLE:FILEPATH=${DOXYGEN_EXECUTABLE} \
         -DModule_ITKTBB:BOOL=${use_tbb} \
         -DTBB_DIR:PATH=${tbb_dir} \
         ${CMAKE_OPTIONS} \
-        -G Ninja \
         -S ${ITK_SOURCE_DIR} \
-        -B ${build_path} \
-      && ${NINJA_EXECUTABLE} -C ${build_path} -j$n_processors -l$n_processors \
-      || exit 1
+        -B ${build_path}
+      ${NINJA_EXECUTABLE} -C ${build_path} -j$n_processors -l$n_processors || exit 1
     )
 
     echo "BUILDING ITK Wheels"
@@ -155,10 +167,11 @@ for VENV in "${VENVS[@]}"; do
       # Configure pyproject.toml
       ${Python3_EXECUTABLE} ${PYPROJECT_CONFIGURE} --env-file ${package_env_file} ${wheel_name}
       # Generate wheel
-      ${Python3_EXECUTABLE} -m build \
+      ${Python3_EXECUTABLE} \
+        -m build \
         --verbose \
         --wheel \
-        --outdir ${_ipp_dir}/dist \
+        --outdir ${IPP_SOURCE_DIR}/dist \
         --no-isolation \
         --skip-dependency-check \
         --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${ITK_SOURCE_DIR} \
@@ -170,9 +183,10 @@ for VENV in "${VENVS[@]}"; do
         --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
         --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
         --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+        ${CMAKE_PLATFORM_FLAGS_NOT_YET_DEFINED} \
         ${CMAKE_OPTIONS//'-D'/'--config-setting=cmake.define.'} \
         ${CMAKE_COMPILER_ARGS//'-D'/'--config-setting=cmake.define.'} \
-        ${_ipp_dir} \
+        ${IPP_SOURCE_DIR} \
       || exit 1
     done
 
@@ -184,6 +198,8 @@ for VENV in "${VENVS[@]}"; do
     fi
 done
 
+# ONLY ON LINUX sudo /opt/python/cp311-cp311/bin/pip3 install auditwheel wheel
+
 if [[ $(arch) != "arm64" ]]; then
   for wheel in ${_ipp_dir}/dist/itk_*.whl; do
     echo "Delocating $wheel"
@@ -192,11 +208,14 @@ if [[ $(arch) != "arm64" ]]; then
   done
 fi
 
-for VENV in "${VENVS[@]}"; do
-  ${VENV}/bin/pip install numpy
-  ${VENV}/bin/pip install itk --no-cache-dir --no-index -f ${_ipp_dir}/dist
-  (cd $HOME && ${VENV}/bin/python -c 'import itk;')
-  (cd $HOME && ${VENV}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
-  (cd $HOME && ${VENV}/bin/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
-  (cd $HOME && ${VENV}/bin/python ${_ipp_dir}/docs/code/test.py )
+for py_env in "${VENVS[@]}"; do
+  ${py_env}/bin/pip install numpy
+  ${py_env}/bin/pip install --upgrade pip
+  ${py_env}/bin/pip install itk --no-cache-dir --no-index -f ${_ipp_dir}/dist
+  (cd $HOME && ${py_env}/bin/python -c 'import itk;')
+  (cd $HOME && ${py_env}/bin/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
+  (cd $HOME && ${py_env}/bin/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
+  (cd $HOME && ${py_env}/bin/python ${_ipp_dir}/docs/code/test.py )
 done
+
+rm -f dist/numpy*.whl
