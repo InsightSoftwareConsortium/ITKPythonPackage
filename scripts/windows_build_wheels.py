@@ -282,19 +282,19 @@ def fixup_wheel(py_envs, filepath, lib_paths: str = ""):
     delve_wheel = os.path.join(
         IPP_SOURCE_DIR, "venv-" + py_env, "Scripts", "delvewheel.exe"
     )
-    check_call(
-        [
-            delve_wheel,
-            "repair",
-            "--no-mangle-all",
-            "--add-path",
-            lib_paths,
-            "--ignore-in-wheel",
-            "-w",
-            os.path.join(IPP_SOURCE_DIR, "dist"),
-            filepath,
-        ]
-    )
+    cmd = [
+        delve_wheel,
+        "repair",
+        "--no-mangle-all",
+        "--add-path",
+        lib_paths,
+        "--ignore-in-wheel",
+        "-w",
+        os.path.join(IPP_SOURCE_DIR, "dist"),
+        filepath,
+    ]
+    print(f"Running {" ".join(cmd)} in {os.getcwd()}")
+    check_call(cmd)
 
 
 def fixup_wheels(single_wheel, py_envs, lib_paths: str = ""):
@@ -337,40 +337,40 @@ def build_wheels(
 
     build_type = "Release"
     use_tbb: str = "ON"
-    with push_dir(directory=IPP_SUPERBUILD_BINARY_DIR, make_directory=True):
-        cmake_executable = "cmake.exe"
-        tools_venv = os.path.join(IPP_SOURCE_DIR, "venv-" + py_envs[0])
-        ninja_executable = shutil.which("ninja.exe")
-        if ninja_executable is None:
-            pip_install(tools_venv, "ninja")
-            ninja_executable = os.path.join(tools_venv, "Scripts", "ninja.exe")
-
-        # -----------------------------------------------------------------------
-        # Build required components (optional local ITK source, TBB builds) used to populate the archive cache
-        cmd = [
-            cmake_executable,
-            "-G",
-            "Ninja",
-            "-DITKPythonPackage_BUILD_PYTHON:BOOL=OFF",
-            f"-DITKPythonPackage_USE_TBB:BOOL={use_tbb}",
-            f"-DCMAKE_BUILD_TYPE:STRING={build_type}",
-            f"-DCMAKE_MAKE_PROGRAM:FILEPATH={ninja_executable}",
-            f"-DITK_SOURCE_DIR:PATH={package_env_config['ITK_SOURCE_DIR']}",
-            f"-DITK_GIT_TAG:STRING={package_env_config['ITK_GIT_TAG']}",
-        ]
-        cmd += [
-            # TODO: PLATFORM CMAKE ITEMS HERE when python used for mac and linux OSX_DEPLOYMENT_TARGET OSX_ARCHITECTURES
-            # TODO: ADD CMAKE_COMPILER_ARGS HERE FOR COMPILER PROPAGATION
-        ]
-        cmd += [
-            "-S",
-            IPP_SOURCE_DIR,
-            "-B",
-            IPP_SUPERBUILD_BINARY_DIR,
-        ]
-
-        check_call(cmd)
-        check_call([ninja_executable, "-C", IPP_SUPERBUILD_BINARY_DIR])
+    # with push_dir(directory=IPP_SUPERBUILD_BINARY_DIR, make_directory=True):
+    #     cmake_executable = "cmake.exe"
+    #     tools_venv = os.path.join(IPP_SOURCE_DIR, "venv-" + py_envs[0])
+    #     ninja_executable = shutil.which("ninja.exe")
+    #     if ninja_executable is None:
+    #         pip_install(tools_venv, "ninja")
+    #         ninja_executable = os.path.join(tools_venv, "Scripts", "ninja.exe")
+    #
+    #     # -----------------------------------------------------------------------
+    #     # Build required components (optional local ITK source, TBB builds) used to populate the archive cache
+    #     cmd = [
+    #         cmake_executable,
+    #         "-G",
+    #         "Ninja",
+    #         "-DITKPythonPackage_BUILD_PYTHON:BOOL=OFF",
+    #         f"-DITKPythonPackage_USE_TBB:BOOL={use_tbb}",
+    #         f"-DCMAKE_BUILD_TYPE:STRING={build_type}",
+    #         f"-DCMAKE_MAKE_PROGRAM:FILEPATH={ninja_executable}",
+    #         f"-DITK_SOURCE_DIR:PATH={package_env_config['ITK_SOURCE_DIR']}",
+    #         f"-DITK_GIT_TAG:STRING={package_env_config['ITK_GIT_TAG']}",
+    #     ]
+    #     cmd += [
+    #         # TODO: PLATFORM CMAKE ITEMS HERE when python used for mac and linux OSX_DEPLOYMENT_TARGET OSX_ARCHITECTURES
+    #         # TODO: ADD CMAKE_COMPILER_ARGS HERE FOR COMPILER PROPAGATION
+    #     ]
+    #     cmd += [
+    #         "-S",
+    #         IPP_SOURCE_DIR,
+    #         "-B",
+    #         IPP_SUPERBUILD_BINARY_DIR,
+    #     ]
+    #
+    #     check_call(cmd)
+    #     check_call([ninja_executable, "-C", IPP_SUPERBUILD_BINARY_DIR])
 
     # Compile wheels re-using standalone project and archive cache
     for py_env in py_envs:
@@ -431,7 +431,12 @@ def main(wheel_names=None):
         wheel_names=wheel_names,
         cmake_options=args.cmake_options,
     )
-    fixup_wheels(args.single_wheel, args.py_envs, ";".join(args.lib_paths))
+
+    # append the oneTBB-prefix\\bin directory for fixing wheels built with local oneTBB
+    search_lib_paths = [s for s in args.lib_paths.rstrip(";") if s]
+    search_lib_paths.append(f"{IPP_SOURCE_DIR}\\oneTBB-prefix\\bin")
+    search_lib_paths_str: str = ";".join(search_lib_paths)
+    fixup_wheels(args.single_wheel, args.py_envs, search_lib_paths_str)
     for py_env in args.py_envs:
         test_wheels(py_env)
 

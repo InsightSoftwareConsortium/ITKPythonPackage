@@ -10,11 +10,17 @@ import argparse
 import shutil
 from pathlib import Path
 
+from dotenv import dotenv_values
+
 SCRIPT_DIR = os.path.dirname(__file__)
-ROOT_DIR = os.path.abspath(os.getcwd())
+IPP_SOURCE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
+IPP_SUPERBUILD_BINARY_DIR = os.path.join(IPP_SOURCE_DIR, "ITK-source")
+package_env_config = dotenv_values(os.path.join(IPP_SOURCE_DIR, "build", "package.env"))
+ITK_SOURCE_DIR = package_env_config["ITK_SOURCE_DIR"]
 
 print(f"SCRIPT_DIR: {SCRIPT_DIR}")
-print(f"ROOT_DIR: {ROOT_DIR}")
+print(f"ROOT_DIR: {IPP_SOURCE_DIR}")
+print(f"ITK_SOURCE: {IPP_SUPERBUILD_BINARY_DIR}")
 
 sys.path.insert(0, os.path.join(SCRIPT_DIR, "internal"))
 
@@ -52,7 +58,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
         with push_env(PATH=f"{path}{os.pathsep}{os.environ['PATH']}"):
             # Install dependencies
             check_call([python_executable, "-m", "pip", "install", "pip", "--upgrade"])
-            requirements_file = os.path.join(ROOT_DIR, "requirements-dev.txt")
+            requirements_file = os.path.join(IPP_SOURCE_DIR, "requirements-dev.txt")
             if os.path.exists(requirements_file):
                 check_call([pip, "install", "--upgrade", "-r", requirements_file])
             check_call([pip, "install", "cmake"])
@@ -61,7 +67,6 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
             check_call([pip, "install", "ninja", "--upgrade"])
             check_call([pip, "install", "delvewheel"])
 
-            source_path = ROOT_DIR
             itk_build_path = os.path.abspath(
                 f"{os.path.join(SCRIPT_DIR, '..')}/ITK-win_{py_env}"
             )
@@ -92,24 +97,17 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
                     "--config-setting=cmake.define.CMAKE_BUILD_TYPE:STRING="
                     "Release"
                     "",
-                    "--config-setting=cmake.define.CMAKE_MAKE_PROGRAM:FILEPATH=%s"
-                    % ninja_executable,
+                    f"--config-setting=cmake.define.CMAKE_MAKE_PROGRAM:FILEPATH={ninja_executable}",
                     f"--config-setting=cmake.define.ITK_DIR:PATH={itk_build_path}",
                     "--config-setting=cmake.define.WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
-                    "--config-setting=cmake.define.SWIG_EXECUTABLE:FILEPATH=%s/Wrapping/Generators/SwigInterface/swig/bin/swig.exe"
-                    % itk_build_path,
+                    f"--config-setting=cmake.define.SWIG_EXECUTABLE:FILEPATH={itk_build_path}/Wrapping/Generators/SwigInterface/swig/bin/swig.exe",
                     "--config-setting=cmake.define.BUILD_TESTING:BOOL=OFF",
                     "--config-setting=cmake.define.CMAKE_INSTALL_LIBDIR:STRING=lib",
-                    "--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=%s"
-                    % python_executable,
-                    "--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=%s"
-                    % python_include_dir,
-                    "--config-setting=cmake.define.Python3_INCLUDE_DIRS:PATH=%s"
-                    % python_include_dir,
-                    "--config-setting=cmake.define.Python3_LIBRARY:FILEPATH=%s"
-                    % python_library,
-                    "--config-setting=cmake.define.Python3_SABI_LIBRARY:FILEPATH=%s"
-                    % python_library,
+                    f"--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH={python_executable}",
+                    f"--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH={python_include_dir}",
+                    f"--config-setting=cmake.define.Python3_INCLUDE_DIRS:PATH={python_include_dir}",
+                    f"--config-setting=cmake.define.Python3_LIBRARY:FILEPATH={python_library}",
+                    f"--config-setting=cmake.define.Python3_SABI_LIBRARY:FILEPATH={python_library}",
                 ]
                 + [
                     o.replace("-D", "--config-setting=cmake.define.")
@@ -192,7 +190,7 @@ def fixup_wheel(py_envs, filepath, lib_paths: str = "", exclude_libs: str = ""):
             exclude_libs,
             "--ignore-in-wheel",
             "-w",
-            os.path.join(ROOT_DIR, "dist"),
+            os.path.join(IPP_SOURCE_DIR, "dist"),
             filepath,
         ]
     )
@@ -205,7 +203,7 @@ def fixup_wheel(py_envs, filepath, lib_paths: str = "", exclude_libs: str = ""):
 
 def fixup_wheels(py_envs, lib_paths: str = "", exclude_libs: str = ""):
     # shared library fix-up
-    for wheel in glob.glob(os.path.join(ROOT_DIR, "dist", "*.whl")):
+    for wheel in glob.glob(os.path.join(IPP_SOURCE_DIR, "dist", "*.whl")):
         fixup_wheel(py_envs, wheel, lib_paths, exclude_libs)
 
 
@@ -247,4 +245,8 @@ if __name__ == "__main__":
     build_wheels(
         cleanup=args.cleanup, py_envs=args.py_envs, cmake_options=args.cmake_options
     )
-    fixup_wheels(args.py_envs, ";".join(args.lib_paths), ";".join(args.exclude_libs))
+    # append the oneTBB-prefix\\bin directory for fixing wheels built with local oneTBB
+    search_lib_paths = [s for s in args.lib_paths.rstrip(";") if s]
+    search_lib_paths.append(f"{IPP_SOURCE_DIR}\\oneTBB-prefix\\bin")
+    search_lib_paths_str: str = ";".join(search_lib_paths)
+    fixup_wheels(args.py_envs, ";".join(args.lib_paths), search_lib_paths_str)
