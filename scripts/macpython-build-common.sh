@@ -64,7 +64,9 @@ fi
 
 # -----------------------------------------------------------------------
 # Remove previous virtualenv's
-rm -rf ${script_dir}/../venvs
+if [[ ${ITK_MODULE_NO_CLEANUP} -eq 0 ]]; then
+  rm -rf ${_ipp_dir}/venvs
+fi
 VENVS=()
 mkdir -p ${_ipp_dir}/venvs
 for PYBIN in "${PYBINARIES[@]}"; do
