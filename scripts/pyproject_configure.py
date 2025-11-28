@@ -89,6 +89,8 @@ def configure(template_file, parameters, output_file):
                 if value.strip() and parameter_option(key, "newline_if_set"):
                     value = f"\n{value}\n{newline_indent}"
                 line = line.replace(f"@{key}@", value)
+                # Windows paths need to have backslashes escaped preserved in writing of files
+                line = line.replace("\\", "\\\\")
             if append:
                 updated_lines.append(line)
 
@@ -241,6 +243,7 @@ def get_wheel_dependencies(SCRIPT_DIR: str, version: str, wheel_names: list):
 def build_base_pyproject_parameters(
     package_env_config: dict, SCRIPT_NAME: str, itk_package_version: str
 ):
+    ITK_SOURCE_README :str = os.path.join(package_env_config["ITK_SOURCE_DIR"],"README.md")
     """Return the base pyproject parameters for 'itk'."""
     return {
         "PYPROJECT_GENERATOR": f"python {SCRIPT_NAME} 'itk'",
@@ -250,6 +253,7 @@ def build_base_pyproject_parameters(
         "PYPROJECT_PY_API": get_py_api(),
         "PYPROJECT_PLATLIB": r"true",
         "ITK_SOURCE_DIR": package_env_config["ITK_SOURCE_DIR"],
+        "ITK_SOURCE_README" :ITK_SOURCE_README,
         "PYPROJECT_PY_MODULES": list_to_str(
             [
                 "itkBase",

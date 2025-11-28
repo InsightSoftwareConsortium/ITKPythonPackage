@@ -9,7 +9,7 @@ name = "@PYPROJECT_NAME@"
 version = "@PYPROJECT_VERSION@"
 
 description = "@PYPROJECT_DESCRIPTION@"
-readme = "@ITK_SOURCE_DIR@/README.md"
+readme = "@ITK_SOURCE_README@"
 license = {file = "LICENSE"}
 authors = [
     { name = "Insight Software Consortium", email = "community@itk.org" },
