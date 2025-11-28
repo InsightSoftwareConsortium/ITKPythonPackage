@@ -71,27 +71,28 @@ if [[ -n ${ITKPYTHONPACKAGE_TAG} ]]; then
   echo "Updating build scripts to ${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage@${ITKPYTHONPACKAGE_TAG}"
   git clone "https://github.com/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage.git" "IPP-tmp"
   pushd IPP-tmp/
-  git checkout "${ITKPYTHONPACKAGE_TAG}"
-  git status
+    git checkout "${ITKPYTHONPACKAGE_TAG}"
+    git status
   popd
-
+  # Graft the newly cloned files over the untarred files
   rm -rf ITKPythonPackage/scripts/
   cp -r IPP-tmp/scripts ITKPythonPackage/
   rm -rf IPP-tmp/
 fi
 
+DASHBOARD_BUILD_DIRECTORY=/Users/svc-dashboard/D/P
 # Run build scripts
-sudo mkdir -p /Users/svc-dashboard/D/P && sudo chown $UID:$GID /Users/svc-dashboard/D/P
-if [[ ! -d /Users/svc-dashboard/D/P/ITKPythonPackage ]]; then
-  mv ITKPythonPackage /Users/svc-dashboard/D/P/
+sudo mkdir -p ${DASHBOARD_BUILD_DIRECTORY} && sudo chown $UID:$GID ${DASHBOARD_BUILD_DIRECTORY}
+if [[ ! -d ${DASHBOARD_BUILD_DIRECTORY}/ITKPythonPackage ]]; then
+  mv ITKPythonPackage ${DASHBOARD_BUILD_DIRECTORY}/
 fi
 
 # Optionally install baseline Python versions
 if [[ ! ${ITK_USE_LOCAL_PYTHON} ]]; then
   echo "Fetching Python frameworks"
   sudo rm -rf /Library/Frameworks/Python.framework/Versions/*
-  /Users/svc-dashboard/D/P/ITKPythonPackage/scripts/macpython-install-python.sh
+  ${DASHBOARD_BUILD_DIRECTORY}/ITKPythonPackage/scripts/macpython-install-python.sh
 fi
 
 echo "Building module wheels"
-/Users/svc-dashboard/D/P/ITKPythonPackage/scripts/macpython-build-module-wheels.sh "${args[@]}"
+${DASHBOARD_BUILD_DIRECTORY}/ITKPythonPackage/scripts/macpython-build-module-wheels.sh "${args[@]}"
