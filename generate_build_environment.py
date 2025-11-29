@@ -28,8 +28,10 @@ from pathlib import Path
 from typing import Dict, Tuple
 
 
-def debug(msg: str) -> None:
-    print(msg)
+
+def debug(msg: str, do_print=False) -> None:
+    if do_print:
+        print(msg)
 
 
 def run(
