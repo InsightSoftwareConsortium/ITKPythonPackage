@@ -3,6 +3,11 @@
 These functions have been copied from scikit-build project.
 See https://github.com/scikit-build/scikit-build
 """
+from __future__ import annotations
+
+import os
+import shutil
+import sys
 
 from pathlib import Path
 from os import environ as os_environ, chdir as os_chdir, environ
@@ -146,3 +151,49 @@ def echo_check_call(cmd: list | tuple | str | Path, **kwargs: dict) -> int:
     cmd_return_status: int = subprocess_check_call(cmd, **kwargs)
     print(f"<<Finished Running: {cmd_return_status=}")
     return cmd_return_status
+
+
+def detect_platform() -> tuple[str, str]:
+    # returns (os_name, arch)
+    uname = os.uname() if hasattr(os, "uname") else None
+    sysname = (
+        uname.sysname if uname else ("Windows" if os.name == "nt" else sys.platform)
+    )
+    machine = (
+        uname.machine
+        if uname
+        else (os.environ.get("PROCESSOR_ARCHITECTURE", "").lower())
+    )
+    os_name = (
+        "linux"
+        if sysname.lower().startswith("linux")
+        else (
+            "darwin"
+            if sysname.lower().startswith("darwin") or sys.platform == "darwin"
+            else ("windows" if os.name == "nt" else "unknown")
+        )
+    )
+    # Normalize machine
+    arch = machine
+    if os_name == "darwin":
+        if machine in ("x86_64",):
+            arch = "x64"
+        elif machine in ("arm64", "aarch64"):
+            arch = "arm64"
+    elif os_name == "linux":
+        if machine in ("x86_64",):
+            arch = "x64"
+        elif machine in ("i686", "i386"):
+            arch = "x86"
+        elif machine in ("aarch64",):
+            arch = "aarch64"
+    return os_name, arch
+
+
+def which_required(name: str) -> str:
+    path = shutil.which(name)
+    if not path:
+        raise RuntimeError(
+            f"MISSING: {name} not found in PATH; aborting until required executables can be found"
+        )
+    return path

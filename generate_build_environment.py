@@ -25,8 +25,8 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, Tuple
 
+from scripts.wheel_builder_utils import detect_platform, which_required
 
 
 def debug(msg: str, do_print=False) -> None:
@@ -40,15 +40,6 @@ def run(
     return subprocess.run(
         cmd, cwd=str(cwd) if cwd else None, check=check, capture_output=True, text=True
     )
-
-
-def which_required(name: str) -> str:
-    path = shutil.which(name)
-    if not path:
-        raise RuntimeError(
-            f"MISSING: {name} not found in PATH; aborting until required executables can be found"
-        )
-    return path
 
 
 def parse_kv_overrides(pairs: list[str]) -> dict[str, str]:
@@ -140,43 +131,6 @@ def compute_itk_package_version(
     if itk_git_tag.lstrip("v") == ipp_latest_tag.lstrip("v"):
         version = itk_git_tag.lstrip("v")
     return version
-
-
-def detect_platform() -> tuple[str, str]:
-    # returns (os_name, arch)
-    uname = os.uname() if hasattr(os, "uname") else None
-    sysname = (
-        uname.sysname if uname else ("Windows" if os.name == "nt" else sys.platform)
-    )
-    machine = (
-        uname.machine
-        if uname
-        else (os.environ.get("PROCESSOR_ARCHITECTURE", "").lower())
-    )
-    os_name = (
-        "linux"
-        if sysname.lower().startswith("linux")
-        else (
-            "darwin"
-            if sysname.lower().startswith("darwin") or sys.platform == "darwin"
-            else ("windows" if os.name == "nt" else "unknown")
-        )
-    )
-    # Normalize machine
-    arch = machine
-    if os_name == "darwin":
-        if machine in ("x86_64",):
-            arch = "x64"
-        elif machine in ("arm64", "aarch64"):
-            arch = "arm64"
-    elif os_name == "linux":
-        if machine in ("x86_64",):
-            arch = "x64"
-        elif machine in ("i686", "i386"):
-            arch = "x86"
-        elif machine in ("aarch64",):
-            arch = "aarch64"
-    return os_name, arch
 
 
 def default_manylinux(
