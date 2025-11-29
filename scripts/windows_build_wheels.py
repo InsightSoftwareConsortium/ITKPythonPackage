@@ -107,7 +107,6 @@ def build_wrapped_itk(
 def build_wheel(
     python_version,
     build_type="Release",
-    single_wheel=False,
     cleanup=True,
     wheel_names=None,
     cmake_options=None,
@@ -146,17 +145,39 @@ def build_wheel(
         if cleanup and os.path.exists(build_path):
             shutil.rmtree(build_path)
 
-        if single_wheel:
+        print("#")
+        print("# Build multiple ITK wheels")
+        print("#")
 
-            print("#")
-            print("# Build single ITK wheel")
-            print("#")
+        build_wrapped_itk(
+            ninja_executable,
+            build_type,
+            source_path,
+            build_path,
+            python_executable,
+            python_include_dir,
+            python_library,
+        )
 
+        # Build wheels
+        if wheel_names is None:
+            with open(os.path.join(SCRIPT_DIR, "WHEEL_NAMES.txt")) as content:
+                wheel_names = [wheel_name.strip() for wheel_name in content.readlines()]
+
+        env_file = os.path.join(os.path.dirname(SCRIPT_DIR), "build", "package.env")
+        for wheel_name in wheel_names:
             # Configure pyproject.toml
             check_call(
-                [python_executable, pyproject_configure, "--env-file", env_file, "itk"]
+                [
+                    python_executable,
+                    pyproject_configure,
+                    "--env-file",
+                    env_file,
+                    wheel_name,
+                ]
             )
 
+            use_tbb: str = "ON"
             # Generate wheel
             check_call(
                 [
@@ -166,101 +187,30 @@ def build_wheel(
                     "--verbose",
                     "--wheel",
                     "--outdir",
-                    "dist",
+                    f"{IPP_SOURCE_DIR}/dist",
                     "--no-isolation",
                     "--skip-dependency-check",
-                    f"--config-setting=cmake.build-type={build_type}",
-                    f"--config-setting=cmake.define.ITK_SOURCE_DIR:PATH={source_path}",
+                    f"--config-setting=cmake.define.ITK_SOURCE_DIR:PATH={ITK_SOURCE_DIR}",
                     f"--config-setting=cmake.define.ITK_BINARY_DIR:PATH={build_path}",
-                    "--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=%s"
-                    % python_executable,
-                    "--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=%s"
-                    % python_include_dir,
-                    "--config-setting=cmake.define.Python3_INCLUDE_DIRS:PATH=%s"
-                    % python_include_dir,
-                    "--config-setting=cmake.define.Python3_LIBRARY:FILEPATH=%s"
-                    % python_library,
-                    "--config-setting=cmake.define.DOXYGEN_EXECUTABLE:FILEPATH=C:/P/doxygen/doxygen.exe",
+                    # TODO: add OSX_DEPLOYMENT OSX_ARCHITECTURES here for linux mac
+                    f"--config-setting=cmake.define.ITKPythonPackage_USE_TBB:BOOL={use_tbb}",  # TODO: May not be needed
+                    "--config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON",
+                    f"--config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING={wheel_name}"
+                    f"--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH={python_executable}",
+                    f"--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH={python_include_dir}",
+                    f"--config-setting=cmake.define.Python3_INCLUDE_DIRS:PATH={python_include_dir}",  # TODO: outdated variable can be removed
+                    f"--config-setting=cmake.define.Python3_LIBRARY:FILEPATH={python_library}",
+                    f"--config-setting=cmake.define.DOXYGEN_EXECUTABLE:FILEPATH={package_env_config['DOXYGEN_EXECUTABLE']}",
+                    f"--config-setting=cmake.build-type={build_type}",
                 ]
                 + [
                     o.replace("-D", "--config-setting=cmake.define.")
                     for o in cmake_options
                 ]
                 + [
-                    ".",
+                    f"{IPP_SOURCE_DIR}",
                 ]
             )
-
-        else:
-
-            print("#")
-            print("# Build multiple ITK wheels")
-            print("#")
-
-            build_wrapped_itk(
-                ninja_executable,
-                build_type,
-                source_path,
-                build_path,
-                python_executable,
-                python_include_dir,
-                python_library,
-            )
-
-            # Build wheels
-            if wheel_names is None:
-                with open(os.path.join(SCRIPT_DIR, "WHEEL_NAMES.txt")) as content:
-                    wheel_names = [
-                        wheel_name.strip() for wheel_name in content.readlines()
-                    ]
-
-            env_file = os.path.join(os.path.dirname(SCRIPT_DIR), "build", "package.env")
-            for wheel_name in wheel_names:
-                # Configure pyproject.toml
-                check_call(
-                    [
-                        python_executable,
-                        pyproject_configure,
-                        "--env-file",
-                        env_file,
-                        wheel_name,
-                    ]
-                )
-
-                use_tbb: str = "ON"
-                # Generate wheel
-                check_call(
-                    [
-                        python_executable,
-                        "-m",
-                        "build",
-                        "--verbose",
-                        "--wheel",
-                        "--outdir",
-                        f"{IPP_SOURCE_DIR}/dist",
-                        "--no-isolation",
-                        "--skip-dependency-check",
-                        f"--config-setting=cmake.define.ITK_SOURCE_DIR:PATH={ITK_SOURCE_DIR}",
-                        f"--config-setting=cmake.define.ITK_BINARY_DIR:PATH={build_path}",
-                        # TODO: add OSX_DEPLOYMENT OSX_ARCHITECTURES here for linux mac
-                        f"--config-setting=cmake.define.ITKPythonPackage_USE_TBB:BOOL={use_tbb}",  # TODO: May not be needed
-                        "--config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON",
-                        f"--config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING={wheel_name}"
-                        f"--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH={python_executable}",
-                        f"--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH={python_include_dir}",
-                        f"--config-setting=cmake.define.Python3_INCLUDE_DIRS:PATH={python_include_dir}",  # TODO: outdated variable can be removed
-                        f"--config-setting=cmake.define.Python3_LIBRARY:FILEPATH={python_library}",
-                        f"--config-setting=cmake.define.DOXYGEN_EXECUTABLE:FILEPATH={package_env_config['DOXYGEN_EXECUTABLE']}",
-                        f"--config-setting=cmake.build-type={build_type}",
-                    ]
-                    + [
-                        o.replace("-D", "--config-setting=cmake.define.")
-                        for o in cmake_options
-                    ]
-                    + [
-                        f"{IPP_SOURCE_DIR}",
-                    ]
-                )
 
         # Remove unnecessary files for building against ITK
         if cleanup:
@@ -297,11 +247,9 @@ def fixup_wheel(py_envs, filepath, lib_paths: str = ""):
     check_call(cmd)
 
 
-def fixup_wheels(single_wheel, py_envs, lib_paths: str = ""):
+def fixup_wheels(py_envs, lib_paths: str = ""):
     # TBB library fix-up
     tbb_wheel = "itk_core"
-    if single_wheel:
-        tbb_wheel = "itk"
     for wheel in glob.glob(os.path.join(IPP_SOURCE_DIR, "dist", tbb_wheel + "*.whl")):
         fixup_wheel(py_envs, wheel, lib_paths)
 
@@ -324,7 +272,6 @@ def test_wheels(python_env):
 
 def build_wheels(
     py_envs=DEFAULT_PY_ENVS,
-    single_wheel=False,
     cleanup=False,
     wheel_names=None,
     cmake_options=None,
@@ -383,7 +330,6 @@ def build_wheels(
         build_wheel(
             py_env,
             build_type,
-            single_wheel=single_wheel,
             cleanup=cleanup,
             wheel_names=wheel_names,
             cmake_options=cmake_options,
@@ -393,11 +339,6 @@ def build_wheels(
 def main(wheel_names=None):
     parser = argparse.ArgumentParser(
         description="Driver script to build ITK Python wheels."
-    )
-    parser.add_argument(
-        "--single-wheel",
-        action="store_true",
-        help="Build a single wheel as opposed to one wheel per ITK module group.",
     )
     parser.add_argument(
         "--py-envs",
@@ -425,7 +366,6 @@ def main(wheel_names=None):
     args = parser.parse_args()
 
     build_wheels(
-        single_wheel=args.single_wheel,
         cleanup=args.cleanup,
         py_envs=args.py_envs,
         wheel_names=wheel_names,
@@ -436,7 +376,7 @@ def main(wheel_names=None):
     search_lib_paths = [s for s in args.lib_paths.rstrip(";") if s]
     search_lib_paths.append(f"{IPP_SOURCE_DIR}\\oneTBB-prefix\\bin")
     search_lib_paths_str: str = ";".join(search_lib_paths)
-    fixup_wheels(args.single_wheel, args.py_envs, search_lib_paths_str)
+    fixup_wheels(args.py_envs, search_lib_paths_str)
     for py_env in args.py_envs:
         test_wheels(py_env)
 
