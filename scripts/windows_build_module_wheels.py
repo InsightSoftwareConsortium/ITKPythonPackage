@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
 # See usage with .\scripts\windows_build_module_wheels.py --help
-
-from subprocess import check_call
 import sys
 import argparse
 from pathlib import Path
@@ -10,7 +8,7 @@ from os import environ, pathsep
 
 from dotenv import dotenv_values
 
-from scripts.wheel_builder_utils import _remove_tree
+from scripts.wheel_builder_utils import _remove_tree, echo_check_call
 
 SCRIPT_DIR = Path(__file__).parent
 IPP_SOURCE_DIR = SCRIPT_DIR.parent.resolve()
@@ -59,15 +57,19 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cmake_options=None):
 
         with push_env(PATH=f"{path}{pathsep}{environ['PATH']}"):
             # Install dependencies
-            check_call([python_executable, "-m", "pip", "install", "pip", "--upgrade"])
+            echo_check_call(
+                [python_executable, "-m", "pip", "install", "pip", "--upgrade"]
+            )
             requirements_file = IPP_SOURCE_DIR / "requirements-dev.txt"
             if requirements_file.exists():
-                check_call([pip, "install", "--upgrade", "-r", str(requirements_file)])
-            check_call([pip, "install", "cmake"])
-            check_call([pip, "install", "scikit-build-core", "--upgrade"])
+                echo_check_call(
+                    [pip, "install", "--upgrade", "-r", str(requirements_file)]
+                )
+            echo_check_call([pip, "install", "cmake"])
+            echo_check_call([pip, "install", "scikit-build-core", "--upgrade"])
 
-            check_call([pip, "install", "ninja", "--upgrade"])
-            check_call([pip, "install", "delvewheel"])
+            echo_check_call([pip, "install", "ninja", "--upgrade"])
+            echo_check_call([pip, "install", "delvewheel"])
 
             itk_build_path = (SCRIPT_DIR.parent / f"ITK-win_{py_env}").resolve()
             print(f"ITKDIR: {itk_build_path}")
@@ -79,7 +81,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cmake_options=None):
             else:
                 wheel_py_api = ""
             # Generate wheel
-            check_call(
+            echo_check_call(
                 [
                     python_executable,
                     "-m",
@@ -153,7 +155,7 @@ def rename_wheel_init(py_env, filepath, add_module_name=True):
     init_file_module = init_dir / ("__init_" + module_name.split("-")[0] + "__.py")
 
     # Unpack wheel and rename __init__ file if it exists.
-    check_call(
+    echo_check_call(
         [python_executable, "-m", "wheel", "unpack", filepath, "-d", str(dist_dir)]
     )
     if add_module_name and init_file.is_file():
@@ -162,7 +164,7 @@ def rename_wheel_init(py_env, filepath, add_module_name=True):
         init_file_module.rename(init_file)
 
     # Pack wheel and clean wheel folder
-    check_call(
+    echo_check_call(
         [python_executable, "-m", "wheel", "pack", str(wheel_dir), "-d", str(dist_dir)]
     )
     _remove_tree(wheel_dir)
@@ -179,7 +181,7 @@ def fixup_wheel(py_envs, filepath, lib_paths: str = "", exclude_libs: str = ""):
     rename_wheel_init(py_env, filepath, False)
 
     delve_wheel = Path("C:/P/IPP") / ("venv-" + py_env) / "Scripts" / "delvewheel.exe"
-    check_call(
+    echo_check_call(
         [
             delve_wheel,
             "repair",

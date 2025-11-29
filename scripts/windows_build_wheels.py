@@ -5,10 +5,9 @@ import sys
 from pathlib import Path
 from os import environ, pathsep
 
-from subprocess import check_call
 from dotenv import dotenv_values
 
-from scripts.wheel_builder_utils import _which, _remove_tree
+from scripts.wheel_builder_utils import _which, _remove_tree, echo_check_call
 
 SCRIPT_DIR = Path(__file__).parent
 IPP_SOURCE_DIR = SCRIPT_DIR.parent.resolve()
@@ -32,7 +31,7 @@ def pip_install(python_dir, package, upgrade=True):
     if upgrade:
         args.append("--upgrade")
     args.append(package)
-    check_call(args)
+    echo_check_call(args)
 
 
 def prepare_build_env(python_version):
@@ -44,7 +43,7 @@ def prepare_build_env(python_version):
     venv_dir = IPP_SOURCE_DIR / f"venv-{python_version}"
     if not venv_dir.exists():
         print(f"Creating python virtual environment: {venv_dir}")
-        check_call([str(virtualenv_exe), str(venv_dir)])
+        echo_check_call([str(virtualenv_exe), str(venv_dir)])
         pip_install(venv_dir, "scikit-build-core")
         pip_install(venv_dir, "ninja")
         pip_install(venv_dir, "delvewheel")
@@ -100,8 +99,8 @@ def build_wrapped_itk(
             "-B",
             build_path,
         ]
-        check_call(cmd)
-        check_call([ninja_executable, "-C", build_path])
+        echo_check_call(cmd)
+        echo_check_call([ninja_executable, "-C", build_path])
 
 
 def build_wheel(
@@ -126,7 +125,7 @@ def build_wheel(
     with push_env(PATH=f"{path}{pathsep}{environ['PATH']}"):
 
         # Install dependencies
-        check_call(
+        echo_check_call(
             [
                 pip,
                 "install",
@@ -166,7 +165,7 @@ def build_wheel(
         env_file = IPP_SOURCE_DIR / "build" / "package.env"
         for wheel_name in wheel_names:
             # Configure pyproject.toml
-            check_call(
+            echo_check_call(
                 [
                     python_executable,
                     pyproject_configure,
@@ -178,7 +177,7 @@ def build_wheel(
 
             use_tbb: str = "ON"
             # Generate wheel
-            check_call(
+            echo_check_call(
                 [
                     python_executable,
                     "-m",
@@ -242,8 +241,7 @@ def fixup_wheel(py_envs, filepath, lib_paths: str = ""):
         str(IPP_SOURCE_DIR / "dist"),
         str(filepath),
     ]
-    print(f"Running {' '.join(cmd)} in {Path.cwd()}")
-    check_call(cmd)
+    echo_check_call(cmd)
 
 
 def fixup_wheels(py_envs, lib_paths: str = ""):
@@ -262,10 +260,10 @@ def test_wheels(python_env):
         ninja_executable,
         path,
     ) = venv_paths(python_env)
-    check_call([pip, "install", "numpy"])
-    check_call([pip, "install", "itk", "--no-cache-dir", "--no-index", "-f", "dist"])
+    echo_check_call([pip, "install", "numpy"])
+    echo_check_call([pip, "install", "itk", "--no-cache-dir", "--no-index", "-f", "dist"])
     print("Wheel successfully installed.")
-    check_call([python_executable, str(IPP_SOURCE_DIR / "docs" / "code" / "test.py")])
+    echo_check_call([python_executable, str(IPP_SOURCE_DIR / "docs" / "code" / "test.py")])
     print("Documentation tests passed.")
 
 
@@ -315,8 +313,8 @@ def build_wheels(
             str(IPP_SUPERBUILD_BINARY_DIR),
         ]
 
-        check_call(cmd)
-        check_call([ninja_executable, "-C", str(IPP_SUPERBUILD_BINARY_DIR)])
+        echo_check_call(cmd)
+        echo_check_call([ninja_executable, "-C", str(IPP_SUPERBUILD_BINARY_DIR)])
 
     # Compile wheels re-using standalone project and archive cache
     for py_env in py_envs:

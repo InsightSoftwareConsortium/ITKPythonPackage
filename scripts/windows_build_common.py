@@ -1,8 +1,7 @@
 __all__ = ["DEFAULT_PY_ENVS", "venv_paths"]
-
-from subprocess import check_call
 from pathlib import Path
 from os import environ as os_environ
+from scripts.wheel_builder_utils import echo_check_call
 
 DEFAULT_PY_ENVS = ["39-x64", "310-x64", "311-x64"]
 
@@ -45,7 +44,7 @@ def venv_paths(python_version):
     # Create venv
     venv_executable = f"C:/Python{python_version}/Scripts/virtualenv.exe"
     venv_dir = Path(MODULE_EXAMPLESROOT_DIR) / f"venv-{python_version}"
-    check_call([venv_executable, str(venv_dir)])
+    echo_check_call([venv_executable, str(venv_dir)])
 
     python_executable = venv_dir / "Scripts" / "python.exe"
     python_include_dir = f"C:/Python{python_version}/include"
