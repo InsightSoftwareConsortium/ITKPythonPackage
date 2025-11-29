@@ -26,6 +26,7 @@ cmake = ">=4.2.0,<5"
 cxx-compiler = "==1.10.0"
 doxygen = ">=1.13.2,<2"
 ninja = ">=1.13.2,<2"
+pkginfo = ">=1.12.1.2,<2"
 
 [feature.python-pkgs.dependencies]
 build = "==1.2.1"
