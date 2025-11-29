@@ -44,7 +44,9 @@ def install_and_import(package):
         globals()[package] = importlib.import_module(package)
 
 
-def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
+def build_wheels(py_envs=DEFAULT_PY_ENVS, cmake_options=None):
+    if cmake_options is None:
+        cmake_options = []
     for py_env in py_envs:
         (
             python_executable,
@@ -240,9 +242,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    build_wheels(
-        cleanup=args.cleanup, py_envs=args.py_envs, cmake_options=args.cmake_options
-    )
+    build_wheels(py_envs=args.py_envs, cmake_options=args.cmake_options)
     # append the oneTBB-prefix\\bin directory for fixing wheels built with local oneTBB
     search_lib_paths = [s for s in args.lib_paths.rstrip(";") if s]
     search_lib_paths.append(f"{IPP_SOURCE_DIR}\\oneTBB-prefix\\bin")

@@ -3,7 +3,6 @@ __all__ = ["DEFAULT_PY_ENVS", "venv_paths"]
 from subprocess import check_call
 from pathlib import Path
 from os import environ as os_environ
-from unittest.main import MODULE_EXAMPLES
 
 DEFAULT_PY_ENVS = ["39-x64", "310-x64", "311-x64"]
 
@@ -34,7 +33,7 @@ def _which(exe_name: Path | str) -> Path | None:
             full = base / c
             try:
                 if full.exists():
-                    return str(full)
+                    return full
             except OSError:
                 # Skip unreadable entries
                 continue

@@ -53,7 +53,7 @@ def prepare_build_env(python_version):
 def build_wrapped_itk(
     ninja_executable,
     build_type,
-    ITK_SOURCE_DIR,
+    itk_source_dir,
     build_path,
     python_executable,
     python_include_dir,
@@ -71,7 +71,7 @@ def build_wrapped_itk(
             "Ninja",
             f"-DCMAKE_MAKE_PROGRAM:FILEPATH={ninja_executable}",
             f"-DCMAKE_BUILD_TYPE:STRING={build_type}",
-            f"-DITK_SOURCE_DIR:PATH={ITK_SOURCE_DIR}",
+            f"-DITK_SOURCE_DIR:PATH={itk_source_dir}",
             f"-DITK_BINARY_DIR:PATH={build_path}",
             "-DBUILD_TESTING:BOOL=OFF",
             # TODO: CMAKE_PLATFORM OSX_DEPLOYMENT OSX_ARCHITECTURES
@@ -96,7 +96,7 @@ def build_wrapped_itk(
             f"-DModule_ITKTBB:BOOL={use_tbb}",
             f"-DTBB_DIR:PATH={tbb_dir}",
             "-S",
-            ITK_SOURCE_DIR,
+            itk_source_dir,
             "-B",
             build_path,
         ]
@@ -139,7 +139,6 @@ def build_wheel(
         source_path = f"{package_env_config['ITK_SOURCE_DIR']}"
         build_path = IPP_SOURCE_DIR / f"ITK-win_{python_version}"
         pyproject_configure = SCRIPT_DIR / "pyproject_configure.py"
-        env_file = IPP_SOURCE_DIR / "build" / "package.env"
 
         # Clean up previous invocations
         if cleanup and Path(build_path).exists():
