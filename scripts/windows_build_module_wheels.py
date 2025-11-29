@@ -140,6 +140,8 @@ def rename_wheel_init(py_env, filepath, add_module_name=True):
 
     # Get module info
     install_and_import("pkginfo")
+    import pkginfo
+
     w = pkginfo.Wheel(filepath)
     module_name = w.name.split("itk-")[-1]
     module_version = w.version
