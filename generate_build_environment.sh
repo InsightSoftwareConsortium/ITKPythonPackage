@@ -275,7 +275,9 @@ if [ -z "${ITK_PACKAGE_VERSION}" ]; then
   # Get auto generated itk package version base semantic versioning
   # rules for relative versioning based on git commits
   pushd "${ITK_SOURCE_DIR}" || echo "cannot enter ${ITK_SOURCE_DIR}"
+    echo "Fetching tags for ${ITK_SOURCE_DIR}"
     git fetch --tags
+    echo "Checking out ${ITK_GIT_TAG} for ${ITK_SOURCE_DIR}"
     git checkout ${ITK_GIT_TAG}
     ITK_PACKAGE_VERSION=$( git describe --tags --long --dirty --always \
            | sed -E 's/^([^-]+)-([0-9]+)-g([0-9a-f]+)(-dirty)?$/\1-dev.\2+\3\4/'
