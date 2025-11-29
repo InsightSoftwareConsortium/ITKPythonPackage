@@ -243,7 +243,9 @@ def get_wheel_dependencies(SCRIPT_DIR: str, version: str, wheel_names: list):
 def build_base_pyproject_parameters(
     package_env_config: dict, SCRIPT_NAME: str, itk_package_version: str
 ):
-    ITK_SOURCE_README :str = os.path.join(package_env_config["ITK_SOURCE_DIR"],"README.md")
+    ITK_SOURCE_README: str = os.path.join(
+        package_env_config["ITK_SOURCE_DIR"], "README.md"
+    )
     """Return the base pyproject parameters for 'itk'."""
     return {
         "PYPROJECT_GENERATOR": f"python {SCRIPT_NAME} 'itk'",
@@ -253,7 +255,7 @@ def build_base_pyproject_parameters(
         "PYPROJECT_PY_API": get_py_api(),
         "PYPROJECT_PLATLIB": r"true",
         "ITK_SOURCE_DIR": package_env_config["ITK_SOURCE_DIR"],
-        "ITK_SOURCE_README" :ITK_SOURCE_README,
+        "ITK_SOURCE_README": ITK_SOURCE_README,
         "PYPROJECT_PY_MODULES": list_to_str(
             [
                 "itkBase",
