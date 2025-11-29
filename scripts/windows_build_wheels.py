@@ -1,32 +1,32 @@
 #!/usr/bin/env python
 
 import argparse
-import glob
-import os
-import shutil
 import sys
+from pathlib import Path
+from os import environ, pathsep
 
 from subprocess import check_call
 from dotenv import dotenv_values
 
+from scripts.wheel_builder_utils import _which, _remove_tree
 
-SCRIPT_DIR = os.path.dirname(__file__)
-IPP_SOURCE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
-IPP_SUPERBUILD_BINARY_DIR = os.path.join(IPP_SOURCE_DIR, "ITK-source")
-package_env_config = dotenv_values(os.path.join(IPP_SOURCE_DIR, "build", "package.env"))
+SCRIPT_DIR = Path(__file__).parent
+IPP_SOURCE_DIR = SCRIPT_DIR.parent.resolve()
+IPP_SUPERBUILD_BINARY_DIR = IPP_SOURCE_DIR / "ITK-source"
+package_env_config = dotenv_values(IPP_SOURCE_DIR / "build" / "package.env")
 ITK_SOURCE_DIR = package_env_config["ITK_SOURCE_DIR"]
 
 print(f"SCRIPT_DIR: {SCRIPT_DIR}")
 print(f"ROOT_DIR: {IPP_SOURCE_DIR}")
 print(f"ITK_SOURCE: {IPP_SUPERBUILD_BINARY_DIR}")
 
-sys.path.insert(0, os.path.join(SCRIPT_DIR, "internal"))
+sys.path.insert(0, str(SCRIPT_DIR / "internal"))
 from wheel_builder_utils import push_dir, push_env
 from windows_build_common import DEFAULT_PY_ENVS, venv_paths
 
 
 def pip_install(python_dir, package, upgrade=True):
-    pip = os.path.join(python_dir, "Scripts", "pip.exe")
+    pip = Path(python_dir) / "Scripts" / "pip.exe"
     print(f"Installing {package} using {pip}")
     args = [pip, "install"]
     if upgrade:
@@ -36,15 +36,15 @@ def pip_install(python_dir, package, upgrade=True):
 
 
 def prepare_build_env(python_version):
-    python_dir = f"C:/Python{python_version}"
-    if not os.path.exists(python_dir):
+    python_dir = Path(f"C:/Python{python_version}")
+    if not python_dir.exists():
         raise FileNotFoundError(f"Aborting. python_dir [{python_dir}] does not exist.")
 
-    virtualenv_exe = os.path.join(python_dir, "Scripts", "virtualenv.exe")
-    venv_dir = os.path.join(IPP_SOURCE_DIR, f"venv-{python_version}")
-    if not os.path.exists(venv_dir):
+    virtualenv_exe = python_dir / "Scripts" / "virtualenv.exe"
+    venv_dir = IPP_SOURCE_DIR / f"venv-{python_version}"
+    if not venv_dir.exists():
         print(f"Creating python virtual environment: {venv_dir}")
-        check_call([virtualenv_exe, venv_dir])
+        check_call([str(virtualenv_exe), str(venv_dir)])
         pip_install(venv_dir, "scikit-build-core")
         pip_install(venv_dir, "ninja")
         pip_install(venv_dir, "delvewheel")
@@ -60,7 +60,7 @@ def build_wrapped_itk(
     python_library,
 ):
 
-    tbb_dir = os.path.join(IPP_SOURCE_DIR, "oneTBB-prefix", "lib", "cmake", "TBB")
+    tbb_dir = IPP_SOURCE_DIR / "oneTBB-prefix" / "lib" / "cmake" / "TBB"
 
     # Build ITK python
     with push_dir(directory=build_path, make_directory=True):
@@ -123,7 +123,7 @@ def build_wheel(
         path,
     ) = venv_paths(python_version)
 
-    with push_env(PATH=f"{path}{os.pathsep}{os.environ['PATH']}"):
+    with push_env(PATH=f"{path}{pathsep}{environ['PATH']}"):
 
         # Install dependencies
         check_call(
@@ -132,18 +132,18 @@ def build_wheel(
                 "install",
                 "--upgrade",
                 "-r",
-                os.path.join(IPP_SOURCE_DIR, "requirements-dev.txt"),
+                str(IPP_SOURCE_DIR / "requirements-dev.txt"),
             ]
         )
 
         source_path = f"{package_env_config['ITK_SOURCE_DIR']}"
-        build_path = f"{IPP_SOURCE_DIR}/ITK-win_{python_version}"
-        pyproject_configure = os.path.join(SCRIPT_DIR, "pyproject_configure.py")
-        env_file = os.path.join(IPP_SOURCE_DIR, "build", "package.env")
+        build_path = IPP_SOURCE_DIR / f"ITK-win_{python_version}"
+        pyproject_configure = SCRIPT_DIR / "pyproject_configure.py"
+        env_file = IPP_SOURCE_DIR / "build" / "package.env"
 
         # Clean up previous invocations
-        if cleanup and os.path.exists(build_path):
-            shutil.rmtree(build_path)
+        if cleanup and Path(build_path).exists():
+            _remove_tree(Path(build_path))
 
         print("#")
         print("# Build multiple ITK wheels")
@@ -161,10 +161,10 @@ def build_wheel(
 
         # Build wheels
         if wheel_names is None:
-            with open(os.path.join(SCRIPT_DIR, "WHEEL_NAMES.txt")) as content:
+            with open(SCRIPT_DIR / "WHEEL_NAMES.txt", "r", encoding="utf-8") as content:
                 wheel_names = [wheel_name.strip() for wheel_name in content.readlines()]
 
-        env_file = os.path.join(os.path.dirname(SCRIPT_DIR), "build", "package.env")
+        env_file = IPP_SOURCE_DIR / "build" / "package.env"
         for wheel_name in wheel_names:
             # Configure pyproject.toml
             check_call(
@@ -187,7 +187,7 @@ def build_wheel(
                     "--verbose",
                     "--wheel",
                     "--outdir",
-                    f"{IPP_SOURCE_DIR}/dist",
+                    str(IPP_SOURCE_DIR / "dist"),
                     "--no-isolation",
                     "--skip-dependency-check",
                     f"--config-setting=cmake.define.ITK_SOURCE_DIR:PATH={ITK_SOURCE_DIR}",
@@ -195,7 +195,7 @@ def build_wheel(
                     # TODO: add OSX_DEPLOYMENT OSX_ARCHITECTURES here for linux mac
                     f"--config-setting=cmake.define.ITKPythonPackage_USE_TBB:BOOL={use_tbb}",  # TODO: May not be needed
                     "--config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON",
-                    f"--config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING={wheel_name}"
+                    f"--config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING={wheel_name}",
                     f"--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH={python_executable}",
                     f"--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH={python_include_dir}",
                     f"--config-setting=cmake.define.Python3_INCLUDE_DIRS:PATH={python_include_dir}",  # TODO: outdated variable can be removed
@@ -208,50 +208,50 @@ def build_wheel(
                     for o in cmake_options
                 ]
                 + [
-                    f"{IPP_SOURCE_DIR}",
+                    str(IPP_SOURCE_DIR),
                 ]
             )
 
         # Remove unnecessary files for building against ITK
         if cleanup:
-            for root, _, file_list in os.walk(build_path):
-                for filename in file_list:
-                    extension = os.path.splitext(filename)[1]
-                    if extension in [".cpp", ".xml", ".obj", ".o"]:
-                        os.remove(os.path.join(root, filename))
-            shutil.rmtree(os.path.join(build_path, "Wrapping", "Generators", "CastXML"))
+            bp = Path(build_path)
+            for p in bp.rglob("*"):
+                if p.is_file() and p.suffix in [".cpp", ".xml", ".obj", ".o"]:
+                    try:
+                        p.unlink()
+                    except OSError:
+                        pass
+            _remove_tree(bp / "Wrapping" / "Generators" / "CastXML")
 
 
 def fixup_wheel(py_envs, filepath, lib_paths: str = ""):
-    lib_paths = lib_paths.strip() if lib_paths.isspace() else lib_paths.strip() + ";"
-    lib_paths += "C:/P/IPP/oneTBB-prefix/bin"
+    lib_paths = lib_paths.strip()
+    lib_paths = (lib_paths + ";" if lib_paths else "") + "C:/P/IPP/oneTBB-prefix/bin"
     print(f"Library paths for fixup: {lib_paths}")
 
     py_env = py_envs[0]
 
-    delve_wheel = os.path.join(
-        IPP_SOURCE_DIR, "venv-" + py_env, "Scripts", "delvewheel.exe"
-    )
+    delve_wheel = IPP_SOURCE_DIR / f"venv-{py_env}" / "Scripts" / "delvewheel.exe"
     cmd = [
-        delve_wheel,
+        str(delve_wheel),
         "repair",
         "--no-mangle-all",
         "--add-path",
         lib_paths,
         "--ignore-in-wheel",
         "-w",
-        os.path.join(IPP_SOURCE_DIR, "dist"),
-        filepath,
+        str(IPP_SOURCE_DIR / "dist"),
+        str(filepath),
     ]
-    print(f"Running {" ".join(cmd)} in {os.getcwd()}")
+    print(f"Running {' '.join(cmd)} in {Path.cwd()}")
     check_call(cmd)
 
 
 def fixup_wheels(py_envs, lib_paths: str = ""):
     # TBB library fix-up
     tbb_wheel = "itk_core"
-    for wheel in glob.glob(os.path.join(IPP_SOURCE_DIR, "dist", tbb_wheel + "*.whl")):
-        fixup_wheel(py_envs, wheel, lib_paths)
+    for wheel in (IPP_SOURCE_DIR / "dist").glob(f"{tbb_wheel}*.whl"):
+        fixup_wheel(py_envs, str(wheel), lib_paths)
 
 
 def test_wheels(python_env):
@@ -266,7 +266,7 @@ def test_wheels(python_env):
     check_call([pip, "install", "numpy"])
     check_call([pip, "install", "itk", "--no-cache-dir", "--no-index", "-f", "dist"])
     print("Wheel successfully installed.")
-    check_call([python_executable, os.path.join(IPP_SOURCE_DIR, "docs/code/test.py")])
+    check_call([python_executable, str(IPP_SOURCE_DIR / "docs" / "code" / "test.py")])
     print("Documentation tests passed.")
 
 
@@ -286,11 +286,11 @@ def build_wheels(
     use_tbb: str = "ON"
     with push_dir(directory=IPP_SUPERBUILD_BINARY_DIR, make_directory=True):
         cmake_executable = "cmake.exe"
-        tools_venv = os.path.join(IPP_SOURCE_DIR, "venv-" + py_envs[0])
-        ninja_executable = shutil.which("ninja.exe")
+        tools_venv = IPP_SOURCE_DIR / ("venv-" + py_envs[0])
+        ninja_executable = _which("ninja.exe")
         if ninja_executable is None:
             pip_install(tools_venv, "ninja")
-            ninja_executable = os.path.join(tools_venv, "Scripts", "ninja.exe")
+            ninja_executable = tools_venv / "Scripts" / "ninja.exe"
 
         # -----------------------------------------------------------------------
         # Build required components (optional local ITK source, TBB builds) used to populate the archive cache
@@ -311,20 +311,18 @@ def build_wheels(
         ]
         cmd += [
             "-S",
-            IPP_SOURCE_DIR,
+            str(IPP_SOURCE_DIR),
             "-B",
-            IPP_SUPERBUILD_BINARY_DIR,
+            str(IPP_SUPERBUILD_BINARY_DIR),
         ]
 
         check_call(cmd)
-        check_call([ninja_executable, "-C", IPP_SUPERBUILD_BINARY_DIR])
+        check_call([ninja_executable, "-C", str(IPP_SUPERBUILD_BINARY_DIR)])
 
     # Compile wheels re-using standalone project and archive cache
     for py_env in py_envs:
-        tools_venv = os.path.join(IPP_SOURCE_DIR, "venv-" + py_env)
-        ninja_executable = shutil.which(
-            "ninja.exe"
-        )  # TODO: REMOVE, NINJA ALREADY AVAILABLE!
+        tools_venv = IPP_SOURCE_DIR / ("venv-" + py_env)
+        ninja_executable = _which("ninja.exe")  # TODO: REMOVE, NINJA ALREADY AVAILABLE!
         if ninja_executable is None:
             pip_install(tools_venv, "ninja")
         build_wheel(
@@ -374,7 +372,7 @@ def main(wheel_names=None):
 
     # append the oneTBB-prefix\\bin directory for fixing wheels built with local oneTBB
     search_lib_paths = [s for s in args.lib_paths.rstrip(";") if s]
-    search_lib_paths.append(f"{IPP_SOURCE_DIR}\\oneTBB-prefix\\bin")
+    search_lib_paths.append(IPP_SOURCE_DIR / "oneTBB-prefix" / "bin")
     search_lib_paths_str: str = ";".join(search_lib_paths)
     fixup_wheels(args.py_envs, search_lib_paths_str)
     for py_env in args.py_envs:

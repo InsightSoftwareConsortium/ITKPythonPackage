@@ -3,28 +3,28 @@
 # See usage with .\scripts\windows_build_module_wheels.py --help
 
 from subprocess import check_call
-import os
-import glob
 import sys
 import argparse
-import shutil
 from pathlib import Path
+from os import environ, pathsep
 
 from dotenv import dotenv_values
 
-SCRIPT_DIR = os.path.dirname(__file__)
-IPP_SOURCE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
-IPP_SUPERBUILD_BINARY_DIR = os.path.join(IPP_SOURCE_DIR, "ITK-source")
-package_env_config = dotenv_values(os.path.join(IPP_SOURCE_DIR, "build", "package.env"))
+from scripts.wheel_builder_utils import _remove_tree
+
+SCRIPT_DIR = Path(__file__).parent
+IPP_SOURCE_DIR = SCRIPT_DIR.parent.resolve()
+IPP_SUPERBUILD_BINARY_DIR = IPP_SOURCE_DIR / "ITK-source"
+package_env_config = dotenv_values(IPP_SOURCE_DIR / "build" / "package.env")
 ITK_SOURCE_DIR = package_env_config["ITK_SOURCE_DIR"]
 
 print(f"SCRIPT_DIR: {SCRIPT_DIR}")
 print(f"ROOT_DIR: {IPP_SOURCE_DIR}")
 print(f"ITK_SOURCE: {IPP_SUPERBUILD_BINARY_DIR}")
 
-sys.path.insert(0, os.path.join(SCRIPT_DIR, "internal"))
+sys.path.insert(0, str(SCRIPT_DIR / "internal"))
 
-from wheel_builder_utils import push_dir, push_env
+from wheel_builder_utils import push_env
 from windows_build_common import DEFAULT_PY_ENVS, venv_paths
 
 
@@ -55,21 +55,19 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
             path,
         ) = venv_paths(py_env)
 
-        with push_env(PATH=f"{path}{os.pathsep}{os.environ['PATH']}"):
+        with push_env(PATH=f"{path}{pathsep}{environ['PATH']}"):
             # Install dependencies
             check_call([python_executable, "-m", "pip", "install", "pip", "--upgrade"])
-            requirements_file = os.path.join(IPP_SOURCE_DIR, "requirements-dev.txt")
-            if os.path.exists(requirements_file):
-                check_call([pip, "install", "--upgrade", "-r", requirements_file])
+            requirements_file = IPP_SOURCE_DIR / "requirements-dev.txt"
+            if requirements_file.exists():
+                check_call([pip, "install", "--upgrade", "-r", str(requirements_file)])
             check_call([pip, "install", "cmake"])
             check_call([pip, "install", "scikit-build-core", "--upgrade"])
 
             check_call([pip, "install", "ninja", "--upgrade"])
             check_call([pip, "install", "delvewheel"])
 
-            itk_build_path = os.path.abspath(
-                f"{os.path.join(SCRIPT_DIR, '..')}/ITK-win_{py_env}"
-            )
+            itk_build_path = (SCRIPT_DIR.parent / f"ITK-win_{py_env}").resolve()
             print(f"ITKDIR: {itk_build_path}")
 
             minor_version = py_env.split("-")[0][1:]
@@ -93,10 +91,8 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
                     f"--config-setting=wheel.py-api={wheel_py_api}",
                     "--config-setting=cmake.define.SKBUILD:BOOL=ON",
                     "--config-setting=cmake.define.PY_SITE_PACKAGES_PATH:PATH=.",
-                    "--config-setting=cmake.args=" "-G Ninja" "",
-                    "--config-setting=cmake.define.CMAKE_BUILD_TYPE:STRING="
-                    "Release"
-                    "",
+                    "--config-setting=cmake.args=-G Ninja",
+                    "--config-setting=cmake.define.CMAKE_BUILD_TYPE:STRING=Release",
                     f"--config-setting=cmake.define.CMAKE_MAKE_PROGRAM:FILEPATH={ninja_executable}",
                     f"--config-setting=cmake.define.ITK_DIR:PATH={itk_build_path}",
                     "--config-setting=cmake.define.WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
@@ -146,26 +142,28 @@ def rename_wheel_init(py_env, filepath, add_module_name=True):
     module_name = w.name.split("itk-")[-1]
     module_version = w.version
 
-    dist_dir = os.path.dirname(filepath)
-    wheel_dir = os.path.join(
-        dist_dir, "itk_" + module_name.replace("-", "_") + "-" + module_version
+    dist_dir = Path(filepath).parent
+    wheel_dir = dist_dir / (
+        "itk_" + module_name.replace("-", "_") + "-" + module_version
     )
-    init_dir = os.path.join(wheel_dir, "itk")
-    init_file = os.path.join(init_dir, "__init__.py")
-    init_file_module = os.path.join(
-        init_dir, "__init_" + module_name.split("-")[0] + "__.py"
-    )
+    init_dir = wheel_dir / "itk"
+    init_file = init_dir / "__init__.py"
+    init_file_module = init_dir / ("__init_" + module_name.split("-")[0] + "__.py")
 
     # Unpack wheel and rename __init__ file if it exists.
-    check_call([python_executable, "-m", "wheel", "unpack", filepath, "-d", dist_dir])
-    if add_module_name and os.path.isfile(init_file):
-        shutil.move(init_file, init_file_module)
-    if not add_module_name and os.path.isfile(init_file_module):
-        shutil.move(init_file_module, init_file)
+    check_call(
+        [python_executable, "-m", "wheel", "unpack", filepath, "-d", str(dist_dir)]
+    )
+    if add_module_name and init_file.is_file():
+        init_file.rename(init_file_module)
+    if not add_module_name and init_file_module.is_file():
+        init_file_module.rename(init_file)
 
     # Pack wheel and clean wheel folder
-    check_call([python_executable, "-m", "wheel", "pack", wheel_dir, "-d", dist_dir])
-    shutil.rmtree(wheel_dir)
+    check_call(
+        [python_executable, "-m", "wheel", "pack", str(wheel_dir), "-d", str(dist_dir)]
+    )
+    _remove_tree(wheel_dir)
 
 
 def fixup_wheel(py_envs, filepath, lib_paths: str = "", exclude_libs: str = ""):
@@ -178,9 +176,7 @@ def fixup_wheel(py_envs, filepath, lib_paths: str = "", exclude_libs: str = ""):
     # delvewheel, i.e., __init__.py.
     rename_wheel_init(py_env, filepath, False)
 
-    delve_wheel = os.path.join(
-        "C:/P/IPP", "venv-" + py_env, "Scripts", "delvewheel.exe"
-    )
+    delve_wheel = Path("C:/P/IPP") / ("venv-" + py_env) / "Scripts" / "delvewheel.exe"
     check_call(
         [
             delve_wheel,
@@ -192,7 +188,7 @@ def fixup_wheel(py_envs, filepath, lib_paths: str = "", exclude_libs: str = ""):
             exclude_libs,
             "--ignore-in-wheel",
             "-w",
-            os.path.join(IPP_SOURCE_DIR, "dist"),
+            str(IPP_SOURCE_DIR / "dist"),
             filepath,
         ]
     )
@@ -205,7 +201,7 @@ def fixup_wheel(py_envs, filepath, lib_paths: str = "", exclude_libs: str = ""):
 
 def fixup_wheels(py_envs, lib_paths: str = "", exclude_libs: str = ""):
     # shared library fix-up
-    for wheel in glob.glob(os.path.join(IPP_SOURCE_DIR, "dist", "*.whl")):
+    for wheel in (IPP_SOURCE_DIR / "dist").glob("*.whl"):
         fixup_wheel(py_envs, wheel, lib_paths, exclude_libs)
 
 

@@ -4,41 +4,33 @@ These functions have been copied from scikit-build project.
 See https://github.com/scikit-build/scikit-build
 """
 
-import errno
-import os
-
+from pathlib import Path
+from os import environ as os_environ, chdir as os_chdir, environ
 from contextlib import contextmanager
 from functools import wraps
 
 
 def mkdir_p(path):
-    """Ensure directory ``path`` exists. If needed, parent directories
-    are created.
+    """Ensure directory ``path`` exists. If needed, parent directories are created.
 
-    Adapted from https://stackoverflow.com/a/600612/1539918
+    Uses pathlib with parents=True and exist_ok=True.
     """
-    try:
-        os.makedirs(path)
-    except OSError as exc:  # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:  # pragma: no cover
-            raise
+    Path(path).mkdir(parents=True, exist_ok=True)
 
 
 @contextmanager
 def push_env(**kwargs):
     """This context manager allow to set/unset environment variables."""
-    saved_env = dict(os.environ)
+    saved_env = dict(os_environ)
     for var, value in kwargs.items():
         if value is not None:
-            os.environ[var] = value
-        elif var in os.environ:
-            del os.environ[var]
+            os_environ[var] = value
+        elif var in os_environ:
+            del os_environ[var]
     yield
-    os.environ.clear()
+    os_environ.clear()
     for saved_var, saved_value in saved_env.items():
-        os.environ[saved_var] = saved_value
+        os_environ[saved_var] = saved_value
 
 
 class ContextDecorator:
@@ -71,7 +63,7 @@ class push_dir(ContextDecorator):
         """
         :param directory:
           Path to set as current working directory. If ``None``
-          is passed, ``os.getcwd()`` is used instead.
+          is passed, current working directory is used instead.
 
         :param make_directory:
           If True, ``directory`` is created.
@@ -82,12 +74,50 @@ class push_dir(ContextDecorator):
         super().__init__(directory=directory, make_directory=make_directory)
 
     def __enter__(self):
-        self.old_cwd = os.getcwd()
+        self.old_cwd = Path.cwd()
         if self.directory:
             if self.make_directory:
                 mkdir_p(self.directory)
-            os.chdir(self.directory)
+            os_chdir(self.directory)
         return self
 
     def __exit__(self, typ, val, traceback):
-        os.chdir(self.old_cwd)
+        os_chdir(self.old_cwd)
+
+
+def _remove_tree(path: Path) -> None:
+    """Recursively delete a file or directory using pathlib only."""
+    if not path.exists():
+        return
+    if path.is_file() or path.is_symlink():
+        try:
+            path.unlink()
+        except OSError:
+            pass
+        return
+    for child in path.iterdir():
+        _remove_tree(child)
+    try:
+        path.rmdir()
+    except OSError:
+        pass
+
+
+def _which(exe_name: str) -> str | None:
+    """Simple PATH-based lookup using pathlib only."""
+    pathext = environ.get("PATHEXT", ".EXE;.BAT;.CMD").split(";")
+    paths = environ.get("PATH", "").split(";")
+    exe = Path(exe_name)
+    candidates = [exe] if exe.suffix else [Path(exe_name + ext) for ext in pathext]
+    for p in paths:
+        if not p:
+            continue
+        base = Path(p)
+        for c in candidates:
+            fp = base / c
+            try:
+                if fp.exists():
+                    return str(fp)
+            except OSError:
+                continue
+    return None
