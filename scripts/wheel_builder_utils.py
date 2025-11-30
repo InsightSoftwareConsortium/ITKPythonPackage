@@ -3,6 +3,7 @@
 These functions have been copied from scikit-build project.
 See https://github.com/scikit-build/scikit-build
 """
+
 from __future__ import annotations
 
 import os
@@ -109,11 +110,11 @@ def _remove_tree(path: Path) -> None:
         pass
 
 
-def _which(exe_name: str) -> str | None:
+def _which(exe_name: str) -> str | Path | None:
     """Simple PATH-based lookup using pathlib only."""
-    pathext = environ.get("PATHEXT", ".EXE;.BAT;.CMD").split(";")
-    paths = environ.get("PATH", "").split(";")
-    exe = Path(exe_name)
+    pathext: list[str] = environ.get("PATHEXT", ".EXE;.BAT;.CMD").split(";")
+    paths: list[str] = environ.get("PATH", "").split(";")
+    exe: Path = Path(exe_name)
     candidates = [exe] if exe.suffix else [Path(exe_name + ext) for ext in pathext]
     for p in paths:
         if not p:
@@ -123,7 +124,7 @@ def _which(exe_name: str) -> str | None:
             fp = base / c
             try:
                 if fp.exists():
-                    return str(fp)
+                    return fp
             except OSError:
                 continue
     return None
