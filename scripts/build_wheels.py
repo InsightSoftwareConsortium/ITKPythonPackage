@@ -226,6 +226,41 @@ def pip_install(python_dir, package, upgrade=True):
     echo_check_call(args)
 
 
+def _pip_uninstall_itk_wildcard(pip_executable: str):
+    """Uninstall all installed packages whose name starts with 'itk'.
+
+    pip does not support shell-style wildcards directly for uninstall, so we:
+      - run 'pip list --format=freeze'
+      - collect package names whose normalized name starts with 'itk'
+      - call 'pip uninstall -y <names...>' if any are found
+    """
+    try:
+        proc = subprocess.run(
+            [pip_executable, "list", "--format=freeze"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: failed to list packages with pip at {pip_executable}: {e}")
+        return
+
+    packages = []
+    for line in proc.stdout.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        # Formats like 'name==version' or 'name @ URL'
+        name = line.split("==")[0].split(" @ ")[0].strip()
+        if name.lower().startswith("itk"):
+            packages.append(name)
+
+    if packages:
+        print(f"Uninstalling existing ITK-related packages: {' '.join(packages)}")
+        # Use echo_check_call for consistent logging/behavior
+        echo_check_call([pip_executable, "uninstall", "-y", *packages])
+
+
 def prepare_build_env(python_version):
     if OS_NAME == "windows":
         python_dir = Path(f"C:/Python{python_version}")
@@ -239,6 +274,8 @@ def prepare_build_env(python_version):
         if not venv_dir.exists():
             print(f"Creating python virtual environment: {venv_dir}")
             echo_check_call([str(virtualenv_exe), str(venv_dir)])
+        pip_path = str(venv_dir / "Scripts" / "pip.exe")
+        _pip_uninstall_itk_wildcard(pip_path)
         pip_install(venv_dir, "scikit-build-core")
         pip_install(venv_dir, "ninja")
         pip_install(venv_dir, "delvewheel")
@@ -253,7 +290,9 @@ def prepare_build_env(python_version):
             _ninja_executable,
             _path,
         ) = venv_paths(python_version)
+        _pip_uninstall_itk_wildcard(pip)
         echo_check_call([pip, "install", "--upgrade", "pip"])
+
         echo_check_call(
             [
                 pip,
@@ -275,6 +314,7 @@ def prepare_build_env(python_version):
             _ninja_executable,
             _path,
         ) = venv_paths(python_version)
+        _pip_uninstall_itk_wildcard(pip)
         echo_check_call([pip, "install", "--upgrade", "pip"])
         echo_check_call(
             [
