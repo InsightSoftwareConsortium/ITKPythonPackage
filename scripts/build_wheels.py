@@ -310,12 +310,14 @@ def build_wrapped_itk(
             # Respect macOS deployment target and architecture if present
         ]
         if OS_NAME == "darwin":
+            use_tbb: str = "OFF"
             macosx_target = package_env_config.get("MACOSX_DEPLOYMENT_TARGET", "")
             if macosx_target:
                 cmd.append(f"-DCMAKE_OSX_DEPLOYMENT_TARGET:STRING={macosx_target}")
             osx_arch = "arm64" if ARCH == "arm64" else "x86_64"
             cmd.append(f"-DCMAKE_OSX_ARCHITECTURES:STRING={osx_arch}")
         elif OS_NAME == "linux":
+            use_tbb: str = "ON"
             # Match flags used in manylinux shell script
             if ARCH == "x64":
                 target_triple = "x86_64-linux-gnu"
@@ -328,6 +330,10 @@ def build_wrapped_itk(
             cmd.append(f"-DCMAKE_CXX_COMPILER_TARGET:STRING={target_triple}")
             cmd.append('-DCMAKE_CXX_FLAGS:STRING="-O3 -DNDEBUG"')
             cmd.append('-DCMAKE_C_FLAGS:STRING="-O3 -DNDEBUG"')
+        elif OS_NAME == "windows":
+            use_tbb: str = "ON"
+        else:
+            raise ValueError(f"Unknown platform {OS_NAME}")
 
         # Set cmake flags for the compiler if CC or CXX are specified
         cxx_compiler: str = package_env_config.get("CXX", "")
