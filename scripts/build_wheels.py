@@ -611,7 +611,7 @@ def fixup_wheels(py_envs, lib_paths: str = ""):
         fixup_wheel(py_envs, str(wheel), lib_paths)
 
 
-def test_wheels(python_env):
+def final_wheel_import_test(python_env):
     (
         python_executable,
         _python_include_dir,
@@ -861,7 +861,7 @@ def build_one_python_instance(
         platform_name, platform_architechture, windows_extra_lib_paths, py_env
     )
 
-    test_wheels(py_env)
+    final_wheel_import_test(py_env)
 
 
 def main(wheel_names=None) -> None:
