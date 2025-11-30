@@ -110,11 +110,17 @@ def venv_paths(py_env: str):
 
 def find_unix_exectable_paths(venv_dir: Path) -> tuple[str, str, str, str, str, str]:
     python_executable = venv_dir / "bin" / "python3"
+    if not python_executable.exists():
+        raise FileNotFoundError(f"Python executable not found: {python_executable}")
     pip = venv_dir / "bin" / "pip3"
-    # Prefer venv's ninja, else fall back to PATH
-    ninja_executable_path = venv_dir / "bin" / "ninja"
-    ninja_executable = find_unix_ninja_executable(ninja_executable_path)
+    if not pip.exists():
+        raise FileNotFoundError(f"pip executable not found: {pip}")
 
+    # Prefer venv's ninja, else fall back to PATH
+    ninja_executable_path: Path = venv_dir / "bin" / "ninja"
+    ninja_executable: Path = find_unix_ninja_executable(ninja_executable_path)
+    if not ninja_executable.exists():
+        raise FileNotFoundError(f"Ninja executable not found: {ninja_executable}")
     # Compute Python include dir using sysconfig for the given interpreter
     try:
         python_include_dir = (
@@ -147,13 +153,13 @@ def find_unix_exectable_paths(venv_dir: Path) -> tuple[str, str, str, str, str, 
     )
 
 
-def find_unix_ninja_executable(ninja_executable_path) -> str | None:
+def find_unix_ninja_executable(ninja_executable_path) -> Path | None:
     ninja_executable = (
         str(ninja_executable_path)
         if ninja_executable_path.exists()
         else (shutil.which("ninja") or str(ninja_executable_path))
     )
-    return ninja_executable
+    return Path(ninja_executable)
 
 
 def discover_python_venvs(
