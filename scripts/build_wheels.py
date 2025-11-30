@@ -9,6 +9,7 @@ from os import environ, pathsep
 
 from dotenv import dotenv_values
 
+from macos_venv_utils import create_macos_venvs
 from wheel_builder_utils import (
     _which,
     _remove_tree,
@@ -91,7 +92,13 @@ def venv_paths(py_env: str):
         """
         venv_dir = Path(py_env)
         if not venv_dir.exists():
-            venv_dir = IPP_SOURCE_DIR / "venvs" / py_env
+            venv_root_dir: Path = IPP_SOURCE_DIR / "venvs"
+            _venvs_dir_list = create_macos_venvs(py_env, venv_root_dir)
+            if len(_venvs_dir_list) != 1:
+                raise ValueError(
+                    f"Expected exactly one venv for {py_env}, found {_venvs_dir_list}"
+                )
+            venv_dir = _venvs_dir_list[0]
         # Common macOS layout
         return find_unix_exectable_paths(venv_dir)
     elif OS_NAME == "linux":
@@ -102,7 +109,9 @@ def venv_paths(py_env: str):
         """
         venv_dir = Path(py_env)
         if not venv_dir.exists():
-            venv_dir = Path("/opt/python") / py_env
+            venv_root_dir = Path("/opt/python")
+            # TODO : create_linux_venvs here
+            venv_dir = venv_root_dir / py_env
         return find_unix_exectable_paths(venv_dir)
     else:
         raise ValueError(f"Unknown platform {OS_NAME}")
@@ -297,7 +306,6 @@ def build_wrapped_itk(
 
     # Build ITK python
     with push_dir(directory=build_path, make_directory=True):
-        use_tbb: str = "ON"
         cmd = [
             "cmake",
             "-G",
@@ -623,7 +631,7 @@ def fixup_wheels(py_envs, lib_paths: str = ""):
         fixup_wheel(py_envs, str(wheel), lib_paths)
 
 
-def final_wheel_import_test(python_env):
+def final_wheel_import_test(python_env, installed_dist_dir: Path):
     (
         python_executable,
         _python_include_dir,
@@ -635,7 +643,15 @@ def final_wheel_import_test(python_env):
     echo_check_call([pip, "install", "numpy"])
     echo_check_call([pip, "install", "--upgrade", "pip"])
     echo_check_call(
-        [pip, "install", "itk", "--no-cache-dir", "--no-index", "-f", "dist"]
+        [
+            pip,
+            "install",
+            "itk",
+            "--no-cache-dir",
+            "--no-index",
+            "-f",
+            str(installed_dist_dir),
+        ]
     )
     print("Wheel successfully installed.")
     # Basic imports
@@ -873,7 +889,7 @@ def build_one_python_instance(
         platform_name, platform_architechture, windows_extra_lib_paths, py_env
     )
 
-    final_wheel_import_test(py_env)
+    final_wheel_import_test(py_env, IPP_SOURCE_DIR / "dist")
 
 
 def main(wheel_names=None) -> None:
