@@ -14,9 +14,15 @@ from wheel_builder_utils import (
     _remove_tree,
     echo_check_call,
     detect_platform,
+    push_dir,
+    push_env,
 )
 
+
 SCRIPT_DIR = Path(__file__).parent
+# TODO: Hard-coded module must be 1 direectory above checkedout ITKPythonPackage
+# MODULE_EXAMPLESROOT_DIR: Path = SCRIPT_DIR.parent.parent.resolve()
+
 IPP_SOURCE_DIR = SCRIPT_DIR.parent.resolve()
 IPP_SUPERBUILD_BINARY_DIR = IPP_SOURCE_DIR / "ITK-source"
 package_env_config = dotenv_values(IPP_SOURCE_DIR / "build" / "package.env")
@@ -27,18 +33,140 @@ print(f"ROOT_DIR: {IPP_SOURCE_DIR}")
 print(f"ITK_SOURCE: {IPP_SUPERBUILD_BINARY_DIR}")
 
 sys.path.insert(0, str(SCRIPT_DIR / "internal"))
-from wheel_builder_utils import push_dir, push_env
+
+OS_NAME: str = "UNKNOWN"
+ARCH: str = "UNKNOWN"
 
 
-def setup_build_tool_environment():
-    global OS_NAME, ARCH, DEFAULT_PY_ENVS, venv_paths
-    # Platform detection
-    OS_NAME, ARCH = detect_platform()
-
-    # Conditionally import Windows helpers; define macOS helpers inline
+def venv_paths(py_env: str):
     if OS_NAME == "windows":
-        from windows_build_common import DEFAULT_PY_ENVS, venv_paths  # type: ignore
+
+        # Create venv
+        venv_executable = f"C:/Python{py_env}/Scripts/virtualenv.exe"
+        venv_dir = Path(ITK_SOURCE_DIR) / f"venv-{py_env}"
+        echo_check_call([venv_executable, str(venv_dir)])
+
+        python_executable = venv_dir / "Scripts" / "python.exe"
+        python_include_dir = f"C:/Python{py_env}/include"
+
+        # XXX It should be possible to query skbuild for the library dir associated
+        #     with a given interpreter.
+        xy_ver = py_env.split("-")[0]
+
+        if int(py_env.split("-")[0][1:]) >= 11:
+            # Stable ABI
+            python_library = f"C:/Python{py_env}/libs/python3.lib"
+        else:
+            python_library = f"C:/Python{py_env}/libs/python{xy_ver}.lib"
+
+        print("")
+        print(f"Python3_EXECUTABLE: {python_executable}")
+        print(f"Python3_INCLUDE_DIR: {python_include_dir}")
+        print(f"Python3_LIBRARY: {python_library}")
+
+        pip = venv_dir / "Scripts" / "pip.exe"
+
+        ninja_executable_path = venv_dir / "Scripts" / "ninja.exe"
+        if ninja_executable_path.exists():
+            ninja_executable = ninja_executable_path
+        else:
+            ninja_executable = _which("ninja.exe") or str(ninja_executable_path)
+        print(f"NINJA_EXECUTABLE:{ninja_executable}")
+
+        # Update PATH
+        path = venv_dir / "Scripts"
+
+        return (
+            python_executable,
+            python_include_dir,
+            python_library,
+            pip,
+            ninja_executable,
+            path,
+        )
+
     elif OS_NAME == "darwin":
+        """Resolve macOS virtualenv tool paths.
+        py_env may be a name under IPP_SOURCE_DIR/venvs or an absolute/relative path to a venv.
+        """
+        venv_dir = Path(py_env)
+        if not venv_dir.exists():
+            venv_dir = IPP_SOURCE_DIR / "venvs" / py_env
+        # Common macOS layout
+        return find_unix_exectable_paths(venv_dir)
+    elif OS_NAME == "linux":
+        """Resolve Linux manylinux Python tool paths.
+
+        py_env is expected to be a directory name under /opt/python (e.g., cp311-cp311),
+        or an absolute path to the specific Python root.
+        """
+        venv_dir = Path(py_env)
+        if not venv_dir.exists():
+            venv_dir = Path("/opt/python") / py_env
+        return find_unix_exectable_paths(venv_dir)
+    else:
+        raise ValueError(f"Unknown platform {OS_NAME}")
+
+
+def find_unix_exectable_paths(venv_dir: Path) -> tuple[str, str, str, str, str, str]:
+    python_executable = venv_dir / "bin" / "python3"
+    pip = venv_dir / "bin" / "pip3"
+    # Prefer venv's ninja, else fall back to PATH
+    ninja_executable_path = venv_dir / "bin" / "ninja"
+    ninja_executable = find_unix_ninja_executable(ninja_executable_path)
+
+    # Compute Python include dir using sysconfig for the given interpreter
+    try:
+        python_include_dir = (
+            subprocess.check_output(
+                [
+                    str(python_executable),
+                    "-c",
+                    "import sysconfig; print(sysconfig.get_paths()['include'])",
+                ],
+                text=True,
+            ).strip()
+            or ""
+        )
+    except Exception as e:
+        print(f"Failed to compute Python include dir: {e}\n defaulting to empty")
+        python_include_dir = ""
+
+    # modern CMake with Python3 can infer the library from executable; leave empty
+    python_library = ""
+
+    # Update PATH
+    path = venv_dir / "bin"
+    return (
+        str(python_executable),
+        python_include_dir,
+        python_library,
+        str(pip),
+        str(ninja_executable),
+        str(path),
+    )
+
+
+def find_unix_ninja_executable(ninja_executable_path) -> str | None:
+    ninja_executable = (
+        str(ninja_executable_path)
+        if ninja_executable_path.exists()
+        else (shutil.which("ninja") or str(ninja_executable_path))
+    )
+    return ninja_executable
+
+
+def discover_python_venvs(
+    platform_os_name: str, platform_architechure: str
+) -> list[str]:
+    # Conditionally import Windows helpers; define macOS helpers inline
+    if platform_os_name == "windows":
+        default_py_envs = [
+            f"39-{platform_architechure}",
+            f"310-{platform_architechure}",
+            f"311-{platform_architechure}",
+        ]
+    elif platform_os_name == "darwin":
         # macOS defaults: discover virtualenvs under project 'venvs' folder
         def _discover_mac_venvs() -> list[str]:
             venvs_dir = IPP_SOURCE_DIR / "venvs"
@@ -48,58 +176,9 @@ def setup_build_tool_environment():
             # Sort for stable order
             return sorted(names)
 
-        DEFAULT_PY_ENVS = _discover_mac_venvs()
+        default_py_envs = _discover_mac_venvs()
 
-        def venv_paths(py_env: str):
-            """Resolve macOS virtualenv tool paths.
-
-            py_env may be a name under IPP_SOURCE_DIR/venvs or an absolute/relative path to a venv.
-            """
-            venv_dir = Path(py_env)
-            if not venv_dir.exists():
-                venv_dir = IPP_SOURCE_DIR / "venvs" / py_env
-            # Common macOS layout
-            python_executable = venv_dir / "bin" / "python3"
-            pip = venv_dir / "bin" / "pip3"
-            # Prefer venv's ninja, else fall back to PATH
-            ninja_executable_path = venv_dir / "bin" / "ninja"
-            ninja_executable = (
-                str(ninja_executable_path)
-                if ninja_executable_path.exists()
-                else (shutil.which("ninja") or str(ninja_executable_path))
-            )
-
-            # Compute Python include dir using sysconfig for the given interpreter
-            try:
-                python_include_dir = (
-                    subprocess.check_output(
-                        [
-                            str(python_executable),
-                            "-c",
-                            "import sysconfig; print(sysconfig.get_paths()['include'])",
-                        ],
-                        text=True,
-                    ).strip()
-                    or ""
-                )
-            except Exception:
-                python_include_dir = ""
-
-            # On macOS, modern CMake with Python3 can infer library from executable; leave empty
-            python_library = ""
-
-            # Update PATH
-            path = venv_dir / "bin"
-            return (
-                str(python_executable),
-                python_include_dir,
-                python_library,
-                str(pip),
-                str(ninja_executable),
-                str(path),
-            )
-
-    elif OS_NAME == "linux":
+    elif platform_os_name == "linux":
         # Discover available manylinux CPython installs under /opt/python
         def _discover_linux_pythons() -> list[str]:
             base = Path("/opt/python")
@@ -111,69 +190,21 @@ def setup_build_tool_environment():
             names.sort()
             return names
 
-        DEFAULT_PY_ENVS = _discover_linux_pythons()
-
-        def venv_paths(py_env: str):
-            """Resolve Linux manylinux Python tool paths.
-
-            py_env is expected to be a directory name under /opt/python (e.g., cp311-cp311),
-            or an absolute path to the specific Python root.
-            """
-            root = Path(py_env)
-            if not root.exists():
-                root = Path("/opt/python") / py_env
-            python_executable = root / "bin" / "python3"
-            pip = root / "bin" / "pip3"
-            # Prefer ninja from PATH
-            ninja_executable_path = root / "bin" / "ninja"
-            ninja_executable = (
-                str(ninja_executable_path)
-                if ninja_executable_path.exists()
-                else (shutil.which("ninja") or str(ninja_executable_path))
-            )
-
-            # Query include directory via sysconfig
-            try:
-                python_include_dir = (
-                    subprocess.check_output(
-                        [
-                            str(python_executable),
-                            "-c",
-                            "import sysconfig; print(sysconfig.get_paths()['include'])",
-                        ],
-                        text=True,
-                    ).strip()
-                    or ""
-                )
-            except Exception:
-                python_include_dir = ""
-
-            python_library = ""  # Let CMake infer from executable on Linux
-
-            path = root / "bin"
-            return (
-                str(python_executable),
-                python_include_dir,
-                python_library,
-                str(pip),
-                str(ninja_executable),
-                str(path),
-            )
+        default_py_envs = _discover_linux_pythons()
 
     else:
-        raise ValueError(f"Unknown platform {OS_NAME}")
+        raise ValueError(f"Unknown platform {platform_os_name}")
+    return default_py_envs
 
 
 def pip_install(python_dir, package, upgrade=True):
+    # for OS_NAME == "darwin"  and OS_NAME == "linux"
+    pip3_executable = Path(python_dir) / "bin" / "pip3"
     # Handle Windows and macOS venv layouts
     if OS_NAME == "windows":
-        pip = Path(python_dir) / "Scripts" / "pip.exe"
-    elif OS_NAME == "darwin":
-        pip = Path(python_dir) / "bin" / "pip3"
-    elif OS_NAME == "linux":
-        pip = Path(python_dir) / "bin" / "pip3"
-    print(f"Installing {package} using {pip}")
-    args = [pip, "install"]
+        pip3_executable = Path(python_dir) / "Scripts" / "pip.exe"
+    print(f"Installing {package} using {pip3_executable}")
+    args = [pip3_executable, "install"]
     if upgrade:
         args.append("--upgrade")
     args.append(package)
@@ -293,18 +324,18 @@ def build_wrapped_itk(
             cmd.append('-DCMAKE_C_FLAGS:STRING="-O3 -DNDEBUG"')
 
         # Set cmake flags for the compiler if CC or CXX are specified
-        CXX_COMPILER: str = package_env_config.get("CXX", "")
-        if CXX_COMPILER != "":
-            cmd.append(f"-DCMAKE_CXX_COMPILER:STRING={CXX_COMPILER}")
+        cxx_compiler: str = package_env_config.get("CXX", "")
+        if cxx_compiler != "":
+            cmd.append(f"-DCMAKE_CXX_COMPILER:STRING={cxx_compiler}")
 
-        C_COMPILER: str = package_env_config.get("CC", "")
-        if C_COMPILER != "":
-            cmd.append(f"-DCMAKE_C_COMPILER:STRING={C_COMPILER}")
+        c_compiler: str = package_env_config.get("CC", "")
+        if c_compiler != "":
+            cmd.append(f"-DCMAKE_C_COMPILER:STRING={c_compiler}")
 
         if package_env_config.get("USE_CCACHE", "OFF") == "ON":
-            CCACHE_EXE: Path = _which("ccache")
-            cmd.append(f"-DCMAKE_C_COMPILER_LAUNCHER:FILEPATH={CCACHE_EXE}")
-            cmd.append(f"-DCMAKE_CXX_COMPILER_LAUNCHER:FILEPATH={CCACHE_EXE}")
+            ccache_exe: Path = _which("ccache")
+            cmd.append(f"-DCMAKE_C_COMPILER_LAUNCHER:FILEPATH={ccache_exe}")
+            cmd.append(f"-DCMAKE_CXX_COMPILER_LAUNCHER:FILEPATH={ccache_exe}")
 
         # Python settings
         cmd.append("-DSKBUILD:BOOL=ON")
@@ -503,15 +534,13 @@ def build_wheel(
             _remove_tree(bp / "Wrapping" / "Generators" / "CastXML")
 
 
-def fixup_wheel(py_envs, filepath, lib_paths: str = ""):
+def fixup_wheel(py_env, filepath, lib_paths: str = ""):
     if OS_NAME == "windows":
         lib_paths = lib_paths.strip()
         lib_paths = (
             lib_paths + ";" if lib_paths else ""
         ) + "C:/P/IPP/oneTBB-prefix/bin"
         print(f"Library paths for fixup: {lib_paths}")
-
-        py_env = py_envs[0]
 
         delve_wheel = IPP_SOURCE_DIR / f"venv-{py_env}" / "Scripts" / "delvewheel.exe"
         cmd = [
@@ -529,7 +558,6 @@ def fixup_wheel(py_envs, filepath, lib_paths: str = ""):
     elif OS_NAME == "darwin":
         # macOS fix-up with delocate (only needed for x86_64)
         if ARCH != "arm64":
-            py_env = py_envs[0]
             (
                 _py,
                 _inc,
@@ -544,7 +572,6 @@ def fixup_wheel(py_envs, filepath, lib_paths: str = ""):
             echo_check_call([str(delocate_wheel), str(filepath)])
     elif OS_NAME == "linux":
         # Use auditwheel to repair wheels and set manylinux tags
-        py_env = py_envs[0]
         (
             python_executable,
             _inc,
@@ -619,7 +646,7 @@ def test_wheels(python_env):
 
 
 def build_wheels(
-    py_envs=DEFAULT_PY_ENVS,
+    py_env,
     cleanup=False,
     wheel_names=None,
     cmake_options=None,
@@ -627,15 +654,12 @@ def build_wheels(
     if cmake_options is None:
         cmake_options = []
 
-    for py_env in py_envs:
-        prepare_build_env(py_env)
-
     build_type = "Release"
     use_tbb: str = "ON"
     with push_dir(directory=IPP_SUPERBUILD_BINARY_DIR, make_directory=True):
         cmake_executable = "cmake.exe" if OS_NAME == "windows" else "cmake"
         if OS_NAME == "windows":
-            tools_venv = IPP_SOURCE_DIR / ("venv-" + py_envs[0])
+            tools_venv = IPP_SOURCE_DIR / ("venv-" + py_env)
             ninja_executable = _which("ninja.exe")
             if ninja_executable is None:
                 pip_install(tools_venv, "ninja")
@@ -651,13 +675,13 @@ def build_wheels(
                     pip,
                     _ninja,
                     _path,
-                ) = venv_paths(py_envs[0])
+                ) = venv_paths(py_env)
                 echo_check_call([pip, "install", "ninja"])
                 ninja_executable = shutil.which("ninja") or str(Path(_path) / "ninja")
         elif OS_NAME == "linux":
             # Prefer system ninja, else ensure it's available in the first Python env
             ninja_executable = shutil.which("ninja")
-            if not ninja_executable and py_envs:
+            if not ninja_executable and py_env:
                 (
                     _py,
                     _inc,
@@ -665,7 +689,7 @@ def build_wheels(
                     pip,
                     _ninja,
                     _path,
-                ) = venv_paths(py_envs[0])
+                ) = venv_paths(py_env)
                 echo_check_call([pip, "install", "ninja"])
                 ninja_executable = shutil.which("ninja") or str(Path(_path) / "ninja")
         else:
@@ -701,46 +725,158 @@ def build_wheels(
         echo_check_call([ninja_executable, "-C", str(IPP_SUPERBUILD_BINARY_DIR)])
 
     # Compile wheels re-using standalone project and archive cache
-    for py_env in py_envs:
-        if OS_NAME == "windows":
-            tools_venv = IPP_SOURCE_DIR / ("venv-" + py_env)
-            ninja_executable = _which("ninja.exe")  # ensure availability
-            if ninja_executable is None:
-                pip_install(tools_venv, "ninja")
-        elif OS_NAME == "darwin":
-            # Ensure ninja present in mac venvs
-            (
-                _py,
-                _inc,
-                _lib,
-                pip,
-                _ninja,
-                _path,
-            ) = venv_paths(py_env)
-            echo_check_call([pip, "install", "ninja"])
-        elif OS_NAME == "linux":
-            # TODO
-            pass
-        else:
-            raise ValueError(f"Unknown platform {OS_NAME}")
+    if OS_NAME == "windows":
+        tools_venv = IPP_SOURCE_DIR / ("venv-" + py_env)
+        ninja_executable = _which("ninja.exe")  # ensure availability
+        if ninja_executable is None:
+            pip_install(tools_venv, "ninja")
+    elif OS_NAME == "darwin":
+        # Ensure ninja present in mac venvs
+        (
+            _py,
+            _inc,
+            _lib,
+            pip,
+            _ninja,
+            _path,
+        ) = venv_paths(py_env)
+        echo_check_call([pip, "install", "ninja"])
+    elif OS_NAME == "linux":
+        # TODO
+        pass
+    else:
+        raise ValueError(f"Unknown platform {OS_NAME}")
 
-        build_wheel(
-            py_env,
-            build_type,
-            cleanup=cleanup,
-            wheel_names=wheel_names,
-            cmake_options=cmake_options,
+    build_wheel(
+        py_env,
+        build_type,
+        cleanup=cleanup,
+        wheel_names=wheel_names,
+        cmake_options=cmake_options,
+    )
+
+
+def post_build_wheel_fixup(
+    platform_name: str, platform_architechture: str, extra_lib_paths: list[str], py_env
+):
+    # Wheel fix-up
+    if platform_name == "windows":
+        # append the oneTBB-prefix\\bin directory for fixing wheels built with local oneTBB
+        search_lib_paths = (
+            [s for s in str(extra_lib_paths[0]).rstrip(";") if s]
+            if extra_lib_paths
+            else []
         )
+        search_lib_paths.append(str(IPP_SOURCE_DIR / "oneTBB-prefix" / "bin"))
+        search_lib_paths_str: str = ";".join(map(str, search_lib_paths))
+        fixup_wheels(py_env, search_lib_paths_str)
+    elif platform_name == "darwin":
+        # delocate on macOS x86_64 only
+        if platform_architechture != "arm64":
+            fixup_wheels(py_env)
+    elif platform_name == "linux":
+        # Repair all produced wheels with auditwheel and retag meta-wheel
+        for whl in (IPP_SOURCE_DIR / "dist").glob("*.whl"):
+            fixup_wheel(py_env, str(whl))
+        # Special handling for the itk meta wheel to adjust tag
+        (python_executable, *_rest) = venv_paths(py_env)
+        manylinux_ver = environ.get("MANYLINUX_VERSION", "")
+        if manylinux_ver:
+            for whl in list((IPP_SOURCE_DIR / "dist").glob("itk-*linux_*.whl")) + list(
+                (IPP_SOURCE_DIR / "dist").glob("itk_*linux_*.whl")
+            ):
+                # Unpack, edit WHEEL tag, repack
+                metawheel_dir = IPP_SOURCE_DIR / "metawheel"
+                metawheel_dist = IPP_SOURCE_DIR / "metawheel-dist"
+                echo_check_call(
+                    [
+                        python_executable,
+                        "-m",
+                        "wheel",
+                        "unpack",
+                        "--dest",
+                        str(metawheel_dir),
+                        str(whl),
+                    ]
+                )
+                # Find unpacked dir
+                unpacked_dirs = list(metawheel_dir.glob("itk-*/itk*.dist-info/WHEEL"))
+                for wheel_file in unpacked_dirs:
+                    content = wheel_file.read_text(encoding="utf-8").splitlines()
+                    base = whl.name.replace("linux", f"manylinux{manylinux_ver}")
+                    tag = Path(base).stem
+                    new = []
+                    for line in content:
+                        if line.startswith("Tag: "):
+                            new.append(f"Tag: {tag}")
+                        else:
+                            new.append(line)
+                    wheel_file.write_text("\n".join(new) + "\n", encoding="utf-8")
+                echo_check_call(
+                    [
+                        python_executable,
+                        "-m",
+                        "wheel",
+                        "pack",
+                        "--dest",
+                        str(metawheel_dist),
+                        str(metawheel_dir / "itk-*"),
+                    ]
+                )
+                # Move and clean
+                for new_whl in metawheel_dist.glob("*.whl"):
+                    shutil.move(
+                        str(new_whl), str((IPP_SOURCE_DIR / "dist") / new_whl.name)
+                    )
+                # Remove old and temp
+                try:
+                    whl.unlink()
+                except OSError:
+                    pass
+                _remove_tree(metawheel_dir)
+                _remove_tree(metawheel_dist)
+    else:
+        raise ValueError(f"Unknown platform {platform_name}")
 
 
-def main(wheel_names=None):
+def build_one_python_instance(
+    py_env,
+    wheel_names,
+    platform_name: str,
+    platform_architechture: str,
+    cleanup: bool,
+    cmake_options: list[str],
+    windows_extra_lib_paths: list[str],
+):
+    prepare_build_env(py_env)
+
+    build_wheels(
+        py_env=py_env,
+        cleanup=cleanup,
+        wheel_names=wheel_names,
+        cmake_options=cmake_options,
+    )
+
+    post_build_wheel_fixup(
+        platform_name, platform_architechture, windows_extra_lib_paths, py_env
+    )
+
+    test_wheels(py_env)
+
+
+def main(wheel_names=None) -> None:
+
+    global OS_NAME, ARCH
+    # Platform detection
+    OS_NAME, ARCH = detect_platform()
+
     parser = argparse.ArgumentParser(
         description="Driver script to build ITK Python wheels."
     )
     parser.add_argument(
         "--py-envs",
         nargs="+",
-        default=DEFAULT_PY_ENVS,
+        default=discover_python_venvs(OS_NAME, ARCH),
         help=(
             "Windows: Python versions like '39-x64'. macOS: names or paths of venvs under 'venvs/'."
         ),
@@ -766,97 +902,17 @@ def main(wheel_names=None):
     )
     args = parser.parse_args()
 
-    setup_build_tool_environment()
-
-    build_wheels(
-        cleanup=args.cleanup,
-        py_envs=args.py_envs,
-        wheel_names=wheel_names,
-        cmake_options=args.cmake_options,
-    )
-
-    # Wheel fix-up
-    if OS_NAME == "windows":
-        # append the oneTBB-prefix\\bin directory for fixing wheels built with local oneTBB
-        search_lib_paths = (
-            [s for s in str(args.lib_paths[0]).rstrip(";") if s]
-            if args.lib_paths
-            else []
-        )
-        search_lib_paths.append(IPP_SOURCE_DIR / "oneTBB-prefix" / "bin")
-        search_lib_paths_str: str = ";".join(map(str, search_lib_paths))
-        fixup_wheels(args.py_envs, search_lib_paths_str)
-    elif OS_NAME == "darwin":
-        # delocate on macOS x86_64 only
-        if ARCH != "arm64":
-            fixup_wheels(args.py_envs)
-    elif OS_NAME == "linux":
-        # Repair all produced wheels with auditwheel and retag meta-wheel
-        for whl in (IPP_SOURCE_DIR / "dist").glob("*.whl"):
-            fixup_wheel(args.py_envs, str(whl))
-        # Special handling for the itk meta wheel to adjust tag
-        py_env = args.py_envs[0]
-        (python_executable, *_rest) = venv_paths(py_env)
-        manylinux_ver = environ.get("MANYLINUX_VERSION", "")
-        if manylinux_ver:
-            for whl in list((IPP_SOURCE_DIR / "dist").glob("itk-*linux_*.whl")) + list(
-                (IPP_SOURCE_DIR / "dist").glob("itk_*linux_*.whl")
-            ):
-                # Unpack, edit WHEEL tag, repack
-                metawheel_dir = IPP_SOURCE_DIR / "metawheel"
-                metawheel_dist = IPP_SOURCE_DIR / "metawheel-dist"
-                echo_check_call(
-                    [
-                        python_executable,
-                        "-m",
-                        "wheel",
-                        "unpack",
-                        "--dest",
-                        str(metawheel_dir),
-                        str(whl),
-                    ]
-                )
-                # Find unpacked dir
-                unpacked_dirs = list((metawheel_dir).glob("itk-*/itk*.dist-info/WHEEL"))
-                for wheel_file in unpacked_dirs:
-                    content = wheel_file.read_text(encoding="utf-8").splitlines()
-                    base = whl.name.replace("linux", f"manylinux{manylinux_ver}")
-                    tag = Path(base).stem
-                    new = []
-                    for line in content:
-                        if line.startswith("Tag: "):
-                            new.append(f"Tag: {tag}")
-                        else:
-                            new.append(line)
-                    wheel_file.write_text("\n".join(new) + "\n", encoding="utf-8")
-                echo_check_call(
-                    [
-                        python_executable,
-                        "-m",
-                        "wheel",
-                        "pack",
-                        "--dest",
-                        str(metawheel_dist),
-                        str(metawheel_dir / "itk-*"),
-                    ]
-                )
-                # Move and clean
-                for new_whl in (metawheel_dist).glob("*.whl"):
-                    shutil.move(
-                        str(new_whl), str((IPP_SOURCE_DIR / "dist") / new_whl.name)
-                    )
-                # Remove old and temp
-                try:
-                    whl.unlink()
-                except OSError:
-                    pass
-                _remove_tree(metawheel_dir)
-                _remove_tree(metawheel_dist)
-    else:
-        raise ValueError(f"Unknown platform {OS_NAME}")
-
     for py_env in args.py_envs:
-        test_wheels(py_env)
+
+        build_one_python_instance(
+            py_env,
+            wheel_names,
+            OS_NAME,
+            ARCH,
+            args.cleanup,
+            args.cmake_options,
+            args.lib_paths,
+        )
 
 
 if __name__ == "__main__":
