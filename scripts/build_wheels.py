@@ -100,7 +100,66 @@ def setup_build_tool_environment():
             )
 
     elif OS_NAME == "linux":
-        pass
+        # Discover available manylinux CPython installs under /opt/python
+        def _discover_linux_pythons() -> list[str]:
+            base = Path("/opt/python")
+            if not base.exists():
+                return []
+            names = [
+                p.name for p in base.iterdir() if p.is_dir() and p.name.startswith("cp")
+            ]
+            names.sort()
+            return names
+
+        DEFAULT_PY_ENVS = _discover_linux_pythons()
+
+        def venv_paths(py_env: str):
+            """Resolve Linux manylinux Python tool paths.
+
+            py_env is expected to be a directory name under /opt/python (e.g., cp311-cp311),
+            or an absolute path to the specific Python root.
+            """
+            root = Path(py_env)
+            if not root.exists():
+                root = Path("/opt/python") / py_env
+            python_executable = root / "bin" / "python3"
+            pip = root / "bin" / "pip3"
+            # Prefer ninja from PATH
+            ninja_executable_path = root / "bin" / "ninja"
+            ninja_executable = (
+                str(ninja_executable_path)
+                if ninja_executable_path.exists()
+                else (shutil.which("ninja") or str(ninja_executable_path))
+            )
+
+            # Query include directory via sysconfig
+            try:
+                python_include_dir = (
+                    subprocess.check_output(
+                        [
+                            str(python_executable),
+                            "-c",
+                            "import sysconfig; print(sysconfig.get_paths()['include'])",
+                        ],
+                        text=True,
+                    ).strip()
+                    or ""
+                )
+            except Exception:
+                python_include_dir = ""
+
+            python_library = ""  # Let CMake infer from executable on Linux
+
+            path = root / "bin"
+            return (
+                str(python_executable),
+                python_include_dir,
+                python_library,
+                str(pip),
+                str(ninja_executable),
+                str(path),
+            )
+
     else:
         raise ValueError(f"Unknown platform {OS_NAME}")
 
@@ -161,7 +220,28 @@ def prepare_build_env(python_version):
             ]
         )
     elif OS_NAME == "linux":
-        pass
+        # manylinux: the interpreter is provided; ensure basic tools are available
+        (
+            python_executable,
+            _python_include_dir,
+            _python_library,
+            pip,
+            _ninja_executable,
+            _path,
+        ) = venv_paths(python_version)
+        echo_check_call([pip, "install", "--upgrade", "pip"])
+        echo_check_call(
+            [
+                pip,
+                "install",
+                "--upgrade",
+                "build",
+                "ninja",
+                "auditwheel",
+                "wheel",
+                "scikit-build-core",
+            ]
+        )
     else:
         raise ValueError(f"Unknown platform {OS_NAME}")
 
@@ -198,6 +278,19 @@ def build_wrapped_itk(
                 cmd.append(f"-DCMAKE_OSX_DEPLOYMENT_TARGET:STRING={macosx_target}")
             osx_arch = "arm64" if ARCH == "arm64" else "x86_64"
             cmd.append(f"-DCMAKE_OSX_ARCHITECTURES:STRING={osx_arch}")
+        elif OS_NAME == "linux":
+            # Match flags used in manylinux shell script
+            if ARCH == "x64":
+                target_triple = "x86_64-linux-gnu"
+            elif ARCH in ("aarch64", "arm64"):
+                target_triple = "aarch64-linux-gnu"
+            elif ARCH == "x86":
+                target_triple = "i686-linux-gnu"
+            else:
+                target_triple = f"{ARCH}-linux-gnu"
+            cmd.append(f"-DCMAKE_CXX_COMPILER_TARGET:STRING={target_triple}")
+            cmd.append('-DCMAKE_CXX_FLAGS:STRING="-O3 -DNDEBUG"')
+            cmd.append('-DCMAKE_C_FLAGS:STRING="-O3 -DNDEBUG"')
 
         # Set cmake flags for the compiler if CC or CXX are specified
         CXX_COMPILER: str = package_env_config.get("CXX", "")
@@ -287,8 +380,11 @@ def build_wheel(
             osx_arch = "arm64" if ARCH == "arm64" else "x86_64"
             build_path = IPP_SOURCE_DIR / f"ITK-{python_version}-macosx_{osx_arch}"
         elif OS_NAME == "linux":
-            # TODO:
-            pass
+            # TODO: do not use environ here, get from package_env instead
+            manylinux_ver = environ.get("MANYLINUX_VERSION", "")
+            build_path = (
+                IPP_SOURCE_DIR / f"ITK-{python_version}-manylinux{manylinux_ver}_{ARCH}"
+            )
         else:
             raise ValueError(f"Unknown platform {OS_NAME}")
         pyproject_configure = SCRIPT_DIR / "pyproject_configure.py"
@@ -360,6 +456,24 @@ def build_wheel(
                 cmd.append(
                     f"--config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING={osx_arch}"
                 )
+            elif OS_NAME == "linux":
+                if ARCH == "x64":
+                    target_triple = "x86_64-linux-gnu"
+                elif ARCH in ("aarch64", "arm64"):
+                    target_triple = "aarch64-linux-gnu"
+                elif ARCH == "x86":
+                    target_triple = "i686-linux-gnu"
+                else:
+                    target_triple = f"{ARCH}-linux-gnu"
+                cmd.append(
+                    f"--config-setting=cmake.define.CMAKE_CXX_COMPILER_TARGET:STRING={target_triple}"
+                )
+                cmd.append(
+                    "--config-setting=cmake.define.CMAKE_CXX_FLAGS:STRING=-O3 -DNDEBUG"
+                )
+                cmd.append(
+                    "--config-setting=cmake.define.CMAKE_C_FLAGS:STRING=-O3 -DNDEBUG"
+                )
             if python_include_dir:
                 cmd.append(
                     f"--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH={python_include_dir}"
@@ -428,11 +542,39 @@ def fixup_wheel(py_envs, filepath, lib_paths: str = ""):
             delocate_wheel = Path(_path) / "delocate-wheel"
             echo_check_call([str(delocate_listdeps), str(filepath)])
             echo_check_call([str(delocate_wheel), str(filepath)])
-        elif OS_NAME == "linux":
-            # TODO -- add manylinux code here
-            pass
-        else:
-            raise ValueError(f"Unknown platform {OS_NAME}")
+    elif OS_NAME == "linux":
+        # Use auditwheel to repair wheels and set manylinux tags
+        py_env = py_envs[0]
+        (
+            python_executable,
+            _inc,
+            _lib,
+            _pip,
+            _ninja,
+            _path,
+        ) = venv_paths(py_env)
+        plat = None
+        manylinux_ver = environ.get("MANYLINUX_VERSION", "")
+        if ARCH == "x64" and manylinux_ver:
+            plat = f"manylinux{manylinux_ver}_x86_64"
+        cmd = [python_executable, "-m", "auditwheel", "repair"]
+        if plat:
+            cmd += ["--plat", plat]
+        cmd += [str(filepath), "-w", str(IPP_SOURCE_DIR / "dist")]
+        # Provide LD_LIBRARY_PATH for oneTBB and common system paths
+        extra_lib = str(IPP_SOURCE_DIR / "oneTBB-prefix" / "lib")
+        env = dict(environ)
+        env["LD_LIBRARY_PATH"] = ":".join(
+            [
+                env.get("LD_LIBRARY_PATH", ""),
+                extra_lib,
+                "/usr/lib64",
+                "/usr/lib",
+            ]
+        )
+        echo_check_call(cmd, env=env)
+    else:
+        raise ValueError(f"Unknown platform {OS_NAME}")
 
 
 def fixup_wheels(py_envs, lib_paths: str = ""):
@@ -513,8 +655,19 @@ def build_wheels(
                 echo_check_call([pip, "install", "ninja"])
                 ninja_executable = shutil.which("ninja") or str(Path(_path) / "ninja")
         elif OS_NAME == "linux":
-            # TODO
-            pass
+            # Prefer system ninja, else ensure it's available in the first Python env
+            ninja_executable = shutil.which("ninja")
+            if not ninja_executable and py_envs:
+                (
+                    _py,
+                    _inc,
+                    _lib,
+                    pip,
+                    _ninja,
+                    _path,
+                ) = venv_paths(py_envs[0])
+                echo_check_call([pip, "install", "ninja"])
+                ninja_executable = shutil.which("ninja") or str(Path(_path) / "ninja")
         else:
             raise ValueError(f"Unknown platform {OS_NAME}")
 
@@ -638,8 +791,67 @@ def main(wheel_names=None):
         if ARCH != "arm64":
             fixup_wheels(args.py_envs)
     elif OS_NAME == "linux":
-        # TODO
-        pass
+        # Repair all produced wheels with auditwheel and retag meta-wheel
+        for whl in (IPP_SOURCE_DIR / "dist").glob("*.whl"):
+            fixup_wheel(args.py_envs, str(whl))
+        # Special handling for the itk meta wheel to adjust tag
+        py_env = args.py_envs[0]
+        (python_executable, *_rest) = venv_paths(py_env)
+        manylinux_ver = environ.get("MANYLINUX_VERSION", "")
+        if manylinux_ver:
+            for whl in list((IPP_SOURCE_DIR / "dist").glob("itk-*linux_*.whl")) + list(
+                (IPP_SOURCE_DIR / "dist").glob("itk_*linux_*.whl")
+            ):
+                # Unpack, edit WHEEL tag, repack
+                metawheel_dir = IPP_SOURCE_DIR / "metawheel"
+                metawheel_dist = IPP_SOURCE_DIR / "metawheel-dist"
+                echo_check_call(
+                    [
+                        python_executable,
+                        "-m",
+                        "wheel",
+                        "unpack",
+                        "--dest",
+                        str(metawheel_dir),
+                        str(whl),
+                    ]
+                )
+                # Find unpacked dir
+                unpacked_dirs = list((metawheel_dir).glob("itk-*/itk*.dist-info/WHEEL"))
+                for wheel_file in unpacked_dirs:
+                    content = wheel_file.read_text(encoding="utf-8").splitlines()
+                    base = whl.name.replace("linux", f"manylinux{manylinux_ver}")
+                    tag = Path(base).stem
+                    new = []
+                    for line in content:
+                        if line.startswith("Tag: "):
+                            new.append(f"Tag: {tag}")
+                        else:
+                            new.append(line)
+                    wheel_file.write_text("\n".join(new) + "\n", encoding="utf-8")
+                echo_check_call(
+                    [
+                        python_executable,
+                        "-m",
+                        "wheel",
+                        "pack",
+                        "--dest",
+                        str(metawheel_dist),
+                        str(metawheel_dir / "itk-*"),
+                    ]
+                )
+                # Move and clean
+                for new_whl in (metawheel_dist).glob("*.whl"):
+                    shutil.move(
+                        str(new_whl), str((IPP_SOURCE_DIR / "dist") / new_whl.name)
+                    )
+                # Remove old and temp
+                try:
+                    whl.unlink()
+                except OSError:
+                    pass
+                _remove_tree(metawheel_dir)
+                _remove_tree(metawheel_dist)
     else:
         raise ValueError(f"Unknown platform {OS_NAME}")
 
