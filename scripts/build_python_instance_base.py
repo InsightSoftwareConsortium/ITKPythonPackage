@@ -409,17 +409,6 @@ class BuildPythonInstanceBase(ABC):
 
         with push_env(PATH=f"{path}{pathsep}{environ['PATH']}"):
 
-            # Install dependencies
-            echo_check_call(
-                [
-                    pip,
-                    "install",
-                    "--upgrade",
-                    "-r",
-                    str(self.IPP_SOURCE_DIR / "requirements-dev.txt"),
-                ]
-            )
-
             source_path = f"{self.package_env_config['ITK_SOURCE_DIR']}"
             # Build path naming per platform
             if self.platform_name == "windows":

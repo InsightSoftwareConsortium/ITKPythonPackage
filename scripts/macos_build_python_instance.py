@@ -36,6 +36,16 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
                 "delocate",
             ]
         )
+        # Install dependencies
+        echo_check_call(
+            [
+                pip,
+                "install",
+                "--upgrade",
+                "-r",
+                str(self.IPP_SOURCE_DIR / "requirements-dev.txt"),
+            ]
+        )
 
         # #############################################
         # ### Setup build tools
