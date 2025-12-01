@@ -12,20 +12,14 @@ from scripts.wheel_builder_utils import echo_check_call, _remove_tree
 class LinuxBuildPythonInstance(BuildPythonInstanceBase):
     def prepare_build_env(self) -> None:
         # manylinux: the interpreter is provided; ensure basic tools are available
-        (
-            python_executable,
-            _python_include_dir,
-            _python_library,
-            pip,
-            self._ninja_executable,
-            _path,
-            _venv_dir,
-        ) = self.venv_paths()
-        self._pip_uninstall_itk_wildcard(pip)
-        echo_check_call([pip, "install", "--upgrade", "pip"])
+        self.venv_paths()
+        self._pip_uninstall_itk_wildcard(self.venv_info_dict["pip_executable"])
+        echo_check_call(
+            [self.venv_info_dict["pip_executable"], "install", "--upgrade", "pip"]
+        )
         echo_check_call(
             [
-                pip,
+                self.venv_info_dict["pip_executable"],
                 "install",
                 "--upgrade",
                 "build",
@@ -40,7 +34,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         # Install dependencies
         echo_check_call(
             [
-                pip,
+                self.venv_info_dict["pip_executable"],
                 "install",
                 "--upgrade",
                 "-r",
@@ -74,7 +68,6 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         for whl in (self.IPP_SOURCE_DIR / "dist").glob("*.whl"):
             self.fixup_wheel(str(whl))
         # Special handling for the itk meta wheel to adjust tag
-        (python_executable, *_rest) = self.venv_paths()
         manylinux_ver = self.package_env_config.get("MANYLINUX_VERSION", "")
         if manylinux_ver:
             for whl in list(
@@ -85,7 +78,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                 metawheel_dist = self.IPP_SOURCE_DIR / "metawheel-dist"
                 echo_check_call(
                     [
-                        python_executable,
+                        self.venv_info_dict["python_executable"],
                         "-m",
                         "wheel",
                         "unpack",
@@ -109,7 +102,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                     wheel_file.write_text("\n".join(new) + "\n", encoding="utf-8")
                 echo_check_call(
                     [
-                        python_executable,
+                        self.venv_info_dict["python_executable"],
                         "-m",
                         "wheel",
                         "pack",
@@ -136,20 +129,11 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
 
     def fixup_wheel(self, filepath, lib_paths: str = "") -> None:
         # Use auditwheel to repair wheels and set manylinux tags
-        (
-            python_executable,
-            _inc,
-            _lib,
-            _pip,
-            _ninja,
-            _path,
-            venv_dir,
-        ) = self.venv_paths()
         plat = None
         manylinux_ver = self.package_env_config.get("MANYLINUX_VERSION", "")
         if self.platform_architechture == "x64" and manylinux_ver:
             plat = f"manylinux{manylinux_ver}_x86_64"
-        cmd = [python_executable, "-m", "auditwheel", "repair"]
+        cmd = [self.venv_info_dict["python_executable"], "-m", "auditwheel", "repair"]
         if plat:
             cmd += ["--plat", plat]
         cmd += [str(filepath), "-w", str(self.IPP_SOURCE_DIR / "dist")]
@@ -166,7 +150,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         )
         echo_check_call(cmd, env=env)
 
-    def venv_paths(self):
+    def venv_paths(self) -> None:
         """Resolve Linux manylinux Python tool paths.
 
         py_env is expected to be a directory name under /opt/python (e.g., cp311-cp311),
@@ -177,7 +161,25 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             venv_root_dir = Path("/opt/python")
             # TODO : create_linux_venvs here
             venv_dir = venv_root_dir / self.py_env
-        return self.find_unix_exectable_paths(venv_dir)
+
+        (
+            python_executable,
+            python_include_dir,
+            python_library,
+            pip_executable,
+            ninja_executable,
+            venv_bin_path,
+            venv_base_dir,
+        ) = self.find_unix_exectable_paths(venv_dir)
+        self.venv_info_dict = {
+            "python_executable": python_executable,
+            "python_include_dir": python_include_dir,
+            "python_library": python_library,
+            "pip_executable": pip_executable,
+            "ninja_executable": ninja_executable,
+            "venv_bin_path": venv_bin_path,
+            "venv_base_dir": venv_base_dir,
+        }
 
     def discover_python_venvs(
         self, platform_os_name: str, platform_architechure: str

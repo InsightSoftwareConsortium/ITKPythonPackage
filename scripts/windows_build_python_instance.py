@@ -4,41 +4,21 @@ from pathlib import Path
 
 from build_python_instance_base import BuildPythonInstanceBase
 
-from scripts.wheel_builder_utils import echo_check_call, _which
+from scripts.wheel_builder_utils import echo_check_call
 
 
 class WindowsBuildPythonInstance(BuildPythonInstanceBase):
     def prepare_build_env(self) -> None:
         # Windows
         # Install required tools into each venv
-        (
-            python_executable,
-            _python_include_dir,
-            _python_library,
-            pip,
-            self._ninja_executable,
-            _path,
-            venv_dir,
-        ) = self.venv_paths()
-
-        # python_version = self.py_env
-        # python_dir = Path(f"C:/Python{python_version}")
-        # if not python_dir.exists():
-        #     raise FileNotFoundError(
-        #         f"Aborting. python_dir [{python_dir}] does not exist."
-        #     )
-        #
-        # virtualenv_exe = python_dir / "Scripts" / "virtualenv.exe"
-        # venv_dir = self.IPP_SOURCE_DIR / f"venv-{python_version}"
-        # if not venv_dir.exists():
-        #     print(f"Creating python virtual environment: {venv_dir}")
-        #     echo_check_call([str(virtualenv_exe), str(venv_dir)])
-        # pip = str(venv_dir / "Scripts" / "pip.exe")
-        self._pip_uninstall_itk_wildcard(pip)
-        echo_check_call([pip, "install", "--upgrade", "pip"])
+        self.venv_paths()
+        self._pip_uninstall_itk_wildcard(self.venv_info_dict["pip_executable"])
+        echo_check_call(
+            [self.venv_info_dict["pip_executable"], "install", "--upgrade", "pip"]
+        )
         echo_check_call(
             [
-                pip,
+                self.venv_info_dict["pip_executable"],
                 "install",
                 "--upgrade",
                 "build",
@@ -53,7 +33,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         # Install dependencies
         echo_check_call(
             [
-                pip,
+                self.venv_info_dict["pip_executable"],
                 "install",
                 "--upgrade",
                 "-r",
@@ -67,12 +47,6 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         self._use_tbb: str = "ON"
         self._tbb_dir = self.IPP_SOURCE_DIR / "oneTBB-prefix" / "lib" / "cmake" / "TBB"
         self._cmake_executable = "cmake.exe"
-        ninja_executable_path = venv_dir / "Scripts" / "ninja.exe"
-        if ninja_executable_path.exists():
-            ninja_executable = ninja_executable_path
-        else:
-            ninja_executable = _which("ninja.exe") or str(ninja_executable_path)
-        print(f"NINJA_EXECUTABLE:{ninja_executable}")
 
     def post_build_fixup(self) -> None:
         # append the oneTBB-prefix\\bin directory for fixing wheels built with local oneTBB
@@ -112,13 +86,13 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         ]
         echo_check_call(cmd)
 
-    def venv_paths(self) -> tuple[str, str, str, str, str, str, Path]:
+    def venv_paths(self) -> None:
         # Create venv related paths
         venv_executable = f"C:/Python{self.py_env}/Scripts/virtualenv.exe"
-        venv_dir = Path(self.ITK_SOURCE_DIR) / f"venv-{self.py_env}"
-        echo_check_call([venv_executable, str(venv_dir)])
+        venv_base_dir = Path(self.ITK_SOURCE_DIR) / f"venv-{self.py_env}"
+        echo_check_call([venv_executable, str(venv_base_dir)])
 
-        python_executable = venv_dir / "Scripts" / "python.exe"
+        python_executable = venv_base_dir / "Scripts" / "python.exe"
         python_include_dir = f"C:/Python{self.py_env}/include"
 
         # XXX It should be possible to query skbuild for the library dir associated
@@ -131,20 +105,23 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         else:
             python_library = f"C:/Python{self.py_env}/libs/python{xy_ver}.lib"
 
-        pip = venv_dir / "Scripts" / "pip.exe"
+        pip_executable = venv_base_dir / "Scripts" / "pip.exe"
 
         # Update PATH
-        path = venv_dir / "Scripts"
+        venv_bin_path = venv_base_dir / "Scripts"
+        ninja_executable = venv_bin_path / "ninja.exe"
 
-        return (
-            str(python_executable),
-            python_include_dir,
-            python_library,
-            str(pip),
-            self._ninja_executable,
-            str(path),
-            venv_dir,
-        )
+        print(f"NINJA_EXECUTABLE:{ninja_executable}")
+
+        self.venv_info_dict = {
+            "python_executable": python_executable,
+            "python_include_dir": python_include_dir,
+            "python_library": python_library,
+            "pip_executable": pip_executable,
+            "ninja_executable": ninja_executable,
+            "venv_bin_path": venv_bin_path,
+            "venv_base_dir": venv_base_dir,
+        }
 
     def discover_python_venvs(
         self, platform_os_name: str, platform_architechure: str

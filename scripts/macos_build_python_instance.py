@@ -12,20 +12,14 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
     def prepare_build_env(self) -> None:
         # macOS: Assume venv already exists under IPP_SOURCE_DIR/venvs/<name>
         # Install required tools into each venv
-        (
-            python_executable,
-            _python_include_dir,
-            _python_library,
-            pip,
-            self._ninja_executable,
-            _path,
-            _venv_dir,
-        ) = self.venv_paths()
-        self._pip_uninstall_itk_wildcard(pip)
-        echo_check_call([pip, "install", "--upgrade", "pip"])
+        self.venv_paths()
+        self._pip_uninstall_itk_wildcard(self.venv_info_dict["pip_executable"])
+        echo_check_call(
+            [self.venv_info_dict["pip_executable"], "install", "--upgrade", "pip"]
+        )
         echo_check_call(
             [
-                pip,
+                self.venv_info_dict["pip_executable"],
                 "install",
                 "--upgrade",
                 "build",
@@ -39,7 +33,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         # Install dependencies
         echo_check_call(
             [
-                pip,
+                self.venv_info_dict["pip_executable"],
                 "install",
                 "--upgrade",
                 "-r",
@@ -76,21 +70,14 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
     def fixup_wheel(self, filepath, lib_paths: str = "") -> None:
         # macOS fix-up with delocate (only needed for x86_64)
         if self.platform_architechture != "arm64":
-            (
-                _py,
-                _inc,
-                _lib,
-                pip,
-                _ninja,
-                _path,
-                _venv_dir,
-            ) = self.venv_paths()
-            delocate_listdeps = Path(_path) / "delocate-listdeps"
-            delocate_wheel = Path(_path) / "delocate-wheel"
+            delocate_listdeps = (
+                self.venv_info_dict["venv_bin_path"] / "delocate-listdeps"
+            )
+            delocate_wheel = self.venv_info_dict["venv_bin_path"] / "delocate-wheel"
             echo_check_call([str(delocate_listdeps), str(filepath)])
             echo_check_call([str(delocate_wheel), str(filepath)])
 
-    def venv_paths(self) -> tuple[str, str, str, str, str, str, Path]:
+    def venv_paths(self) -> None:
         # Create venv related paths
         """Resolve macOS virtualenv tool paths.
         py_env may be a name under IPP_SOURCE_DIR/venvs or an absolute/relative path to a venv.
@@ -104,8 +91,24 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
                     f"Expected exactly one venv for {self.py_env}, found {_venvs_dir_list}"
                 )
             venv_dir = _venvs_dir_list[0]
-        # Common macOS layout
-        return self.find_unix_exectable_paths(venv_dir)
+        (
+            python_executable,
+            python_include_dir,
+            python_library,
+            pip_executable,
+            ninja_executable,
+            venv_bin_path,
+            venv_base_dir,
+        ) = self.find_unix_exectable_paths(venv_dir)
+        self.venv_info_dict = {
+            "python_executable": python_executable,
+            "python_include_dir": python_include_dir,
+            "python_library": python_library,
+            "pip_executable": pip_executable,
+            "ninja_executable": ninja_executable,
+            "venv_bin_path": venv_bin_path,
+            "venv_base_dir": venv_base_dir,
+        }
 
     def discover_python_venvs(
         self, platform_os_name: str, platform_architechure: str

@@ -158,11 +158,19 @@ class BuildPythonInstanceBase(ABC):
         self.windows_extra_lib_paths = windows_extra_lib_paths
         self.dist_dir = dist_dir
         self._cmake_executable = None
-        self._ninja_executable = None
         self._doxygen_executable = None
         self._use_tbb = "ON"
         self._tbb_dir = None
         self._build_type = "Release"
+        self.venv_info_dict = {
+            "python_executable": None,
+            "python_include_dir": None,
+            "python_library": None,
+            "pip_executable": None,
+            "ninja_executable": None,
+            "venv_bin_path": None,
+            "venv_base_dir": None,
+        }
 
     def run(self) -> None:
         """Run the full build flow for this Python instance."""
@@ -170,13 +178,7 @@ class BuildPythonInstanceBase(ABC):
         python_packabge_build_steps: dict = {
             "00_prepare_build_env": self.prepare_build_env,
             "01_superbuild_support_components": self.build_superbuild_support_components,
-            "02_build_wheels": lambda: self.build_wheel(
-                self.py_env,
-                self._build_type,
-                cleanup=self.cleanup,
-                wheel_names=self.wheel_names,
-                cmake_options=self.cmake_options,
-            ),
+            "02_build_wheels": self.build_wheel,
             "03_post_build_fixup": self.post_build_fixup,
             "04_final_import_test": self.final_import_test,
         }
@@ -204,7 +206,7 @@ class BuildPythonInstanceBase(ABC):
             "-DITKPythonPackage_BUILD_PYTHON:BOOL=OFF",
             f"-DITKPythonPackage_USE_TBB:BOOL={self._use_tbb}",
             f"-DCMAKE_BUILD_TYPE:STRING={self._build_type}",
-            f"-DCMAKE_MAKE_PROGRAM:FILEPATH={self._ninja_executable}",
+            f"-DCMAKE_MAKE_PROGRAM:FILEPATH={self.venv_info_dict['ninja_executable']}",
             f"-DITK_SOURCE_DIR:PATH={self.package_env_config['ITK_SOURCE_DIR']}",
             f"-DITK_GIT_TAG:STRING={self.package_env_config['ITK_GIT_TAG']}",
         ]
@@ -220,7 +222,11 @@ class BuildPythonInstanceBase(ABC):
 
         echo_check_call(cmd)
         echo_check_call(
-            [self._ninja_executable, "-C", str(self.IPP_SUPERBUILD_BINARY_DIR)]
+            [
+                self.venv_info_dict["ninja_executable"],
+                "-C",
+                str(self.IPP_SUPERBUILD_BINARY_DIR),
+            ]
         )
 
     def fixup_wheels(self, lib_paths: str = ""):
@@ -230,17 +236,9 @@ class BuildPythonInstanceBase(ABC):
             self.fixup_wheel(str(wheel), lib_paths)
 
     def final_wheel_import_test(self, installed_dist_dir: Path):
-        (
-            python_executable,
-            _python_include_dir,
-            _python_library,
-            pip,
-            _ninja_executable,
-            _path,
-        ) = self.venv_paths()
         echo_check_call(
             [
-                pip,
+                self.venv_info_dict["pip_executable"],
                 "install",
                 "itk",
                 "--no-cache-dir",
@@ -251,20 +249,27 @@ class BuildPythonInstanceBase(ABC):
         )
         print("Wheel successfully installed.")
         # Basic imports
-        echo_check_call([python_executable, "-c", "import itk;"])
+        echo_check_call([self.venv_info_dict["python_executable"], "-c", "import itk;"])
         echo_check_call(
-            [python_executable, "-c", "import itk; image = itk.Image[itk.UC, 2].New()"]
+            [
+                self.venv_info_dict["python_executable"],
+                "-c",
+                "import itk; image = itk.Image[itk.UC, 2].New()",
+            ]
         )
         echo_check_call(
             [
-                python_executable,
+                self.venv_info_dict["python_executable"],
                 "-c",
                 "import itkConfig; itkConfig.LazyLoading=False; import itk;",
             ]
         )
         # Full doc tests
         echo_check_call(
-            [python_executable, str(self.IPP_SOURCE_DIR / "docs" / "code" / "test.py")]
+            [
+                self.venv_info_dict["python_executable"],
+                str(self.IPP_SOURCE_DIR / "docs" / "code" / "test.py"),
+            ]
         )
         print("Documentation tests passed.")
 
@@ -310,9 +315,9 @@ class BuildPythonInstanceBase(ABC):
         python_executable = venv_dir / "bin" / "python3"
         if not python_executable.exists():
             raise FileNotFoundError(f"Python executable not found: {python_executable}")
-        pip = venv_dir / "bin" / "pip3"
-        if not pip.exists():
-            raise FileNotFoundError(f"pip executable not found: {pip}")
+        pip_executable = venv_dir / "bin" / "pip3"
+        if not pip_executable.exists():
+            raise FileNotFoundError(f"pip executable not found: {pip_executable}")
 
         # Prefer venv's ninja, else fall back to PATH
         ninja_executable_path: Path = venv_dir / "bin" / "ninja"
@@ -340,14 +345,14 @@ class BuildPythonInstanceBase(ABC):
         python_library = ""
 
         # Update PATH
-        path = venv_dir / "bin"
+        venv_bin_path = venv_dir / "bin"
         return (
             str(python_executable),
             python_include_dir,
             python_library,
-            str(pip),
+            str(pip_executable),
             str(ninja_executable),
-            str(path),
+            str(venv_bin_path),
             venv_dir,
         )
 
@@ -386,53 +391,46 @@ class BuildPythonInstanceBase(ABC):
     ) -> list[str]:
         pass
 
-    def build_wheel(
-        self,
-        python_version,
-        build_type="Release",
-        cleanup=True,
-        wheel_names=None,
-        cmake_options=None,
-    ):
-        if cmake_options is None:
-            cmake_options = []
+    def build_wheel(self):
+        """
+        REDO:  cmake_options do not belong here, they should be at intialization
+        need to make cmake configure module settings as dictionary to be re-user_data_dir
+        for standard cmake.exe and build wrapped cmake, and remove the replace magic
+        below:
+        make ITK specific build flags dictionary
+        make compiler environment specific dictionary
+        make other features specific dictionary
 
-        (
-            python_executable,
-            python_include_dir,
-            python_library,
-            pip,
-            ninja_executable,
-            path,
-            _venv_dir,
-        ) = self.venv_paths()
+        """
 
-        with push_env(PATH=f"{path}{pathsep}{environ['PATH']}"):
+        with push_env(
+            PATH=f"{self.venv_info_dict['venv_bin_path']}{pathsep}{environ['PATH']}"
+        ):
 
             source_path = f"{self.package_env_config['ITK_SOURCE_DIR']}"
             # Build path naming per platform
             if self.platform_name == "windows":
-                build_path = self.IPP_SOURCE_DIR / f"ITK-win_{python_version}"
+                build_path = self.IPP_SOURCE_DIR / f"ITK-win_{self.py_env}"
             elif self.platform_name == "darwin":
                 osx_arch = (
                     "arm64" if self.platform_architechture == "arm64" else "x86_64"
                 )
                 build_path = (
-                    self.IPP_SOURCE_DIR / f"ITK-{python_version}-macosx_{osx_arch}"
+                    self.IPP_SOURCE_DIR / f"ITK-{self.py_env}-macosx_{osx_arch}"
                 )
             elif self.platform_name == "linux":
                 # TODO: do not use environ here, get from package_env instead
                 manylinux_ver = environ.get("MANYLINUX_VERSION", "")
                 build_path = (
                     self.IPP_SOURCE_DIR
-                    / f"ITK-{python_version}-manylinux{manylinux_ver}_{self.platform_architechture}"
+                    / f"ITK-{self.py_env}-manylinux{manylinux_ver}_{self.platform_architechture}"
                 )
             else:
                 raise ValueError(f"Unknown platform {self.platform_name}")
             pyproject_configure = self.SCRIPT_DIR / "pyproject_configure.py"
 
             # Clean up previous invocations
-            if cleanup and Path(build_path).exists():
+            if self.cleanup and Path(build_path).exists():
                 _remove_tree(Path(build_path))
 
             print("#")
@@ -440,23 +438,17 @@ class BuildPythonInstanceBase(ABC):
             print("#")
 
             self.build_wrapped_itk(
-                ninja_executable,
-                build_type,
-                source_path,
                 build_path,
-                python_executable,
-                python_include_dir,
-                python_library,
             )
 
             # Build wheels
 
             env_file = self.IPP_SOURCE_DIR / "build" / "package.env"
-            for wheel_name in wheel_names:
+            for wheel_name in self.wheel_names:
                 # Configure pyproject.toml
                 echo_check_call(
                     [
-                        python_executable,
+                        str(self.venv_info_dict["python_executable"]),
                         pyproject_configure,
                         "--env-file",
                         env_file,
@@ -466,7 +458,7 @@ class BuildPythonInstanceBase(ABC):
 
                 # Generate wheel
                 cmd = [
-                    python_executable,
+                    str(self.venv_info_dict["python_executable"]),
                     "-m",
                     "build",
                     "--verbose",
@@ -480,10 +472,10 @@ class BuildPythonInstanceBase(ABC):
                     f"--config-setting=cmake.define.ITKPythonPackage_USE_TBB:BOOL={self._use_tbb}",
                     "--config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON",
                     f"--config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING={wheel_name}",
-                    f"--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH={python_executable}",
+                    f"--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH={self.venv_info_dict['python_executable']}",
                     "--config-setting=cmake.define.DOXYGEN_EXECUTABLE:FILEPATH="
                     + f"{self.package_env_config['DOXYGEN_EXECUTABLE']}",
-                    f"--config-setting=cmake.build-type={build_type}",
+                    f"--config-setting=cmake.build-type={self._build_type}",
                 ]
                 if self.platform_name == "darwin":
                     macosx_target = self.package_env_config.get(
@@ -517,26 +509,26 @@ class BuildPythonInstanceBase(ABC):
                     cmd.append(
                         "--config-setting=cmake.define.CMAKE_C_FLAGS:STRING=-O3 -DNDEBUG"
                     )
-                if python_include_dir:
+                if self.venv_info_dict["python_include_dir"]:
                     cmd.append(
-                        f"--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH={python_include_dir}"
+                        f"--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH={self.venv_info_dict['python_include_dir']}"
                     )
                     cmd.append(
-                        f"--config-setting=cmake.define.Python3_INCLUDE_DIRS:PATH={python_include_dir}"
+                        f"--config-setting=cmake.define.Python3_INCLUDE_DIRS:PATH={self.venv_info_dict['python_include_dir']}"
                     )
-                if python_library:
+                if self.venv_info_dict["python_library"]:
                     cmd.append(
-                        f"--config-setting=cmake.define.Python3_LIBRARY:FILEPATH={python_library}"
+                        f"--config-setting=cmake.define.Python3_LIBRARY:FILEPATH={self.venv_info_dict['python_library']}"
                     )
                 cmd += [
                     o.replace("-D", "--config-setting=cmake.define.")
-                    for o in cmake_options
+                    for o in self.cmake_options
                 ]
                 cmd += [str(self.IPP_SOURCE_DIR)]
                 echo_check_call(cmd)
 
             # Remove unnecessary files for building against ITK
-            if cleanup:
+            if self.cleanup:
                 bp = Path(build_path)
                 for p in bp.rglob("*"):
                     if p.is_file() and p.suffix in [".cpp", ".xml", ".obj", ".o"]:
@@ -548,13 +540,7 @@ class BuildPythonInstanceBase(ABC):
 
     def build_wrapped_itk(
         self,
-        ninja_executable,
-        build_type,
-        itk_source_dir,
         build_path,
-        python_executable,
-        python_include_dir,
-        python_library,
     ):
 
         # Build ITK python
@@ -562,9 +548,9 @@ class BuildPythonInstanceBase(ABC):
             "cmake",
             "-G",
             "Ninja",
-            f"-DCMAKE_MAKE_PROGRAM:FILEPATH={ninja_executable}",
-            f"-DCMAKE_BUILD_TYPE:STRING={build_type}",
-            f"-DITK_SOURCE_DIR:PATH={itk_source_dir}",
+            f"-DCMAKE_MAKE_PROGRAM:FILEPATH={self.venv_info_dict['ninja_executable']}",
+            f"-DCMAKE_BUILD_TYPE:STRING={self._build_type}",
+            f"-DITK_SOURCE_DIR:PATH={self.ITK_SOURCE_DIR}",
             f"-DITK_BINARY_DIR:PATH={build_path}",
             "-DBUILD_TESTING:BOOL=OFF",
         ]
@@ -587,13 +573,23 @@ class BuildPythonInstanceBase(ABC):
 
         # Python settings
         cmd.append("-DSKBUILD:BOOL=ON")
-        cmd.append(f"-DPython3_EXECUTABLE:FILEPATH={python_executable}")
-        if python_include_dir:
-            cmd.append(f"-DPython3_INCLUDE_DIR:PATH={python_include_dir}")
-            cmd.append(f"-DPython3_INCLUDE_DIRS:PATH={python_include_dir}")
-        if python_library:
-            cmd.append(f"-DPython3_LIBRARY:FILEPATH={python_library}")
-            cmd.append(f"-DPython3_SABI_LIBRARY:FILEPATH={python_library}")
+        cmd.append(
+            f"-DPython3_EXECUTABLE:FILEPATH={self.venv_info_dict['python_executable']}"
+        )
+        if self.venv_info_dict["python_include_dir"]:
+            cmd.append(
+                f"-DPython3_INCLUDE_DIR:PATH={self.venv_info_dict['python_include_dir']}"
+            )
+            cmd.append(
+                f"-DPython3_INCLUDE_DIRS:PATH={self.venv_info_dict['python_include_dir']}"
+            )
+        if self.venv_info_dict["python_library"]:
+            cmd.append(
+                f"-DPython3_LIBRARY:FILEPATH={self.venv_info_dict['python_library']}"
+            )
+            cmd.append(
+                f"-DPython3_SABI_LIBRARY:FILEPATH={self.venv_info_dict['python_library']}"
+            )
 
         # ITK wrapping options
         cmd += [
@@ -611,9 +607,9 @@ class BuildPythonInstanceBase(ABC):
             f"-DModule_ITKTBB:BOOL={self._use_tbb}",
             f"-DTBB_DIR:PATH={self._tbb_dir}",
             "-S",
-            itk_source_dir,
+            self.ITK_SOURCE_DIR,
             "-B",
             build_path,
         ]
         echo_check_call(cmd)
-        echo_check_call([ninja_executable, "-C", build_path])
+        echo_check_call([self.venv_info_dict["ninja_executable"], "-C", build_path])
