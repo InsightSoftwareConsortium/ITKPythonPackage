@@ -1,0 +1,190 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+from build_python_instance_base import BuildPythonInstanceBase
+
+import shutil
+
+from scripts.wheel_builder_utils import echo_check_call, _remove_tree
+
+
+class LinuxBuildPythonInstance(BuildPythonInstanceBase):
+    def prepare_build_env(self) -> None:
+        # manylinux: the interpreter is provided; ensure basic tools are available
+        (
+            python_executable,
+            _python_include_dir,
+            _python_library,
+            pip,
+            self._ninja_executable,
+            _path,
+            _venv_dir,
+        ) = self.venv_paths()
+        self._pip_uninstall_itk_wildcard(pip)
+        echo_check_call([pip, "install", "--upgrade", "pip"])
+        echo_check_call(
+            [
+                pip,
+                "install",
+                "--upgrade",
+                "build",
+                "ninja",
+                "numpy",
+                "scikit-build-core",
+                #  os-specific tools below
+                "wheel",
+                "auditwheel",
+            ]
+        )
+
+        # #############################################
+        # ### Setup build tools
+        self._build_type = "Release"
+        self._use_tbb: str = "ON"
+        self._tbb_dir = self.IPP_SOURCE_DIR / "oneTBB-prefix" / "lib" / "cmake" / "TBB"
+        self._cmake_executable = "cmake"
+
+        self.cmake_options = []
+        # Match flags used in manylinux shell script
+        if self.platform_architechture == "x64":
+            target_triple = "x86_64-linux-gnu"
+        elif self.platform_architechture in ("aarch64", "arm64"):
+            target_triple = "aarch64-linux-gnu"
+        elif self.platform_architechture == "x86":
+            target_triple = "i686-linux-gnu"
+        else:
+            target_triple = f"{self.platform_architechture}-linux-gnu"
+        self.cmake_options.append(f"-DCMAKE_CXX_COMPILER_TARGET:STRING={target_triple}")
+        self.cmake_options.append('-DCMAKE_CXX_FLAGS:STRING="-O3 -DNDEBUG"')
+        self.cmake_options.append('-DCMAKE_C_FLAGS:STRING="-O3 -DNDEBUG"')
+
+    def post_build_fixup(self) -> None:
+        # Repair all produced wheels with auditwheel and retag meta-wheel
+        for whl in (self.IPP_SOURCE_DIR / "dist").glob("*.whl"):
+            self.fixup_wheel(str(whl))
+        # Special handling for the itk meta wheel to adjust tag
+        (python_executable, *_rest) = self.venv_paths()
+        manylinux_ver = self.package_env_config.get("MANYLINUX_VERSION", "")
+        if manylinux_ver:
+            for whl in list(
+                (self.IPP_SOURCE_DIR / "dist").glob("itk-*linux_*.whl")
+            ) + list((self.IPP_SOURCE_DIR / "dist").glob("itk_*linux_*.whl")):
+                # Unpack, edit WHEEL tag, repack
+                metawheel_dir = self.IPP_SOURCE_DIR / "metawheel"
+                metawheel_dist = self.IPP_SOURCE_DIR / "metawheel-dist"
+                echo_check_call(
+                    [
+                        python_executable,
+                        "-m",
+                        "wheel",
+                        "unpack",
+                        "--dest",
+                        str(metawheel_dir),
+                        str(whl),
+                    ]
+                )
+                # Find unpacked dir
+                unpacked_dirs = list(metawheel_dir.glob("itk-*/itk*.dist-info/WHEEL"))
+                for wheel_file in unpacked_dirs:
+                    content = wheel_file.read_text(encoding="utf-8").splitlines()
+                    base = whl.name.replace("linux", f"manylinux{manylinux_ver}")
+                    tag = Path(base).stem
+                    new = []
+                    for line in content:
+                        if line.startswith("Tag: "):
+                            new.append(f"Tag: {tag}")
+                        else:
+                            new.append(line)
+                    wheel_file.write_text("\n".join(new) + "\n", encoding="utf-8")
+                echo_check_call(
+                    [
+                        python_executable,
+                        "-m",
+                        "wheel",
+                        "pack",
+                        "--dest",
+                        str(metawheel_dist),
+                        str(metawheel_dir / "itk-*"),
+                    ]
+                )
+                # Move and clean
+                for new_whl in metawheel_dist.glob("*.whl"):
+                    shutil.move(
+                        str(new_whl), str((self.IPP_SOURCE_DIR / "dist") / new_whl.name)
+                    )
+                # Remove old and temp
+                try:
+                    whl.unlink()
+                except OSError:
+                    pass
+                _remove_tree(metawheel_dir)
+                _remove_tree(metawheel_dist)
+
+    def final_import_test(self) -> None:
+        self._final_import_test_fn(self.py_env, Path(self.dist_dir))
+
+    def fixup_wheel(self, filepath, lib_paths: str = "") -> None:
+        # Use auditwheel to repair wheels and set manylinux tags
+        (
+            python_executable,
+            _inc,
+            _lib,
+            _pip,
+            _ninja,
+            _path,
+            venv_dir,
+        ) = self.venv_paths()
+        plat = None
+        manylinux_ver = self.package_env_config.get("MANYLINUX_VERSION", "")
+        if self.platform_architechture == "x64" and manylinux_ver:
+            plat = f"manylinux{manylinux_ver}_x86_64"
+        cmd = [python_executable, "-m", "auditwheel", "repair"]
+        if plat:
+            cmd += ["--plat", plat]
+        cmd += [str(filepath), "-w", str(self.IPP_SOURCE_DIR / "dist")]
+        # Provide LD_LIBRARY_PATH for oneTBB and common system paths
+        extra_lib = str(self.IPP_SOURCE_DIR / "oneTBB-prefix" / "lib")
+        env = dict(self.package_env_config)
+        env["LD_LIBRARY_PATH"] = ":".join(
+            [
+                env.get("LD_LIBRARY_PATH", ""),
+                extra_lib,
+                "/usr/lib64",
+                "/usr/lib",
+            ]
+        )
+        echo_check_call(cmd, env=env)
+
+    def venv_paths(self):
+        """Resolve Linux manylinux Python tool paths.
+
+        py_env is expected to be a directory name under /opt/python (e.g., cp311-cp311),
+        or an absolute path to the specific Python root.
+        """
+        venv_dir = Path(self.py_env)
+        if not venv_dir.exists():
+            venv_root_dir = Path("/opt/python")
+            # TODO : create_linux_venvs here
+            venv_dir = venv_root_dir / self.py_env
+        return self.find_unix_exectable_paths(venv_dir)
+
+    def discover_python_venvs(
+        self, platform_os_name: str, platform_architechure: str
+    ) -> list[str]:
+        # Discover available manylinux CPython installs under /opt/python
+        def _discover_linux_pythons() -> list[str]:
+            base = Path("/opt/python")
+            if not base.exists():
+                return []
+            names = [
+                p.name for p in base.iterdir() if p.is_dir() and p.name.startswith("cp")
+            ]
+            return sorted(names)
+
+        default_py_envs = _discover_linux_pythons()
+
+        return default_py_envs
+
+    def _final_import_test_fn(self, py_env, param):
+        pass

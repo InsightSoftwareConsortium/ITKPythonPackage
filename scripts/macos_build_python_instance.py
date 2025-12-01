@@ -1,0 +1,117 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+from build_python_instance_base import BuildPythonInstanceBase
+from scripts.macos_venv_utils import create_macos_venvs
+
+from scripts.wheel_builder_utils import echo_check_call
+
+
+class MacOSBuildPythonInstance(BuildPythonInstanceBase):
+    def prepare_build_env(self) -> None:
+        # macOS: Assume venv already exists under IPP_SOURCE_DIR/venvs/<name>
+        # Install required tools into each venv
+        (
+            python_executable,
+            _python_include_dir,
+            _python_library,
+            pip,
+            self._ninja_executable,
+            _path,
+            _venv_dir,
+        ) = self.venv_paths()
+        self._pip_uninstall_itk_wildcard(pip)
+        echo_check_call([pip, "install", "--upgrade", "pip"])
+        echo_check_call(
+            [
+                pip,
+                "install",
+                "--upgrade",
+                "build",
+                "ninja",
+                "numpy",
+                "scikit-build-core",
+                #  os-specific tools below
+                "delocate",
+            ]
+        )
+
+        # #############################################
+        # ### Setup build tools
+        self._build_type = "Release"
+        self._use_tbb: str = "OFF"
+        self._tbb_dir = self.IPP_SOURCE_DIR / "oneTBB-prefix" / "lib" / "cmake" / "TBB"
+        self._cmake_executable = "cmake"
+
+        # ################################################
+        # ### Update cmake options for this platform
+        self.cmake_options = []
+        macosx_target = self.package_env_config.get("MACOSX_DEPLOYMENT_TARGET", "")
+        if macosx_target:
+            self.cmake_options.append(
+                f"-DCMAKE_OSX_DEPLOYMENT_TARGET:STRING={macosx_target}"
+            )
+        osx_arch = "arm64" if self.platform_architechture == "arm64" else "x86_64"
+        self.cmake_options.append(f"-DCMAKE_OSX_ARCHITECTURES:STRING={osx_arch}")
+
+    def post_build_fixup(self) -> None:
+        # delocate on macOS x86_64 only
+        if self.platform_architechture != "arm64":
+            self.fixup_wheels()
+
+    def final_import_test(self) -> None:
+        self._final_import_test_fn(self.py_env, Path(self.dist_dir))
+
+    def fixup_wheel(self, filepath, lib_paths: str = "") -> None:
+        # macOS fix-up with delocate (only needed for x86_64)
+        if self.platform_architechture != "arm64":
+            (
+                _py,
+                _inc,
+                _lib,
+                pip,
+                _ninja,
+                _path,
+                _venv_dir,
+            ) = self.venv_paths()
+            delocate_listdeps = Path(_path) / "delocate-listdeps"
+            delocate_wheel = Path(_path) / "delocate-wheel"
+            echo_check_call([str(delocate_listdeps), str(filepath)])
+            echo_check_call([str(delocate_wheel), str(filepath)])
+
+    def venv_paths(self) -> tuple[str, str, str, str, str, str, Path]:
+        # Create venv related paths
+        """Resolve macOS virtualenv tool paths.
+        py_env may be a name under IPP_SOURCE_DIR/venvs or an absolute/relative path to a venv.
+        """
+        venv_dir = Path(self.py_env)
+        if not venv_dir.exists():
+            venv_root_dir: Path = self.IPP_SOURCE_DIR / "venvs"
+            _venvs_dir_list = create_macos_venvs(self.py_env, venv_root_dir)
+            if len(_venvs_dir_list) != 1:
+                raise ValueError(
+                    f"Expected exactly one venv for {self.py_env}, found {_venvs_dir_list}"
+                )
+            venv_dir = _venvs_dir_list[0]
+        # Common macOS layout
+        return self.find_unix_exectable_paths(venv_dir)
+
+    def discover_python_venvs(
+        self, platform_os_name: str, platform_architechure: str
+    ) -> list[str]:
+        # macOS defaults: discover virtualenvs under project 'venvs' folder
+        def _discover_mac_venvs() -> list[str]:
+            venvs_dir = self.IPP_SOURCE_DIR / "venvs"
+            if not venvs_dir.exists():
+                return []
+            names = [p.name for p in venvs_dir.iterdir() if p.is_dir()]
+            # Sort for stable order
+            return sorted(names)
+
+        default_py_envs = _discover_mac_venvs()
+
+        return default_py_envs
+
+    def _final_import_test_fn(self, py_env, param):
+        pass

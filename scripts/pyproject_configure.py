@@ -220,7 +220,9 @@ def get_wheel_dependencies(SCRIPT_DIR: str, version: str, wheel_names: list):
     all_depends = {}
     regex_group_depends = r"set\s*\(\s*ITK\_GROUP\_([a-zA-Z0-9\_\-]+)\_DEPENDS\s*([a-zA-Z0-9\_\-\s]*)\s*"  # noqa: E501
     pattern = re.compile(regex_group_depends)
-    with open(os.path.join(SCRIPT_DIR, "..", "cmake/ITKPythonPackage_BuildWheels.cmake")) as file_:
+    with open(
+        os.path.join(SCRIPT_DIR, "..", "cmake/ITKPythonPackage_BuildWheels.cmake")
+    ) as file_:
         for line in file_.readlines():
             match = re.search(pattern, line)
             if not match:

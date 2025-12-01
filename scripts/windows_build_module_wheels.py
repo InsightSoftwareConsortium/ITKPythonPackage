@@ -10,6 +10,9 @@ from dotenv import dotenv_values
 
 from scripts.wheel_builder_utils import _remove_tree, echo_check_call
 
+# Get module info
+import pkginfo
+
 SCRIPT_DIR = Path(__file__).parent
 IPP_SOURCE_DIR = SCRIPT_DIR.parent.resolve()
 IPP_SUPERBUILD_BINARY_DIR = IPP_SOURCE_DIR / "ITK-source"
@@ -137,10 +140,6 @@ def rename_wheel_init(py_env, filepath, add_module_name=True):
         ninja_executable,
         path,
     ) = venv_paths(py_env)
-
-    # Get module info
-    install_and_import("pkginfo")
-    import pkginfo
 
     w = pkginfo.Wheel(filepath)
     module_name = w.name.split("itk-")[-1]
