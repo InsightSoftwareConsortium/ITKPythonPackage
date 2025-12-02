@@ -9,6 +9,7 @@ from os import environ, pathsep
 from dotenv import dotenv_values
 
 from scripts.wheel_builder_utils import _remove_tree, echo_check_call
+from cmake_argument_builder import CMakeArgumentBuilder
 
 # Get module info
 import pkginfo
@@ -84,42 +85,51 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cmake_options=None):
             else:
                 wheel_py_api = ""
             # Generate wheel
-            echo_check_call(
-                [
-                    python_executable,
-                    "-m",
-                    "build",
-                    "--verbose",
-                    "--wheel",
-                    "--outdir",
-                    "dist",
-                    "--no-isolation",
-                    "--skip-dependency-check",
-                    f"--config-setting=wheel.py-api={wheel_py_api}",
-                    "--config-setting=cmake.define.SKBUILD:BOOL=ON",
-                    "--config-setting=cmake.define.PY_SITE_PACKAGES_PATH:PATH=.",
-                    "--config-setting=cmake.args=-G Ninja",
-                    "--config-setting=cmake.define.CMAKE_BUILD_TYPE:STRING=Release",
-                    f"--config-setting=cmake.define.CMAKE_MAKE_PROGRAM:FILEPATH={ninja_executable}",
-                    f"--config-setting=cmake.define.ITK_DIR:PATH={itk_build_path}",
-                    "--config-setting=cmake.define.WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
-                    f"--config-setting=cmake.define.SWIG_EXECUTABLE:FILEPATH={itk_build_path}/Wrapping/Generators/SwigInterface/swig/bin/swig.exe",
-                    "--config-setting=cmake.define.BUILD_TESTING:BOOL=OFF",
-                    "--config-setting=cmake.define.CMAKE_INSTALL_LIBDIR:STRING=lib",
-                    f"--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH={python_executable}",
-                    f"--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH={python_include_dir}",
-                    f"--config-setting=cmake.define.Python3_INCLUDE_DIRS:PATH={python_include_dir}",
-                    f"--config-setting=cmake.define.Python3_LIBRARY:FILEPATH={python_library}",
-                    f"--config-setting=cmake.define.Python3_SABI_LIBRARY:FILEPATH={python_library}",
-                ]
-                + [
-                    o.replace("-D", "--config-setting=cmake.define.")
-                    for o in cmake_options
-                ]
-                + [
-                    ".",
-                ]
+            # Build up cmake.define arguments via the builder
+            defs = CMakeArgumentBuilder(
+                {
+                    "SKBUILD:BOOL": "ON",
+                    "PY_SITE_PACKAGES_PATH:PATH": ".",
+                    "CMAKE_BUILD_TYPE:STRING": "Release",
+                    "CMAKE_MAKE_PROGRAM:FILEPATH": f"{ninja_executable}",
+                    "ITK_DIR:PATH": f"{itk_build_path}",
+                    "WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING": "PythonWheel",
+                    "SWIG_EXECUTABLE:FILEPATH": f"{itk_build_path}/Wrapping/Generators/SwigInterface/swig/bin/swig.exe",
+                    "BUILD_TESTING:BOOL": "OFF",
+                    "CMAKE_INSTALL_LIBDIR:STRING": "lib",
+                    "Python3_EXECUTABLE:FILEPATH": f"{python_executable}",
+                    "Python3_INCLUDE_DIR:PATH": f"{python_include_dir}",
+                    "Python3_INCLUDE_DIRS:PATH": f"{python_include_dir}",
+                    "Python3_LIBRARY:FILEPATH": f"{python_library}",
+                    "Python3_SABI_LIBRARY:FILEPATH": f"{python_library}",
+                }
             )
+            # Merge any user-provided -D options
+            for opt in cmake_options:
+                if not isinstance(opt, str) or not opt.startswith("-D"):
+                    continue
+                try:
+                    key, value = opt[2:].split("=", 1)
+                except ValueError:
+                    continue
+                defs.set(key, value)
+
+            cmd = [
+                python_executable,
+                "-m",
+                "build",
+                "--verbose",
+                "--wheel",
+                "--outdir",
+                "dist",
+                "--no-isolation",
+                "--skip-dependency-check",
+                f"--config-setting=wheel.py-api={wheel_py_api}",
+                "--config-setting=cmake.args=-G Ninja",
+            ]
+            cmd += defs.getPythonBuildCommandLineArguments()
+            cmd += ["."]
+            echo_check_call(cmd)
 
 
 def rename_wheel_init(py_env, filepath, add_module_name=True):

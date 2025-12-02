@@ -10,36 +10,6 @@ from scripts.wheel_builder_utils import echo_check_call
 class WindowsBuildPythonInstance(BuildPythonInstanceBase):
     def prepare_build_env(self) -> None:
         # Windows
-        # Install required tools into each venv
-        self.venv_paths()
-        self._pip_uninstall_itk_wildcard(self.venv_info_dict["pip_executable"])
-        echo_check_call(
-            [self.venv_info_dict["pip_executable"], "install", "--upgrade", "pip"]
-        )
-        echo_check_call(
-            [
-                self.venv_info_dict["pip_executable"],
-                "install",
-                "--upgrade",
-                "build",
-                "ninja",
-                "numpy",
-                "scikit-build-core",
-                #  os-specific tools below
-                "delvewheel",
-                "pkginfo",
-            ]
-        )
-        # Install dependencies
-        echo_check_call(
-            [
-                self.venv_info_dict["pip_executable"],
-                "install",
-                "--upgrade",
-                "-r",
-                str(self.IPP_SOURCE_DIR / "requirements-dev.txt"),
-            ]
-        )
 
         # #############################################
         # ### Setup build tools
@@ -47,6 +17,16 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         self._use_tbb: str = "ON"
         self._tbb_dir = self.IPP_SOURCE_DIR / "oneTBB-prefix" / "lib" / "cmake" / "TBB"
         self._cmake_executable = "cmake.exe"
+        self.venv_paths()
+        self.update_venv_itk_build_configurations()
+        self.cmake_compiler_configurations.update(
+            {
+                "CMAKE_MAKE_PROGRAM:FILEPATH": f"{self.venv_info_dict['ninja_executable']}",
+            }
+        )
+        self.cmake_itk_source_build_configurations.set(
+            "ITK_BINARY_DIR:PATH", str(self.IPP_SOURCE_DIR / f"ITK-win_{self.py_env}")
+        )
 
     def post_build_fixup(self) -> None:
         # append the oneTBB-prefix\\bin directory for fixing wheels built with local oneTBB
@@ -90,8 +70,40 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         # Create venv related paths
         venv_executable = f"C:/Python{self.py_env}/Scripts/virtualenv.exe"
         venv_base_dir = Path(self.ITK_SOURCE_DIR) / f"venv-{self.py_env}"
-        echo_check_call([venv_executable, str(venv_base_dir)])
+        if not venv_base_dir.exists():
+            echo_check_call([venv_executable, str(venv_base_dir)])
+            local_pip_executable = venv_base_dir / "Scripts" / "pip.exe"
 
+            # Install required tools into each venv
+
+            self._pip_uninstall_itk_wildcard(self.venv_info_dict["pip_executable"])
+            echo_check_call([local_pip_executable, "install", "--upgrade", "pip"])
+            echo_check_call(
+                [
+                    local_pip_executable,
+                    "install",
+                    "--upgrade",
+                    "build",
+                    "ninja",
+                    "numpy",
+                    "scikit-build-core",
+                    #  os-specific tools below
+                    "delvewheel",
+                    "pkginfo",
+                ]
+            )
+            # Install dependencies
+            echo_check_call(
+                [
+                    local_pip_executable,
+                    "install",
+                    "--upgrade",
+                    "-r",
+                    str(self.IPP_SOURCE_DIR / "requirements-dev.txt"),
+                ]
+            )
+
+        pip_executable = venv_base_dir / "Scripts" / "pip.exe"
         python_executable = venv_base_dir / "Scripts" / "python.exe"
         python_include_dir = f"C:/Python{self.py_env}/include"
 
@@ -105,13 +117,9 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         else:
             python_library = f"C:/Python{self.py_env}/libs/python{xy_ver}.lib"
 
-        pip_executable = venv_base_dir / "Scripts" / "pip.exe"
-
         # Update PATH
         venv_bin_path = venv_base_dir / "Scripts"
         ninja_executable = venv_bin_path / "ninja.exe"
-
-        print(f"NINJA_EXECUTABLE:{ninja_executable}")
 
         self.venv_info_dict = {
             "python_executable": python_executable,

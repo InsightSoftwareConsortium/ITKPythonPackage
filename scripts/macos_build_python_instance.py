@@ -10,36 +10,6 @@ from scripts.wheel_builder_utils import echo_check_call
 
 class MacOSBuildPythonInstance(BuildPythonInstanceBase):
     def prepare_build_env(self) -> None:
-        # macOS: Assume venv already exists under IPP_SOURCE_DIR/venvs/<name>
-        # Install required tools into each venv
-        self.venv_paths()
-        self._pip_uninstall_itk_wildcard(self.venv_info_dict["pip_executable"])
-        echo_check_call(
-            [self.venv_info_dict["pip_executable"], "install", "--upgrade", "pip"]
-        )
-        echo_check_call(
-            [
-                self.venv_info_dict["pip_executable"],
-                "install",
-                "--upgrade",
-                "build",
-                "ninja",
-                "numpy",
-                "scikit-build-core",
-                #  os-specific tools below
-                "delocate",
-            ]
-        )
-        # Install dependencies
-        echo_check_call(
-            [
-                self.venv_info_dict["pip_executable"],
-                "install",
-                "--upgrade",
-                "-r",
-                str(self.IPP_SOURCE_DIR / "requirements-dev.txt"),
-            ]
-        )
 
         # #############################################
         # ### Setup build tools
@@ -47,17 +17,27 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         self._use_tbb: str = "OFF"
         self._tbb_dir = self.IPP_SOURCE_DIR / "oneTBB-prefix" / "lib" / "cmake" / "TBB"
         self._cmake_executable = "cmake"
+        # macOS: Assume venv already exists under IPP_SOURCE_DIR/venvs/<name>
+        # Install required tools into each venv
+        self.venv_paths()
+        self.update_venv_itk_build_configurations()
+        self.cmake_compiler_configurations.set(
+            "CMAKE_MAKE_PROGRAM:FILEPATH", f"{self.venv_info_dict['ninja_executable']}"
+        )
 
-        # ################################################
-        # ### Update cmake options for this platform
-        self.cmake_options = []
         macosx_target = self.package_env_config.get("MACOSX_DEPLOYMENT_TARGET", "")
         if macosx_target:
-            self.cmake_options.append(
-                f"-DCMAKE_OSX_DEPLOYMENT_TARGET:STRING={macosx_target}"
+            self.cmake_compiler_configurations.set(
+                "CMAKE_OSX_DEPLOYMENT_TARGET:STRING", macosx_target
             )
         osx_arch = "arm64" if self.platform_architechture == "arm64" else "x86_64"
-        self.cmake_options.append(f"-DCMAKE_OSX_ARCHITECTURES:STRING={osx_arch}")
+        self.cmake_compiler_configurations.set(
+            "CMAKE_OSX_ARCHITECTURES:STRING", osx_arch
+        )
+        self.cmake_itk_source_build_configurations.set(
+            "ITK_BINARY_DIR:PATH",
+            str(self.IPP_SOURCE_DIR / f"ITK-{self.py_env}-macosx_{osx_arch}"),
+        )
 
     def post_build_fixup(self) -> None:
         # delocate on macOS x86_64 only
@@ -91,6 +71,32 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
                     f"Expected exactly one venv for {self.py_env}, found {_venvs_dir_list}"
                 )
             venv_dir = _venvs_dir_list[0]
+            local_pip_executable = venv_dir / "bin" / "pip3"
+            echo_check_call([local_pip_executable, "install", "--upgrade", "pip"])
+            echo_check_call(
+                [
+                    local_pip_executable,
+                    "install",
+                    "--upgrade",
+                    "build",
+                    "ninja",
+                    "numpy",
+                    "scikit-build-core",
+                    #  os-specific tools below
+                    "delocate",
+                ]
+            )
+            # Install dependencies
+            echo_check_call(
+                [
+                    local_pip_executable,
+                    "install",
+                    "--upgrade",
+                    "-r",
+                    str(self.IPP_SOURCE_DIR / "requirements-dev.txt"),
+                ]
+            )
+            self._pip_uninstall_itk_wildcard(local_pip_executable)
         (
             python_executable,
             python_include_dir,

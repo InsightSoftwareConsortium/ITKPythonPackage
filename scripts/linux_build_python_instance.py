@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from os import environ
 from pathlib import Path
 
 from build_python_instance_base import BuildPythonInstanceBase
@@ -11,46 +12,18 @@ from scripts.wheel_builder_utils import echo_check_call, _remove_tree
 
 class LinuxBuildPythonInstance(BuildPythonInstanceBase):
     def prepare_build_env(self) -> None:
-        # manylinux: the interpreter is provided; ensure basic tools are available
-        self.venv_paths()
-        self._pip_uninstall_itk_wildcard(self.venv_info_dict["pip_executable"])
-        echo_check_call(
-            [self.venv_info_dict["pip_executable"], "install", "--upgrade", "pip"]
-        )
-        echo_check_call(
-            [
-                self.venv_info_dict["pip_executable"],
-                "install",
-                "--upgrade",
-                "build",
-                "ninja",
-                "numpy",
-                "scikit-build-core",
-                #  os-specific tools below
-                "wheel",
-                "auditwheel",
-            ]
-        )
-        # Install dependencies
-        echo_check_call(
-            [
-                self.venv_info_dict["pip_executable"],
-                "install",
-                "--upgrade",
-                "-r",
-                str(self.IPP_SOURCE_DIR / "requirements-dev.txt"),
-            ]
-        )
-
         # #############################################
         # ### Setup build tools
         self._build_type = "Release"
         self._use_tbb: str = "ON"
         self._tbb_dir = self.IPP_SOURCE_DIR / "oneTBB-prefix" / "lib" / "cmake" / "TBB"
         self._cmake_executable = "cmake"
-
-        self.cmake_options = []
-        # Match flags used in manylinux shell script
+        # manylinux: the interpreter is provided; ensure basic tools are available
+        self.venv_paths()
+        self.update_venv_itk_build_configurations()
+        self.cmake_compiler_configurations.set(
+            "CMAKE_MAKE_PROGRAM:FILEPATH", f"{self.venv_info_dict['ninja_executable']}"
+        )
         if self.platform_architechture == "x64":
             target_triple = "x86_64-linux-gnu"
         elif self.platform_architechture in ("aarch64", "arm64"):
@@ -59,9 +32,33 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             target_triple = "i686-linux-gnu"
         else:
             target_triple = f"{self.platform_architechture}-linux-gnu"
-        self.cmake_options.append(f"-DCMAKE_CXX_COMPILER_TARGET:STRING={target_triple}")
-        self.cmake_options.append('-DCMAKE_CXX_FLAGS:STRING="-O3 -DNDEBUG"')
-        self.cmake_options.append('-DCMAKE_C_FLAGS:STRING="-O3 -DNDEBUG"')
+        self.cmake_compiler_configurations.set(
+            "CMAKE_CXX_COMPILER_TARGET:STRING", target_triple
+        )
+        # TODO: do not use environ here, get from package_env instead
+        manylinux_ver = environ.get("MANYLINUX_VERSION", "")
+        self.cmake_itk_source_build_configurations.set(
+            "ITK_BINARY_DIR:PATH",
+            str(
+                self.IPP_SOURCE_DIR
+                / f"ITK-{self.py_env}-manylinux{manylinux_ver}_{self.platform_architechture}"
+            ),
+        )
+
+        if self.platform_architechture == "x64":
+            target_triple = "x86_64-linux-gnu"
+        elif self.platform_architechture in ("aarch64", "arm64"):
+            target_triple = "aarch64-linux-gnu"
+        elif self.platform_architechture == "x86":
+            target_triple = "i686-linux-gnu"
+        else:
+            target_triple = f"{self.platform_architechture}-linux-gnu"
+        self.cmake_compiler_configurations.set(
+            "CMAKE_CXX_COMPILER_TARGET:STRING", target_triple
+        )
+        # Keep values consistent with prior quoting behavior
+        self.cmake_compiler_configurations.set("CMAKE_CXX_FLAGS:STRING", "-O3 -DNDEBUG")
+        self.cmake_compiler_configurations.set("CMAKE_C_FLAGS:STRING", "-O3 -DNDEBUG")
 
     def post_build_fixup(self) -> None:
         # Repair all produced wheels with auditwheel and retag meta-wheel
@@ -161,7 +158,33 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             venv_root_dir = Path("/opt/python")
             # TODO : create_linux_venvs here
             venv_dir = venv_root_dir / self.py_env
-
+            local_pip_executable = venv_dir / "bin" / "pip3"
+            self._pip_uninstall_itk_wildcard(local_pip_executable)
+            echo_check_call([local_pip_executable, "install", "--upgrade", "pip"])
+            echo_check_call(
+                [
+                    local_pip_executable,
+                    "install",
+                    "--upgrade",
+                    "build",
+                    "ninja",
+                    "numpy",
+                    "scikit-build-core",
+                    #  os-specific tools below
+                    "wheel",
+                    "auditwheel",
+                ]
+            )
+            # Install dependencies
+            echo_check_call(
+                [
+                    local_pip_executable,
+                    "install",
+                    "--upgrade",
+                    "-r",
+                    str(self.IPP_SOURCE_DIR / "requirements-dev.txt"),
+                ]
+            )
         (
             python_executable,
             python_include_dir,

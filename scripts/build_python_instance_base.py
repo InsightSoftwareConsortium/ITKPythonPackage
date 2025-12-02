@@ -7,10 +7,9 @@ import shutil
 import subprocess
 from pathlib import Path
 from os import environ, pathsep
-import json
-import time
-from datetime import datetime
+from cmake_argument_builder import CMakeArgumentBuilder
 
+from scripts.BuildManager import BuildManager
 from wheel_builder_utils import (
     _remove_tree,
     echo_check_call,
@@ -55,7 +54,6 @@ class BuildPythonInstanceBase(ABC):
         self.SCRIPT_DIR = script_dir
         self.package_env_config = package_env_config
         self.cleanup = cleanup
-        self.cmake_options = cmake_options
         self.windows_extra_lib_paths = windows_extra_lib_paths
         self.dist_dir = dist_dir
         self._cmake_executable = None
@@ -63,21 +61,121 @@ class BuildPythonInstanceBase(ABC):
         self._use_tbb = "ON"
         self._tbb_dir = None
         self._build_type = "Release"
+        self.env_file = self.IPP_SOURCE_DIR / "build" / "package.env"
+        # Unified place to collect cmake -D definitions for this instance
+        self.cmake_cmdline_definitions: CMakeArgumentBuilder = CMakeArgumentBuilder()
+        # Seed from legacy cmake_options if provided as ['-D<KEY>=<VALUE>', ...]
+        if cmake_options:
+            for opt in cmake_options:
+                if not opt.startswith("-D"):
+                    continue
+                # Strip leading -D, split on first '=' into key and value
+                try:
+                    key, value = opt[2:].split("=", 1)
+                except ValueError:
+                    # Malformed option; skip to avoid breaking build
+                    continue
+                # Preserve value verbatim (may contain quotes)
+                self.cmake_cmdline_definitions.set(key, value)
+        self.cmake_compiler_configurations: CMakeArgumentBuilder = (
+            CMakeArgumentBuilder()
+        )
+        self.cmake_compiler_configurations.update(
+            {
+                "CMAKE_BUILD_TYPE:STRING": f"{self._build_type}",
+                "CMAKE_CXX_FLAGS:STRING": "-O3 -DNDEBUG",
+                "CMAKE_C_FLAGS:STRING": "-O3 -DNDEBUG",
+            }
+        )
+        # Set cmake flags for the compiler if CC or CXX are specified
+        cxx_compiler: str = self.package_env_config.get("CXX", "")
+        if cxx_compiler != "":
+            self.cmake_compiler_configurations.set(
+                "CMAKE_CXX_COMPILER:STRING", cxx_compiler
+            )
+
+        c_compiler: str = self.package_env_config.get("CC", "")
+        if c_compiler != "":
+            self.cmake_compiler_configurations.set(
+                "CMAKE_C_COMPILER:STRING", c_compiler
+            )
+
+        if self.package_env_config.get("USE_CCACHE", "OFF") == "ON":
+            ccache_exe: Path = _which("ccache")
+            self.cmake_compiler_configurations.set(
+                "CMAKE_C_COMPILER_LAUNCHER:FILEPATH", f"{ccache_exe}"
+            )
+            self.cmake_compiler_configurations.set(
+                "CMAKE_CXX_COMPILER_LAUNCHER:FILEPATH", f"{ccache_exe}"
+            )
+
+        self.cmake_itk_source_build_configurations: CMakeArgumentBuilder = (
+            CMakeArgumentBuilder()
+        )
+        self.cmake_itk_source_build_configurations.update(
+            # ITK wrapping options
+            {
+                "ITK_SOURCE_DIR:PATH": f"{self.ITK_SOURCE_DIR}",
+                "BUILD_TESTING:BOOL": "OFF",
+                "ITK_WRAP_unsigned_short:BOOL": "ON",
+                "ITK_WRAP_double:BOOL": "ON",
+                "ITK_WRAP_complex_double:BOOL": "ON",
+                "ITK_WRAP_IMAGE_DIMS:STRING": "2;3;4",
+                "WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING": "PythonWheel",
+                "WRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL": "ON",
+                "PY_SITE_PACKAGES_PATH:PATH": ".",
+                "ITK_LEGACY_SILENT:BOOL": "ON",
+                "ITK_WRAP_PYTHON:BOOL": "ON",
+                "ITK_WRAP_DOC:BOOL": "ON",
+                "DOXYGEN_EXECUTABLE:FILEPATH": f"{self.package_env_config['DOXYGEN_EXECUTABLE']}",
+                "Module_ITKTBB:BOOL": f"{self._use_tbb}",
+                "TBB_DIR:PATH": f"{self._tbb_dir}",
+                # Python settings
+                "SKBUILD:BOOL": "ON",
+            }
+        )
+
         self.venv_info_dict = {
-            "python_executable": None,
-            "python_include_dir": None,
-            "python_library": None,
-            "pip_executable": None,
-            "ninja_executable": None,
-            "venv_bin_path": None,
-            "venv_base_dir": None,
+            # Filled in for each platform and each pyenvs
+            # "python_executable": None,
+            # "python_include_dir": None,
+            # "python_library": None,
+            # "pip_executable": None,
+            # "ninja_executable": None,
+            # "venv_bin_path": None,
+            # "venv_base_dir": None,
         }
+
+    def update_venv_itk_build_configurations(self) -> None:
+        # TODO: Make this better later currently needs to be called after each platforms update of venv_info_dict
+        self.cmake_itk_source_build_configurations.set(
+            "Python3_EXECUTABLE:FILEPATH",
+            f"{self.venv_info_dict['python_executable']}",
+        )
+        if self.venv_info_dict["python_include_dir"]:
+            self.cmake_itk_source_build_configurations.set(
+                "Python3_INCLUDE_DIR:PATH",
+                f"{self.venv_info_dict['python_include_dir']}",
+            )
+            self.cmake_itk_source_build_configurations.set(
+                "Python3_INCLUDE_DIRS:PATH",
+                f"{self.venv_info_dict['python_include_dir']}",
+            )
+        if self.venv_info_dict["python_library"]:
+            self.cmake_itk_source_build_configurations.set(
+                "Python3_LIBRARY:FILEPATH",
+                f"{self.venv_info_dict['python_library']}",
+            )
+            self.cmake_itk_source_build_configurations.set(
+                "Python3_SABI_LIBRARY:FILEPATH",
+                f"{self.venv_info_dict['python_library']}",
+            )
 
     def run(self) -> None:
         """Run the full build flow for this Python instance."""
         # Use BuildManager to persist and resume build steps
-        python_packabge_build_steps: dict = {
-            "00_prepare_build_env": self.prepare_build_env,
+        self.prepare_build_env()
+        python_package_build_steps: dict = {
             "01_superbuild_support_components": self.build_superbuild_support_components,
             "02_build_wheels": self.build_wheel,
             "03_post_build_fixup": self.post_build_fixup,
@@ -86,10 +184,10 @@ class BuildPythonInstanceBase(ABC):
         self.dist_dir.mkdir(parents=True, exist_ok=True)
         build_report_fn: Path = self.dist_dir / f"build_log_{self.py_env}.json"
         build_manager: BuildManager = BuildManager(
-            build_report_fn, list(python_packabge_build_steps.keys())
+            build_report_fn, list(python_package_build_steps.keys())
         )
         build_manager.save()
-        for build_step_name, build_step_func in python_packabge_build_steps.items():
+        for build_step_name, build_step_func in python_package_build_steps.items():
             print("=" * 80)
             print(f"Running build step: {build_step_name}")
             build_manager.run_step(build_step_name, build_step_func)
@@ -100,19 +198,31 @@ class BuildPythonInstanceBase(ABC):
     def build_superbuild_support_components(self):
         # -----------------------------------------------------------------------
         # Build required components (optional local ITK source, TBB builds) used to populate the archive cache
+
+        # Build up definitions using the builder
+        cmake_superbuild_argumets = CMakeArgumentBuilder()
+        if self.cmake_compiler_configurations:
+            cmake_superbuild_argumets.update(self.cmake_compiler_configurations.items())
+        # Add superbuild-specific flags
+        cmake_superbuild_argumets.update(
+            {
+                "ITKPythonPackage_BUILD_PYTHON:BOOL": "OFF",
+                "ITKPythonPackage_USE_TBB:BOOL": f"{self._use_tbb}",
+                "ITK_SOURCE_DIR:PATH": f"{self.package_env_config['ITK_SOURCE_DIR']}",
+                "ITK_GIT_TAG:STRING": f"{self.package_env_config['ITK_GIT_TAG']}",
+            }
+        )
+        # Start from any platform/user-provided defaults
+        if self.cmake_cmdline_definitions:
+            cmake_superbuild_argumets.update(self.cmake_cmdline_definitions.items())
+
         cmd = [
             self._cmake_executable,
             "-G",
             "Ninja",
-            "-DITKPythonPackage_BUILD_PYTHON:BOOL=OFF",
-            f"-DITKPythonPackage_USE_TBB:BOOL={self._use_tbb}",
-            f"-DCMAKE_BUILD_TYPE:STRING={self._build_type}",
-            f"-DCMAKE_MAKE_PROGRAM:FILEPATH={self.venv_info_dict['ninja_executable']}",
-            f"-DITK_SOURCE_DIR:PATH={self.package_env_config['ITK_SOURCE_DIR']}",
-            f"-DITK_GIT_TAG:STRING={self.package_env_config['ITK_GIT_TAG']}",
         ]
 
-        cmd.extend(self.cmake_options)
+        cmd += cmake_superbuild_argumets.getCMakeCommandLineArguments()
 
         cmd += [
             "-S",
@@ -175,7 +285,7 @@ class BuildPythonInstanceBase(ABC):
         print("Documentation tests passed.")
 
     @staticmethod
-    def _pip_uninstall_itk_wildcard(pip_executable: str):
+    def _pip_uninstall_itk_wildcard(pip_executable: str | Path):
         """Uninstall all installed packages whose name starts with 'itk'.
 
         pip does not support shell-style wildcards directly for uninstall, so we:
@@ -183,6 +293,7 @@ class BuildPythonInstanceBase(ABC):
           - collect package names whose normalized name starts with 'itk'
           - call 'pip uninstall -y <names...>' if any are found
         """
+        pip_executable = str(pip_executable)
         try:
             proc = subprocess.run(
                 [pip_executable, "list", "--format=freeze"],
@@ -307,52 +418,41 @@ class BuildPythonInstanceBase(ABC):
         with push_env(
             PATH=f"{self.venv_info_dict['venv_bin_path']}{pathsep}{environ['PATH']}"
         ):
-
-            source_path = f"{self.package_env_config['ITK_SOURCE_DIR']}"
-            # Build path naming per platform
-            if self.platform_name == "windows":
-                build_path = self.IPP_SOURCE_DIR / f"ITK-win_{self.py_env}"
-            elif self.platform_name == "darwin":
-                osx_arch = (
-                    "arm64" if self.platform_architechture == "arm64" else "x86_64"
-                )
-                build_path = (
-                    self.IPP_SOURCE_DIR / f"ITK-{self.py_env}-macosx_{osx_arch}"
-                )
-            elif self.platform_name == "linux":
-                # TODO: do not use environ here, get from package_env instead
-                manylinux_ver = environ.get("MANYLINUX_VERSION", "")
-                build_path = (
-                    self.IPP_SOURCE_DIR
-                    / f"ITK-{self.py_env}-manylinux{manylinux_ver}_{self.platform_architechture}"
-                )
-            else:
-                raise ValueError(f"Unknown platform {self.platform_name}")
             pyproject_configure = self.SCRIPT_DIR / "pyproject_configure.py"
 
             # Clean up previous invocations
-            if self.cleanup and Path(build_path).exists():
-                _remove_tree(Path(build_path))
+            if (
+                self.cleanup
+                and Path(
+                    self.cmake_itk_source_build_configurations["ITK_BINARY_DIR:PATH"]
+                ).exists()
+            ):
+                _remove_tree(
+                    Path(
+                        self.cmake_itk_source_build_configurations[
+                            "ITK_BINARY_DIR:PATH"
+                        ]
+                    )
+                )
 
             print("#")
-            print("# Build multiple ITK wheels")
+            print("# START-Build ITK C++")
             print("#")
-
-            self.build_wrapped_itk(
-                build_path,
-            )
+            self.build_wrapped_itk_cplusplus()
+            print("# FINISHED-Build ITK C++")
 
             # Build wheels
-
-            env_file = self.IPP_SOURCE_DIR / "build" / "package.env"
             for wheel_name in self.wheel_names:
+                print("#")
+                print(f"# Build ITK wheel {wheel_name} from {self.wheel_names}")
+                print("#")
                 # Configure pyproject.toml
                 echo_check_call(
                     [
                         str(self.venv_info_dict["python_executable"]),
                         pyproject_configure,
                         "--env-file",
-                        env_file,
+                        self.env_file,
                         wheel_name,
                     ]
                 )
@@ -368,69 +468,41 @@ class BuildPythonInstanceBase(ABC):
                     str(self.IPP_SOURCE_DIR / "dist"),
                     "--no-isolation",
                     "--skip-dependency-check",
-                    f"--config-setting=cmake.define.ITK_SOURCE_DIR:PATH={self.ITK_SOURCE_DIR}",
-                    f"--config-setting=cmake.define.ITK_BINARY_DIR:PATH={build_path}",
-                    f"--config-setting=cmake.define.ITKPythonPackage_USE_TBB:BOOL={self._use_tbb}",
-                    "--config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON",
-                    f"--config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING={wheel_name}",
-                    f"--config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH={self.venv_info_dict['python_executable']}",
-                    "--config-setting=cmake.define.DOXYGEN_EXECUTABLE:FILEPATH="
-                    + f"{self.package_env_config['DOXYGEN_EXECUTABLE']}",
                     f"--config-setting=cmake.build-type={self._build_type}",
                 ]
-                if self.platform_name == "darwin":
-                    macosx_target = self.package_env_config.get(
-                        "MACOSX_DEPLOYMENT_TARGET", ""
+                # Build scikit-build defines via builder
+                scikitbuild_cmdline_args = CMakeArgumentBuilder()
+                scikitbuild_cmdline_args.update(
+                    self.cmake_compiler_configurations.items()
+                )
+                scikitbuild_cmdline_args.update(
+                    self.cmake_itk_source_build_configurations.items()
+                )
+                scikitbuild_cmdline_args.update(
+                    {
+                        "ITKPythonPackage_USE_TBB:BOOL": f"{self._use_tbb}",
+                        "ITKPythonPackage_ITK_BINARY_REUSE:BOOL": "ON",
+                        "ITKPythonPackage_WHEEL_NAME:STRING": f"{wheel_name}",
+                        "DOXYGEN_EXECUTABLE:FILEPATH": f"{self.package_env_config['DOXYGEN_EXECUTABLE']}",
+                    }
+                )
+
+                if (
+                    self.cmake_cmdline_definitions
+                ):  # Do last to override with command line items
+                    scikitbuild_cmdline_args.update(
+                        self.cmake_cmdline_definitions.items()
                     )
-                    if macosx_target:
-                        cmd.append(
-                            f"--config-setting=cmake.define.CMAKE_OSX_DEPLOYMENT_TARGET:STRING={macosx_target}"
-                        )
-                    osx_arch = (
-                        "arm64" if self.platform_architechture == "arm64" else "x86_64"
-                    )
-                    cmd.append(
-                        f"--config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING={osx_arch}"
-                    )
-                elif self.platform_name == "linux":
-                    if self.platform_architechture == "x64":
-                        target_triple = "x86_64-linux-gnu"
-                    elif self.platform_architechture in ("aarch64", "arm64"):
-                        target_triple = "aarch64-linux-gnu"
-                    elif self.platform_architechture == "x86":
-                        target_triple = "i686-linux-gnu"
-                    else:
-                        target_triple = f"{self.platform_architechture}-linux-gnu"
-                    cmd.append(
-                        f"--config-setting=cmake.define.CMAKE_CXX_COMPILER_TARGET:STRING={target_triple}"
-                    )
-                    cmd.append(
-                        "--config-setting=cmake.define.CMAKE_CXX_FLAGS:STRING=-O3 -DNDEBUG"
-                    )
-                    cmd.append(
-                        "--config-setting=cmake.define.CMAKE_C_FLAGS:STRING=-O3 -DNDEBUG"
-                    )
-                if self.venv_info_dict["python_include_dir"]:
-                    cmd.append(
-                        f"--config-setting=cmake.define.Python3_INCLUDE_DIR:PATH={self.venv_info_dict['python_include_dir']}"
-                    )
-                    cmd.append(
-                        f"--config-setting=cmake.define.Python3_INCLUDE_DIRS:PATH={self.venv_info_dict['python_include_dir']}"
-                    )
-                if self.venv_info_dict["python_library"]:
-                    cmd.append(
-                        f"--config-setting=cmake.define.Python3_LIBRARY:FILEPATH={self.venv_info_dict['python_library']}"
-                    )
-                cmd += [
-                    o.replace("-D", "--config-setting=cmake.define.")
-                    for o in self.cmake_options
-                ]
+                    # Append all cmake.define entries
+                cmd += scikitbuild_cmdline_args.getPythonBuildCommandLineArguments()
                 cmd += [str(self.IPP_SOURCE_DIR)]
                 echo_check_call(cmd)
 
             # Remove unnecessary files for building against ITK
             if self.cleanup:
-                bp = Path(build_path)
+                bp = Path(
+                    self.cmake_itk_source_build_configurations["ITK_BINARY_DIR:PATH"]
+                )
                 for p in bp.rglob("*"):
                     if p.is_file() and p.suffix in [".cpp", ".xml", ".obj", ".o"]:
                         try:
@@ -439,78 +511,32 @@ class BuildPythonInstanceBase(ABC):
                             pass
                 _remove_tree(bp / "Wrapping" / "Generators" / "CastXML")
 
-    def build_wrapped_itk(
-        self,
-        build_path,
-    ):
+    def build_wrapped_itk_cplusplus(self):
 
         # Build ITK python
         cmd = [
             "cmake",
             "-G",
             "Ninja",
-            f"-DCMAKE_MAKE_PROGRAM:FILEPATH={self.venv_info_dict['ninja_executable']}",
-            f"-DCMAKE_BUILD_TYPE:STRING={self._build_type}",
-            f"-DITK_SOURCE_DIR:PATH={self.ITK_SOURCE_DIR}",
-            f"-DITK_BINARY_DIR:PATH={build_path}",
-            "-DBUILD_TESTING:BOOL=OFF",
         ]
-
-        cmd.extend(self.cmake_options)
-
-        # Set cmake flags for the compiler if CC or CXX are specified
-        cxx_compiler: str = self.package_env_config.get("CXX", "")
-        if cxx_compiler != "":
-            cmd.append(f"-DCMAKE_CXX_COMPILER:STRING={cxx_compiler}")
-
-        c_compiler: str = self.package_env_config.get("CC", "")
-        if c_compiler != "":
-            cmd.append(f"-DCMAKE_C_COMPILER:STRING={c_compiler}")
-
-        if self.package_env_config.get("USE_CCACHE", "OFF") == "ON":
-            ccache_exe: Path = _which("ccache")
-            cmd.append(f"-DCMAKE_C_COMPILER_LAUNCHER:FILEPATH={ccache_exe}")
-            cmd.append(f"-DCMAKE_CXX_COMPILER_LAUNCHER:FILEPATH={ccache_exe}")
-
-        # Python settings
-        cmd.append("-DSKBUILD:BOOL=ON")
-        cmd.append(
-            f"-DPython3_EXECUTABLE:FILEPATH={self.venv_info_dict['python_executable']}"
-        )
-        if self.venv_info_dict["python_include_dir"]:
-            cmd.append(
-                f"-DPython3_INCLUDE_DIR:PATH={self.venv_info_dict['python_include_dir']}"
-            )
-            cmd.append(
-                f"-DPython3_INCLUDE_DIRS:PATH={self.venv_info_dict['python_include_dir']}"
-            )
-        if self.venv_info_dict["python_library"]:
-            cmd.append(
-                f"-DPython3_LIBRARY:FILEPATH={self.venv_info_dict['python_library']}"
-            )
-            cmd.append(
-                f"-DPython3_SABI_LIBRARY:FILEPATH={self.venv_info_dict['python_library']}"
-            )
-
-        # ITK wrapping options
+        # Collect all -D definitions via builder
+        defs = CMakeArgumentBuilder()
+        defs.update(self.cmake_compiler_configurations.items())
+        defs.update(self.cmake_itk_source_build_configurations.items())
+        # NOTE Do cmake_cmdline_definitions last so they override internal defaults
+        defs.update(self.cmake_cmdline_definitions.items())
+        cmd += defs.getCMakeCommandLineArguments()
         cmd += [
-            "-DITK_WRAP_unsigned_short:BOOL=ON",
-            "-DITK_WRAP_double:BOOL=ON",
-            "-DITK_WRAP_complex_double:BOOL=ON",
-            "-DITK_WRAP_IMAGE_DIMS:STRING=2;3;4",
-            "-DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
-            "-DWRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL=ON",
-            "-DPY_SITE_PACKAGES_PATH:PATH=.",
-            "-DITK_LEGACY_SILENT:BOOL=ON",
-            "-DITK_WRAP_PYTHON:BOOL=ON",
-            "-DITK_WRAP_DOC:BOOL=ON",
-            f"-DDOXYGEN_EXECUTABLE:FILEPATH={self.package_env_config['DOXYGEN_EXECUTABLE']}",
-            f"-DModule_ITKTBB:BOOL={self._use_tbb}",
-            f"-DTBB_DIR:PATH={self._tbb_dir}",
             "-S",
             self.ITK_SOURCE_DIR,
             "-B",
-            build_path,
+            self.cmake_itk_source_build_configurations["ITK_BINARY_DIR:PATH"],
         ]
         echo_check_call(cmd)
-        echo_check_call([self.venv_info_dict["ninja_executable"], "-C", build_path])
+        echo_check_call(
+            [
+                self.venv_info_dict["ninja_executable"],
+                "-C",
+                self.cmake_itk_source_build_configurations["ITK_BINARY_DIR:PATH"],
+            ]
+        )
