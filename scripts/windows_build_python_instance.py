@@ -4,7 +4,7 @@ from pathlib import Path
 
 from build_python_instance_base import BuildPythonInstanceBase
 
-from scripts.wheel_builder_utils import echo_check_call
+from wheel_builder_utils import echo_check_call
 
 
 class WindowsBuildPythonInstance(BuildPythonInstanceBase):

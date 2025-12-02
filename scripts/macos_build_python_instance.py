@@ -3,9 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from build_python_instance_base import BuildPythonInstanceBase
-from scripts.macos_venv_utils import create_macos_venvs
+from macos_venv_utils import create_macos_venvs
 
-from scripts.wheel_builder_utils import echo_check_call
+from wheel_builder_utils import echo_check_call
 
 
 class MacOSBuildPythonInstance(BuildPythonInstanceBase):

@@ -26,7 +26,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from scripts.wheel_builder_utils import detect_platform, which_required
+from wheel_builder_utils import detect_platform, which_required
 
 
 def debug(msg: str, do_print=False) -> None:

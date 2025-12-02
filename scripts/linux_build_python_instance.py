@@ -7,7 +7,7 @@ from build_python_instance_base import BuildPythonInstanceBase
 
 import shutil
 
-from scripts.wheel_builder_utils import echo_check_call, _remove_tree
+from wheel_builder_utils import echo_check_call, _remove_tree
 
 
 class LinuxBuildPythonInstance(BuildPythonInstanceBase):

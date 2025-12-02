@@ -9,7 +9,7 @@ from pathlib import Path
 from os import environ, pathsep
 from cmake_argument_builder import CMakeArgumentBuilder
 
-from scripts.BuildManager import BuildManager
+from BuildManager import BuildManager
 from wheel_builder_utils import (
     _remove_tree,
     echo_check_call,
