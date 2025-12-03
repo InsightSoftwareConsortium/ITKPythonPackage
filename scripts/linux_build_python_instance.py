@@ -7,6 +7,7 @@ from build_python_instance_base import BuildPythonInstanceBase
 
 import shutil
 
+from scripts.linux_venv_utils import create_linux_venvs
 from wheel_builder_utils import echo_check_call, _remove_tree
 
 
@@ -157,7 +158,12 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         if not venv_dir.exists():
             venv_root_dir = Path("/opt/python")
             # TODO : create_linux_venvs here
-            venv_dir = venv_root_dir / self.py_env
+            _venvs_dir_list = create_linux_venvs(self.py_env, venv_root_dir)
+            if len(_venvs_dir_list) != 1:
+                raise ValueError(
+                    f"Expected exactly one venv for {self.py_env}, found {_venvs_dir_list}"
+                )
+            venv_dir = _venvs_dir_list[0]
             local_pip_executable = venv_dir / "bin" / "pip3"
             self._pip_uninstall_itk_wildcard(local_pip_executable)
             echo_check_call([local_pip_executable, "install", "--upgrade", "pip"])
