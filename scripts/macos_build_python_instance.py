@@ -58,12 +58,15 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             echo_check_call([str(delocate_wheel), str(filepath)])
 
     def venv_paths(self) -> None:
-        # Create venv related paths
-        """Resolve macOS virtualenv tool paths.
+        """Resolve virtualenv tool paths.
         py_env may be a name under IPP_SOURCE_DIR/venvs or an absolute/relative path to a venv.
         """
-        venv_dir = Path(self.py_env)
-        if not venv_dir.exists():
+        # First determine if py_env is the full path to a python environment
+        _command_line_pip_executable = Path(self.py_env) / "bin" / "pip3"
+        if _command_line_pip_executable.exists():
+            venv_dir = Path(self.py_env)
+            local_pip_executable = _command_line_pip_executable
+        else:
             venv_root_dir: Path = self.IPP_SOURCE_DIR / "venvs"
             _venvs_dir_list = create_macos_venvs(self.py_env, venv_root_dir)
             if len(_venvs_dir_list) != 1:
@@ -72,31 +75,32 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
                 )
             venv_dir = _venvs_dir_list[0]
             local_pip_executable = venv_dir / "bin" / "pip3"
-            echo_check_call([local_pip_executable, "install", "--upgrade", "pip"])
-            echo_check_call(
-                [
-                    local_pip_executable,
-                    "install",
-                    "--upgrade",
-                    "build",
-                    "ninja",
-                    "numpy",
-                    "scikit-build-core",
-                    #  os-specific tools below
-                    "delocate",
-                ]
-            )
-            # Install dependencies
-            echo_check_call(
-                [
-                    local_pip_executable,
-                    "install",
-                    "--upgrade",
-                    "-r",
-                    str(self.IPP_SOURCE_DIR / "requirements-dev.txt"),
-                ]
-            )
-            self._pip_uninstall_itk_wildcard(local_pip_executable)
+
+        echo_check_call([local_pip_executable, "install", "--upgrade", "pip"])
+        echo_check_call(
+            [
+                local_pip_executable,
+                "install",
+                "--upgrade",
+                "build",
+                "ninja",
+                "numpy",
+                "scikit-build-core",
+                #  os-specific tools below
+                "delocate",
+            ]
+        )
+        # Install dependencies
+        echo_check_call(
+            [
+                local_pip_executable,
+                "install",
+                "--upgrade",
+                "-r",
+                str(self.IPP_SOURCE_DIR / "requirements-dev.txt"),
+            ]
+        )
+        self._pip_uninstall_itk_wildcard(local_pip_executable)
         (
             python_executable,
             python_include_dir,
@@ -119,16 +123,17 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
     def discover_python_venvs(
         self, platform_os_name: str, platform_architechure: str
     ) -> list[str]:
-        # macOS defaults: discover virtualenvs under project 'venvs' folder
-        def _discover_mac_venvs() -> list[str]:
+        names = []
+        # Discover virtualenvs under project 'venvs' folder
+        def _discover_ipp_venvs() -> list[str]:
             venvs_dir = self.IPP_SOURCE_DIR / "venvs"
             if not venvs_dir.exists():
                 return []
-            names = [p.name for p in venvs_dir.iterdir() if p.is_dir()]
+            names.extend([p.name for p in venvs_dir.iterdir() if p.is_dir()])
             # Sort for stable order
             return sorted(names)
 
-        default_py_envs = _discover_mac_venvs()
+        default_py_envs = _discover_ipp_venvs()
 
         return default_py_envs
 

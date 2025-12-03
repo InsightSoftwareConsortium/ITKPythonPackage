@@ -8,7 +8,7 @@ import sys
 import textwrap
 import shutil
 
-from scripts.linux_venv_utils import create_linux_venvs
+from linux_venv_utils import create_linux_venvs
 from wheel_builder_utils import echo_check_call, _remove_tree
 
 
@@ -128,42 +128,45 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
 
     def fixup_wheel(self, filepath, lib_paths: str = "") -> None:
         # Use auditwheel to repair wheels and set manylinux tags
-        plat = None
         manylinux_ver = self.package_env_config.get("MANYLINUX_VERSION", "")
-        if self.platform_architechture == "x64" and manylinux_ver:
-            plat = f"manylinux{manylinux_ver}_x86_64"
-        cmd = [self.venv_info_dict["python_executable"], "-m", "auditwheel", "repair"]
-        if plat:
-            cmd += ["--plat", plat]
-        cmd += [str(filepath), "-w", str(self.IPP_SOURCE_DIR / "dist")]
-        # Provide LD_LIBRARY_PATH for oneTBB and common system paths
-        extra_lib = str(self.IPP_SOURCE_DIR / "oneTBB-prefix" / "lib")
-        env = dict(self.package_env_config)
-        env["LD_LIBRARY_PATH"] = ":".join(
-            [
-                env.get("LD_LIBRARY_PATH", ""),
-                extra_lib,
-                "/usr/lib64",
-                "/usr/lib",
-            ]
-        )
-        echo_check_call(cmd, env=env)
+        if len(manylinux_ver) > 1:
+            plat = None
+            if self.platform_architechture == "x64" and manylinux_ver:
+                plat = f"manylinux{manylinux_ver}_x86_64"
+            cmd = [self.venv_info_dict["python_executable"], "-m", "auditwheel", "repair"]
+            if plat:
+                cmd += ["--plat", plat]
+            cmd += [str(filepath), "-w", str(self.IPP_SOURCE_DIR / "dist")]
+            # Provide LD_LIBRARY_PATH for oneTBB and common system paths
+            extra_lib = str(self.IPP_SOURCE_DIR / "oneTBB-prefix" / "lib")
+            env = dict(self.package_env_config)
+            env["LD_LIBRARY_PATH"] = ":".join(
+                [
+                    env.get("LD_LIBRARY_PATH", ""),
+                    extra_lib,
+                    "/usr/lib64",
+                    "/usr/lib",
+                ]
+            )
+            echo_check_call(cmd, env=env)
+        print(f"Building outside of manylinux environment does not require wheel fixups.")
+        return
 
     def venv_paths(self) -> None:
-        venv_dir = Path(self.py_env)
-        if not venv_dir.exists():
-            venv_root_dir = Path("/opt/python")
-            if not venv_dir.exists():
-                print(textwrap.dedent("""
-                Resolve Linux manylinux Python tool paths.
-                py_env is expected to be a directory name under
-                /opt/python (e.g., cp311-cp311),
-                or an absolute path to the specific Python root
-                must be specified with command line --py-env
-                """
-                ))
-                sys.exit(1)
-            # TODO : create_linux_venvs here
+        """Resolve virtualenv tool paths.
+        py_env may be a name under IPP_SOURCE_DIR/venvs or an absolute/relative path to a venv.
+        """
+        # First determine if py_env is the full path to a python environment
+        _command_line_pip_executable = Path(self.py_env) / "bin" / "pip3"
+        _dockcross_pip_executable = Path("/opt/python")/"bin"/ "pip3"
+        if _command_line_pip_executable.exists():
+            venv_dir = Path(self.py_env)
+            local_pip_executable = _command_line_pip_executable
+        elif _dockcross_pip_executable.exists():
+            venv_dir = Path("/opt/python")
+            local_pip_executable = _dockcross_pip_executable;
+        else:
+            venv_root_dir: Path = self.IPP_SOURCE_DIR / "venvs"
             _venvs_dir_list = create_linux_venvs(self.py_env, venv_root_dir)
             if len(_venvs_dir_list) != 1:
                 raise ValueError(
@@ -171,32 +174,33 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                 )
             venv_dir = _venvs_dir_list[0]
             local_pip_executable = venv_dir / "bin" / "pip3"
-            self._pip_uninstall_itk_wildcard(local_pip_executable)
-            echo_check_call([local_pip_executable, "install", "--upgrade", "pip"])
-            echo_check_call(
-                [
-                    local_pip_executable,
-                    "install",
-                    "--upgrade",
-                    "build",
-                    "ninja",
-                    "numpy",
-                    "scikit-build-core",
-                    #  os-specific tools below
-                    "wheel",
-                    "auditwheel",
-                ]
-            )
-            # Install dependencies
-            echo_check_call(
-                [
-                    local_pip_executable,
-                    "install",
-                    "--upgrade",
-                    "-r",
-                    str(self.IPP_SOURCE_DIR / "requirements-dev.txt"),
-                ]
-            )
+
+        echo_check_call([local_pip_executable, "install", "--upgrade", "pip"])
+        echo_check_call(
+            [
+                local_pip_executable,
+                "install",
+                "--upgrade",
+                "build",
+                "ninja",
+                "numpy",
+                "scikit-build-core",
+                #  os-specific tools below
+                "wheel",
+                "auditwheel",
+            ]
+        )
+        # Install dependencies
+        echo_check_call(
+            [
+                local_pip_executable,
+                "install",
+                "--upgrade",
+                "-r",
+                str(self.IPP_SOURCE_DIR / "requirements-dev.txt"),
+            ]
+        )
+        self._pip_uninstall_itk_wildcard(local_pip_executable)
         (
             python_executable,
             python_include_dir,
@@ -219,17 +223,24 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
     def discover_python_venvs(
         self, platform_os_name: str, platform_architechure: str
     ) -> list[str]:
+        names = []
+        # Discover virtualenvs under project 'venvs' folder
+        def _discover_ipp_venvs() -> list[str]:
+            venvs_dir = self.IPP_SOURCE_DIR / "venvs"
+            if not venvs_dir.exists():
+                return []
+            names.extend([p.name for p in venvs_dir.iterdir() if p.is_dir()])
+            # Sort for stable order
+            return sorted(names)
         # Discover available manylinux CPython installs under /opt/python
-        def _discover_linux_pythons() -> list[str]:
+        def _discover_local_pythons() -> list[str]:
             base = Path("/opt/python")
             if not base.exists():
                 return []
-            names = [
-                p.name for p in base.iterdir() if p.is_dir() and p.name.startswith("cp")
-            ]
+            names.extend([p.name for p in venvs_dir.iterdir() if p.is_dir()])
             return sorted(names)
 
-        default_py_envs = _discover_linux_pythons()
+        default_py_envs = _discover_linux_pythons() + _discover_ipp_venvs()
 
         return default_py_envs
 
