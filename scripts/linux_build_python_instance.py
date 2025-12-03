@@ -4,7 +4,8 @@ from os import environ
 from pathlib import Path
 
 from build_python_instance_base import BuildPythonInstanceBase
-
+import sys
+import textwrap
 import shutil
 
 from scripts.linux_venv_utils import create_linux_venvs
@@ -149,14 +150,19 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         echo_check_call(cmd, env=env)
 
     def venv_paths(self) -> None:
-        """Resolve Linux manylinux Python tool paths.
-
-        py_env is expected to be a directory name under /opt/python (e.g., cp311-cp311),
-        or an absolute path to the specific Python root.
-        """
         venv_dir = Path(self.py_env)
         if not venv_dir.exists():
             venv_root_dir = Path("/opt/python")
+            if not venv_dir.exists():
+                print(textwrap.dedent("""
+                Resolve Linux manylinux Python tool paths.
+                py_env is expected to be a directory name under
+                /opt/python (e.g., cp311-cp311),
+                or an absolute path to the specific Python root
+                must be specified with command line --py-env
+                """
+                ))
+                sys.exit(1)
             # TODO : create_linux_venvs here
             _venvs_dir_list = create_linux_venvs(self.py_env, venv_root_dir)
             if len(_venvs_dir_list) != 1:
