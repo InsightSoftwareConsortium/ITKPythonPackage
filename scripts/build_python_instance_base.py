@@ -226,7 +226,7 @@ class BuildPythonInstanceBase(ABC):
 
         cmd += [
             "-S",
-            str(self.IPP_SOURCE_DIR),
+            str(self.IPP_SOURCE_DIR / "SuperbuildSupport"),
             "-B",
             str(self.IPP_SUPERBUILD_BINARY_DIR),
         ]
@@ -453,6 +453,8 @@ class BuildPythonInstanceBase(ABC):
                         pyproject_configure,
                         "--env-file",
                         self.env_file,
+                        "--output-dir",
+                        self.IPP_SOURCE_DIR / "BuildWheelsSupport",
                         wheel_name,
                     ]
                 )
@@ -495,7 +497,7 @@ class BuildPythonInstanceBase(ABC):
                     )
                     # Append all cmake.define entries
                 cmd += scikitbuild_cmdline_args.getPythonBuildCommandLineArguments()
-                cmd += [str(self.IPP_SOURCE_DIR)]
+                cmd += [self.IPP_SOURCE_DIR / "BuildWheelsSupport"]
                 echo_check_call(cmd)
 
             # Remove unnecessary files for building against ITK

@@ -19,7 +19,7 @@ SCRIPT_DIR = Path(__file__).parent
 # MODULE_EXAMPLESROOT_DIR: Path = SCRIPT_DIR.parent.parent.resolve()
 
 IPP_SOURCE_DIR = SCRIPT_DIR.parent.resolve()
-IPP_SUPERBUILD_BINARY_DIR = IPP_SOURCE_DIR / "ITK-source"
+IPP_SUPERBUILD_BINARY_DIR = IPP_SOURCE_DIR / "build" / "ITK-source"
 package_env_config = dotenv_values(IPP_SOURCE_DIR / "build" / "package.env")
 ITK_SOURCE_DIR = package_env_config["ITK_SOURCE_DIR"]
 
