@@ -126,7 +126,8 @@ def main() -> None:
     ) as content:
         wheel_names = [wheel_name.strip() for wheel_name in content.readlines()]
 
-    for py_env in args.py_envs:
+    normalized_python_versions: list[str] =[ p.replace("cp3","3.") for p in args.py_envs ]
+    for py_env in normalized_python_versions:
         build_one_python_instance(
             py_env,
             wheel_names,

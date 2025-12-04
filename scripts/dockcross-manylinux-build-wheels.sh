@@ -45,7 +45,7 @@ pushd ${_ipp_dir} # Must run _local_dockercross_script from the root of the dire
   DOCKER_ARGS="-v ${_ipp_dir}/dist:${CONTAINER_WORK_DIR}/dist/  -v${ITK_SOURCE_DIR}:${CONTAINER_ITK_SOURCE_DIR} --env-file ${package_env_file}"
   cmd=$(echo bash -x ${_local_dockercross_script} \
     -a \"$DOCKER_ARGS\" \
-    ${CONTAINER_WORK_DIR}/scripts/internal/manylinux-build-wheels.sh "$@")
+    ${CONTAINER_WORK_DIR}/scripts/build_wheels.py --py-envs "$@")
   echo "RUNNING: $cmd"
   eval $cmd
 popd
