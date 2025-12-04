@@ -43,6 +43,7 @@ class BuildPythonInstanceBase(ABC):
         cmake_options: list[str],
         windows_extra_lib_paths: list[str],
         dist_dir: Path,
+        module_source_dir: Path | None = None,
     ) -> None:
         self.py_env = py_env
         self.wheel_names = list(wheel_names)
@@ -57,6 +58,8 @@ class BuildPythonInstanceBase(ABC):
         # NEVER CLEANUP FOR DEBUGGGING cleanup
         self.windows_extra_lib_paths = windows_extra_lib_paths
         self.dist_dir = dist_dir
+        self.module_source_dir = module_source_dir
+
         self._cmake_executable = None
         self._doxygen_executable = None
         self._use_tbb = "ON"
@@ -183,6 +186,11 @@ class BuildPythonInstanceBase(ABC):
             "04_post_build_fixup": self.post_build_fixup,
             "05_final_import_test": self.final_import_test,
         }
+        if self.module_source_dir is not None:
+            python_package_build_steps[
+                f"06_build_external_module_wheel_{self.module_source_dir.name}"
+            ] = self.build_external_module_python_wheel
+
         self.dist_dir.mkdir(parents=True, exist_ok=True)
         build_report_fn: Path = self.dist_dir / f"build_log_{self.py_env}.json"
         build_manager: BuildManager = BuildManager(
@@ -404,6 +412,108 @@ class BuildPythonInstanceBase(ABC):
         self, platform_os_name: str, platform_architechure: str
     ) -> list[str]:
         pass
+
+    def build_external_module_python_wheel(self):
+        self.module_source_dir = Path(self.module_source_dir)
+        out_dir = self.module_source_dir / "dist"
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        # Ensure venv tools are first in PATH
+        with push_env(
+            PATH=f"{self.venv_info_dict['venv_bin_path']}{pathsep}{environ['PATH']}"
+        ):
+            py_exe = str(self.venv_info_dict["python_executable"])  # Python3_EXECUTABLE
+
+            # Compute Python include directory (Python3_INCLUDE_DIR)
+            py_include = self.venv_info_dict.get("python_include_dir", "")
+            if not py_include:
+                try:
+                    py_include = (
+                        subprocess.check_output(
+                            [
+                                py_exe,
+                                "-c",
+                                "import sysconfig; print(sysconfig.get_paths()['include'])",
+                            ],
+                            text=True,
+                        ).strip()
+                        or ""
+                    )
+                except Exception:
+                    py_include = ""
+
+            # Determine platform-specific settings (macOS)
+            config_settings: dict[str, str] = {}
+
+            # ITK build path for external modules: prefer configured ITK binary dir
+            itk_build_path = self.cmake_itk_source_build_configurations.get(
+                "ITK_BINARY_DIR:PATH",
+                "",
+            )
+
+            # wheel.py-api for stable ABI when Python >= 3.11
+            try:
+                py_minor = int(
+                    subprocess.check_output(
+                        [py_exe, "-c", "import sys; print(sys.version_info.minor)"],
+                        text=True,
+                    ).strip()
+                )
+            except Exception:
+                py_minor = 0
+            wheel_py_api = f"cp3{py_minor}" if py_minor >= 11 else ""
+
+            # Base build command
+            cmd = [
+                py_exe,
+                "-m",
+                "build",
+                "--verbose",
+                "--wheel",
+                "--outdir",
+                str(out_dir),
+                "--no-isolation",
+                "--skip-dependency-check",
+                f"--config-setting=cmake.build-type={self._build_type}",
+            ]
+
+            # Collect scikit-build CMake definitions
+            defs = CMakeArgumentBuilder()
+            defs.update(self.cmake_compiler_configurations.items())
+            # Propagate macOS specific defines if any were set above
+            for k, v in config_settings.items():
+                defs.set(k, v)
+
+            # Required defines for external module build
+            if itk_build_path:
+                defs.set("ITK_DIR:PATH", str(itk_build_path))
+            defs.set("CMAKE_INSTALL_LIBDIR:STRING", "lib")
+            defs.set("WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING", "PythonWheel")
+            defs.set("PY_SITE_PACKAGES_PATH:PATH", ".")
+            defs.set("BUILD_TESTING:BOOL", "OFF")
+            defs.set("Python3_EXECUTABLE:FILEPATH", py_exe)
+            if py_include:
+                defs.set("Python3_INCLUDE_DIR:PATH", py_include)
+
+            # Allow command-line cmake -D overrides to win last
+            if self.cmake_cmdline_definitions:
+                defs.update(self.cmake_cmdline_definitions.items())
+
+            # Append all cmake.define entries to the build cmd
+            cmd += defs.getPythonBuildCommandLineArguments()
+
+            # Stable ABI setting if applicable
+            if wheel_py_api:
+                cmd += [f"--config-setting=wheel.py-api={wheel_py_api}"]
+
+            # Module source directory to build
+            cmd += [self.module_source_dir]
+
+            echo_check_call(cmd)
+
+            # Post-process produced wheels (e.g., delocate on macOS x86_64)
+            for wheel in out_dir.glob("*.whl"):
+                self.fixup_wheel(str(wheel))
 
     def build_itk_python_wheels(self):
         with push_env(

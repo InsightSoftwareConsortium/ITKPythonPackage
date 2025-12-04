@@ -42,6 +42,7 @@ def build_one_python_instance(
     cleanup: bool,
     cmake_options: list[str],
     windows_extra_lib_paths: list[str],
+    module_source_dir: Path | None = None,
 ):
     """
     Backwards-compatible wrapper that now delegates to the new OOP builders.
@@ -71,6 +72,7 @@ def build_one_python_instance(
         cmake_options=cmake_options,
         windows_extra_lib_paths=windows_extra_lib_paths,
         dist_dir=IPP_SOURCE_DIR / "dist",
+        module_source_dir=module_source_dir,
     )
     builder.run()
 
@@ -111,6 +113,12 @@ def main() -> None:
         nargs="*",
         help="Extra options to pass to CMake, e.g. -DBUILD_SHARED_LIBS:BOOL=OFF",
     )
+    parser.add_argument(
+        "--module-source-dir",
+        type=Path,
+        default=None,
+        help="Path to the module source directory",
+    )
     args = parser.parse_args()
 
     with open(
@@ -127,6 +135,7 @@ def main() -> None:
             args.no_cleanup,
             args.cmake_options,
             args.lib_paths,
+            args.module_source_dir,
         )
 
 

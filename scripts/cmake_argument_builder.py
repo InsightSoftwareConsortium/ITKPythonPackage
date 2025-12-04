@@ -34,6 +34,9 @@ class CMakeArgumentBuilder:
         """Set or replace a definition (key should include type suffix if desired)."""
         self._defs[key] = value
 
+    def get(self, key: str, default: str | None = None) -> str | None:
+        return self._defs.get(key, default)
+
     def update(self, other: Mapping[str, str] | Iterable[Tuple[str, str]]) -> None:
         if isinstance(other, Mapping):
             self._defs.update(other)
