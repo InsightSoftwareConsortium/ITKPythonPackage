@@ -3,5 +3,5 @@ cmake_minimum_required(VERSION 3.26.6 FATAL_ERROR)
 
 project(ITKPythonPackageWheels CXX)
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ITKPythonPackage_Utils.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ITKPythonPackage_BuildWheels.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/ITKPythonPackage_Utils.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/ITKPythonPackage_BuildWheels.cmake)

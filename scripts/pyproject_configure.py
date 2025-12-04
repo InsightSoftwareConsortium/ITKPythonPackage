@@ -203,8 +203,8 @@ def update_wheel_pyproject_toml_parameters(
     return PYPROJECT_PY_PARAMETERS
 
 
-def get_wheel_names(SCRIPT_DIR: str):
-    with open(os.path.join(SCRIPT_DIR, "WHEEL_NAMES.txt")) as _file:
+def get_wheel_names(IPP_BuildWheelsSupport_DIR: str):
+    with open(os.path.join(IPP_BuildWheelsSupport_DIR, "WHEEL_NAMES.txt")) as _file:
         return [wheel_name.strip() for wheel_name in _file.readlines()]
 
 
@@ -287,6 +287,7 @@ def build_base_pyproject_parameters(
 def main():
     # Resolve script information locally
     SCRIPT_DIR = os.path.dirname(__file__)
+    IPP_BuildWheelsSupport_DIR = os.path.join(SCRIPT_DIR, "..", "BuildWheelsSupport")
     SCRIPT_NAME = os.path.basename(__file__)
     # Defaults
     default_output_dir = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
@@ -361,7 +362,7 @@ Accepted values for `wheel_name` are ``itk`` and all values read from
         package_env_config, SCRIPT_NAME, PEP440_VERSION
     )
 
-    wheel_names = get_wheel_names(SCRIPT_DIR)
+    wheel_names = get_wheel_names(IPP_BuildWheelsSupport_DIR)
     wheel_dependencies = get_wheel_dependencies(
         SCRIPT_DIR, base_params["PYPROJECT_VERSION"], wheel_names
     )

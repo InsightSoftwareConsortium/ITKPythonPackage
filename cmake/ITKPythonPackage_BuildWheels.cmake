@@ -37,7 +37,7 @@ message(STATUS "${msg} - done [${ITK_WHEEL_GROUP}]")
 
 # List of ITK wheel groups
 set(ITK_WHEEL_GROUPS "")
-file(STRINGS "${CMAKE_SOURCE_DIR}/scripts/WHEEL_NAMES.txt" ITK_WHEELS  REGEX "^itk-.+")
+file(STRINGS "${CMAKE_SOURCE_DIR}/WHEEL_NAMES.txt" ITK_WHEELS  REGEX "^itk-.+")
 foreach(wheel_name IN LISTS ITK_WHEELS)
   ipp_wheel_to_group(${wheel_name} group)
   list(APPEND ITK_WHEEL_GROUPS ${group})
