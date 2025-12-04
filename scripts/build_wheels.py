@@ -4,7 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from dotenv import dotenv_values
+from wheel_builder_utils import read_env_file
 
 from windows_build_python_instance import WindowsBuildPythonInstance
 from macos_build_python_instance import MacOSBuildPythonInstance
@@ -21,7 +21,7 @@ SCRIPT_DIR = Path(__file__).parent
 IPP_SOURCE_DIR = SCRIPT_DIR.parent.resolve()
 IPP_BuildWheelsSupport_DIR = IPP_SOURCE_DIR / "BuildWheelsSupport"
 IPP_SUPERBUILD_BINARY_DIR = IPP_SOURCE_DIR / "build" / "ITK-source"
-package_env_config = dotenv_values(IPP_SOURCE_DIR / "build" / "package.env")
+package_env_config = read_env_file(IPP_SOURCE_DIR / "build" / "package.env")
 ITK_SOURCE_DIR = package_env_config["ITK_SOURCE_DIR"]
 
 print(f"SCRIPT_DIR: {SCRIPT_DIR}")

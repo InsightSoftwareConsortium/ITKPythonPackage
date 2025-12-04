@@ -110,6 +110,46 @@ def _remove_tree(path: Path) -> None:
         pass
 
 
+def read_env_file(file_path: os.PathLike | str) -> dict[str, str]:
+    """Read a simple .env-style file and return a dict of key/value pairs.
+
+    Supported syntax:
+    - Blank lines and lines starting with '#' are ignored.
+    - Optional leading 'export ' prefix is ignored.
+    - KEY=VALUE pairs; surrounding single or double quotes are stripped.
+    - Whitespace around keys and the '=' is ignored.
+
+    This function does not perform variable expansion or modify os.environ.
+    """
+    result: dict[str, str] = {}
+    path = Path(file_path)
+    if not path.exists():
+        return result
+    try:
+        content = path.read_text(encoding="utf-8")
+    except Exception:
+        return result
+
+    for raw_line in content.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[len("export ") :].lstrip()
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        # Strip surrounding quotes if present
+        if (len(value) >= 2) and (
+            (value[0] == value[-1] == '"') or (value[0] == value[-1] == "'")
+        ):
+            value = value[1:-1]
+        result[key] = value
+    return result
+
+
 def _which(exe_name: str) -> str | Path | None:
     """Simple PATH-based lookup using pathlib only."""
     pathext: list[str] = environ.get("PATHEXT", ".EXE;.BAT;.CMD").split(";")
