@@ -179,7 +179,7 @@ class BuildPythonInstanceBase(ABC):
         python_package_build_steps: dict = {
             "01_superbuild_support_components": self.build_superbuild_support_components,
             "02_build_wrapped_itk_cplusplus": self.build_wrapped_itk_cplusplus,
-            "03_build_wheels": self.build_wheel,
+            "03_build_wheels": self.build_itk_python_wheels,
             "04_post_build_fixup": self.post_build_fixup,
             "05_final_import_test": self.final_import_test,
         }
@@ -405,18 +405,7 @@ class BuildPythonInstanceBase(ABC):
     ) -> list[str]:
         pass
 
-    def build_wheel(self):
-        """
-        REDO:  cmake_options do not belong here, they should be at intialization
-        need to make cmake configure module settings as dictionary to be re-user_data_dir
-        for standard cmake.exe and build wrapped cmake, and remove the replace magic
-        below:
-        make ITK specific build flags dictionary
-        make compiler environment specific dictionary
-        make other features specific dictionary
-
-        """
-
+    def build_itk_python_wheels(self):
         with push_env(
             PATH=f"{self.venv_info_dict['venv_bin_path']}{pathsep}{environ['PATH']}"
         ):
