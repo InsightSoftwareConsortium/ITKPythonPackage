@@ -140,10 +140,12 @@ def echo_check_call(cmd: list | tuple | str | Path, **kwargs: dict) -> int:
     **kwargs :
         Additional keyword arguments forwarded to subprocess.check_call.
     """
+    # convert all items to strings (i.e. Path() to str)
+    cmd = [str(c) for c in cmd]
     # Prepare a friendly command-line string for display
     try:
         if isinstance(cmd, (list, tuple)):
-            display_cmd = " ".join(str(c) for c in cmd)
+            display_cmd = " ".join(cmd)
         else:
             display_cmd = str(cmd)
     except Exception as e:
