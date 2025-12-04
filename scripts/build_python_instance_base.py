@@ -53,7 +53,8 @@ class BuildPythonInstanceBase(ABC):
         self.ITK_SOURCE_DIR = itk_source_dir
         self.SCRIPT_DIR = script_dir
         self.package_env_config = package_env_config
-        self.cleanup = cleanup
+        self.cleanup = False
+        # NEVER CLEANUP FOR DEBUGGGING cleanup
         self.windows_extra_lib_paths = windows_extra_lib_paths
         self.dist_dir = dist_dir
         self._cmake_executable = None

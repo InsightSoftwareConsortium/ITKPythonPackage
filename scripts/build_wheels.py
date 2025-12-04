@@ -94,7 +94,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--no-cleanup",
-        dest="cleanup",
+        dest="no_cleanup",
         action="store_false",
         help="Do not clean up temporary build files.",
     )
@@ -124,7 +124,7 @@ def main() -> None:
             wheel_names,
             OS_NAME,
             ARCH,
-            args.cleanup,
+            args.no_cleanup,
             args.cmake_options,
             args.lib_paths,
         )
