@@ -178,9 +178,10 @@ class BuildPythonInstanceBase(ABC):
         self.prepare_build_env()
         python_package_build_steps: dict = {
             "01_superbuild_support_components": self.build_superbuild_support_components,
-            "02_build_wheels": self.build_wheel,
-            "03_post_build_fixup": self.post_build_fixup,
-            "04_final_import_test": self.final_import_test,
+            "02_build_wrapped_itk_cplusplus": self.build_wrapped_itk_cplusplus,
+            "03_build_wheels": self.build_wheel,
+            "04_post_build_fixup": self.post_build_fixup,
+            "05_final_import_test": self.final_import_test,
         }
         self.dist_dir.mkdir(parents=True, exist_ok=True)
         build_report_fn: Path = self.dist_dir / f"build_log_{self.py_env}.json"
@@ -421,27 +422,6 @@ class BuildPythonInstanceBase(ABC):
         ):
             pyproject_configure = self.SCRIPT_DIR / "pyproject_configure.py"
 
-            # Clean up previous invocations
-            if (
-                self.cleanup
-                and Path(
-                    self.cmake_itk_source_build_configurations["ITK_BINARY_DIR:PATH"]
-                ).exists()
-            ):
-                _remove_tree(
-                    Path(
-                        self.cmake_itk_source_build_configurations[
-                            "ITK_BINARY_DIR:PATH"
-                        ]
-                    )
-                )
-
-            print("#")
-            print("# START-Build ITK C++")
-            print("#")
-            self.build_wrapped_itk_cplusplus()
-            print("# FINISHED-Build ITK C++")
-
             # Build wheels
             for wheel_name in self.wheel_names:
                 print("#")
@@ -515,6 +495,20 @@ class BuildPythonInstanceBase(ABC):
                 _remove_tree(bp / "Wrapping" / "Generators" / "CastXML")
 
     def build_wrapped_itk_cplusplus(self):
+        # Clean up previous invocations
+        if (
+            self.cleanup
+            and Path(
+                self.cmake_itk_source_build_configurations["ITK_BINARY_DIR:PATH"]
+            ).exists()
+        ):
+            _remove_tree(
+                Path(self.cmake_itk_source_build_configurations["ITK_BINARY_DIR:PATH"])
+            )
+
+        print("#")
+        print("# START-Build ITK C++")
+        print("#")
 
         # Build ITK python
         cmd = [
@@ -543,3 +537,4 @@ class BuildPythonInstanceBase(ABC):
                 self.cmake_itk_source_build_configurations["ITK_BINARY_DIR:PATH"],
             ]
         )
+        print("# FINISHED-Build ITK C++")
