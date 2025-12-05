@@ -102,7 +102,7 @@ endif()
 
 # Sanity checks
 if(DEFINED ITK_SOURCE_DIR AND NOT EXISTS ${ITK_SOURCE_DIR})
-message(FATAL_ERROR "ITK_SOURCE_DIR variable is defined but corresponds to nonexistent directory")
+  message(FATAL_ERROR "ITK_SOURCE_DIR=${ITK_SOURCE_DIR} : variable is defined but corresponds to nonexistent directory")
 endif()
 
 if(ITKPythonPackage_USE_TBB)
@@ -201,16 +201,16 @@ message(STATUS "SuperBuild - Searching for python")
 
 # Sanity checks
 if(DEFINED Python3_INCLUDE_DIR AND NOT EXISTS ${Python3_INCLUDE_DIR})
-message(FATAL_ERROR "Python3_INCLUDE_DIR variable is defined but corresponds to nonexistent directory")
+  message(FATAL_ERROR "Python3_INCLUDE_DIR=${Python3_INCLUDE_DIR}: variable is defined but corresponds to nonexistent directory")
 endif()
 if(DEFINED Python3_LIBRARY AND NOT EXISTS ${Python3_LIBRARY})
-message(FATAL_ERROR "Python3_LIBRARY variable is defined but corresponds to nonexistent file")
+  message(FATAL_ERROR "Python3_LIBRARY=${Python3_LIBRARY}: variable is defined but corresponds to nonexistent file")
 endif()
 if(DEFINED Python3_EXECUTABLE AND NOT EXISTS ${Python3_EXECUTABLE})
-message(FATAL_ERROR "Python3_EXECUTABLE variable is defined but corresponds to nonexistent file")
+  message(FATAL_ERROR "Python3_EXECUTABLE=${Python3_EXECUTABLE}: variable is defined but corresponds to nonexistent file")
 endif()
 if(DEFINED DOXYGEN_EXECUTABLE AND NOT EXISTS ${DOXYGEN_EXECUTABLE})
-message(FATAL_ERROR "DOXYGEN_EXECUTABLE variable is defined but corresponds to nonexistent file")
+  message(FATAL_ERROR "DOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE}: variable is defined but corresponds to nonexistent file")
 endif()
 
 if(NOT DEFINED Python3_INCLUDE_DIR
