@@ -1,4 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+
+import sys
+if sys.version_info < (3, 10):
+    sys.stderr.write("Python 3.10+ required for the python packaging script execution.\n")
+    sys.exit(1)
 
 import argparse
 import sys
