@@ -5,7 +5,7 @@ from pathlib import Path
 
 from build_python_instance_base import BuildPythonInstanceBase
 
-from wheel_builder_utils import echo_check_call
+from wheel_builder_utils import echo_check_call, push_dir
 
 
 class WindowsBuildPythonInstance(BuildPythonInstanceBase):
@@ -139,6 +139,94 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             "venv_bin_path": venv_bin_path,
             "venv_base_dir": venv_base_dir,
         }
+
+    def build_tarball(self):
+        """Create an archive of the ITK Python package build tree (Windows).
+
+        Mirrors scripts/windows-build-tarball.ps1 behavior:
+        - Remove contents of IPP\dist
+        - Use 7-Zip, when present, to archive the full IPP tree into
+          ITKPythonBuilds-windows.zip at the parent directory of IPP (e.g., C:\P)
+        - Fallback to Python's zip archive creation if 7-Zip is unavailable
+        """
+        ipp_dir = Path(self.IPP_SOURCE_DIR)
+        base_dir = ipp_dir.parent  # e.g., C:\P
+        out_zip = base_dir / "ITKPythonBuilds-windows.zip"
+
+        # 1) Clean IPP/dist contents (do not remove the directory itself)
+        dist_dir = ipp_dir / "dist"
+        if dist_dir.exists():
+            for p in dist_dir.glob("*"):
+                try:
+                    if p.is_dir():
+                        # shutil.rmtree alternative without importing here
+                        for sub in p.rglob("*"):
+                            # best-effort clean
+                            try:
+                                if sub.is_file() or sub.is_symlink():
+                                    sub.unlink(missing_ok=True)
+                            except Exception:
+                                pass
+                        try:
+                            p.rmdir()
+                        except Exception:
+                            pass
+                    else:
+                        p.unlink(missing_ok=True)
+                except Exception:
+                    # best-effort cleanup; ignore errors to continue packaging
+                    pass
+
+        # 2) Try to use 7-Zip if available
+        seven_zip_candidates = [
+            Path(r"C:\\7-Zip\\7z.exe"),
+            Path(r"C:\\Program Files\\7-Zip\\7z.exe"),
+            Path(r"C:\\Program Files (x86)\\7-Zip\\7z.exe"),
+        ]
+
+        seven_zip = None
+        for cand in seven_zip_candidates:
+            if cand.exists():
+                seven_zip = cand
+                break
+
+        if seven_zip is None:
+            # Try PATH lookup using where/which behavior from shutil
+            import shutil as _shutil
+
+            found = _shutil.which("7z.exe") or _shutil.which("7z")
+            if found:
+                seven_zip = Path(found)
+
+        if seven_zip is not None:
+            # Match the PS1: run from C:\P and create archive of IPP directory
+            with push_dir(base_dir):
+                # Using -t7z in the PS1 but naming .zip; preserve behavior
+                cmd = [
+                    str(seven_zip),
+                    "a",
+                    "-t7z",
+                    "-r",
+                    str(out_zip),
+                    "-w",
+                    str(ipp_dir),
+                ]
+                echo_check_call(cmd)
+            return
+
+        # 3) Fallback: create a .zip using Python's shutil
+        # This will create a zip archive named ITKPythonBuilds-windows.zip
+        import shutil as _shutil
+
+        if out_zip.exists():
+            try:
+                out_zip.unlink()
+            except Exception:
+                pass
+        # make_archive requires base name without extension
+        base_name = str(out_zip.with_suffix("").with_suffix(""))
+        # shutil.make_archive will append .zip
+        _shutil.make_archive(base_name, "zip", root_dir=str(base_dir), base_dir=str(ipp_dir.name))
 
     def discover_python_venvs(
         self, platform_os_name: str, platform_architechure: str
