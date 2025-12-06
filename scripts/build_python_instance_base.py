@@ -425,6 +425,10 @@ class BuildPythonInstanceBase(ABC):
         pass
 
     @abstractmethod
+    def build_tarball(self):
+        pass
+
+    @abstractmethod
     def prepare_build_env(self) -> None:  # pragma: no cover - abstract
         pass
 

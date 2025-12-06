@@ -10,7 +10,7 @@ import textwrap
 import shutil
 
 from linux_venv_utils import create_linux_venvs
-from wheel_builder_utils import echo_check_call, _remove_tree
+from wheel_builder_utils import echo_check_call, _remove_tree, push_dir
 
 
 class LinuxBuildPythonInstance(BuildPythonInstanceBase):
@@ -168,6 +168,68 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         )
         return
 
+    def build_tarball(self):
+        """Create a compressed tarball of the ITK Python build tree (Linux).
+
+        Mirrors scripts/dockcross-manylinux-build-tarball.sh behavior:
+        - tar selected content from ITKPythonPackage
+          * ITKPythonPackage/ITK-*
+          * ITKPythonPackage/oneTBB*
+          * ITKPythonPackage/requirements-dev.txt
+          * ITKPythonPackage/scripts
+        - zstd compress with options (-10 -T6 --long=31)
+        """
+        base_dir = Path(self.IPP_SOURCE_DIR)
+        tar_name = "ITKPythonBuilds-linux.tar"
+        tar_path = base_dir / tar_name
+        zst_path = base_dir / f"{tar_name}.zst"
+
+        itk_pkg = base_dir / "ITKPythonPackage"
+
+        with push_dir(base_dir):
+            # Build list of paths to include (expand existing patterns)
+            include_paths: list[str] = []
+
+            # ITK builds and oneTBB
+            for p in sorted(itk_pkg.glob("ITK-*")):
+                include_paths.append(str(p))
+            for p in sorted(itk_pkg.glob("oneTBB*")):
+                include_paths.append(str(p))
+
+            # requirements-dev.txt
+            req = itk_pkg / "requirements-dev.txt"
+            if req.exists():
+                include_paths.append(str(req))
+
+            # scripts directory
+            if (itk_pkg / "scripts").exists():
+                include_paths.append(str(itk_pkg / "scripts"))
+
+            if not include_paths:
+                include_paths = [
+                    str(itk_pkg / "ITK-*"),
+                    str(itk_pkg / "oneTBB*"),
+                    str(itk_pkg / "requirements-dev.txt"),
+                    str(itk_pkg / "scripts"),
+                ]
+
+            # Create tar
+            echo_check_call(["tar", "-cf", str(tar_path), *include_paths])
+
+            # Compress with zstd
+            echo_check_call(
+                [
+                    "zstd",
+                    "-f",
+                    "-10",
+                    "-T6",
+                    "--long=31",
+                    str(tar_path),
+                    "-o",
+                    str(zst_path),
+                ]
+            )
+
     def venv_paths(self) -> None:
         """Resolve virtualenv tool paths.
         py_env may be a name under IPP_SOURCE_DIR/venvs or an absolute/relative path to a venv.
@@ -255,10 +317,10 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             base = Path("/opt/python")
             if not base.exists():
                 return []
-            names.extend([p.name for p in venvs_dir.iterdir() if p.is_dir()])
+            names.extend([p.name for p in base.iterdir() if p.is_dir()])
             return sorted(names)
 
-        default_py_envs = _discover_linux_pythons() + _discover_ipp_venvs()
+        default_py_envs = _discover_local_pythons() + _discover_ipp_venvs()
 
         return default_py_envs
 

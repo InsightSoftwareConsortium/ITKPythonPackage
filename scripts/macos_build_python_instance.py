@@ -6,7 +6,7 @@ from pathlib import Path
 from build_python_instance_base import BuildPythonInstanceBase
 from macos_venv_utils import create_macos_venvs
 
-from wheel_builder_utils import echo_check_call
+from wheel_builder_utils import echo_check_call, push_dir
 
 
 class MacOSBuildPythonInstance(BuildPythonInstanceBase):
@@ -65,6 +65,79 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             delocate_wheel = self.venv_info_dict["venv_bin_path"] / "delocate-wheel"
             echo_check_call([str(delocate_listdeps), str(filepath)])
             echo_check_call([str(delocate_wheel), str(filepath)])
+
+    def build_tarball(self):
+        """Create a compressed tarball of the ITK Python build tree (macOS).
+
+        Mirrors scripts/macpython-build-tarball.sh behavior:
+        - dot_clean ITKPythonPackage
+        - tar selected content
+        - zstd compress with options (-10 -T6 --long=31)
+        - add "-arm64" suffix for arm64 architectures
+        """
+        base_dir = Path(self.IPP_SOURCE_DIR)
+        arch_postfix = "-arm64" if self.platform_architechture == "arm64" else ""
+        tar_name = f"ITKPythonBuilds-macosx{arch_postfix}.tar"
+        tar_path = base_dir / tar_name
+        zst_path = base_dir / f"{tar_name}.zst"
+
+        itk_pkg = base_dir / "ITKPythonPackage"
+
+        # Optional: clean AppleDouble files if tool is available
+        with push_dir(base_dir):
+            try:
+                echo_check_call(["dot_clean", str(itk_pkg.name)])
+            except Exception:
+                # dot_clean may not be available; continue without it
+                pass
+
+            # Build list of paths to include (expand existing patterns)
+            include_paths: list[str] = []
+
+            # ITK builds
+            for p in sorted((itk_pkg.glob("ITK-*"))):
+                include_paths.append(str(p))
+
+            # On macOS, TBB contents are not included (kept empty in bash)
+
+            # venvs directory
+            if (itk_pkg / "venvs").exists():
+                include_paths.append(str(itk_pkg / "venvs"))
+
+            # Required extraction marker
+            req_file = base_dir / "ITKPythonPackageRequiredExtractionDir.txt"
+            if req_file.exists():
+                include_paths.append(str(req_file))
+
+            # scripts directory
+            if (itk_pkg / "scripts").exists():
+                include_paths.append(str(itk_pkg / "scripts"))
+
+            # Fall back to original paths if expansions found nothing
+            if not include_paths:
+                include_paths = [
+                    str(itk_pkg / "ITK-*"),
+                    str(itk_pkg / "venvs"),
+                    str(base_dir / "ITKPythonPackageRequiredExtractionDir.txt"),
+                    str(itk_pkg / "scripts"),
+                ]
+
+            # Create tar
+            echo_check_call(["tar", "-cf", str(tar_path), *include_paths])
+
+            # Compress with zstd
+            echo_check_call(
+                [
+                    "zstd",
+                    "-f",
+                    "-10",
+                    "-T6",
+                    "--long=31",
+                    str(tar_path),
+                    "-o",
+                    str(zst_path),
+                ]
+            )
 
     def venv_paths(self) -> None:
         """Resolve virtualenv tool paths.
