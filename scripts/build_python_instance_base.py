@@ -429,6 +429,10 @@ class BuildPythonInstanceBase(ABC):
         pass
 
     @abstractmethod
+    def post_build_cleanup(self):
+        pass
+
+    @abstractmethod
     def prepare_build_env(self) -> None:  # pragma: no cover - abstract
         pass
 

@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import copy
 from pathlib import Path
+from os import environ
 
 from build_python_instance_base import BuildPythonInstanceBase
 from macos_venv_utils import create_macos_venvs
 
-from wheel_builder_utils import echo_check_call, push_dir
+from wheel_builder_utils import echo_check_call, push_dir, _remove_tree
 
 
 class MacOSBuildPythonInstance(BuildPythonInstanceBase):
@@ -52,6 +53,65 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         # delocate on macOS x86_64 only
         if self.platform_architechture != "arm64":
             self.fixup_wheels()
+
+    def post_build_cleanup(self) -> None:
+        """Clean macOS build artifacts (leave dist/ intact).
+
+        Modeled after the manylinux cleanup, adapted to macOS naming:
+        - remove oneTBB-prefix (symlink or dir)
+        - remove ITKPythonPackage/, tools/, _skbuild/, build/
+        - remove top-level *.egg-info
+        - remove ITK-*-macosx_<arch>/
+        - remove ITKPythonBuilds-macosx*.tar.zst
+        - remove any module prereq clones from ITK_MODULE_PREQ
+        """
+        base = Path(self.IPP_SOURCE_DIR)
+
+        def rm(p: Path):
+            try:
+                _remove_tree(p)
+            except Exception:
+                pass
+
+        # oneTBB-prefix
+        tbb = base / "oneTBB-prefix"
+        try:
+            if tbb.is_symlink() or tbb.is_file():
+                tbb.unlink(missing_ok=True)  # type: ignore[arg-type]
+            elif tbb.exists():
+                rm(tbb)
+        except Exception:
+            pass
+
+        # Common build dirs
+        for rel in ("ITKPythonPackage", "tools", "_skbuild", "build"):
+            rm(base / rel)
+
+        # egg-info entries
+        for p in base.glob("*.egg-info"):
+            rm(p)
+
+        # ITK build tree
+        osx_arch = "arm64" if self.platform_architechture == "arm64" else "x86_64"
+        for p in base.glob(f"ITK-*-macosx_{osx_arch}"):
+            rm(p)
+
+        # Tarballs
+        for p in base.glob("ITKPythonBuilds-macosx*.tar.zst"):
+            rm(p)
+
+        # Module prerequisites
+        itk_preq = self.package_env_config.get("ITK_MODULE_PREQ") or environ.get("ITK_MODULE_PREQ", "")
+        if itk_preq:
+            for entry in itk_preq.split(":"):
+                entry = entry.strip()
+                if not entry:
+                    continue
+                try:
+                    module_name = entry.split("@", 1)[0].split("/", 1)[1]
+                except Exception:
+                    continue
+                rm(base / module_name)
 
     def final_import_test(self) -> None:
         self._final_import_test_fn(self.py_env, Path(self.dist_dir))

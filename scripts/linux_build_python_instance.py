@@ -168,6 +168,74 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         )
         return
 
+    def post_build_cleanup(self) -> None:
+        """Clean Linux build artifacts using dockcross-manylinux-cleanup.sh as reference.
+
+        Actions (leaving dist/ intact):
+        - unlink oneTBB-prefix (symlink)
+        - remove ITKPythonPackage/, tools/, _skbuild/, build/
+        - remove ./*.egg-info/
+        - remove ITK-* manylinux build tree and tarballs
+        - if ITK_MODULE_PREQ is set ("org/name@ref:org2/name2@ref2"), remove cloned module dirs
+        """
+        base = Path(self.IPP_SOURCE_DIR)
+
+        # Helper to remove arbitrary paths (files/dirs) quietly
+        def rm(p: Path):
+            try:
+                _remove_tree(p)
+            except Exception:
+                pass
+
+        # 1) unlink oneTBB-prefix if it's a symlink or file
+        tbb_link = base / "oneTBB-prefix"
+        try:
+            if tbb_link.exists() or tbb_link.is_symlink():
+                if tbb_link.is_symlink() or tbb_link.is_file():
+                    tbb_link.unlink(missing_ok=True)  # type: ignore[arg-type]
+                else:
+                    # If it is a directory (not expected), remove tree
+                    rm(tbb_link)
+        except Exception:
+            pass
+
+        # 2) standard build directories
+        for rel in ("ITKPythonPackage", "tools", "_skbuild", "build"):
+            rm(base / rel)
+
+        # 3) egg-info folders at top-level
+        for p in base.glob("*.egg-info"):
+            rm(p)
+
+        # 4) ITK build tree and tarballs specific to manylinux
+        manylinux_ver = (self.package_env_config.get("MANYLINUX_VERSION") or
+                         environ.get("MANYLINUX_VERSION", ""))
+        target_arch = (self.platform_architechture or
+                       self.package_env_config.get("TARGET_ARCH", ""))
+        # ITK-*-manylinux<ver>_<arch>/
+        if manylinux_ver and target_arch:
+            for p in base.glob(f"ITK-*-manylinux{manylinux_ver}_{target_arch}"):
+                rm(p)
+        # Tarballs: ITKPythonBuilds-linux-manylinux*<ver>*.tar.zst
+        if manylinux_ver:
+            for p in base.glob(f"ITKPythonBuilds-linux-manylinux*{manylinux_ver}*.tar.zst"):
+                rm(p)
+
+        # 5) Optional module prerequisites cleanup (ITK_MODULE_PREQ)
+        # Format: "InsightSoftwareConsortium/ITKModuleA@v1.0:Kitware/ITKModuleB@sha" -> remove repo names
+        itk_preq = self.package_env_config.get("ITK_MODULE_PREQ") or environ.get("ITK_MODULE_PREQ", "")
+        if itk_preq:
+            for entry in itk_preq.split(":"):
+                entry = entry.strip()
+                if not entry:
+                    continue
+                try:
+                    module_name = entry.split("@", 1)[0].split("/", 1)[1]
+                except Exception:
+                    continue
+                rm(base / module_name)
+        # Note: dist/ and download scripts are intentionally preserved
+
     def build_tarball(self):
         """Create a compressed tarball of the ITK Python build tree (Linux).
 

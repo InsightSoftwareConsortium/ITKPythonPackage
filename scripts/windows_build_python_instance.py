@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import copy
 from pathlib import Path
+from os import environ
 
 from build_python_instance_base import BuildPythonInstanceBase
 
-from wheel_builder_utils import echo_check_call, push_dir
+from wheel_builder_utils import echo_check_call, push_dir, _remove_tree
 
 
 class WindowsBuildPythonInstance(BuildPythonInstanceBase):
@@ -47,6 +48,64 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         search_lib_paths.append(str(self.IPP_SOURCE_DIR / "oneTBB-prefix" / "bin"))
         search_lib_paths_str: str = ";".join(map(str, search_lib_paths))
         self.fixup_wheels(search_lib_paths_str)
+
+    def post_build_cleanup(self) -> None:
+        """Clean Windows build artifacts (leave dist/ intact).
+
+        Mirrors the intent of dockcross-manylinux-cleanup.sh for Windows:
+        - remove oneTBB-prefix (symlink/dir)
+        - remove ITKPythonPackage/, tools/, _skbuild/, build/
+        - remove top-level *.egg-info
+        - remove ITK-win_* build trees
+        - remove ITKPythonBuilds-win*.tar.zst if present
+        - remove any module prereq clones from ITK_MODULE_PREQ env/config
+        """
+        base = Path(self.IPP_SOURCE_DIR)
+
+        def rm(p: Path):
+            try:
+                _remove_tree(p)
+            except Exception:
+                pass
+
+        # oneTBB-prefix
+        tbb = base / "oneTBB-prefix"
+        try:
+            if tbb.is_symlink() or tbb.is_file():
+                tbb.unlink(missing_ok=True)  # type: ignore[arg-type]
+            elif tbb.exists():
+                rm(tbb)
+        except Exception:
+            pass
+
+        # Common build dirs
+        for rel in ("ITKPythonPackage", "tools", "_skbuild", "build"):
+            rm(base / rel)
+
+        # egg-info
+        for p in base.glob("*.egg-info"):
+            rm(p)
+
+        # ITK build tree(s)
+        for p in base.glob("ITK-win_*"):
+            rm(p)
+
+        # Tarballs (if used on Windows)
+        for p in base.glob("ITKPythonBuilds-win*.tar.zst"):
+            rm(p)
+
+        # Module prerequisites
+        itk_preq = self.package_env_config.get("ITK_MODULE_PREQ") or environ.get("ITK_MODULE_PREQ", "")
+        if itk_preq:
+            for entry in itk_preq.split(":"):
+                entry = entry.strip()
+                if not entry:
+                    continue
+                try:
+                    module_name = entry.split("@", 1)[0].split("/", 1)[1]
+                except Exception:
+                    continue
+                rm(base / module_name)
 
     def final_import_test(self) -> None:
         self._final_import_test_fn(self.py_env, Path(self.dist_dir))
