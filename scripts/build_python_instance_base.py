@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from abc import ABC, abstractmethod
 from typing import Iterable
 
@@ -15,7 +16,19 @@ from wheel_builder_utils import (
     echo_check_call,
     push_env,
     _which,
+    set_main_variable_names,
 )
+
+(
+    SCRIPT_DIR,
+    IPP_SOURCE_DIR,
+    IPP_BuildWheelsSupport_DIR,
+    IPP_SUPERBUILD_BINARY_DIR,
+    package_env_config,
+    ITK_SOURCE_DIR,
+    OS_NAME,
+    ARCH,
+) = set_main_variable_names(Path(__file__).parent)
 
 
 class BuildPythonInstanceBase(ABC):
@@ -44,6 +57,8 @@ class BuildPythonInstanceBase(ABC):
         windows_extra_lib_paths: list[str],
         dist_dir: Path,
         module_source_dir: Path | None = None,
+        module_dependancies_root_dir: Path | None = None,
+        itk_module_deps: str | None = None,
     ) -> None:
         self.py_env = py_env
         self.wheel_names = list(wheel_names)
@@ -55,10 +70,14 @@ class BuildPythonInstanceBase(ABC):
         self.SCRIPT_DIR = script_dir
         self.package_env_config = package_env_config
         self.cleanup = False
+        self.cmake_options = cmake_options
         # NEVER CLEANUP FOR DEBUGGGING cleanup
         self.windows_extra_lib_paths = windows_extra_lib_paths
         self.dist_dir = dist_dir
+        # Needed for processing remote modules and their dependancies
         self.module_source_dir = module_source_dir
+        self.module_dependancies_root_dir = module_dependancies_root_dir
+        self.itk_module_deps = itk_module_deps
 
         self._cmake_executable = None
         self._doxygen_executable = None
@@ -179,6 +198,11 @@ class BuildPythonInstanceBase(ABC):
         """Run the full build flow for this Python instance."""
         # Use BuildManager to persist and resume build steps
         self.prepare_build_env()
+
+        # HACK
+        if self.itk_module_deps:
+            self._build_module_dependancies()
+
         python_package_build_steps: dict = {
             "01_superbuild_support_components": self.build_superbuild_support_components,
             "02_build_wrapped_itk_cplusplus": self.build_wrapped_itk_cplusplus,
@@ -386,6 +410,11 @@ class BuildPythonInstanceBase(ABC):
             else (shutil.which("ninja") or str(ninja_executable_path))
         )
         return Path(ninja_executable)
+
+    @abstractmethod
+    def clone(self):
+        # each subclass must implement this method that is used to clone itself
+        pass
 
     @abstractmethod
     def venv_paths(self):
@@ -637,3 +666,140 @@ class BuildPythonInstanceBase(ABC):
             ]
         )
         print("# FINISHED-Build ITK C++")
+
+    def _build_module_dependancies(self):
+        """
+        Build prerequisite ITK external modules, mirroring the behavior of
+        the platform shell scripts that use the ITK_MODULE_PREQ environment.
+
+        Accepted formats in self.itk_module_deps (colon-delimited):
+          - "MeshToPolyData@v0.10.0"  -> defaults to
+            "InsightSoftwareConsortium/ITKMeshToPolyData@v0.10.0"
+          - "InsightSoftwareConsortium/ITKMeshToPolyData@v0.10.0"
+
+        For each dependency, clone the repository, checkout the given tag,
+        invoke the platform download-cache-and-build script, then copy
+        headers and wrapping input files into the current module tree
+        (include/ and wrapping/), similar to the bash implementations.
+        """
+
+        if len(self.itk_module_deps) == 0:
+            return
+        print(f"Building module dependancies: {self.itk_module_deps}")
+        self.module_dependancies_root_dir.mkdir(parents=True, exist_ok=True)
+
+        # Normalize entries to "Org/Repo@Tag"
+        def _normalize(entry: str) -> str:
+            entry = entry.strip()
+            if not entry:
+                return ""
+            if "/" in entry:
+                # Already Org/Repo@Tag
+                return entry
+            # Short form: Name@Tag -> InsightSoftwareConsortium/ITKName@Tag
+            try:
+                name, tag = entry.split("@", 1)
+            except ValueError:
+                # If no tag, pass-through (unexpected)
+                return entry
+            repo = f"ITK{name}"
+            return f"InsightSoftwareConsortium/{repo}@{tag}"
+
+        # Ensure working directories exist
+        module_root = Path(self.module_source_dir).resolve()
+        include_dir = module_root / "include"
+        wrapping_dir = module_root / "wrapping"
+        include_dir.mkdir(parents=True, exist_ok=True)
+        wrapping_dir.mkdir(parents=True, exist_ok=True)
+
+        dep_entries = [e for e in (s for s in self.itk_module_deps.split(":")) if e]
+        normalized = [_normalize(e) for e in dep_entries]
+        normalized = [e for e in normalized if e]
+
+        # Build each dependency in order
+        for current_entry, entry in enumerate(normalized):
+            org = entry.split("/", 1)[0]
+            repo_tag = entry.split("/", 1)[1]
+            repo = repo_tag.split("@", 1)[0]
+            tag = repo_tag.split("@", 1)[1] if "@" in repo_tag else ""
+
+            upstream = f"https://github.com/{org}/{repo}.git"
+            dependant_module_clone_dir = (
+                self.module_dependancies_root_dir / repo
+                if self.module_dependancies_root_dir
+                else module_root / repo
+            )
+            if not dependant_module_clone_dir.exists():
+                echo_check_call(["git", "clone", upstream, dependant_module_clone_dir])
+
+            # Checkout requested tag
+            with push_env():
+                echo_check_call(
+                    [
+                        "git",
+                        "-C",
+                        dependant_module_clone_dir,
+                        "fetch",
+                        "--all",
+                        "--tags",
+                    ]
+                )
+                if tag:
+                    echo_check_call(
+                        ["git", "-C", dependant_module_clone_dir, "checkout", tag]
+                    )
+
+                if (dependant_module_clone_dir / "setup.py").exists():
+                    print(
+                        f"Old sci-kit-build with setup.py is no longer supported for {dependant_module_clone_dir} at {tag}"
+                    )
+                    sys.exit(1)
+
+                # Clonen the current build environment, and modify for current module
+                dependannt_module_build_setup = self.clone()
+                dependannt_module_build_setup.module_source_dir = Path(
+                    dependant_module_clone_dir
+                )
+                dependannt_module_build_setup.itk_module_deps = (
+                    None  # Prevent recursion
+                )
+                dependannt_module_build_setup.run()
+
+            # After building dependency, copy includes and wrapping files
+            # 1) Top-level include/* -> include/
+            dep_include = dependant_module_clone_dir / "include"
+            if dep_include.exists():
+                for src in dep_include.rglob("*"):
+                    if src.is_file():
+                        rel = src.relative_to(dep_include)
+                        dst = include_dir / rel
+                        dst.parent.mkdir(parents=True, exist_ok=True)
+                        try:
+                            shutil.copy2(src, dst)
+                        except Exception:
+                            pass
+
+            # 2) Any */build/*/include/* -> include/
+            for sub in dependant_module_clone_dir.rglob("*build*/**/include"):
+                if sub.is_dir():
+                    for src in sub.rglob("*"):
+                        if src.is_file():
+                            rel = src.relative_to(sub)
+                            dst = include_dir / rel
+                            dst.parent.mkdir(parents=True, exist_ok=True)
+                            try:
+                                shutil.copy2(src, dst)
+                            except Exception:
+                                pass
+
+            # 3) Wrapping templates (*.in, *.init) -> wrapping/
+            dep_wrapping = dependant_module_clone_dir / "wrapping"
+            if dep_wrapping.exists():
+                for pattern in ("*.in", "*.init"):
+                    for src in dep_wrapping.rglob(pattern):
+                        if src.is_file():
+                            dst = wrapping_dir / src.name
+                            try:
+                                shutil.copy2(src, dst)
+                            except Exception:
+                                pass

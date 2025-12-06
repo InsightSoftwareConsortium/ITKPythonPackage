@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 
 from build_python_instance_base import BuildPythonInstanceBase
@@ -8,6 +9,14 @@ from wheel_builder_utils import echo_check_call
 
 
 class WindowsBuildPythonInstance(BuildPythonInstanceBase):
+
+    def clone(self):
+        # Pattern for generating a deep copy of the current object state as a new build instance
+        cls = self.__class__
+        new = cls.__new__(cls)
+        new.__dict__ = copy.deepcopy(self.__dict__)
+        return new
+
     def prepare_build_env(self) -> None:
         # Windows
 

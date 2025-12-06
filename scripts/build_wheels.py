@@ -1,85 +1,33 @@
 #!/usr/bin/env python3
 
 import sys
+
+from scripts.wheel_builder_utils import (
+    set_main_variable_names,
+)
+from scripts.build_one_python_factory import build_one_python_instance
+
 if sys.version_info < (3, 10):
-    sys.stderr.write("Python 3.10+ required for the python packaging script execution.\n")
+    sys.stderr.write(
+        "Python 3.10+ required for the python packaging script execution.\n"
+    )
     sys.exit(1)
 
 import argparse
-import sys
 from pathlib import Path
 
-from wheel_builder_utils import read_env_file
+from wheel_builder_utils import detect_platform
 
-from windows_build_python_instance import WindowsBuildPythonInstance
-from macos_build_python_instance import MacOSBuildPythonInstance
-from linux_build_python_instance import LinuxBuildPythonInstance
-from wheel_builder_utils import (
-    detect_platform,
-)
-
-
-SCRIPT_DIR = Path(__file__).parent
-# TODO: Hard-coded module must be 1 direectory above checkedout ITKPythonPackage
-# MODULE_EXAMPLESROOT_DIR: Path = SCRIPT_DIR.parent.parent.resolve()
-
-IPP_SOURCE_DIR = SCRIPT_DIR.parent.resolve()
-IPP_BuildWheelsSupport_DIR = IPP_SOURCE_DIR / "BuildWheelsSupport"
-IPP_SUPERBUILD_BINARY_DIR = IPP_SOURCE_DIR / "build" / "ITK-source"
-package_env_config = read_env_file(IPP_SOURCE_DIR / "build" / "package.env")
-ITK_SOURCE_DIR = package_env_config["ITK_SOURCE_DIR"]
-
-print(f"SCRIPT_DIR: {SCRIPT_DIR}")
-print(f"ROOT_DIR: {IPP_SOURCE_DIR}")
-print(f"ITK_SOURCE: {IPP_SUPERBUILD_BINARY_DIR}")
-
-sys.path.insert(0, str(SCRIPT_DIR / "internal"))
-
-OS_NAME: str = "UNKNOWN"
-ARCH: str = "UNKNOWN"
-
-
-def build_one_python_instance(
-    py_env,
-    wheel_names,
-    platform_name: str,
-    platform_architechture: str,
-    cleanup: bool,
-    cmake_options: list[str],
-    windows_extra_lib_paths: list[str],
-    module_source_dir: Path | None = None,
-):
-    """
-    Backwards-compatible wrapper that now delegates to the new OOP builders.
-    """
-    platform = platform_name.lower()
-    if platform == "windows":
-        builder_cls = WindowsBuildPythonInstance
-    elif platform in ("darwin", "mac", "macos", "osx"):
-        builder_cls = MacOSBuildPythonInstance
-    elif platform == "linux":
-        builder_cls = LinuxBuildPythonInstance
-    else:
-        raise ValueError(f"Unknown platform {platform_name}")
-
-    # Pass helper function callables and dist dir to avoid circular imports
-    builder = builder_cls(
-        py_env=py_env,
-        wheel_names=wheel_names,
-        platform_name=platform_name,
-        platform_architechture=platform_architechture,
-        ipp_source_dir=IPP_SOURCE_DIR,
-        ipp_superbuild_binary_dir=IPP_SUPERBUILD_BINARY_DIR,
-        itk_source_dir=ITK_SOURCE_DIR,
-        script_dir=SCRIPT_DIR,
-        package_env_config=package_env_config,
-        cleanup=cleanup,
-        cmake_options=cmake_options,
-        windows_extra_lib_paths=windows_extra_lib_paths,
-        dist_dir=IPP_SOURCE_DIR / "dist",
-        module_source_dir=module_source_dir,
-    )
-    builder.run()
+(
+    SCRIPT_DIR,
+    IPP_SOURCE_DIR,
+    IPP_BuildWheelsSupport_DIR,
+    IPP_SUPERBUILD_BINARY_DIR,
+    package_env_config,
+    ITK_SOURCE_DIR,
+    OS_NAME,
+    ARCH,
+) = set_main_variable_names(Path(__file__).parent)
 
 
 def main() -> None:
@@ -124,6 +72,18 @@ def main() -> None:
         default=None,
         help="Path to the module source directory",
     )
+    parser.add_argument(
+        "--module-dependancies-root-dir",
+        type=Path,
+        default=None,
+        help="Path to the root directory for module dependancies",
+    )
+    parser.add_argument(
+        "--itk-module-deps",
+        type=str,
+        default=None,
+        help="Semicolon-delimited list of ITK module dependencies",
+    )
     args = parser.parse_args()
 
     with open(
@@ -131,7 +91,10 @@ def main() -> None:
     ) as content:
         wheel_names = [wheel_name.strip() for wheel_name in content.readlines()]
 
-    normalized_python_versions: list[str] =[ p.replace("cp3","3.") for p in args.py_envs ]
+    normalized_python_versions: list[str] = [
+        p.replace("cp3", "3.") for p in args.py_envs
+    ]
+
     for py_env in normalized_python_versions:
         build_one_python_instance(
             py_env,
@@ -142,6 +105,8 @@ def main() -> None:
             args.cmake_options,
             args.lib_paths,
             args.module_source_dir,
+            args.module_dependancies_root_dir,
+            args.itk_module_deps,
         )
 
 

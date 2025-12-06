@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 
 from build_python_instance_base import BuildPythonInstanceBase
@@ -9,6 +10,14 @@ from wheel_builder_utils import echo_check_call
 
 
 class MacOSBuildPythonInstance(BuildPythonInstanceBase):
+
+    def clone(self):
+        # Pattern for generating a deep copy of the current object state as a new build instance
+        cls = self.__class__
+        new = cls.__new__(cls)
+        new.__dict__ = copy.deepcopy(self.__dict__)
+        return new
+
     def prepare_build_env(self) -> None:
 
         # #############################################
@@ -124,6 +133,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         self, platform_os_name: str, platform_architechure: str
     ) -> list[str]:
         names = []
+
         # Discover virtualenvs under project 'venvs' folder
         def _discover_ipp_venvs() -> list[str]:
             venvs_dir = self.IPP_SOURCE_DIR / "venvs"

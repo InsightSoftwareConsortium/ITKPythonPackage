@@ -170,7 +170,9 @@ def _which(exe_name: str) -> str | Path | None:
     return None
 
 
-def echo_check_call(cmd: list | tuple | str | Path, **kwargs: dict) -> int:
+def echo_check_call(
+    cmd: list[str | Path] | tuple[str | Path] | str | Path, **kwargs: dict
+) -> int:
     """Print the command then run subprocess.check_call.
 
     Parameters
@@ -240,3 +242,34 @@ def which_required(name: str) -> str:
             f"MISSING: {name} not found in PATH; aborting until required executables can be found"
         )
     return path
+
+
+def set_main_variable_names(SCRIPT_DIR):
+    # TODO: Hard-coded module must be 1 direectory above checkedout ITKPythonPackage
+    # MODULE_EXAMPLESROOT_DIR: Path = SCRIPT_DIR.parent.parent.resolve()
+
+    IPP_SOURCE_DIR = SCRIPT_DIR.parent.resolve()
+    IPP_BuildWheelsSupport_DIR = IPP_SOURCE_DIR / "BuildWheelsSupport"
+    IPP_SUPERBUILD_BINARY_DIR = IPP_SOURCE_DIR / "build" / "ITK-source"
+    package_env_config = read_env_file(IPP_SOURCE_DIR / "build" / "package.env")
+    ITK_SOURCE_DIR = package_env_config["ITK_SOURCE_DIR"]
+
+    print(f"SCRIPT_DIR: {SCRIPT_DIR}")
+    print(f"ROOT_DIR: {IPP_SOURCE_DIR}")
+    print(f"ITK_SOURCE: {IPP_SUPERBUILD_BINARY_DIR}")
+
+    sys.path.insert(0, str(SCRIPT_DIR / "internal"))
+
+    OS_NAME: str = "UNKNOWN"
+    ARCH: str = "UNKNOWN"
+
+    return (
+        SCRIPT_DIR,
+        IPP_SOURCE_DIR,
+        IPP_BuildWheelsSupport_DIR,
+        IPP_SUPERBUILD_BINARY_DIR,
+        package_env_config,
+        ITK_SOURCE_DIR,
+        OS_NAME,
+        ARCH,
+    )

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from os import environ
 from pathlib import Path
 
@@ -13,6 +14,14 @@ from wheel_builder_utils import echo_check_call, _remove_tree
 
 
 class LinuxBuildPythonInstance(BuildPythonInstanceBase):
+
+    def clone(self):
+        # Pattern for generating a deep copy of the current object state as a new build instance
+        cls = self.__class__
+        new = cls.__new__(cls)
+        new.__dict__ = copy.deepcopy(self.__dict__)
+        return new
+
     def prepare_build_env(self) -> None:
         # #############################################
         # ### Setup build tools
@@ -133,7 +142,12 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             plat = None
             if self.platform_architechture == "x64" and manylinux_ver:
                 plat = f"manylinux{manylinux_ver}_x86_64"
-            cmd = [self.venv_info_dict["python_executable"], "-m", "auditwheel", "repair"]
+            cmd = [
+                self.venv_info_dict["python_executable"],
+                "-m",
+                "auditwheel",
+                "repair",
+            ]
             if plat:
                 cmd += ["--plat", plat]
             cmd += [str(filepath), "-w", str(self.IPP_SOURCE_DIR / "dist")]
@@ -149,7 +163,9 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                 ]
             )
             echo_check_call(cmd, env=env)
-        print(f"Building outside of manylinux environment does not require wheel fixups.")
+        print(
+            f"Building outside of manylinux environment does not require wheel fixups."
+        )
         return
 
     def venv_paths(self) -> None:
@@ -158,13 +174,13 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         """
         # First determine if py_env is the full path to a python environment
         _command_line_pip_executable = Path(self.py_env) / "bin" / "pip3"
-        _dockcross_pip_executable = Path("/opt/python")/"bin"/ "pip3"
+        _dockcross_pip_executable = Path("/opt/python") / "bin" / "pip3"
         if _command_line_pip_executable.exists():
             venv_dir = Path(self.py_env)
             local_pip_executable = _command_line_pip_executable
         elif _dockcross_pip_executable.exists():
             venv_dir = Path("/opt/python")
-            local_pip_executable = _dockcross_pip_executable;
+            local_pip_executable = _dockcross_pip_executable
         else:
             venv_root_dir: Path = self.IPP_SOURCE_DIR / "venvs"
             _venvs_dir_list = create_linux_venvs(self.py_env, venv_root_dir)
@@ -224,6 +240,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         self, platform_os_name: str, platform_architechure: str
     ) -> list[str]:
         names = []
+
         # Discover virtualenvs under project 'venvs' folder
         def _discover_ipp_venvs() -> list[str]:
             venvs_dir = self.IPP_SOURCE_DIR / "venvs"
@@ -232,6 +249,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             names.extend([p.name for p in venvs_dir.iterdir() if p.is_dir()])
             # Sort for stable order
             return sorted(names)
+
         # Discover available manylinux CPython installs under /opt/python
         def _discover_local_pythons() -> list[str]:
             base = Path("/opt/python")
