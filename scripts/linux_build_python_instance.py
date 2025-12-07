@@ -45,13 +45,16 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         self.cmake_compiler_configurations.set(
             "CMAKE_CXX_COMPILER_TARGET:STRING", target_triple
         )
-        # TODO: do not use environ here, get from package_env instead
-        manylinux_ver = environ.get("MANYLINUX_VERSION", "")
+        itk_binary_build_name:str = f"ITK-{self.py_env}-linux_{self.platform_architechture}"
+        manylinux_ver = self.package_env_config.get("MANYLINUX_VERSION", "")
+        if len(manylinux_ver) > 0:
+            itk_binary_build_name:str = f"ITK-{self.py_env}-manylinux{manylinux_ver}_{self.platform_architechture}"
+
         self.cmake_itk_source_build_configurations.set(
             "ITK_BINARY_DIR:PATH",
             str(
                 self.IPP_SOURCE_DIR
-                / f"ITK-{self.py_env}-manylinux{manylinux_ver}_{self.platform_architechture}"
+                / itk_binary_build_name
             ),
         )
 
@@ -98,7 +101,9 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                 unpacked_dirs = list(metawheel_dir.glob("itk-*/itk*.dist-info/WHEEL"))
                 for wheel_file in unpacked_dirs:
                     content = wheel_file.read_text(encoding="utf-8").splitlines()
-                    base = whl.name.replace("linux", f"manylinux{manylinux_ver}")
+                    base = whl.name
+                    if len(manylinux_ver) > 0:
+                      base = whl.name.replace("linux", f"manylinux{manylinux_ver}")
                     tag = Path(base).stem
                     new = []
                     for line in content:
@@ -213,14 +218,13 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         target_arch = self.platform_architechture or self.package_env_config.get(
             "TARGET_ARCH", ""
         )
-        # ITK-*-manylinux<ver>_<arch>/
         if manylinux_ver and target_arch:
-            for p in base.glob(f"ITK-*-manylinux{manylinux_ver}_{target_arch}"):
+            for p in base.glob(f"ITK-*-*linux{manylinux_ver}_{target_arch}"):
                 rm(p)
-        # Tarballs: ITKPythonBuilds-linux-manylinux*<ver>*.tar.zst
+        # Tarballs: ITKPythonBuilds-linux-*linux*<ver>*.tar.zst
         if manylinux_ver:
             for p in base.glob(
-                f"ITKPythonBuilds-linux-manylinux*{manylinux_ver}*.tar.zst"
+                f"ITKPythonBuilds-linux-*linux*{manylinux_ver}*.tar.zst"
             ):
                 rm(p)
 
