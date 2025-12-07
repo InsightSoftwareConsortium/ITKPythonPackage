@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import os
+import sys
+
 from pathlib import Path
+
 
 from build_python_instance_base import (
     IPP_SOURCE_DIR,
@@ -38,6 +42,11 @@ def build_one_python_instance(
         builder_cls = MacOSBuildPythonInstance
     elif platform == "linux":
         from linux_build_python_instance import LinuxBuildPythonInstance
+
+        MANYLINUX_VERSION: str = package_env_config.get("MANYLINUX_VERSION","")
+        if ( os.environ.get("CROSS_TRIPLE",None) is None ) and ( len(MANYLINUX_VERSION) > 0):
+            print(f"ERROR: {MANYLINUX_VERSION=} but not building in dockcross.")
+            sys.exit(1)
 
         builder_cls = LinuxBuildPythonInstance
     else:
