@@ -2,10 +2,10 @@
 
 import sys
 
-from scripts.wheel_builder_utils import (
+from wheel_builder_utils import (
     set_main_variable_names,
 )
-from scripts.build_one_python_factory import build_one_python_instance
+from build_one_python_factory import build_one_python_instance
 
 if sys.version_info < (3, 10):
     sys.stderr.write(

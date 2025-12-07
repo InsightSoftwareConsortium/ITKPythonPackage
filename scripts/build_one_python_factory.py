@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from scripts.build_python_instance_base import (
+from build_python_instance_base import (
     IPP_SOURCE_DIR,
     IPP_SUPERBUILD_BINARY_DIR,
     ITK_SOURCE_DIR,
@@ -28,15 +28,15 @@ def build_one_python_instance(
     """
     platform = platform_name.lower()
     if platform == "windows":
-        from scripts.windows_build_python_instance import WindowsBuildPythonInstance
+        from windows_build_python_instance import WindowsBuildPythonInstance
 
         builder_cls = WindowsBuildPythonInstance
     elif platform in ("darwin", "mac", "macos", "osx"):
-        from scripts.macos_build_python_instance import MacOSBuildPythonInstance
+        from macos_build_python_instance import MacOSBuildPythonInstance
 
         builder_cls = MacOSBuildPythonInstance
     elif platform == "linux":
-        from scripts.linux_build_python_instance import LinuxBuildPythonInstance
+        from linux_build_python_instance import LinuxBuildPythonInstance
 
         builder_cls = LinuxBuildPythonInstance
     else:
