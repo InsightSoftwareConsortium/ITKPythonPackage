@@ -44,7 +44,9 @@ def main() -> None:
         nargs="+",
         default=None,
         help=(
-            "Windows: Python versions like '39-x64'. macOS: names or paths of venvs under 'venvs/'."
+            "A list of python environments to build for:\n"
+            + "    - Windows: Python versions like '310-x64' '311-x64'.\n"
+            + " macOS & linux: names or paths of venvs under 'venvs/'. like '3.11' or 'cp311'"
         ),
     )
     parser.add_argument(
@@ -64,26 +66,39 @@ def main() -> None:
     parser.add_argument(
         "cmake_options",
         nargs="*",
-        help="Extra options to pass to CMake, e.g. -DBUILD_SHARED_LIBS:BOOL=OFF",
+        help="Extra options to pass to CMake, e.g. -DBUILD_SHARED_LIBS:BOOL=OFF.\n"
+        "   These will override defaults if duplicated",
     )
     parser.add_argument(
         "--module-source-dir",
         type=Path,
         default=None,
-        help="Path to the module source directory",
+        help="Path to the (remote) module source directory to build.",
     )
     parser.add_argument(
         "--module-dependancies-root-dir",
         type=Path,
         default=None,
-        help="Path to the root directory for module dependancies",
+        help="Path to the root directory for module dependancies.\n"
+        + "This is the path where a remote module dependencies (other remote modules)\n"
+        + "are searched for, or automatically git cloned to.",
     )
     parser.add_argument(
         "--itk-module-deps",
         type=str,
         default=None,
-        help="Semicolon-delimited list of ITK module dependencies",
+        help="Semicolon-delimited list of a remote modules dependencies.\n"
+        + "'gitorg/repo@tag:gitorg/repo@tag:gitorg/repo@tag'\n"
+        + "These are set in ITKRemoteModuleBuildTestPackageAction:itk-module-deps github actions."
+        + "and were historically set as an environment variable ITK_MODULE_PREQ.",
     )
+    parser.add_argument(
+        "--build-itk-tarball-cache",
+        dest="build_itk_tarball_cache",
+        action="store_true",
+        help="Build an uploadable tarball.  The tarball can be used as a cache for remote module builds.",
+    )
+
     args = parser.parse_args()
 
     with open(
@@ -102,6 +117,7 @@ def main() -> None:
             OS_NAME,
             ARCH,
             args.no_cleanup,
+            args.build_itk_tarball_cache,
             args.cmake_options,
             args.lib_paths,
             args.module_source_dir,

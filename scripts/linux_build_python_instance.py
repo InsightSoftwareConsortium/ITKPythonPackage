@@ -5,12 +5,11 @@ from os import environ
 from pathlib import Path
 
 from build_python_instance_base import BuildPythonInstanceBase
-import sys
-import textwrap
-import shutil
-
 from linux_venv_utils import create_linux_venvs
-from wheel_builder_utils import echo_check_call, _remove_tree, push_dir
+import shutil
+from build_wheels import IPP_SUPERBUILD_BINARY_DIR
+
+from wheel_builder_utils import echo_check_call, push_dir, _remove_tree
 
 
 class LinuxBuildPythonInstance(BuildPythonInstanceBase):
@@ -208,22 +207,28 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             rm(p)
 
         # 4) ITK build tree and tarballs specific to manylinux
-        manylinux_ver = (self.package_env_config.get("MANYLINUX_VERSION") or
-                         environ.get("MANYLINUX_VERSION", ""))
-        target_arch = (self.platform_architechture or
-                       self.package_env_config.get("TARGET_ARCH", ""))
+        manylinux_ver = self.package_env_config.get("MANYLINUX_VERSION") or environ.get(
+            "MANYLINUX_VERSION", ""
+        )
+        target_arch = self.platform_architechture or self.package_env_config.get(
+            "TARGET_ARCH", ""
+        )
         # ITK-*-manylinux<ver>_<arch>/
         if manylinux_ver and target_arch:
             for p in base.glob(f"ITK-*-manylinux{manylinux_ver}_{target_arch}"):
                 rm(p)
         # Tarballs: ITKPythonBuilds-linux-manylinux*<ver>*.tar.zst
         if manylinux_ver:
-            for p in base.glob(f"ITKPythonBuilds-linux-manylinux*{manylinux_ver}*.tar.zst"):
+            for p in base.glob(
+                f"ITKPythonBuilds-linux-manylinux*{manylinux_ver}*.tar.zst"
+            ):
                 rm(p)
 
         # 5) Optional module prerequisites cleanup (ITK_MODULE_PREQ)
         # Format: "InsightSoftwareConsortium/ITKModuleA@v1.0:Kitware/ITKModuleB@sha" -> remove repo names
-        itk_preq = self.package_env_config.get("ITK_MODULE_PREQ") or environ.get("ITK_MODULE_PREQ", "")
+        itk_preq = self.package_env_config.get("ITK_MODULE_PREQ") or environ.get(
+            "ITK_MODULE_PREQ", ""
+        )
         if itk_preq:
             for entry in itk_preq.split(":"):
                 entry = entry.strip()
@@ -237,66 +242,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         # Note: dist/ and download scripts are intentionally preserved
 
     def build_tarball(self):
-        """Create a compressed tarball of the ITK Python build tree (Linux).
-
-        Mirrors scripts/dockcross-manylinux-build-tarball.sh behavior:
-        - tar selected content from ITKPythonPackage
-          * ITKPythonPackage/ITK-*
-          * ITKPythonPackage/oneTBB*
-          * ITKPythonPackage/requirements-dev.txt
-          * ITKPythonPackage/scripts
-        - zstd compress with options (-10 -T6 --long=31)
-        """
-        base_dir = Path(self.IPP_SOURCE_DIR)
-        tar_name = "ITKPythonBuilds-linux.tar"
-        tar_path = base_dir / tar_name
-        zst_path = base_dir / f"{tar_name}.zst"
-
-        itk_pkg = base_dir / "ITKPythonPackage"
-
-        with push_dir(base_dir):
-            # Build list of paths to include (expand existing patterns)
-            include_paths: list[str] = []
-
-            # ITK builds and oneTBB
-            for p in sorted(itk_pkg.glob("ITK-*")):
-                include_paths.append(str(p))
-            for p in sorted(itk_pkg.glob("oneTBB*")):
-                include_paths.append(str(p))
-
-            # requirements-dev.txt
-            req = itk_pkg / "requirements-dev.txt"
-            if req.exists():
-                include_paths.append(str(req))
-
-            # scripts directory
-            if (itk_pkg / "scripts").exists():
-                include_paths.append(str(itk_pkg / "scripts"))
-
-            if not include_paths:
-                include_paths = [
-                    str(itk_pkg / "ITK-*"),
-                    str(itk_pkg / "oneTBB*"),
-                    str(itk_pkg / "requirements-dev.txt"),
-                    str(itk_pkg / "scripts"),
-                ]
-
-            # Create tar
-            echo_check_call(["tar", "-cf", str(tar_path), *include_paths])
-
-            # Compress with zstd
-            echo_check_call(
-                [
-                    "zstd",
-                    "-f",
-                    "-10",
-                    "-T6",
-                    "--long=31",
-                    str(tar_path),
-                    "-o",
-                    str(zst_path),
-                ]
-            )
+        self.create_posix_tarball()
 
     def venv_paths(self) -> None:
         """Resolve virtualenv tool paths.

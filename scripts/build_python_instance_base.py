@@ -17,6 +17,7 @@ from wheel_builder_utils import (
     push_env,
     _which,
     set_main_variable_names,
+    push_dir,
 )
 
 (
@@ -53,6 +54,7 @@ class BuildPythonInstanceBase(ABC):
         script_dir: Path | str,
         package_env_config: dict,
         cleanup: bool,
+        build_itk_tarball_cache: bool,
         cmake_options: list[str],
         windows_extra_lib_paths: list[str],
         dist_dir: Path,
@@ -70,13 +72,18 @@ class BuildPythonInstanceBase(ABC):
         self.SCRIPT_DIR = script_dir
         self.package_env_config = package_env_config
         self.cleanup = False
+        self.build_itk_tarball_cache = build_itk_tarball_cache
         self.cmake_options = cmake_options
         # NEVER CLEANUP FOR DEBUGGGING cleanup
         self.windows_extra_lib_paths = windows_extra_lib_paths
         self.dist_dir = dist_dir
         # Needed for processing remote modules and their dependancies
-        self.module_source_dir = module_source_dir
-        self.module_dependancies_root_dir = module_dependancies_root_dir
+        self.module_source_dir: Path = (
+            Path(module_source_dir) if module_source_dir else None
+        )
+        self.module_dependancies_root_dir: Path = (
+            Path(module_dependancies_root_dir) if module_dependancies_root_dir else None
+        )
         self.itk_module_deps = itk_module_deps
 
         self._cmake_executable = None
@@ -214,6 +221,10 @@ class BuildPythonInstanceBase(ABC):
             python_package_build_steps[
                 f"06_build_external_module_wheel_{self.module_source_dir.name}"
             ] = self.build_external_module_python_wheel
+        if self.build_itk_tarball_cache:
+            python_package_build_steps[
+                f"07_build_itk_tarball_cache_{self.platform_name}_{self.platform_architechture}"
+            ] = self.build_tarball
 
         self.dist_dir.mkdir(parents=True, exist_ok=True)
         build_report_fn: Path = self.dist_dir / f"build_log_{self.py_env}.json"
@@ -811,3 +822,75 @@ class BuildPythonInstanceBase(ABC):
                                 shutil.copy2(src, dst)
                             except Exception:
                                 pass
+
+    def create_posix_tarball(self):
+        """Create a compressed tarball of the ITK Python build tree.
+
+        Mirrors the historical scripts/*-build-tarball.sh behavior:
+        - zstd compress with options (-10 -T6 --long=31)
+        """
+        arch_postfix = f"-{self.platform_architechture}"
+        tar_name = f"ITKPythonBuilds-{self.platform_name}{arch_postfix}.tar"
+        tar_path = self.IPP_SOURCE_DIR.parent / tar_name
+        zst_path = self.IPP_SOURCE_DIR.parent / f"{tar_name}.zst"
+
+        with push_dir(self.IPP_SOURCE_DIR):
+            # ITK builds
+            cache_directory_paths: list[Path] = [
+                p
+                for p in self.IPP_SOURCE_DIR.glob(
+                    f"ITK-*-{self.platform_name}_{self.platform_architechture}"
+                )
+            ]
+            # oneTBB
+            cache_directory_paths.extend(
+                [x for x in self.IPP_SOURCE_DIR.glob("oneTBB*")]
+            )
+            cache_directory_paths.append(IPP_SUPERBUILD_BINARY_DIR)
+            # venvs directory
+            cache_directory_paths.append(self.IPP_SOURCE_DIR / "venvs")
+
+            # requirements-dev.txt
+            req = self.IPP_SOURCE_DIR / "requirements-dev.txt"
+            if req.exists():
+                cache_directory_paths.append(req)
+
+            # Build list of paths to include (expand existing patterns)
+            tarball_include_paths: list[str] = sorted(
+                [str(p) for p in cache_directory_paths]
+            )
+
+            # # Required extraction marker -- This file does not exist, and it is not clear how to create it
+            # req_file = self.IPP_SOURCE_DIR / "ITKPythonPackageRequiredExtractionDir.txt"
+            # if req_file.exists():
+            #     tarball_include_paths.append(str(req_file))
+
+            # scripts directory
+            if (self.IPP_SOURCE_DIR / "scripts").exists():
+                tarball_include_paths.append(str(self.IPP_SOURCE_DIR / "scripts"))
+
+            # Create tar
+            echo_check_call(
+                [
+                    "tar",
+                    "-cf",
+                    str(tar_path),
+                    '--exclude="*.o"',  # Do not include object files
+                    '--exclude="__pycache__"',  # Do not include __pycache__
+                    *tarball_include_paths,
+                ]
+            )
+
+            # Compress with zstd
+            echo_check_call(
+                [
+                    "zstd",
+                    "-f",
+                    "-10",
+                    "-T6",
+                    "--long=31",
+                    str(tar_path),
+                    "-o",
+                    str(zst_path),
+                ]
+            )
