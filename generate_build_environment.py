@@ -26,8 +26,64 @@ import subprocess
 import sys
 from pathlib import Path
 
-from wheel_builder_utils import detect_platform, which_required
+from scripts.wheel_builder_utils import detect_platform, which_required
 
+
+def semver_to_pep440(semver: str) -> str:
+    """
+    Convert a Semantic Versioning prerelease (e.g. `v6.0.0-beta.3`)
+    into a PEP 440–compatible PyPI version (e.g. `6.0.0b3`).
+
+    Supported prerelease labels:
+      - alpha -> a
+      - beta  -> b
+      - rc    -> rc
+
+    Raises:
+        ValueError: if the input format or prerelease tag is unsupported.
+    """
+
+    # Strict SemVer pattern: major.minor.patch[-prerelease]
+    pattern = re.compile(
+        r"^(?P<major>0|[1-9]\d*)\."
+        r"(?P<minor>0|[1-9]\d*)\."
+        r"(?P<patch>0|[1-9]\d*)"
+        r"(?:-(?P<prelabel>[0-9A-Za-z\-]+)"
+        r"\.(?P<prenum>\d+))?$"
+    )
+
+    m = pattern.match(semver)
+    if not m:
+        raise ValueError(f"Invalid SEM version: {semver}")
+
+    major, minor, patch = m.group("major", "minor", "patch")
+    prelabel = m.group("prelabel")
+    prenum = m.group("prenum")
+
+    base = f"{major}.{minor}.{patch}"
+
+    if prelabel is None:
+        return base  # Pure release, no prerelease segment
+
+    # Normalize prerelease label mapping
+    prelabel_lower = prelabel.lower()
+    mapping = {
+        "alpha": "a",
+        "a": "a",
+        "beta": "b",
+        "b": "b",
+        "rc": "rc",
+    }
+
+    if prelabel_lower not in mapping:
+        raise ValueError(
+            f"Unsupported SEM prerelease label `{prelabel}`. "
+            f"Supported: alpha, beta, rc."
+        )
+
+    pep_label = mapping[prelabel_lower]
+
+    return f"{base}{pep_label}{int(prenum)}"
 
 def debug(msg: str, do_print=False) -> None:
     if do_print:
@@ -206,7 +262,7 @@ def cmake_compiler_defaults(build_dir: Path) -> tuple[str | None, str | None]:
     return cc, cxx
 
 
-def main(argv: list[str]) -> int:
+def generate_build_environment(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("pairs", nargs="*")
     parser.add_argument("-i", dest="input_file", default=None)
@@ -248,7 +304,10 @@ def main(argv: list[str]) -> int:
     env: dict[str, str] = dict(os.environ)
     if reference_env_report:
         env_from_file = load_env_file(Path(reference_env_report))
-        env.update(env_from_file)  # priority 2 over 1
+        env_from_file.update(
+            env
+        )  # Environmental settings override matching env_from_file settings
+        env.update(env_from_file)  # Merge extra env_from_file settings back into env
     overrides = parse_kv_overrides(args.pairs)
     for k, v in overrides.items():
         if v is None:
@@ -268,10 +327,12 @@ def main(argv: list[str]) -> int:
     itk_source_dir = Path(
         env.get("ITK_SOURCE_DIR", str(_ipp_dir / "ITK-source" / "ITK"))
     )
-    ipp_latest_tag = get_git_id(_ipp_dir)
-    ipp_latest_pep440 = (
+    ipp_latest_tag :str = get_git_id(_ipp_dir)
+    semver_from_tag: str = (
         ipp_latest_tag[1:] if ipp_latest_tag.startswith("v") else ipp_latest_tag
     )
+    pep440_tag :str = semver_to_pep440(semver_from_tag)
+
 
     itk_git_tag = env.get("ITK_GIT_TAG", ipp_latest_tag)
     if not itk_source_dir.exists():
@@ -292,11 +353,12 @@ def main(argv: list[str]) -> int:
     except subprocess.CalledProcessError:
         # try fetch then checkout
         print(f"WARNING: Failed to checkout {itk_git_tag}, reverting to 'main':")
-        itk_git_tag = main
+        itk_git_tag = 'main'
         run(["git", "checkout", itk_git_tag], cwd=itk_source_dir)
 
-    itk_package_version = env.get("ITK_PACKAGE_VERSION") or compute_itk_package_version(
-        itk_source_dir, itk_git_tag, ipp_latest_tag
+    itk_package_version = env.get(
+        "ITK_PACKAGE_VERSION",
+        compute_itk_package_version(itk_source_dir, itk_git_tag, ipp_latest_tag),
     )
 
     # Manylinux/docker bits for Linux
@@ -461,4 +523,4 @@ def main(argv: list[str]) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    sys.exit(generate_build_environment(sys.argv[1:]))
