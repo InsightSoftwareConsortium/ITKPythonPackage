@@ -26,6 +26,24 @@ usage()
   exit 2
 }
 
+# Required environment variables
+required_vars=(
+  ITK_GIT_TAG
+  ITKPYTHONPACKAGE_ORG
+  ITKPYTHONPACKAGE_TAG
+  MANYLINUX_VERSION
+  TARGET_ARCH
+)
+
+# Sanity Validation loop
+for v in "${required_vars[@]}"; do
+  if [ -z "${!v:-}" ]; then
+    echo "ERROR: Required environment variable '$v' is not set or empty."
+    exit 1
+  fi
+done
+
+
 FORWARD_ARGS=("$@") # Store arguments to forward them later
 PARSED_ARGS=$(getopt -a -n dockcross-manylinux-download-cache-and-build-module-wheels \
   -o hc:x: --long help,cmake_options:,exclude_libs: -- "$@")
