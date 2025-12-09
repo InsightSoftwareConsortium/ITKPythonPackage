@@ -45,17 +45,18 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         self.cmake_compiler_configurations.set(
             "CMAKE_CXX_COMPILER_TARGET:STRING", target_triple
         )
-        itk_binary_build_name:str = f"ITK-{self.py_env}-linux_{self.platform_architechture}"
+        itk_binary_build_name: str = (
+            f"ITK-{self.py_env}-linux_{self.platform_architechture}"
+        )
         manylinux_ver = self.package_env_config.get("MANYLINUX_VERSION", "")
         if len(manylinux_ver) > 0:
-            itk_binary_build_name:str = f"ITK-{self.py_env}-manylinux{manylinux_ver}_{self.platform_architechture}"
+            itk_binary_build_name: str = (
+                f"ITK-{self.py_env}-manylinux{manylinux_ver}_{self.platform_architechture}"
+            )
 
         self.cmake_itk_source_build_configurations.set(
             "ITK_BINARY_DIR:PATH",
-            str(
-                self.IPP_SOURCE_DIR
-                / itk_binary_build_name
-            ),
+            str(self.IPP_SOURCE_DIR / itk_binary_build_name),
         )
 
         if self.platform_architechture == "x64":
@@ -103,7 +104,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                     content = wheel_file.read_text(encoding="utf-8").splitlines()
                     base = whl.name
                     if len(manylinux_ver) > 0:
-                      base = whl.name.replace("linux", f"manylinux{manylinux_ver}")
+                        base = whl.name.replace("linux", f"manylinux{manylinux_ver}")
                     tag = Path(base).stem
                     new = []
                     for line in content:

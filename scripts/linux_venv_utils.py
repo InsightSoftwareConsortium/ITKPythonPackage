@@ -45,7 +45,14 @@ DEFAULT_LINUX_PREFIXES: tuple[str, ...] = (
 )
 
 # Default set the user asked for
-DEFAULT_PYTHON_VERSIONS: tuple[str, ...] = ("3.9", "3.10", "3.11", "3.12", "3.13", "3.14")
+DEFAULT_PYTHON_VERSIONS: tuple[str, ...] = (
+    "3.9",
+    "3.10",
+    "3.11",
+    "3.12",
+    "3.13",
+    "3.14",
+)
 
 
 def _candidate_exec_names(ver: str) -> tuple[str, ...]:
@@ -145,7 +152,11 @@ def create_linux_venvs(
 
     exe_map = _discover_python_executables(python_versions, prefixes)
     if not exe_map:
-        ver_desc = ", ".join(python_versions or []) if python_versions else ", ".join(DEFAULT_PYTHON_VERSIONS)
+        ver_desc = (
+            ", ".join(python_versions or [])
+            if python_versions
+            else ", ".join(DEFAULT_PYTHON_VERSIONS)
+        )
         pref_desc = ", ".join(prefixes or list(DEFAULT_LINUX_PREFIXES))
         raise FileNotFoundError(
             f"No Linux Python executables found for versions [{ver_desc}] under prefixes/paths [{pref_desc}] or PATH"
@@ -155,7 +166,7 @@ def create_linux_venvs(
     failures: list[tuple[str, str]] = []
 
     # Process in version order for stable results
-    for ver in sorted(exe_map.keys(), key=lambda s: [int(x) for x in s.split('.')]):
+    for ver in sorted(exe_map.keys(), key=lambda s: [int(x) for x in s.split(".")]):
         python_exec = exe_map[ver]
         venv_dir = venvs_root / ver
 

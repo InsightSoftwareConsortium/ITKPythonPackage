@@ -194,7 +194,7 @@ def echo_check_call(
         display_cmd = str(cmd)
     print(f">>Start Running: {display_cmd} in {Path.cwd()}")
     cmd_return_status: int = subprocess_check_call(cmd, **kwargs)
-    print(f"<<Finished Running: {cmd_return_status=}")
+    print(f"<<Finished Running: cmd_return_status={cmd_return_status}")
     return cmd_return_status
 
 

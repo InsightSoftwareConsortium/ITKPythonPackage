@@ -95,7 +95,9 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             rm(p)
 
         # Module prerequisites
-        itk_preq = self.package_env_config.get("ITK_MODULE_PREQ") or environ.get("ITK_MODULE_PREQ", "")
+        itk_preq = self.package_env_config.get("ITK_MODULE_PREQ") or environ.get(
+            "ITK_MODULE_PREQ", ""
+        )
         if itk_preq:
             for entry in itk_preq.split(":"):
                 entry = entry.strip()
@@ -285,7 +287,9 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         # make_archive requires base name without extension
         base_name = str(out_zip.with_suffix("").with_suffix(""))
         # shutil.make_archive will append .zip
-        _shutil.make_archive(base_name, "zip", root_dir=str(base_dir), base_dir=str(ipp_dir.name))
+        _shutil.make_archive(
+            base_name, "zip", root_dir=str(base_dir), base_dir=str(ipp_dir.name)
+        )
 
     def discover_python_venvs(
         self, platform_os_name: str, platform_architechure: str
