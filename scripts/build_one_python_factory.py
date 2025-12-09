@@ -32,6 +32,9 @@ def build_one_python_instance(
     Backwards-compatible wrapper that now delegates to the new OOP builders.
     """
     platform = platform_name.lower()
+
+    # Historical dist_dir name for compatibility with ITKRemoteModuleBuildTestPackageAction
+    dist_dir = IPP_SOURCE_DIR / "dist"
     if platform == "windows":
         from windows_build_python_instance import WindowsBuildPythonInstance
 
@@ -43,9 +46,15 @@ def build_one_python_instance(
     elif platform == "linux":
         from linux_build_python_instance import LinuxBuildPythonInstance
 
-        MANYLINUX_VERSION: str = package_env_config.get("MANYLINUX_VERSION","")
-        if ( os.environ.get("CROSS_TRIPLE",None) is None ) and ( len(MANYLINUX_VERSION) > 0):
-            print(f"ERROR: {MANYLINUX_VERSION=} but not building in dockcross.")
+        MANYLINUX_VERSION: str = package_env_config.get("MANYLINUX_VERSION", "")
+        if len(MANYLINUX_VERSION) == 0:
+            # Native builds without dockercross need a separate dist dir to avoid conflicts with manylinux
+            # dist_dir = IPP_SOURCE_DIR / f"{platform}_dist"
+            pass
+        if os.environ.get("CROSS_TRIPLE", None) is None:
+            print(
+                f"ERROR: MANYLINUX_VERSION={MANYLINUX_VERSION} but not building in dockcross."
+            )
             sys.exit(1)
 
         builder_cls = LinuxBuildPythonInstance
@@ -67,7 +76,7 @@ def build_one_python_instance(
         build_itk_tarball_cache=build_itk_tarball_cache,
         cmake_options=cmake_options,
         windows_extra_lib_paths=windows_extra_lib_paths,
-        dist_dir=IPP_SOURCE_DIR / "dist",
+        dist_dir=dist_dir,
         module_source_dir=module_source_dir,
         module_dependancies_root_dir=module_dependancies_root_dir,
         itk_module_deps=itk_module_deps,
