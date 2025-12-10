@@ -7,7 +7,6 @@ from pathlib import Path
 from build_python_instance_base import BuildPythonInstanceBase
 from linux_venv_utils import create_linux_venvs
 import shutil
-from build_wheels import IPP_SUPERBUILD_BINARY_DIR
 
 from wheel_builder_utils import echo_check_call, push_dir, _remove_tree
 
@@ -26,7 +25,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         # ### Setup build tools
         self._build_type = "Release"
         self._use_tbb: str = "ON"
-        self._tbb_dir = self.IPP_SOURCE_DIR / "oneTBB-prefix" / "lib" / "cmake" / "TBB"
+        self._tbb_dir = self.package_env_config["IPP_SOURCE_DIR"] / "oneTBB-prefix" / "lib" / "cmake" / "TBB"
         self._cmake_executable = "cmake"
         # manylinux: the interpreter is provided; ensure basic tools are available
         self.venv_paths()
@@ -34,39 +33,39 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         self.cmake_compiler_configurations.set(
             "CMAKE_MAKE_PROGRAM:FILEPATH", f"{self.venv_info_dict['ninja_executable']}"
         )
-        if self.platform_architechture == "x64":
+        if self.package_env_config["ARCH"] == "x64":
             target_triple = "x86_64-linux-gnu"
-        elif self.platform_architechture in ("aarch64", "arm64"):
+        elif self.package_env_config["ARCH"] in ("aarch64", "arm64"):
             target_triple = "aarch64-linux-gnu"
-        elif self.platform_architechture == "x86":
+        elif self.package_env_config["ARCH"] == "x86":
             target_triple = "i686-linux-gnu"
         else:
-            target_triple = f"{self.platform_architechture}-linux-gnu"
+            target_triple = f"{self.package_env_config["ARCH"]}-linux-gnu"
         self.cmake_compiler_configurations.set(
             "CMAKE_CXX_COMPILER_TARGET:STRING", target_triple
         )
         itk_binary_build_name: str = (
-            f"ITK-{self.py_env}-linux_{self.platform_architechture}"
+            f"ITK-{self.py_env}-linux_{self.package_env_config["ARCH"]}"
         )
         manylinux_ver = self.package_env_config.get("MANYLINUX_VERSION", "")
         if len(manylinux_ver) > 0:
             itk_binary_build_name: str = (
-                f"ITK-{self.py_env}-manylinux{manylinux_ver}_{self.platform_architechture}"
+                f"ITK-{self.py_env}-manylinux{manylinux_ver}_{self.package_env_config["ARCH"]}"
             )
 
         self.cmake_itk_source_build_configurations.set(
             "ITK_BINARY_DIR:PATH",
-            str(self.IPP_SOURCE_DIR / itk_binary_build_name),
+            str(self.package_env_config["IPP_SOURCE_DIR"] / itk_binary_build_name),
         )
 
-        if self.platform_architechture == "x64":
+        if self.package_env_config["ARCH"] == "x64":
             target_triple = "x86_64-linux-gnu"
-        elif self.platform_architechture in ("aarch64", "arm64"):
+        elif self.package_env_config["ARCH"] in ("aarch64", "arm64"):
             target_triple = "aarch64-linux-gnu"
-        elif self.platform_architechture == "x86":
+        elif self.package_env_config["ARCH"] == "x86":
             target_triple = "i686-linux-gnu"
         else:
-            target_triple = f"{self.platform_architechture}-linux-gnu"
+            target_triple = f"{self.package_env_config["ARCH"]}-linux-gnu"
         self.cmake_compiler_configurations.set(
             "CMAKE_CXX_COMPILER_TARGET:STRING", target_triple
         )
@@ -76,17 +75,17 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
 
     def post_build_fixup(self) -> None:
         # Repair all produced wheels with auditwheel and retag meta-wheel
-        for whl in (self.IPP_SOURCE_DIR / "dist").glob("*.whl"):
+        for whl in (self.package_env_config["IPP_SOURCE_DIR"] / "dist").glob("*.whl"):
             self.fixup_wheel(str(whl))
         # Special handling for the itk meta wheel to adjust tag
         manylinux_ver = self.package_env_config.get("MANYLINUX_VERSION", "")
         if manylinux_ver:
             for whl in list(
-                (self.IPP_SOURCE_DIR / "dist").glob("itk-*linux_*.whl")
-            ) + list((self.IPP_SOURCE_DIR / "dist").glob("itk_*linux_*.whl")):
+                (self.package_env_config["IPP_SOURCE_DIR"] / "dist").glob("itk-*linux_*.whl")
+            ) + list((self.package_env_config["IPP_SOURCE_DIR"] / "dist").glob("itk_*linux_*.whl")):
                 # Unpack, edit WHEEL tag, repack
-                metawheel_dir = self.IPP_SOURCE_DIR / "metawheel"
-                metawheel_dist = self.IPP_SOURCE_DIR / "metawheel-dist"
+                metawheel_dir = self.package_env_config["IPP_SOURCE_DIR"] / "metawheel"
+                metawheel_dist = self.package_env_config["IPP_SOURCE_DIR"] / "metawheel-dist"
                 echo_check_call(
                     [
                         self.venv_info_dict["python_executable"],
@@ -127,7 +126,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                 # Move and clean
                 for new_whl in metawheel_dist.glob("*.whl"):
                     shutil.move(
-                        str(new_whl), str((self.IPP_SOURCE_DIR / "dist") / new_whl.name)
+                        str(new_whl), str((self.package_env_config["IPP_SOURCE_DIR"] / "dist") / new_whl.name)
                     )
                 # Remove old and temp
                 try:
@@ -145,7 +144,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         manylinux_ver = self.package_env_config.get("MANYLINUX_VERSION", "")
         if len(manylinux_ver) > 1:
             plat = None
-            if self.platform_architechture == "x64" and manylinux_ver:
+            if self.package_env_config["ARCH"] == "x64" and manylinux_ver:
                 plat = f"manylinux{manylinux_ver}_x86_64"
             cmd = [
                 self.venv_info_dict["python_executable"],
@@ -155,9 +154,9 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             ]
             if plat:
                 cmd += ["--plat", plat]
-            cmd += [str(filepath), "-w", str(self.IPP_SOURCE_DIR / "dist")]
+            cmd += [str(filepath), "-w", str(self.package_env_config["IPP_SOURCE_DIR"] / "dist")]
             # Provide LD_LIBRARY_PATH for oneTBB and common system paths
-            extra_lib = str(self.IPP_SOURCE_DIR / "oneTBB-prefix" / "lib")
+            extra_lib = str(self.package_env_config["IPP_SOURCE_DIR"] / "oneTBB-prefix" / "lib")
             env = dict(self.package_env_config)
             env["LD_LIBRARY_PATH"] = ":".join(
                 [
@@ -183,7 +182,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         - remove ITK-* manylinux build tree and tarballs
         - if ITK_MODULE_PREQ is set ("org/name@ref:org2/name2@ref2"), remove cloned module dirs
         """
-        base = Path(self.IPP_SOURCE_DIR)
+        base = Path(self.package_env_config["IPP_SOURCE_DIR"])
 
         # Helper to remove arbitrary paths (files/dirs) quietly
         def rm(p: Path):
@@ -216,7 +215,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         manylinux_ver = self.package_env_config.get("MANYLINUX_VERSION") or environ.get(
             "MANYLINUX_VERSION", ""
         )
-        target_arch = self.platform_architechture or self.package_env_config.get(
+        target_arch = self.package_env_config["ARCH"] or self.package_env_config.get(
             "TARGET_ARCH", ""
         )
         if manylinux_ver and target_arch:
@@ -263,7 +262,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             venv_dir = Path("/opt/python")
             local_pip_executable = _dockcross_pip_executable
         else:
-            venv_root_dir: Path = self.IPP_SOURCE_DIR / "venvs"
+            venv_root_dir: Path = self.package_env_config["IPP_SOURCE_DIR"] / "venvs"
             _venvs_dir_list = create_linux_venvs(self.py_env, venv_root_dir)
             if len(_venvs_dir_list) != 1:
                 raise ValueError(
@@ -294,7 +293,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                 "install",
                 "--upgrade",
                 "-r",
-                str(self.IPP_SOURCE_DIR / "requirements-dev.txt"),
+                str(self.package_env_config["IPP_SOURCE_DIR"] / "requirements-dev.txt"),
             ]
         )
         self._pip_uninstall_itk_wildcard(local_pip_executable)
@@ -324,7 +323,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
 
         # Discover virtualenvs under project 'venvs' folder
         def _discover_ipp_venvs() -> list[str]:
-            venvs_dir = self.IPP_SOURCE_DIR / "venvs"
+            venvs_dir = self.package_env_config["IPP_SOURCE_DIR"] / "venvs"
             if not venvs_dir.exists():
                 return []
             names.extend([p.name for p in venvs_dir.iterdir() if p.is_dir()])

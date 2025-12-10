@@ -245,13 +245,16 @@ def which_required(name: str) -> str:
 
 
 def set_main_variable_names(SCRIPT_DIR):
-    # TODO: Hard-coded module must be 1 direectory above checkedout ITKPythonPackage
+    # TODO: Hard-coded module must be 1 direectory above checked out ITKPythonPackage
     # MODULE_EXAMPLESROOT_DIR: Path = SCRIPT_DIR.parent.parent.resolve()
 
     IPP_SOURCE_DIR = SCRIPT_DIR.parent.resolve()
     IPP_BuildWheelsSupport_DIR = IPP_SOURCE_DIR / "BuildWheelsSupport"
     IPP_SUPERBUILD_BINARY_DIR = IPP_SOURCE_DIR / "build" / "ITK-source"
-    package_env_config = read_env_file(IPP_SOURCE_DIR / "build" / "package.env")
+    default_package_env_file = IPP_SOURCE_DIR / "build" / "package.env"
+    PACKAGE_ENV_FILE = os.environ.get("PACKAGE_ENV_FILE", default_package_env_file)
+    package_env_config = read_env_file(PACKAGE_ENV_FILE)
+    package_env_config["PACKAGE_ENV_FILE"] = PACKAGE_ENV_FILE
     ITK_SOURCE_DIR = package_env_config["ITK_SOURCE_DIR"]
 
     print(f"SCRIPT_DIR: {SCRIPT_DIR}")
@@ -260,16 +263,13 @@ def set_main_variable_names(SCRIPT_DIR):
 
     sys.path.insert(0, str(SCRIPT_DIR / "internal"))
 
-    OS_NAME: str = "UNKNOWN"
-    ARCH: str = "UNKNOWN"
+    package_env_config["SCRIPT_DIR"] = SCRIPT_DIR
+    package_env_config["IPP_SOURCE_DIR"] = IPP_SOURCE_DIR
+    package_env_config["IPP_BuildWheelsSupport_DIR"] = IPP_BuildWheelsSupport_DIR
+    OS_NAME, ARCH = detect_platform()
+    package_env_config["OS_NAME"] = OS_NAME
+    package_env_config["ARCH"] = ARCH
+    package_env_config["ITK_SOURCE_DIR"] = ITK_SOURCE_DIR
+    package_env_config["IPP_SUPERBUILD_BINARY_DIR"] = IPP_SUPERBUILD_BINARY_DIR
 
-    return (
-        SCRIPT_DIR,
-        IPP_SOURCE_DIR,
-        IPP_BuildWheelsSupport_DIR,
-        IPP_SUPERBUILD_BINARY_DIR,
-        package_env_config,
-        ITK_SOURCE_DIR,
-        OS_NAME,
-        ARCH,
-    )
+    return package_env_config

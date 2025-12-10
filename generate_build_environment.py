@@ -85,6 +85,7 @@ def semver_to_pep440(semver: str) -> str:
 
     return f"{base}{pep_label}{int(prenum)}"
 
+
 def debug(msg: str, do_print=False) -> None:
     if do_print:
         print(msg)
@@ -232,7 +233,7 @@ def resolve_oci_exe(env: dict[str, str]) -> str:
     if env.get("OCI_EXE"):
         return env["OCI_EXE"]
     for cand in ("docker", "podman", "nerdctl"):
-        if shutil.which(cand):
+        if shutil.which(cand):  # NOTE ALWAYS RETURNS NONE ON WINDOWS
             return cand
     # Default to docker name if nothing found
     return "docker"
@@ -327,12 +328,11 @@ def generate_build_environment(argv: list[str]) -> int:
     itk_source_dir = Path(
         env.get("ITK_SOURCE_DIR", str(_ipp_dir / "ITK-source" / "ITK"))
     )
-    ipp_latest_tag :str = get_git_id(_ipp_dir)
-    semver_from_tag: str = (
-        ipp_latest_tag[1:] if ipp_latest_tag.startswith("v") else ipp_latest_tag
-    )
-    pep440_tag :str = semver_to_pep440(semver_from_tag)
-
+    ipp_latest_tag: str = get_git_id(_ipp_dir)
+    # semver_from_tag: str = (
+    #    ipp_latest_tag[1:] if ipp_latest_tag.startswith("v") else ipp_latest_tag
+    # )
+    # pep440_tag: str = semver_to_pep440(semver_from_tag)
 
     itk_git_tag = env.get("ITK_GIT_TAG", ipp_latest_tag)
     if not itk_source_dir.exists():
@@ -353,7 +353,7 @@ def generate_build_environment(argv: list[str]) -> int:
     except subprocess.CalledProcessError:
         # try fetch then checkout
         print(f"WARNING: Failed to checkout {itk_git_tag}, reverting to 'main':")
-        itk_git_tag = 'main'
+        itk_git_tag = "main"
         run(["git", "checkout", itk_git_tag], cwd=itk_source_dir)
 
     itk_package_version = env.get(

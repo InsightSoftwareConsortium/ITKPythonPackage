@@ -16,20 +16,8 @@ from wheel_builder_utils import (
     echo_check_call,
     push_env,
     _which,
-    set_main_variable_names,
     push_dir,
 )
-
-(
-    SCRIPT_DIR,
-    IPP_SOURCE_DIR,
-    IPP_BuildWheelsSupport_DIR,
-    IPP_SUPERBUILD_BINARY_DIR,
-    package_env_config,
-    ITK_SOURCE_DIR,
-    OS_NAME,
-    ARCH,
-) = set_main_variable_names(Path(__file__).parent)
 
 
 class BuildPythonInstanceBase(ABC):
@@ -46,12 +34,6 @@ class BuildPythonInstanceBase(ABC):
         *,
         py_env,
         wheel_names: Iterable[str],
-        platform_name: str,
-        platform_architechture: str,
-        ipp_source_dir: Path | str,
-        ipp_superbuild_binary_dir: Path | str,
-        itk_source_dir: Path | str,
-        script_dir: Path | str,
         package_env_config: dict,
         cleanup: bool,
         build_itk_tarball_cache: bool,
@@ -64,13 +46,9 @@ class BuildPythonInstanceBase(ABC):
     ) -> None:
         self.py_env = py_env
         self.wheel_names = list(wheel_names)
-        self.platform_name = platform_name
-        self.platform_architechture = platform_architechture
-        self.IPP_SOURCE_DIR = ipp_source_dir
-        self.IPP_SUPERBUILD_BINARY_DIR = ipp_superbuild_binary_dir
-        self.ITK_SOURCE_DIR = itk_source_dir
-        self.SCRIPT_DIR = script_dir
         self.package_env_config = package_env_config
+        del package_env_config
+
         self.cleanup = False
         self.build_itk_tarball_cache = build_itk_tarball_cache
         self.cmake_options = cmake_options
@@ -89,9 +67,8 @@ class BuildPythonInstanceBase(ABC):
         self._cmake_executable = None
         self._doxygen_executable = None
         self._use_tbb = "ON"
-        self._tbb_dir = None
+        self._tbb_dir = self.package_env_config.get("TBB_DIR", None)
         self._build_type = "Release"
-        self.env_file = self.IPP_SOURCE_DIR / "build" / "package.env"
         # Unified place to collect cmake -D definitions for this instance
         self.cmake_cmdline_definitions: CMakeArgumentBuilder = CMakeArgumentBuilder()
         # Seed from legacy cmake_options if provided as ['-D<KEY>=<VALUE>', ...]
@@ -145,7 +122,7 @@ class BuildPythonInstanceBase(ABC):
         self.cmake_itk_source_build_configurations.update(
             # ITK wrapping options
             {
-                "ITK_SOURCE_DIR:PATH": f"{self.ITK_SOURCE_DIR}",
+                "ITK_SOURCE_DIR:PATH": f"{self.package_env_config["ITK_SOURCE_DIR"]}",
                 "BUILD_TESTING:BOOL": "OFF",
                 "ITK_WRAP_unsigned_short:BOOL": "ON",
                 "ITK_WRAP_double:BOOL": "ON",
@@ -223,7 +200,7 @@ class BuildPythonInstanceBase(ABC):
             ] = self.build_external_module_python_wheel
         if self.build_itk_tarball_cache:
             python_package_build_steps[
-                f"07_build_itk_tarball_cache_{self.platform_name}_{self.platform_architechture}"
+                f"07_build_itk_tarball_cache_{self.package_env_config["OS_NAME"]}_{self.package_env_config["ARCH"]}"
             ] = self.build_tarball
 
         self.dist_dir.mkdir(parents=True, exist_ok=True)
@@ -271,9 +248,9 @@ class BuildPythonInstanceBase(ABC):
 
         cmd += [
             "-S",
-            str(self.IPP_SOURCE_DIR / "SuperbuildSupport"),
+            str(self.package_env_config["IPP_SOURCE_DIR"] / "SuperbuildSupport"),
             "-B",
-            str(self.IPP_SUPERBUILD_BINARY_DIR),
+            str(self.package_env_config["IPP_SUPERBUILD_BINARY_DIR"]),
         ]
 
         echo_check_call(cmd)
@@ -281,14 +258,14 @@ class BuildPythonInstanceBase(ABC):
             [
                 self.venv_info_dict["ninja_executable"],
                 "-C",
-                str(self.IPP_SUPERBUILD_BINARY_DIR),
+                str(self.package_env_config["IPP_SUPERBUILD_BINARY_DIR"]),
             ]
         )
 
     def fixup_wheels(self, lib_paths: str = ""):
         # TBB library fix-up (applies to itk_core wheel)
         tbb_wheel = "itk_core"
-        for wheel in (self.IPP_SOURCE_DIR / "dist").glob(f"{tbb_wheel}*.whl"):
+        for wheel in (self.package_env_config["IPP_SOURCE_DIR"] / "dist").glob(f"{tbb_wheel}*.whl"):
             self.fixup_wheel(str(wheel), lib_paths)
 
     def final_wheel_import_test(self, installed_dist_dir: Path):
@@ -324,7 +301,7 @@ class BuildPythonInstanceBase(ABC):
         echo_check_call(
             [
                 self.venv_info_dict["python_executable"],
-                str(self.IPP_SOURCE_DIR / "docs" / "code" / "test.py"),
+                str(self.package_env_config["IPP_SOURCE_DIR"] / "docs" / "code" / "test.py"),
             ]
         )
         print("Documentation tests passed.")
@@ -567,7 +544,7 @@ class BuildPythonInstanceBase(ABC):
         with push_env(
             PATH=f"{self.venv_info_dict['venv_bin_path']}{pathsep}{environ['PATH']}"
         ):
-            pyproject_configure = self.SCRIPT_DIR / "pyproject_configure.py"
+            pyproject_configure = self.package_env_config["SCRIPT_DIR"] / "pyproject_configure.py"
 
             # Build wheels
             for wheel_name in self.wheel_names:
@@ -580,9 +557,9 @@ class BuildPythonInstanceBase(ABC):
                         str(self.venv_info_dict["python_executable"]),
                         pyproject_configure,
                         "--env-file",
-                        self.env_file,
+                        self.package_env_config.get("PACKAGE_ENV_FILE"),
                         "--output-dir",
-                        self.IPP_SOURCE_DIR / "BuildWheelsSupport",
+                        self.package_env_config["IPP_SOURCE_DIR"] / "BuildWheelsSupport",
                         wheel_name,
                     ]
                 )
@@ -595,7 +572,7 @@ class BuildPythonInstanceBase(ABC):
                     "--verbose",
                     "--wheel",
                     "--outdir",
-                    str(self.IPP_SOURCE_DIR / "dist"),
+                    str(self.package_env_config["IPP_SOURCE_DIR"] / "dist"),
                     "--no-isolation",
                     "--skip-dependency-check",
                     f"--config-setting=cmake.build-type={self._build_type}",
@@ -625,7 +602,7 @@ class BuildPythonInstanceBase(ABC):
                     )
                     # Append all cmake.define entries
                 cmd += scikitbuild_cmdline_args.getPythonBuildCommandLineArguments()
-                cmd += [self.IPP_SOURCE_DIR / "BuildWheelsSupport"]
+                cmd += [self.package_env_config["IPP_SOURCE_DIR"] / "BuildWheelsSupport"]
                 echo_check_call(cmd)
 
             # Remove unnecessary files for building against ITK
@@ -672,7 +649,7 @@ class BuildPythonInstanceBase(ABC):
         cmd += defs.getCMakeCommandLineArguments()
         cmd += [
             "-S",
-            self.ITK_SOURCE_DIR,
+            self.package_env_config["ITK_SOURCE_DIR"],
             "-B",
             self.cmake_itk_source_build_configurations["ITK_BINARY_DIR:PATH"],
         ]
@@ -829,29 +806,31 @@ class BuildPythonInstanceBase(ABC):
         Mirrors the historical scripts/*-build-tarball.sh behavior:
         - zstd compress with options (-10 -T6 --long=31)
         """
-        arch_postfix = f"-{self.platform_architechture}"
-        tar_name = f"ITKPythonBuilds-{self.platform_name}{arch_postfix}.tar"
-        tar_path = self.IPP_SOURCE_DIR.parent / tar_name
-        zst_path = self.IPP_SOURCE_DIR.parent / f"{tar_name}.zst"
+        arch_postfix = f"-{self.package_env_config["ARCH"]}"
+        tar_name = f"ITKPythonBuilds-{self.package_env_config["OS_NAME"]}{arch_postfix}.tar"
+        tar_path = self.package_env_config["IPP_SOURCE_DIR"].parent / tar_name
+        zst_path = self.package_env_config["IPP_SOURCE_DIR"].parent / f"{tar_name}.zst"
 
-        with push_dir(self.IPP_SOURCE_DIR):
+        with push_dir(self.package_env_config["IPP_SOURCE_DIR"]):
             # ITK builds
             cache_directory_paths: list[Path] = [
                 p
-                for p in self.IPP_SOURCE_DIR.glob(
-                    f"ITK-*-{self.platform_name}_{self.platform_architechture}"
+                for p in self.package_env_config["IPP_SOURCE_DIR"].glob(
+                    f"ITK-*-{self.package_env_config["OS_NAME"]}_{self.package_env_config["ARCH"]}"
                 )
             ]
             # oneTBB
             cache_directory_paths.extend(
-                [x for x in self.IPP_SOURCE_DIR.glob("oneTBB*")]
+                [x for x in self.package_env_config["IPP_SOURCE_DIR"].glob("oneTBB*")]
             )
-            cache_directory_paths.append(IPP_SUPERBUILD_BINARY_DIR)
+            cache_directory_paths.append(
+                self.package_env_config["IPP_SUPERBUILD_BINARY_DIR"]
+            )
             # venvs directory
-            cache_directory_paths.append(self.IPP_SOURCE_DIR / "venvs")
+            cache_directory_paths.append(self.package_env_config["IPP_SOURCE_DIR"] / "venvs")
 
             # requirements-dev.txt
-            req = self.IPP_SOURCE_DIR / "requirements-dev.txt"
+            req = self.package_env_config["IPP_SOURCE_DIR"] / "requirements-dev.txt"
             if req.exists():
                 cache_directory_paths.append(req)
 
@@ -861,13 +840,13 @@ class BuildPythonInstanceBase(ABC):
             )
 
             # # Required extraction marker -- This file does not exist, and it is not clear how to create it
-            # req_file = self.IPP_SOURCE_DIR / "ITKPythonPackageRequiredExtractionDir.txt"
+            # req_file = self.package_env_config["IPP_SOURCE_DIR"] / "ITKPythonPackageRequiredExtractionDir.txt"
             # if req_file.exists():
             #     tarball_include_paths.append(str(req_file))
 
             # scripts directory
-            if (self.IPP_SOURCE_DIR / "scripts").exists():
-                tarball_include_paths.append(str(self.IPP_SOURCE_DIR / "scripts"))
+            if (self.package_env_config["IPP_SOURCE_DIR"] / "scripts").exists():
+                tarball_include_paths.append(str(self.package_env_config["IPP_SOURCE_DIR"] / "scripts"))
 
             # Create tar
             echo_check_call(

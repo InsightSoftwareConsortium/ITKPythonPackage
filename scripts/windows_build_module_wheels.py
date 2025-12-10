@@ -128,7 +128,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cmake_options=None):
                 "--config-setting=cmake.args=-G Ninja",
             ]
             cmd += defs.getPythonBuildCommandLineArguments()
-            cmd += [self.IPP_SOURCE_DIR / "BuildWheelsSupport"]
+            cmd += [self.package_env_config["IPP_SOURCE_DIR"] / "BuildWheelsSupport"]
             echo_check_call(cmd)
 
 

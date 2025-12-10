@@ -24,7 +24,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         # ### Setup build tools
         self._build_type = "Release"
         self._use_tbb: str = "OFF"
-        self._tbb_dir = self.IPP_SOURCE_DIR / "oneTBB-prefix" / "lib" / "cmake" / "TBB"
+        self._tbb_dir = self.package_env_config["IPP_SOURCE_DIR"] / "oneTBB-prefix" / "lib" / "cmake" / "TBB"
         self._cmake_executable = "cmake"
         # macOS: Assume venv already exists under IPP_SOURCE_DIR/venvs/<name>
         # Install required tools into each venv
@@ -39,18 +39,18 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             self.cmake_compiler_configurations.set(
                 "CMAKE_OSX_DEPLOYMENT_TARGET:STRING", macosx_target
             )
-        osx_arch = "arm64" if self.platform_architechture == "arm64" else "x86_64"
+        osx_arch = "arm64" if self.package_env_config["ARCH"] == "arm64" else "x86_64"
         self.cmake_compiler_configurations.set(
             "CMAKE_OSX_ARCHITECTURES:STRING", osx_arch
         )
         self.cmake_itk_source_build_configurations.set(
             "ITK_BINARY_DIR:PATH",
-            str(self.IPP_SOURCE_DIR / f"ITK-{self.py_env}-macosx_{osx_arch}"),
+            str(self.package_env_config["IPP_SOURCE_DIR"] / f"ITK-{self.py_env}-macosx_{osx_arch}"),
         )
 
     def post_build_fixup(self) -> None:
         # delocate on macOS x86_64 only
-        if self.platform_architechture != "arm64":
+        if self.package_env_config["ARCH"] != "arm64":
             self.fixup_wheels()
 
     def post_build_cleanup(self) -> None:
@@ -64,7 +64,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         - remove ITKPythonBuilds-macosx*.tar.zst
         - remove any module prereq clones from ITK_MODULE_PREQ
         """
-        base = Path(self.IPP_SOURCE_DIR)
+        base = Path(self.package_env_config["IPP_SOURCE_DIR"])
 
         def rm(p: Path):
             try:
@@ -91,7 +91,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             rm(p)
 
         # ITK build tree
-        osx_arch = "arm64" if self.platform_architechture == "arm64" else "x86_64"
+        osx_arch = "arm64" if self.package_env_config["ARCH"] == "arm64" else "x86_64"
         for p in base.glob(f"ITK-*-macosx_{osx_arch}"):
             rm(p)
 
@@ -120,7 +120,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
     def fixup_wheel(self, filepath, lib_paths: str = "") -> None:
         self.remove_apple_double_files()
         # macOS fix-up with delocate (only needed for x86_64)
-        if self.platform_architechture != "arm64":
+        if self.package_env_config["ARCH"] != "arm64":
             delocate_listdeps = (
                 self.venv_info_dict["venv_bin_path"] / "delocate-listdeps"
             )
@@ -134,7 +134,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
     def remove_apple_double_files(self):
         try:
             # Optional: clean AppleDouble files if tool is available
-            echo_check_call(["dot_clean", str(self.IPP_SOURCE_DIR.name)])
+            echo_check_call(["dot_clean", str(self.package_env_config["IPP_SOURCE_DIR"].name)])
         except Exception:
             # dot_clean may not be available; continue without it
             pass
@@ -149,7 +149,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             venv_dir = Path(self.py_env)
             local_pip_executable = _command_line_pip_executable
         else:
-            venv_root_dir: Path = self.IPP_SOURCE_DIR / "venvs"
+            venv_root_dir: Path = self.package_env_config["IPP_SOURCE_DIR"] / "venvs"
             _venvs_dir_list = create_macos_venvs(self.py_env, venv_root_dir)
             if len(_venvs_dir_list) != 1:
                 raise ValueError(
@@ -179,7 +179,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
                 "install",
                 "--upgrade",
                 "-r",
-                str(self.IPP_SOURCE_DIR / "requirements-dev.txt"),
+                str(self.package_env_config["IPP_SOURCE_DIR"] / "requirements-dev.txt"),
             ]
         )
         self._pip_uninstall_itk_wildcard(local_pip_executable)
@@ -209,7 +209,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
 
         # Discover virtualenvs under project 'venvs' folder
         def _discover_ipp_venvs() -> list[str]:
-            venvs_dir = self.IPP_SOURCE_DIR / "venvs"
+            venvs_dir = self.package_env_config["IPP_SOURCE_DIR"] / "venvs"
             if not venvs_dir.exists():
                 return []
             names.extend([p.name for p in venvs_dir.iterdir() if p.is_dir()])

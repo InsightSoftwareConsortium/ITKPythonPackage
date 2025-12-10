@@ -16,25 +16,8 @@ if sys.version_info < (3, 10):
 import argparse
 from pathlib import Path
 
-from wheel_builder_utils import detect_platform
-
-(
-    SCRIPT_DIR,
-    IPP_SOURCE_DIR,
-    IPP_BuildWheelsSupport_DIR,
-    IPP_SUPERBUILD_BINARY_DIR,
-    package_env_config,
-    ITK_SOURCE_DIR,
-    OS_NAME,
-    ARCH,
-) = set_main_variable_names(Path(__file__).parent)
-
 
 def main() -> None:
-
-    global OS_NAME, ARCH
-    # Platform detection
-    OS_NAME, ARCH = detect_platform()
 
     parser = argparse.ArgumentParser(
         description="Driver script to build ITK Python wheels."
@@ -101,8 +84,12 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    package_env_config = set_main_variable_names(Path(__file__).parent)
+
     with open(
-        IPP_BuildWheelsSupport_DIR / "WHEEL_NAMES.txt", "r", encoding="utf-8"
+        package_env_config["IPP_BuildWheelsSupport_DIR"] / "WHEEL_NAMES.txt",
+        "r",
+        encoding="utf-8",
     ) as content:
         wheel_names = [wheel_name.strip() for wheel_name in content.readlines()]
 
@@ -114,8 +101,7 @@ def main() -> None:
         build_one_python_instance(
             py_env,
             wheel_names,
-            OS_NAME,
-            ARCH,
+            package_env_config,
             args.no_cleanup,
             args.build_itk_tarball_cache,
             args.cmake_options,
