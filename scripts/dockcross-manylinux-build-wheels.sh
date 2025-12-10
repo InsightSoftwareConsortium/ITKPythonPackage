@@ -73,6 +73,7 @@ mv ${package_env_file} ${package_env_file}_hidden
 
 # Set the path from within the container for the TBB_DIR
 echo "TBB_DIR=${CONTAINER_WORK_DIR}/build/oneTBB-prefix/lib/cmake/TBB" >> ${HOST_TO_CONTAINER_ENV_FILE}
+echo "LD_LIBRARY_DIR=${CONTAINER_WORK_DIR}/build/oneTBB-prefix/lib" >> ${HOST_TO_CONTAINER_ENV_FILE}
 
 DOCKER_ARGS="  -v ${_ipp_dir}/dist:${CONTAINER_WORK_DIR}/dist/ "
 DOCKER_ARGS+=" -v${ITK_SOURCE_DIR}:${CONTAINER_ITK_SOURCE_DIR} "

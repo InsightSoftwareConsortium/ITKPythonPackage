@@ -607,6 +607,7 @@ def generate_build_environment(argv: list[str]) -> int:
             "PKG_CONFIG_LIBDIR",
             "LD_LIBRARY_PATH",
             "DYLD_LIBRARY_PATH",
+            "TBB_DIR",
         ]
         lines += [
             "",
