@@ -201,15 +201,6 @@ def load_env_file(path: Path) -> dict[str, str]:
 
 
 def get_git_id(repo_dir: Path, backup_version: str = "v0.0.0") -> str:
-    if not (repo_dir / ".git").is_dir():
-        if (repo_dir / ".git").is_file():
-            print(
-                f"ERROR: {str(repo_dir)} is a secondary git worktree, and may not resolve from within dockercross build"
-            )
-            return backup_version
-        print(f"ERROR: {repo_dir} is not a primary git repository")
-        return backup_version
-
     # 1. exact tag
     try:
         tag = run(
@@ -229,7 +220,24 @@ def get_git_id(repo_dir: Path, backup_version: str = "v0.0.0") -> str:
     except subprocess.CalledProcessError:
         pass
     # 3. short hash
-    return run(["git", "rev-parse", "--short", "HEAD"], cwd=repo_dir).stdout.strip()
+    try:
+        short_version = run(
+            ["git", "rev-parse", "--short", "HEAD"], cwd=repo_dir
+        ).stdout.strip()
+        if short_version and short_version != "HEAD":
+            return short_version
+    except subprocess.CalledProcessError:
+        pass
+
+    # 4. punt and give dummy backup_version identifier
+    if not (repo_dir / ".git").is_dir():
+        if (repo_dir / ".git").is_file():
+            print(
+                f"WARNING: {str(repo_dir)} is a secondary git worktree, and may not resolve from within dockercross build"
+            )
+            return backup_version
+        print(f"ERROR: {repo_dir} is not a primary git repository")
+        return backup_version
 
 
 def compute_itk_package_version(
@@ -394,6 +402,7 @@ def generate_build_environment(argv: list[str]) -> int:
     cmake_exec = env.get("CMAKE_EXECUTABLE", None)
     if doxygen_exec is None or ninja_exec is None or cmake_exec is None:
         print("Generating pixi installed resources.")
+        reference_env_report.parent.mkdir(parents=True, exist_ok=True)
         run(
             [
                 "curl",
