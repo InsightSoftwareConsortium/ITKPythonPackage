@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-
+import os
 import sys
 
-from wheel_builder_utils import (
-    set_main_variable_names,
-)
+
 from build_one_python_factory import build_one_python_instance
+from generate_build_environment import generate_build_environment
+from wheel_builder_utils import read_env_file, detect_platform
 
 if sys.version_info < (3, 10):
     sys.stderr.write(
@@ -17,8 +17,44 @@ import argparse
 from pathlib import Path
 
 
-def main() -> None:
+def _set_main_variable_names(
+    SCRIPT_DIR: Path, PACKAGE_ENV_FILE: Path
+) -> dict[str, str | Path | None]:
+    # TODO: Hard-coded module must be 1 direectory above checked out ITKPythonPackage
+    # MODULE_EXAMPLESROOT_DIR: Path = SCRIPT_DIR.parent.parent.resolve()
 
+    # Primarily needed for docker-cross to fill in CMAKE_EXECUTABLE, NINJA_EXECUTABLE, and DOXYGEN_EXECUTABLE
+    # from the environment defaults
+    generate_build_environment_update_args = ["-o", str(PACKAGE_ENV_FILE)]
+    if not PACKAGE_ENV_FILE.exists():
+        generate_build_environment_update_args.extend(["-i", str(PACKAGE_ENV_FILE)])
+    generate_build_environment(generate_build_environment_update_args)
+
+    PACKAGE_ENV_FILE = Path(os.environ.get("PACKAGE_ENV_FILE", PACKAGE_ENV_FILE))
+    package_env_config: dict[str, str | Path | None] = read_env_file(PACKAGE_ENV_FILE)
+    package_env_config["PACKAGE_ENV_FILE"] = PACKAGE_ENV_FILE
+
+    sys.path.insert(0, str(SCRIPT_DIR / "internal"))
+    package_env_config["SCRIPT_DIR"] = SCRIPT_DIR
+
+    IPP_SOURCE_DIR = SCRIPT_DIR.parent.resolve()
+    package_env_config["IPP_SOURCE_DIR"] = IPP_SOURCE_DIR
+
+    IPP_BuildWheelsSupport_DIR = IPP_SOURCE_DIR / "BuildWheelsSupport"
+    package_env_config["IPP_BuildWheelsSupport_DIR"] = IPP_BuildWheelsSupport_DIR
+
+    IPP_SUPERBUILD_BINARY_DIR = IPP_SOURCE_DIR / "build" / "ITK-source"
+    package_env_config["IPP_SUPERBUILD_BINARY_DIR"] = IPP_SUPERBUILD_BINARY_DIR
+
+    OS_NAME, ARCH = detect_platform()
+    package_env_config["OS_NAME"] = OS_NAME
+    package_env_config["ARCH"] = ARCH
+
+    return package_env_config
+
+
+def main() -> None:
+    SCRIPT_DIR: Path = Path(__file__).parent
     parser = argparse.ArgumentParser(
         description="Driver script to build ITK Python wheels."
     )
@@ -81,10 +117,23 @@ def main() -> None:
         action="store_true",
         help="Build an uploadable tarball.  The tarball can be used as a cache for remote module builds.",
     )
+    parser.add_argument(
+        "--package-env-file",
+        type=str,
+        default=f"{SCRIPT_DIR}/build/package.env",
+        help=".env file with parameters used to control builds, default to build/package.env for native builds\n"
+        + "and is commonly set to /work/dist/container_package.env for dockercross builds.",
+    )
 
     args = parser.parse_args()
-
-    package_env_config = set_main_variable_names(Path(__file__).parent)
+    print("=" * 80)
+    print("=" * 80)
+    print("= Building Wheels")
+    print("=" * 80)
+    print("=" * 80)
+    package_env_config = _set_main_variable_names(
+        SCRIPT_DIR=SCRIPT_DIR, PACKAGE_ENV_FILE=Path(args.package_env_file)
+    )
 
     with open(
         package_env_config["IPP_BuildWheelsSupport_DIR"] / "WHEEL_NAMES.txt",

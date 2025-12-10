@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 """
-Generate build/package.env in a cross-platform way, rewriting the logic of
-generate_build_environment.sh in Python.
+Generate .env formatted file with build parameters build/package.env in a cross-platform way
 
 Priority of settings (highest to lowest):
-  1. Trailing KEY=VALUE pairs on the command line
+  1. Trailing KEY=VALUE pairs on the command line (always retained)
   2. Mappings specified in -i input_file
   3. Exported environment variables from the current process
-  4. Guessed values (computed defaults)
+  4. Guessed values (computed defaults, last resort for setting values)
 
 Usage:
-  python generate_build_environment.py [-i input_file] [-o output_file] [KEY=VALUE ...]
+  export KEY0=VALUE0; python generate_build_environment.py [-i input_file] [-o output_file] [KEY1=VALUE1 KEY2=VALUE2 ...]
 
 Notes:
-  - The resulting environment is written to build/package.env by default.
+  - The resulting environment is written to the output_file if specified or build/package.env by default.
 """
 
 from __future__ import annotations
@@ -26,35 +25,33 @@ import subprocess
 import sys
 from pathlib import Path
 
-from scripts.wheel_builder_utils import detect_platform, which_required
+from wheel_builder_utils import detect_platform, which_required
 
 
-def semver_to_pep440(semver: str) -> str:
+def semver_to_pep440(semver: str, validate=False) -> str:
     """
-    Convert a Semantic Versioning prerelease (e.g. `v6.0.0-beta.3`)
-    into a PEP 440–compatible PyPI version (e.g. `6.0.0b3`).
+    Convert a SemVer prerelease like `6.0.0-beta.3`
+    to PEP 440 `6.0.0b3`.
 
-    Supported prerelease labels:
-      - alpha -> a
-      - beta  -> b
-      - rc    -> rc
-
-    Raises:
-        ValueError: if the input format or prerelease tag is unsupported.
+    Supports prerelease labels: alpha, beta, rc.
     """
 
-    # Strict SemVer pattern: major.minor.patch[-prerelease]
+    # HACK-
+    semver = "6.0.0-beta.1"
+
     pattern = re.compile(
         r"^(?P<major>0|[1-9]\d*)\."
         r"(?P<minor>0|[1-9]\d*)\."
         r"(?P<patch>0|[1-9]\d*)"
         r"(?:-(?P<prelabel>[0-9A-Za-z\-]+)"
         r"\.(?P<prenum>\d+))?$"
+        # NOT SEM COMPATIBLE
     )
 
     m = pattern.match(semver)
     if not m:
-        raise ValueError(f"Invalid SEM version: {semver}")
+        if validate:
+            raise ValueError(f"Invalid SEM version: {semver!r}")
 
     major, minor, patch = m.group("major", "minor", "patch")
     prelabel = m.group("prelabel")
@@ -63,9 +60,8 @@ def semver_to_pep440(semver: str) -> str:
     base = f"{major}.{minor}.{patch}"
 
     if prelabel is None:
-        return base  # Pure release, no prerelease segment
+        return base
 
-    # Normalize prerelease label mapping
     prelabel_lower = prelabel.lower()
     mapping = {
         "alpha": "a",
@@ -77,13 +73,85 @@ def semver_to_pep440(semver: str) -> str:
 
     if prelabel_lower not in mapping:
         raise ValueError(
-            f"Unsupported SEM prerelease label `{prelabel}`. "
-            f"Supported: alpha, beta, rc."
+            f"Unsupported SEM prerelease label {prelabel!r}. "
+            "Supported: alpha, beta, rc."
         )
 
     pep_label = mapping[prelabel_lower]
-
     return f"{base}{pep_label}{int(prenum)}"
+
+
+def git_describe_to_pep440(desc: str) -> str:
+    """
+    Convert `git describe --tags --long --dirty --always` output
+    to a PEP 440–compatible version string.
+
+    Rules:
+      - tag-only        : v1.2.3              -> 1.2.3
+      - exact tag       : v1.2.3-0-g<sha>     -> 1.2.3+g<sha>
+      - ahead of tag    : v1.2.3-5-g<sha>     -> 1.2.3.dev5+g<sha>
+      - dirty           : append `.dirty` in local segment
+                          v1.2.3-5-g<sha>-dirty -> 1.2.3.dev5+g<sha>.dirty
+
+    Assumes SEM-style tags like:
+      vMAJOR.MINOR.PATCH[-prelabel.N]
+    e.g. v6.0.0-beta.3
+    """
+    original = desc.strip()
+    dirty = False
+
+    # Handle dirty flag
+    if original.endswith("-dirty"):
+        dirty = True
+        desc = original[: -len("-dirty")]
+    else:
+        desc = original
+
+    # Pattern: <tag>-<distance>-g<sha>
+    m = re.match(r"^(?P<tag>.+)-(?P<distance>\d+)-g(?P<sha>[0-9a-fA-F]+)$", desc)
+    if m:
+        tag = m.group("tag")
+        distance = int(m.group("distance"))
+        sha = m.group("sha").lower()
+
+        # Strip leading 'v' or 'V' from tags like v1.2.3, v6.0.0-beta.3
+        if tag.startswith(("v", "V")):
+            tag = tag[1:]
+
+        # Convert SEM tag to PEP 440
+        base_version = semver_to_pep440(tag)
+
+        local_suffix = f"+g{sha}"
+        if dirty:
+            local_suffix += ".dirty"
+
+        if distance == 0:
+            # Exact tag: just add local version
+            return f"{base_version}{local_suffix}"
+        else:
+            # N commits after tag -> .devN
+            return f"{base_version}.dev{distance}{local_suffix}"
+
+    # Fallback: no distance/sha (pure tag or hash only)
+    # Try to treat it as a pure tag first
+    tag = desc
+    if tag.startswith(("v", "V")):
+        tag = tag[1:]
+
+    try:
+        base_version = semver_to_pep440(tag)
+    except ValueError:
+        # Last resort: use a dummy base and encode everything as local,
+        # or you can raise to keep CI strict.
+        raise ValueError(
+            f"Cannot interpret git describe output as a tagged version: {original!r}"
+        )
+
+    local_suffix = ""
+    if dirty:
+        local_suffix = "+dirty"
+
+    return f"{base_version}{local_suffix}"
 
 
 def debug(msg: str, do_print=False) -> None:
@@ -94,6 +162,7 @@ def debug(msg: str, do_print=False) -> None:
 def run(
     cmd: list[str], cwd: Path | None = None, check: bool = True
 ) -> subprocess.CompletedProcess:
+    print(f"Running >>>>>: {' '.join(cmd)}  ; # in cwd={cwd} with check={check}")
     return subprocess.run(
         cmd, cwd=str(cwd) if cwd else None, check=check, capture_output=True, text=True
     )
@@ -131,7 +200,16 @@ def load_env_file(path: Path) -> dict[str, str]:
     return env
 
 
-def get_git_id(repo_dir: Path) -> str:
+def get_git_id(repo_dir: Path, backup_version: str = "v0.0.0") -> str:
+    if not (repo_dir / ".git").is_dir():
+        if (repo_dir / ".git").is_file():
+            print(
+                f"ERROR: {str(repo_dir)} is a secondary git worktree, and may not resolve from within dockercross build"
+            )
+            return backup_version
+        print(f"ERROR: {repo_dir} is not a primary git repository")
+        return backup_version
+
     # 1. exact tag
     try:
         tag = run(
@@ -171,22 +249,10 @@ def compute_itk_package_version(
         desc = run(
             ["git", "describe", "--tags", "--long", "--dirty", "--always"], cwd=itk_dir
         ).stdout.strip()
-        # Transform like sed -E 's/^([^-]+)-([0-9]+)-g([0-9a-f]+)(-dirty)?$/\1-dev.\2+\3\4/'
-        m = re.match(r"^([^-]+)-([0-9]+)-g([0-9a-f]+)(-dirty)?$", desc)
-        if m:
-            base, commits, sha, dirty = m.groups()
-            version = f"{base}-dev.{commits}+{sha}{dirty or ''}"
-        else:
-            version = desc
-        # remove leading v
-        if version.startswith("v"):
-            version = version[1:]
+        version = git_describe_to_pep440(desc)
     except subprocess.CalledProcessError:
         version = itk_git_tag.lstrip("v")
 
-    # backward compatibility
-    if itk_git_tag.lstrip("v") == ipp_latest_tag.lstrip("v"):
-        version = itk_git_tag.lstrip("v")
     return version
 
 
@@ -277,16 +343,18 @@ def generate_build_environment(argv: list[str]) -> int:
         )
         return 0
 
-    repo_root = Path(__file__).resolve().parent
-    _ipp_dir = repo_root
+    _ipp_dir = Path(__file__).resolve().parent.parent
     build_dir = _ipp_dir / "build"
-    build_dir.mkdir(parents=True, exist_ok=True)
-
     build_env_report = args.output_file or str(build_dir / "package.env")
-    ref_env_report_default = (
-        build_env_report if Path(build_env_report).exists() else None
-    )
-    reference_env_report = args.input_file or ref_env_report_default
+
+    if args.input_file:
+        reference_env_report = args.input_file
+    else:
+        build_dir.mkdir(parents=True, exist_ok=True)
+        reference_env_report = (
+            build_env_report if Path(build_env_report).exists() else None
+        )
+    reference_env_report = Path(reference_env_report)
 
     debug(f"Input:   {reference_env_report or '<none>'}")
     debug(f"Output:  {build_env_report or '<none>'}")
@@ -320,21 +388,59 @@ def generate_build_environment(argv: list[str]) -> int:
     os_name, arch = detect_platform()
 
     # Required executables (paths recorded)
-    doxygen_exec = env.get("DOXYGEN_EXECUTABLE") or which_required("doxygen")
-    ninja_exec = env.get("NINJA_EXECUTABLE") or which_required("ninja")
-    cmake_exec = env.get("CMAKE_EXECUTABLE") or which_required("cmake")
 
-    # ITK repo handling
-    itk_source_dir = Path(
-        env.get("ITK_SOURCE_DIR", str(_ipp_dir / "ITK-source" / "ITK"))
+    doxygen_exec = env.get("DOXYGEN_EXECUTABLE", None)
+    ninja_exec = env.get("NINJA_EXECUTABLE", None)
+    cmake_exec = env.get("CMAKE_EXECUTABLE", None)
+    if doxygen_exec is None or ninja_exec is None or cmake_exec is None:
+        print("Generating pixi installed resources.")
+        run(
+            [
+                "curl",
+                "-fsSL",
+                "https://pixi.sh/install.sh",
+                "-o",
+                str(reference_env_report.parent / "pixi_install.sh"),
+            ]
+        )
+        run(
+            [
+                "/bin/sh",
+                str(reference_env_report.parent / "pixi_install.sh"),
+            ]
+        )
+        pixi_install_dir = Path.home() / ".pixi" / "bin"
+        run(
+            [
+                str(pixi_install_dir / "pixi"),
+                "global",
+                "install",
+                "doxygen",
+                "cmake",
+                "ninja",
+            ]
+        )
+        os.environ["PATH"] = (
+            str(pixi_install_dir) + os.pathsep + os.environ.get("PATH", "")
+        )
+
+    doxygen_exec = which_required("doxygen")
+    ninja_exec = which_required("ninja")
+    cmake_exec = which_required("cmake")
+
+    ipp_latest_tag: str = get_git_id(
+        _ipp_dir, env.get("ITKPYTHONPACKAGE_TAG", "v0.0.0")
     )
-    ipp_latest_tag: str = get_git_id(_ipp_dir)
     # semver_from_tag: str = (
     #    ipp_latest_tag[1:] if ipp_latest_tag.startswith("v") else ipp_latest_tag
     # )
     # pep440_tag: str = semver_to_pep440(semver_from_tag)
 
     itk_git_tag = env.get("ITK_GIT_TAG", ipp_latest_tag)
+    # ITK repo handling
+    itk_source_dir = Path(
+        env.get("ITK_SOURCE_DIR", str(_ipp_dir / "ITK-source" / "ITK"))
+    )
     if not itk_source_dir.exists():
         itk_source_dir.parent.mkdir(parents=True, exist_ok=True)
         debug(f"Cloning ITK into {itk_source_dir}...")
