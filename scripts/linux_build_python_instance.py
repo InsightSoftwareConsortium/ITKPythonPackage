@@ -8,7 +8,7 @@ from build_python_instance_base import BuildPythonInstanceBase
 from linux_venv_utils import create_linux_venvs
 import shutil
 
-from wheel_builder_utils import echo_check_call, push_dir, _remove_tree
+from wheel_builder_utils import echo_check_call, _remove_tree
 
 
 class LinuxBuildPythonInstance(BuildPythonInstanceBase):
@@ -25,7 +25,13 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         # ### Setup build tools
         self._build_type = "Release"
         self._use_tbb: str = "ON"
-        self._tbb_dir = self.package_env_config["IPP_SOURCE_DIR"] / "oneTBB-prefix" / "lib" / "cmake" / "TBB"
+        self._tbb_dir = (
+            self.package_env_config["IPP_SOURCE_DIR"]
+            / "oneTBB-prefix"
+            / "lib"
+            / "cmake"
+            / "TBB"
+        )
         self._cmake_executable = "cmake"
         # manylinux: the interpreter is provided; ensure basic tools are available
         self.venv_paths()
@@ -40,17 +46,17 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         elif self.package_env_config["ARCH"] == "x86":
             target_triple = "i686-linux-gnu"
         else:
-            target_triple = f"{self.package_env_config["ARCH"]}-linux-gnu"
+            target_triple = f"{self.package_env_config['ARCH']}-linux-gnu"
         self.cmake_compiler_configurations.set(
             "CMAKE_CXX_COMPILER_TARGET:STRING", target_triple
         )
         itk_binary_build_name: str = (
-            f"ITK-{self.py_env}-linux_{self.package_env_config["ARCH"]}"
+            f"ITK-{self.py_env}-linux_{self.package_env_config['ARCH']}"
         )
         manylinux_ver = self.package_env_config.get("MANYLINUX_VERSION", "")
         if len(manylinux_ver) > 0:
             itk_binary_build_name: str = (
-                f"ITK-{self.py_env}-manylinux{manylinux_ver}_{self.package_env_config["ARCH"]}"
+                f"ITK-{self.py_env}-manylinux{manylinux_ver}_{self.package_env_config['ARCH']}"
             )
 
         self.cmake_itk_source_build_configurations.set(
@@ -58,17 +64,6 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             str(self.package_env_config["IPP_SOURCE_DIR"] / itk_binary_build_name),
         )
 
-        if self.package_env_config["ARCH"] == "x64":
-            target_triple = "x86_64-linux-gnu"
-        elif self.package_env_config["ARCH"] in ("aarch64", "arm64"):
-            target_triple = "aarch64-linux-gnu"
-        elif self.package_env_config["ARCH"] == "x86":
-            target_triple = "i686-linux-gnu"
-        else:
-            target_triple = f"{self.package_env_config["ARCH"]}-linux-gnu"
-        self.cmake_compiler_configurations.set(
-            "CMAKE_CXX_COMPILER_TARGET:STRING", target_triple
-        )
         # Keep values consistent with prior quoting behavior
         self.cmake_compiler_configurations.set("CMAKE_CXX_FLAGS:STRING", "-O3 -DNDEBUG")
         self.cmake_compiler_configurations.set("CMAKE_C_FLAGS:STRING", "-O3 -DNDEBUG")
@@ -81,11 +76,19 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         manylinux_ver = self.package_env_config.get("MANYLINUX_VERSION", "")
         if manylinux_ver:
             for whl in list(
-                (self.package_env_config["IPP_SOURCE_DIR"] / "dist").glob("itk-*linux_*.whl")
-            ) + list((self.package_env_config["IPP_SOURCE_DIR"] / "dist").glob("itk_*linux_*.whl")):
+                (self.package_env_config["IPP_SOURCE_DIR"] / "dist").glob(
+                    "itk-*linux_*.whl"
+                )
+            ) + list(
+                (self.package_env_config["IPP_SOURCE_DIR"] / "dist").glob(
+                    "itk_*linux_*.whl"
+                )
+            ):
                 # Unpack, edit WHEEL tag, repack
                 metawheel_dir = self.package_env_config["IPP_SOURCE_DIR"] / "metawheel"
-                metawheel_dist = self.package_env_config["IPP_SOURCE_DIR"] / "metawheel-dist"
+                metawheel_dist = (
+                    self.package_env_config["IPP_SOURCE_DIR"] / "metawheel-dist"
+                )
                 echo_check_call(
                     [
                         self.venv_info_dict["python_executable"],
@@ -126,7 +129,11 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                 # Move and clean
                 for new_whl in metawheel_dist.glob("*.whl"):
                     shutil.move(
-                        str(new_whl), str((self.package_env_config["IPP_SOURCE_DIR"] / "dist") / new_whl.name)
+                        str(new_whl),
+                        str(
+                            (self.package_env_config["IPP_SOURCE_DIR"] / "dist")
+                            / new_whl.name
+                        ),
                     )
                 # Remove old and temp
                 try:
@@ -154,9 +161,15 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             ]
             if plat:
                 cmd += ["--plat", plat]
-            cmd += [str(filepath), "-w", str(self.package_env_config["IPP_SOURCE_DIR"] / "dist")]
+            cmd += [
+                str(filepath),
+                "-w",
+                str(self.package_env_config["IPP_SOURCE_DIR"] / "dist"),
+            ]
             # Provide LD_LIBRARY_PATH for oneTBB and common system paths
-            extra_lib = str(self.package_env_config["IPP_SOURCE_DIR"] / "oneTBB-prefix" / "lib")
+            extra_lib = str(
+                self.package_env_config["IPP_SOURCE_DIR"] / "oneTBB-prefix" / "lib"
+            )
             env = dict(self.package_env_config)
             env["LD_LIBRARY_PATH"] = ":".join(
                 [
@@ -185,9 +198,9 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         base = Path(self.package_env_config["IPP_SOURCE_DIR"])
 
         # Helper to remove arbitrary paths (files/dirs) quietly
-        def rm(p: Path):
+        def rm(tree_path: Path):
             try:
-                _remove_tree(p)
+                _remove_tree(tree_path)
             except Exception:
                 pass
 

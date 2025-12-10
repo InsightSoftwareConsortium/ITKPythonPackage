@@ -25,7 +25,13 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         # ### Setup build tools
         self._build_type = "Release"
         self._use_tbb: str = "ON"
-        self._tbb_dir = self.package_env_config["IPP_SOURCE_DIR"] / "oneTBB-prefix" / "lib" / "cmake" / "TBB"
+        self._tbb_dir = (
+            self.package_env_config["IPP_SOURCE_DIR"]
+            / "oneTBB-prefix"
+            / "lib"
+            / "cmake"
+            / "TBB"
+        )
         self._cmake_executable = "cmake.exe"
         self.venv_paths()
         self.update_venv_itk_build_configurations()
@@ -35,7 +41,8 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             }
         )
         self.cmake_itk_source_build_configurations.set(
-            "ITK_BINARY_DIR:PATH", str(self.package_env_config["IPP_SOURCE_DIR"] / f"ITK-win_{self.py_env}")
+            "ITK_BINARY_DIR:PATH",
+            str(self.package_env_config["IPP_SOURCE_DIR"] / f"ITK-win_{self.py_env}"),
         )
 
     def post_build_fixup(self) -> None:
@@ -45,7 +52,9 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             if self.windows_extra_lib_paths
             else []
         )
-        search_lib_paths.append(str(self.package_env_config["IPP_SOURCE_DIR"] / "oneTBB-prefix" / "bin"))
+        search_lib_paths.append(
+            str(self.package_env_config["IPP_SOURCE_DIR"] / "oneTBB-prefix" / "bin")
+        )
         search_lib_paths_str: str = ";".join(map(str, search_lib_paths))
         self.fixup_wheels(search_lib_paths_str)
 
@@ -121,7 +130,10 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         print(f"Library paths for fixup: {lib_paths}")
 
         delve_wheel = (
-            self.package_env_config["IPP_SOURCE_DIR"] / f"venv-{self.py_env}" / "Scripts" / "delvewheel.exe"
+            self.package_env_config["IPP_SOURCE_DIR"]
+            / f"venv-{self.py_env}"
+            / "Scripts"
+            / "delvewheel.exe"
         )
         cmd = [
             str(delve_wheel),
@@ -139,7 +151,9 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
     def venv_paths(self) -> None:
         # Create venv related paths
         venv_executable = f"C:/Python{self.py_env}/Scripts/virtualenv.exe"
-        venv_base_dir = Path(self.package_env_config["ITK_SOURCE_DIR"]) / f"venv-{self.py_env}"
+        venv_base_dir = (
+            Path(self.package_env_config["ITK_SOURCE_DIR"]) / f"venv-{self.py_env}"
+        )
         if not venv_base_dir.exists():
             echo_check_call([venv_executable, str(venv_base_dir)])
             local_pip_executable = venv_base_dir / "Scripts" / "pip.exe"
@@ -169,7 +183,10 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                     "install",
                     "--upgrade",
                     "-r",
-                    str(self.package_env_config["IPP_SOURCE_DIR"] / "requirements-dev.txt"),
+                    str(
+                        self.package_env_config["IPP_SOURCE_DIR"]
+                        / "requirements-dev.txt"
+                    ),
                 ]
             )
 

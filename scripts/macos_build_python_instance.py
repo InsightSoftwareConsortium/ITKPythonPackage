@@ -24,7 +24,13 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         # ### Setup build tools
         self._build_type = "Release"
         self._use_tbb: str = "OFF"
-        self._tbb_dir = self.package_env_config["IPP_SOURCE_DIR"] / "oneTBB-prefix" / "lib" / "cmake" / "TBB"
+        self._tbb_dir = (
+            self.package_env_config["IPP_SOURCE_DIR"]
+            / "oneTBB-prefix"
+            / "lib"
+            / "cmake"
+            / "TBB"
+        )
         self._cmake_executable = "cmake"
         # macOS: Assume venv already exists under IPP_SOURCE_DIR/venvs/<name>
         # Install required tools into each venv
@@ -45,7 +51,10 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         )
         self.cmake_itk_source_build_configurations.set(
             "ITK_BINARY_DIR:PATH",
-            str(self.package_env_config["IPP_SOURCE_DIR"] / f"ITK-{self.py_env}-macosx_{osx_arch}"),
+            str(
+                self.package_env_config["IPP_SOURCE_DIR"]
+                / f"ITK-{self.py_env}-macosx_{osx_arch}"
+            ),
         )
 
     def post_build_fixup(self) -> None:
@@ -134,7 +143,9 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
     def remove_apple_double_files(self):
         try:
             # Optional: clean AppleDouble files if tool is available
-            echo_check_call(["dot_clean", str(self.package_env_config["IPP_SOURCE_DIR"].name)])
+            echo_check_call(
+                ["dot_clean", str(self.package_env_config["IPP_SOURCE_DIR"].name)]
+            )
         except Exception:
             # dot_clean may not be available; continue without it
             pass
