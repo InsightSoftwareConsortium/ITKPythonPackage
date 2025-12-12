@@ -22,6 +22,7 @@ if [ ! -f "${package_env_file}" ]; then
   # ITKRemoteModuleBuildTestPackageAction/.github/workflows/build-test-package-python.yml
   ${_ipp_dir}/scripts/generate_build_environment.py -o ${package_env_file}
 else
+  # Re-use cached package_env_file
   ${_ipp_dir}/scripts/generate_build_environment.py -i ${package_env_file} -o ${package_env_file}
 fi
 source "${package_env_file}"
@@ -71,29 +72,28 @@ sed "s#ITK_SOURCE_DIR=.*#ITK_SOURCE_DIR=${CONTAINER_ITK_SOURCE_DIR}#g"  ${packag
   | sed "s#CMAKE_EXECUTABLE=.*##g"   - > ${HOST_TO_CONTAINER_ENV_FILE}
 mv ${package_env_file} ${package_env_file}_hidden
 
-# Set the path from within the container for the TBB_DIR
-echo "TBB_DIR=${CONTAINER_WORK_DIR}/build/oneTBB-prefix/lib/cmake/TBB" >> ${HOST_TO_CONTAINER_ENV_FILE}
-echo "LD_LIBRARY_DIR=${CONTAINER_WORK_DIR}/build/oneTBB-prefix/lib" >> ${HOST_TO_CONTAINER_ENV_FILE}
+#If command line argument given, then use them
+if [ $# -ge 1 ]; then
+  PY_ENVS="$@"
+else
+  PY_ENVS="3.9 3.10 3.11"
+fi
 
 DOCKER_ARGS="  -v ${_ipp_dir}/dist:${CONTAINER_WORK_DIR}/dist/ "
 DOCKER_ARGS+=" -v${ITK_SOURCE_DIR}:${CONTAINER_ITK_SOURCE_DIR} "
 DOCKER_ARGS+=" --env-file ${HOST_TO_CONTAINER_ENV_FILE} "  # Configure container to start with correct environment variables
 DOCKER_ARGS+=" -e PACKAGE_ENV_FILE=${CONTAINER_ENV_FILE} " # Choose the right env cache inside container (needed for subsequent scripts)
-#DOCKER_ARGS+=" -u $(id -u):$(id -g) "
-# Set BUILD_WHEELS_EXTRA_FLAGS="" to disable building the tarball or force cleanup
-export BUILD_WHEELS_EXTRA_FLAGS=${BUILD_WHEELS_EXTRA_FLAGS:=" --build-itk-tarball-cache --no-cleanup "}
+
+BUILD_WHEELS_EXTRA_FLAGS=${BUILD_WHEELS_EXTRA_FLAGS:=" --build-itk-tarball-cache --no-cleanup "}
+#BUILD_WHEELS_EXTRA_FLAGS=\"${BUILD_WHEELS_EXTRA_FLAGS}\" \
+PIXI_ENV=${PIXI_ENV:=manylinux228}
 
 # When building ITK wheels, --module-source-dir, --module-dependancies-root-dir, and --itk-module-deps to be empty
 cmd=$(echo bash -x ${_local_dockercross_script} \
   -a \"$DOCKER_ARGS\" \
-  /usr/local/bin/python3.10 \
-  ${CONTAINER_WORK_DIR}/scripts/build_wheels.py \
-  --py-envs "$@" \
-  --module-source-dir \"\" --module-dependancies-root-dir \"\" \
-  --itk-module-deps \"\" \
-  --lib-paths \"\" \
-  ${BUILD_WHEELS_EXTRA_FLAGS} \
-  --package-env-file \"${CONTAINER_ENV_FILE}\"
+  /bin/bash ${CONTAINER_WORK_DIR}/scripts/environment_driver.sh \
+      PIXI_ENV=\"${PIXI_ENV}\" \
+      PY_ENVS=\"${PY_ENVS}\"
 )
 echo "RUNNING: $cmd"
 eval $cmd
