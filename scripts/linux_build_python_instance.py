@@ -67,8 +67,8 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         )
 
         # Keep values consistent with prior quoting behavior
-        self.cmake_compiler_configurations.set("CMAKE_CXX_FLAGS:STRING", "-O3 -DNDEBUG")
-        self.cmake_compiler_configurations.set("CMAKE_C_FLAGS:STRING", "-O3 -DNDEBUG")
+        self.cmake_compiler_configurations.set("CMAKE_CXX_FLAGS:STRING", "\"-O3 -DNDEBUG\"")
+        self.cmake_compiler_configurations.set("CMAKE_C_FLAGS:STRING", "\"-O3 -DNDEBUG\"")
 
     def post_build_fixup(self) -> None:
         manylinux_ver: str | None = self.package_env_config.get(
