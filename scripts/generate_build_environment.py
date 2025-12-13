@@ -28,130 +28,72 @@ from pathlib import Path
 from wheel_builder_utils import detect_platform, which_required
 
 
-def semver_to_pep440(semver: str, validate=False) -> str:
-    """
-    Convert a SemVer prerelease like `6.0.0-beta.3`
-    to PEP 440 `6.0.0b3`.
-
-    Supports prerelease labels: alpha, beta, rc.
-    """
-
-    # HACK-
-    semver = "6.0.0-beta.1"
-
-    pattern = re.compile(
-        r"^(?P<major>0|[1-9]\d*)\."
-        r"(?P<minor>0|[1-9]\d*)\."
-        r"(?P<patch>0|[1-9]\d*)"
-        r"(?:-(?P<prelabel>[0-9A-Za-z\-]+)"
-        r"\.(?P<prenum>\d+))?$"
-        # NOT SEM COMPATIBLE
-    )
-
-    m = pattern.match(semver)
-    if not m:
-        if validate:
-            raise ValueError(f"Invalid SEM version: {semver!r}")
-
-    major, minor, patch = m.group("major", "minor", "patch")
-    prelabel = m.group("prelabel")
-    prenum = m.group("prenum")
-
-    base = f"{major}.{minor}.{patch}"
-
-    if prelabel is None:
-        return base
-
-    prelabel_lower = prelabel.lower()
-    mapping = {
-        "alpha": "a",
-        "a": "a",
-        "beta": "b",
-        "b": "b",
-        "rc": "rc",
-    }
-
-    if prelabel_lower not in mapping:
-        raise ValueError(
-            f"Unsupported SEM prerelease label {prelabel!r}. "
-            "Supported: alpha, beta, rc."
-        )
-
-    pep_label = mapping[prelabel_lower]
-    return f"{base}{pep_label}{int(prenum)}"
-
-
 def git_describe_to_pep440(desc: str) -> str:
     """
     Convert `git describe --tags --long --dirty --always` output
+
+    # v6.0b03-3-g1a2b3c4
+    # │   |   │   └── abbreviated commit hash
+    # │   |   └────── commits since tag
+    # |   └────────── pre-release type and number
+    # └────────────── nearest tag
     to a PEP 440–compatible version string.
 
-    Rules:
-      - tag-only        : v1.2.3              -> 1.2.3
-      - exact tag       : v1.2.3-0-g<sha>     -> 1.2.3+g<sha>
-      - ahead of tag    : v1.2.3-5-g<sha>     -> 1.2.3.dev5+g<sha>
-      - dirty           : append `.dirty` in local segment
-                          v1.2.3-5-g<sha>-dirty -> 1.2.3.dev5+g<sha>.dirty
-
-    Assumes SEM-style tags like:
-      vMAJOR.MINOR.PATCH[-prelabel.N]
-    e.g. v6.0.0-beta.3
+    [N!]N(.N)*[{a|b|rc}N][.postN][.devN]+<localinfo>
+    111122222233333333333444444445555555666666666666
+    1 Epoch segment: N!
+    2 Release segment: N(.N)*
+    3 Pre-release segment: {a|b|rc}N
+    4 Post-release segment: .postN
+    5 Development release segment: .devN
+    6 local info not used in version ordering. I.e. ignored by package resolution rules
     """
-    original = desc.strip()
+    desc = desc.strip()
     dirty = False
+    semver_format = "0.0.0"
 
-    # Handle dirty flag
-    if original.endswith("-dirty"):
-        dirty = True
-        desc = original[: -len("-dirty")]
-    else:
-        desc = original
-
-    # Pattern: <tag>-<distance>-g<sha>
-    m = re.match(r"^(?P<tag>.+)-(?P<distance>\d+)-g(?P<sha>[0-9a-fA-F]+)$", desc)
+    m = re.match(
+        r"^(v)*(?P<majorver>\d+)(?P<minor>\.\d+)(?P<patch>\.\d+)*(?P<pretype>a|b|rc|alpha|beta)*0*(?P<prerelnum>\d*)-*(?P<posttagcount>\d*)-*g*(?P<sha>[0-9a-fA-F]+)*(?P<dirty>.dirty)*$",
+        desc,
+    )
     if m:
-        tag = m.group("tag")
-        distance = int(m.group("distance"))
-        sha = m.group("sha").lower()
+        groupdict = m.groupdict()
 
-        # Strip leading 'v' or 'V' from tags like v1.2.3, v6.0.0-beta.3
-        if tag.startswith(("v", "V")):
-            tag = tag[1:]
-
-        # Convert SEM tag to PEP 440
-        base_version = semver_to_pep440(tag)
-
-        local_suffix = f"+g{sha}"
-        if dirty:
-            local_suffix += ".dirty"
-
-        if distance == 0:
-            # Exact tag: just add local version
-            return f"{base_version}{local_suffix}"
-        else:
-            # N commits after tag -> .devN
-            return f"{base_version}.dev{distance}{local_suffix}"
-
-    # Fallback: no distance/sha (pure tag or hash only)
-    # Try to treat it as a pure tag first
-    tag = desc
-    if tag.startswith(("v", "V")):
-        tag = tag[1:]
-
-    try:
-        base_version = semver_to_pep440(tag)
-    except ValueError:
-        # Last resort: use a dummy base and encode everything as local,
-        # or you can raise to keep CI strict.
-        raise ValueError(
-            f"Cannot interpret git describe output as a tagged version: {original!r}"
+        semver_format = (
+            f"{groupdict.get('majorver','')}" + f"{groupdict.get('minor','')}"
         )
+        patch = groupdict.get("patch", None)
+        if patch:
+            semver_format += f"{patch}"
+        else:
+            semver_format += ".0"
 
-    local_suffix = ""
-    if dirty:
-        local_suffix = "+dirty"
-
-    return f"{base_version}{local_suffix}"
+        prereleasemapping = {
+            "alpha": "a",
+            "a": "a",
+            "beta": "b",
+            "b": "b",
+            "rc": "rc",
+            "": "",
+        }
+        prerelease_name = prereleasemapping.get(groupdict.get("pretype", ""), None)
+        prerelnum = groupdict.get("prerelnum", None)
+        if prerelease_name and prerelnum and len(prerelease_name) > 0:
+            semver_format += f"{prerelease_name}{prerelnum}"
+        posttagcount = groupdict.get("posttagcount", None)
+        dirty = groupdict.get("dirty", None)
+        if len(posttagcount) > 0 and int(posttagcount) == 0 and (dirty is None or len(dirty) == 0):
+            # If exactly on a tag, then do not add post, or sha
+            return semver_format
+        else:
+            if posttagcount and int(posttagcount) > 0:
+                semver_format += f".post{posttagcount}"
+            sha = groupdict.get("sha", None)
+            if sha:
+                semver_format += f"+g{sha.lower()}"
+            if dirty:
+                semver_format += f".dirty"
+    return semver_format
 
 
 def debug(msg: str, do_print=False) -> None:
