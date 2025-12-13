@@ -22,6 +22,47 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         new.__dict__ = copy.deepcopy(self.__dict__)
         return new
 
+    def get_pixi_environment_name(self):
+        # The pixi environment name is the same as the manylinux version
+        # and is related to the environment setups defined in pixi.toml
+        # in the root of this git directory that contains these scripts.
+
+        manylinux_ver: str | None = self.package_env_config.get(
+            "MANYLINUX_VERSION", None
+        )
+        if not manylinux_ver:
+            # Building native on linux, packages have very limited distribution utility
+            return "linux"
+        manylinux_ver = manylinux_ver.strip().lower()
+
+        match manylinux_ver:
+            case "manylinux1":
+                # PEP 513; glibc 2.5 (CentOS 5 era); obsolete and effectively unusable today.
+                return "manylinux1"
+            case "manylinux2010":
+                # PEP 571; glibc 2.12 (CentOS 6 era); deprecated/EOL in most ecosystems.
+                return "manylinux2010"
+            case "manylinux2014":
+                # PEP 599; glibc 2.17 (CentOS 7 era); broadest modern compatibility (workhorse).
+                return "manylinux2014"
+            case "manylinux_2_24":
+                # PEP 600; glibc 2.24 (Debian 9 era); transitional, less commonly targeted explicitly.
+                return "manylinux224"
+            case "manylinux_2_28":
+                # PEP 600; glibc 2.28 (RHEL/Alma 8 era); modern default for many projects.
+                return "manylinux228"
+            case "manylinux_2_31":
+                # PEP 600; glibc 2.31 (Debian 11/Ubuntu 20.04 era); narrower audience than 2_28.
+                return "manylinux231"
+            case "manylinux_2_34":
+                # PEP 600; glibc 2.34 (RHEL/Alma 9 era); cutting-edge, reduced downstream coverage.
+                return "manylinux234"
+            case _ if manylinux_ver.startswith("manylinux_2_"):
+                # PEP 600 family; glibc baseline is encoded in the tag; higher means newer, narrower.
+                return manylinux_ver.replace("_", "")
+            case _:
+                return f"Unknown/unsupported manylinux tag: {manylinux_ver!r}"
+
     def prepare_build_env(self) -> None:
         # #############################################
         # ### Setup build tools
@@ -98,7 +139,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                 # Unpack, edit WHEEL tag, repack
                 metawheel_dir = self.package_env_config["IPP_SOURCE_DIR"] / "metawheel"
                 metawheel_dir.mkdir(parents=True, exist_ok=True)
-                echo_check_call(
+                self.echo_check_call(
                     [
                         self.venv_info_dict["python_executable"],
                         "-m",
@@ -128,10 +169,10 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                     wheel_file.write_text("\n".join(new) + "\n", encoding="utf-8")
                 for fixed_dir in metawheel_dir.glob("itk-*"):
                     metawheel_dist = (
-                    self.package_env_config["IPP_SOURCE_DIR"] / "metawheel-dist"
+                        self.package_env_config["IPP_SOURCE_DIR"] / "metawheel-dist"
                     )
                     metawheel_dist.mkdir(parents=True, exist_ok=True)
-                    echo_check_call(
+                    self.echo_check_call(
                         [
                             self.venv_info_dict["python_executable"],
                             "-m",
@@ -204,7 +245,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             )
             print(f'RUNNING WITH PATH {os.environ["PATH"]}')
             env["PATH"] = os.environ["PATH"]
-            echo_check_call(cmd, env=env)
+            self.echo_check_call(cmd, env=env)
         print(
             f"Building outside of manylinux environment does not require wheel fixups."
         )
@@ -309,8 +350,8 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             venv_dir = _venvs_dir_list[0]
             local_pip_executable = venv_dir / "bin" / "pip3"
 
-        echo_check_call([local_pip_executable, "install", "--upgrade", "pip"])
-        echo_check_call(
+        self.echo_check_call([local_pip_executable, "install", "--upgrade", "pip"])
+        self.echo_check_call(
             [
                 local_pip_executable,
                 "install",
@@ -326,7 +367,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             ]
         )
         # Install dependencies
-        echo_check_call(
+        self.echo_check_call(
             [
                 local_pip_executable,
                 "install",

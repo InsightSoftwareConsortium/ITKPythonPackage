@@ -7,8 +7,7 @@ from pathlib import Path
 from build_python_instance_base import BuildPythonInstanceBase
 from macos_venv_utils import create_macos_venvs
 
-from wheel_builder_utils import push_dir, _remove_tree
-from build_python_instance_base import echo_check_call
+from wheel_builder_utils import _remove_tree
 
 
 class MacOSBuildPythonInstance(BuildPythonInstanceBase):
@@ -19,6 +18,12 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         new = cls.__new__(cls)
         new.__dict__ = copy.deepcopy(self.__dict__)
         return new
+
+    def get_pixi_environment_name(self):
+        # The pixi environment name is the same as the manylinux version
+        # and is related to the environment setups defined in pixi.toml
+        # in the root of this git directory that contains these scripts.
+        return "macos"
 
     def prepare_build_env(self) -> None:
         # #############################################
@@ -135,8 +140,8 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
                 self.venv_info_dict["venv_bin_path"] / "delocate-listdeps"
             )
             delocate_wheel = self.venv_info_dict["venv_bin_path"] / "delocate-wheel"
-            echo_check_call([str(delocate_listdeps), str(filepath)])
-            echo_check_call([str(delocate_wheel), str(filepath)])
+            self.echo_check_call([str(delocate_listdeps), str(filepath)])
+            self.echo_check_call([str(delocate_wheel), str(filepath)])
 
     def build_tarball(self):
         self.create_posix_tarball()
@@ -144,7 +149,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
     def remove_apple_double_files(self):
         try:
             # Optional: clean AppleDouble files if tool is available
-            echo_check_call(
+            self.echo_check_call(
                 ["dot_clean", str(self.package_env_config["IPP_SOURCE_DIR"].name)]
             )
         except Exception:
@@ -170,8 +175,8 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             venv_dir = _venvs_dir_list[0]
             local_pip_executable = venv_dir / "bin" / "pip3"
 
-        echo_check_call([local_pip_executable, "install", "--upgrade", "pip"])
-        echo_check_call(
+        self.echo_check_call([local_pip_executable, "install", "--upgrade", "pip"])
+        self.echo_check_call(
             [
                 local_pip_executable,
                 "install",
@@ -185,7 +190,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             ]
         )
         # Install dependencies
-        echo_check_call(
+        self.echo_check_call(
             [
                 local_pip_executable,
                 "install",

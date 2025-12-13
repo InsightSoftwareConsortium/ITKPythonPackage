@@ -7,7 +7,6 @@ from os import environ
 from build_python_instance_base import BuildPythonInstanceBase
 
 from wheel_builder_utils import push_dir, _remove_tree
-from build_python_instance_base import echo_check_call
 
 
 class WindowsBuildPythonInstance(BuildPythonInstanceBase):
@@ -18,6 +17,12 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         new = cls.__new__(cls)
         new.__dict__ = copy.deepcopy(self.__dict__)
         return new
+
+    def get_pixi_environment_name(self):
+        # The pixi environment name is the same as the manylinux version
+        # and is related to the environment setups defined in pixi.toml
+        # in the root of this git directory that contains these scripts.
+        return "windows"
 
     def prepare_build_env(self) -> None:
         # Windows
@@ -147,7 +152,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             str(self.package_env_config["IPP_SOURCE_DIR"] / "dist"),
             str(filepath),
         ]
-        echo_check_call(cmd)
+        self.echo_check_call(cmd)
 
     def venv_paths(self) -> None:
         # Create venv related paths
@@ -156,14 +161,14 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             Path(self.package_env_config["ITK_SOURCE_DIR"]) / f"venv-{self.py_env}"
         )
         if not venv_base_dir.exists():
-            echo_check_call([venv_executable, str(venv_base_dir)])
+            self.echo_check_call([venv_executable, str(venv_base_dir)])
             local_pip_executable = venv_base_dir / "Scripts" / "pip.exe"
 
             # Install required tools into each venv
 
             self._pip_uninstall_itk_wildcard(self.venv_info_dict["pip_executable"])
-            echo_check_call([local_pip_executable, "install", "--upgrade", "pip"])
-            echo_check_call(
+            self.echo_check_call([local_pip_executable, "install", "--upgrade", "pip"])
+            self.echo_check_call(
                 [
                     local_pip_executable,
                     "install",
@@ -178,7 +183,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                 ]
             )
             # Install dependencies
-            echo_check_call(
+            self.echo_check_call(
                 [
                     local_pip_executable,
                     "install",
@@ -290,7 +295,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                     "-w",
                     str(ipp_dir),
                 ]
-                echo_check_call(cmd)
+                self.echo_check_call(cmd)
             return
 
         # 3) Fallback: create a .zip using Python's shutil

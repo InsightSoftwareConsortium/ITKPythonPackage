@@ -62,19 +62,19 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cmake_options=None):
 
         with push_env(PATH=f"{path}{pathsep}{environ['PATH']}"):
             # Install dependencies
-            echo_check_call(
+            self.echo_check_call(
                 [python_executable, "-m", "pip", "install", "pip", "--upgrade"]
             )
             requirements_file = IPP_SOURCE_DIR / "requirements-dev.txt"
             if requirements_file.exists():
-                echo_check_call(
+                self.echo_check_call(
                     [pip, "install", "--upgrade", "-r", str(requirements_file)]
                 )
-            echo_check_call([pip, "install", "cmake"])
-            echo_check_call([pip, "install", "scikit-build-core", "--upgrade"])
+            self.echo_check_call([pip, "install", "cmake"])
+            self.echo_check_call([pip, "install", "scikit-build-core", "--upgrade"])
 
-            echo_check_call([pip, "install", "ninja", "--upgrade"])
-            echo_check_call([pip, "install", "delvewheel"])
+            self.echo_check_call([pip, "install", "ninja", "--upgrade"])
+            self.echo_check_call([pip, "install", "delvewheel"])
 
             itk_build_path = (SCRIPT_DIR.parent / f"ITK-win_{py_env}").resolve()
             print(f"ITKDIR: {itk_build_path}")
@@ -130,7 +130,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cmake_options=None):
             ]
             cmd += defs.getPythonBuildCommandLineArguments()
             cmd += [self.package_env_config["IPP_SOURCE_DIR"] / "BuildWheelsSupport"]
-            echo_check_call(cmd)
+            self.echo_check_call(cmd)
 
 
 def rename_wheel_init(py_env, filepath, add_module_name=True):
@@ -165,7 +165,7 @@ def rename_wheel_init(py_env, filepath, add_module_name=True):
     init_file_module = init_dir / ("__init_" + module_name.split("-")[0] + "__.py")
 
     # Unpack wheel and rename __init__ file if it exists.
-    echo_check_call(
+    self.echo_check_call(
         [python_executable, "-m", "wheel", "unpack", filepath, "-d", str(dist_dir)]
     )
     if add_module_name and init_file.is_file():
@@ -174,7 +174,7 @@ def rename_wheel_init(py_env, filepath, add_module_name=True):
         init_file_module.rename(init_file)
 
     # Pack wheel and clean wheel folder
-    echo_check_call(
+    self.echo_check_call(
         [python_executable, "-m", "wheel", "pack", str(wheel_dir), "-d", str(dist_dir)]
     )
     _remove_tree(wheel_dir)
@@ -191,7 +191,7 @@ def fixup_wheel(py_envs, filepath, lib_paths: str = "", exclude_libs: str = ""):
     rename_wheel_init(py_env, filepath, False)
 
     delve_wheel = Path("C:/P/IPP") / ("venv-" + py_env) / "Scripts" / "delvewheel.exe"
-    echo_check_call(
+    self.echo_check_call(
         [
             delve_wheel,
             "repair",

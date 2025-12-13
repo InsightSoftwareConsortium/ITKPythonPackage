@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import sys
 import os
+import sys
 from abc import ABC, abstractmethod
 from subprocess import check_call as subprocess_check_call
 from typing import Iterable
@@ -45,6 +45,8 @@ class BuildPythonInstanceBase(ABC):
         module_dependancies_root_dir: Path | None = None,
         itk_module_deps: str | None = None,
     ) -> None:
+        self.build_node_cpu_count: int = os.cpu_count() or 1
+
         self.py_env = py_env
         self.wheel_names = list(wheel_names)
         self.package_env_config = package_env_config
@@ -88,8 +90,8 @@ class BuildPythonInstanceBase(ABC):
         self.cmake_compiler_configurations.update(
             {
                 "CMAKE_BUILD_TYPE:STRING": f"{self._build_type}",
-                "CMAKE_CXX_FLAGS:STRING": '"-O3 -DNDEBUG"',
-                "CMAKE_C_FLAGS:STRING": '"-O3 -DNDEBUG"',
+                "CMAKE_CXX_FLAGS:STRING": "-O3 -DNDEBUG",
+                "CMAKE_C_FLAGS:STRING": "-O3 -DNDEBUG",
             }
         )
         # Set cmake flags for the compiler if CC or CXX are specified
@@ -251,10 +253,12 @@ class BuildPythonInstanceBase(ABC):
             str(self.package_env_config["IPP_SUPERBUILD_BINARY_DIR"]),
         ]
 
-        echo_check_call(cmd)
-        echo_check_call(
+        self.echo_check_call(cmd)
+        self.echo_check_call(
             [
                 self.venv_info_dict["ninja_executable"],
+                f"-j{self.build_node_cpu_count}",
+                f"-l{self.build_node_cpu_count}",
                 "-C",
                 str(self.package_env_config["IPP_SUPERBUILD_BINARY_DIR"]),
             ]
@@ -269,7 +273,7 @@ class BuildPythonInstanceBase(ABC):
             self.fixup_wheel(str(wheel), lib_paths)
 
     def final_wheel_import_test(self, installed_dist_dir: Path):
-        echo_check_call(
+        self.echo_check_call(
             [
                 self.venv_info_dict["pip_executable"],
                 "install",
@@ -282,15 +286,17 @@ class BuildPythonInstanceBase(ABC):
         )
         print("Wheel successfully installed.")
         # Basic imports
-        echo_check_call([self.venv_info_dict["python_executable"], "-c", "import itk;"])
-        echo_check_call(
+        self.echo_check_call(
+            [self.venv_info_dict["python_executable"], "-c", "import itk;"]
+        )
+        self.echo_check_call(
             [
                 self.venv_info_dict["python_executable"],
                 "-c",
                 "import itk; image = itk.Image[itk.UC, 2].New()",
             ]
         )
-        echo_check_call(
+        self.echo_check_call(
             [
                 self.venv_info_dict["python_executable"],
                 "-c",
@@ -298,7 +304,7 @@ class BuildPythonInstanceBase(ABC):
             ]
         )
         # Full doc tests
-        echo_check_call(
+        self.echo_check_call(
             [
                 self.venv_info_dict["python_executable"],
                 str(
@@ -311,8 +317,7 @@ class BuildPythonInstanceBase(ABC):
         )
         print("Documentation tests passed.")
 
-    @staticmethod
-    def _pip_uninstall_itk_wildcard(pip_executable: str | Path):
+    def _pip_uninstall_itk_wildcard(self, pip_executable: str | Path):
         """Uninstall all installed packages whose name starts with 'itk'.
 
         pip does not support shell-style wildcards directly for uninstall, so we:
@@ -345,7 +350,7 @@ class BuildPythonInstanceBase(ABC):
         if packages:
             print(f"Uninstalling existing ITK-related packages: {' '.join(packages)}")
             # Use echo_check_call for consistent logging/behavior
-            echo_check_call([pip_executable, "uninstall", "-y", *packages])
+            self.echo_check_call([pip_executable, "uninstall", "-y", *packages])
 
     def find_unix_exectable_paths(
         self,
@@ -539,7 +544,7 @@ class BuildPythonInstanceBase(ABC):
             # Module source directory to build
             cmd += [self.module_source_dir]
 
-            echo_check_call(cmd)
+            self.echo_check_call(cmd)
 
             # Post-process produced wheels (e.g., delocate on macOS x86_64)
             for wheel in out_dir.glob("*.whl"):
@@ -559,7 +564,7 @@ class BuildPythonInstanceBase(ABC):
                 print(f"# Build ITK wheel {wheel_name} from {self.wheel_names}")
                 print("#")
                 # Configure pyproject.toml
-                echo_check_call(
+                self.echo_check_call(
                     [
                         str(self.venv_info_dict["python_executable"]),
                         pyproject_configure,
@@ -613,7 +618,7 @@ class BuildPythonInstanceBase(ABC):
                 cmd += [
                     self.package_env_config["IPP_SOURCE_DIR"] / "BuildWheelsSupport"
                 ]
-                echo_check_call(cmd)
+                self.echo_check_call(cmd)
 
             # Remove unnecessary files for building against ITK
             if self.cleanup:
@@ -664,10 +669,12 @@ class BuildPythonInstanceBase(ABC):
             "-B",
             self.cmake_itk_source_build_configurations["ITK_BINARY_DIR:PATH"],
         ]
-        echo_check_call(cmd)
-        echo_check_call(
+        self.echo_check_call(cmd)
+        self.echo_check_call(
             [
                 self.venv_info_dict["ninja_executable"],
+                f"-j{self.build_node_cpu_count}",
+                f"-l{self.build_node_cpu_count}",
                 "-C",
                 self.cmake_itk_source_build_configurations["ITK_BINARY_DIR:PATH"],
             ]
@@ -740,11 +747,13 @@ class BuildPythonInstanceBase(ABC):
                 else module_root / repo
             )
             if not dependant_module_clone_dir.exists():
-                echo_check_call(["git", "clone", upstream, dependant_module_clone_dir])
+                self.echo_check_call(
+                    ["git", "clone", upstream, dependant_module_clone_dir]
+                )
 
             # Checkout requested tag
             with push_env():
-                echo_check_call(
+                self.echo_check_call(
                     [
                         "git",
                         "-C",
@@ -755,7 +764,7 @@ class BuildPythonInstanceBase(ABC):
                     ]
                 )
                 if tag:
-                    echo_check_call(
+                    self.echo_check_call(
                         ["git", "-C", dependant_module_clone_dir, "checkout", tag]
                     )
 
@@ -871,7 +880,7 @@ class BuildPythonInstanceBase(ABC):
                 )
 
             # Create tar
-            echo_check_call(
+            self.echo_check_call(
                 [
                     "tar",
                     "-cf",
@@ -883,7 +892,7 @@ class BuildPythonInstanceBase(ABC):
             )
 
             # Compress with zstd
-            echo_check_call(
+            self.echo_check_call(
                 [
                     "zstd",
                     "-f",
@@ -896,42 +905,47 @@ class BuildPythonInstanceBase(ABC):
                 ]
             )
 
+    @abstractmethod
+    def get_pixi_environment_name(self):
+        pass
 
-def echo_check_call(
-    cmd: list[str | Path] | tuple[str | Path] | str | Path,
-    pixi_environment: str = "manylinux228",
-    **kwargs: dict,
-) -> int:
-    """Print the command then run subprocess.check_call.
+    def echo_check_call(
+        self,
+        cmd: list[str | Path] | tuple[str | Path] | str | Path,
+        **kwargs: dict,
+    ) -> int:
+        """Print the command then run subprocess.check_call.
 
-    Parameters
-    ----------
-    cmd :
-        Command to execute, same as subprocess.check_call.
-    **kwargs :
-        Additional keyword arguments forwarded to subprocess.check_call.
-    """
-    pixi_run_preamble: list[str] = []
-    if pixi_environment:
-        pixi_run_preamble = ["pixi", "run", "-e", pixi_environment]
+        Parameters
+        ----------
+        cmd :
+            Command to execute, same as subprocess.check_call.
+        **kwargs :
+            Additional keyword arguments forwarded to subprocess.check_call.
+        """
 
-        # convert all items to strings (i.e. Path() to str)
-    cmd = pixi_run_preamble + [str(c) for c in cmd]
-    # Prepare a friendly command-line string for display
-    try:
-        if isinstance(cmd, (list, tuple)):
-            display_cmd = " ".join(cmd)
-        else:
+        pixi_environment: str = self.get_pixi_environment_name()
+        pixi_run_preamble: list[str] = []
+        if pixi_environment:
+            pixi_run_preamble = ["pixi", "run", "-e", pixi_environment]
+
+            # convert all items to strings (i.e. Path() to str)
+        cmd = pixi_run_preamble + [str(c) for c in cmd]
+        # Prepare a friendly command-line string for display
+        try:
+            if isinstance(cmd, (list, tuple)):
+                display_cmd = " ".join(cmd)
+            else:
+                display_cmd = str(cmd)
+        except Exception as e:
             display_cmd = str(cmd)
-    except Exception as e:
-        display_cmd = str(cmd)
-    print(f">>Start Running: {display_cmd} in {Path.cwd()}")
-    print("^" * 60)
-    print(cmd)
-    print("^" * 60)
-    print(kwargs)
-    print("^" * 60)
-    cmd_return_status: int = subprocess_check_call(cmd, **kwargs)
-    print("^" * 60)
-    print(f"<<Finished Running: cmd_return_status={cmd_return_status}")
-    return cmd_return_status
+        print(f">>Start Running: {display_cmd} in {Path.cwd()}")
+        print("^" * 60)
+        print(cmd)
+        print("^" * 60)
+        print(kwargs)
+        print("^" * 60)
+        cmd_return_status: int = subprocess_check_call(cmd, **kwargs)
+        print("^" * 60)
+        print(f"<<Finished Running: cmd_return_status={cmd_return_status}")
+        return cmd_return_status
