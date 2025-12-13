@@ -10,7 +10,6 @@ from linux_venv_utils import create_linux_venvs
 import shutil
 
 from wheel_builder_utils import _remove_tree
-from build_python_instance_base import echo_check_call
 
 
 class LinuxBuildPythonInstance(BuildPythonInstanceBase):
