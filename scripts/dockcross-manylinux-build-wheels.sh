@@ -92,9 +92,10 @@ PIXI_ENV=${PIXI_ENV:=manylinux228}
 # When building ITK wheels, --module-source-dir, --module-dependancies-root-dir, and --itk-module-deps to be empty
 cmd=$(echo bash -x ${_local_dockercross_script} \
   -a \"$DOCKER_ARGS\" \
-  /bin/bash -x ${CONTAINER_WORK_DIR}/scripts/docker_build_environment_driver.sh \
-      PIXI_ENV=\"${PIXI_ENV}\" \
-      PY_ENVS=\"${PY_ENVS}\"
+   /usr/bin/env \
+     PIXI_ENV=\"${PIXI_ENV}\" \
+     PY_ENVS=\"${PY_ENVS}\" \
+     /bin/bash -x ${CONTAINER_WORK_DIR}/scripts/docker_build_environment_driver.sh
 )
 echo "RUNNING: $cmd"
 eval $cmd
