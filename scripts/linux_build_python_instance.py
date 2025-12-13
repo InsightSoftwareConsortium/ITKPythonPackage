@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import os
 from os import environ
 from pathlib import Path
 
@@ -8,7 +9,8 @@ from build_python_instance_base import BuildPythonInstanceBase
 from linux_venv_utils import create_linux_venvs
 import shutil
 
-from wheel_builder_utils import echo_check_call, _remove_tree
+from wheel_builder_utils import _remove_tree
+from build_python_instance_base import echo_check_call
 
 
 class LinuxBuildPythonInstance(BuildPythonInstanceBase):
@@ -69,23 +71,33 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         self.cmake_compiler_configurations.set("CMAKE_C_FLAGS:STRING", "-O3 -DNDEBUG")
 
     def post_build_fixup(self) -> None:
-        # Repair all produced wheels with auditwheel and retag meta-wheel
-        for whl in (self.package_env_config["IPP_SOURCE_DIR"] / "dist").glob("*.whl"):
-            self.fixup_wheel(str(whl))
-        # Special handling for the itk meta wheel to adjust tag
-        manylinux_ver = self.package_env_config.get("MANYLINUX_VERSION", "")
+        manylinux_ver: str | None = self.package_env_config.get(
+            "MANYLINUX_VERSION", None
+        )
         if manylinux_ver:
-            for whl in list(
+            # Repair all produced wheels with auditwheel for packages with so elements (starts with itk_)
+            whl = None
+            for whl in (self.package_env_config["IPP_SOURCE_DIR"] / "dist").glob(
+                "itk_*linux_*.whl"
+            ):
+                if str(whl).startswith("itk-"):
+                    print(
+                        f"Skipping the itk-meta wheel that has nothing to fixup {whl}"
+                    )
+                    continue
+                self.fixup_wheel(str(whl))
+            del whl
+            # Retag meta-wheel: Special handling for the itk meta wheel to adjust tag
+            # auditwheel does not process this "metawheel" correctly since it does not
+            # have any native SO's.
+            for metawhl in list(
                 (self.package_env_config["IPP_SOURCE_DIR"] / "dist").glob(
                     "itk-*linux_*.whl"
-                )
-            ) + list(
-                (self.package_env_config["IPP_SOURCE_DIR"] / "dist").glob(
-                    "itk_*linux_*.whl"
                 )
             ):
                 # Unpack, edit WHEEL tag, repack
                 metawheel_dir = self.package_env_config["IPP_SOURCE_DIR"] / "metawheel"
+                metawheel_dir.mkdir(parents=True, exist_ok=True)
                 metawheel_dist = (
                     self.package_env_config["IPP_SOURCE_DIR"] / "metawheel-dist"
                 )
@@ -97,16 +109,18 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                         "unpack",
                         "--dest",
                         str(metawheel_dir),
-                        str(whl),
+                        str(metawhl),
                     ]
                 )
                 # Find unpacked dir
                 unpacked_dirs = list(metawheel_dir.glob("itk-*/itk*.dist-info/WHEEL"))
                 for wheel_file in unpacked_dirs:
                     content = wheel_file.read_text(encoding="utf-8").splitlines()
-                    base = whl.name
+                    base = metawhl.name
                     if len(manylinux_ver) > 0:
-                        base = whl.name.replace("linux", f"manylinux{manylinux_ver}")
+                        base = metawhl.name.replace(
+                            "linux", f"manylinux{manylinux_ver}"
+                        )
                     tag = Path(base).stem
                     new = []
                     for line in content:
@@ -137,7 +151,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                     )
                 # Remove old and temp
                 try:
-                    whl.unlink()
+                    metawhl.unlink()
                 except OSError:
                     pass
                 _remove_tree(metawheel_dir)
@@ -168,7 +182,9 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             ]
             # Provide LD_LIBRARY_PATH for oneTBB and common system paths
             extra_lib = str(
-                self.package_env_config["IPP_SOURCE_DIR"] / "oneTBB-prefix" / "lib"
+                self.package_env_config["IPP_SUPERBUILD_BINARY_DIR"].parent
+                / "oneTBB-prefix"
+                / "lib"
             )
             env = dict(self.package_env_config)
             env["LD_LIBRARY_PATH"] = ":".join(
@@ -179,6 +195,13 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                     "/usr/lib",
                 ]
             )
+            os.environ["PATH"] = (
+                str(Path(self.venv_info_dict["python_executable"]).parent)
+                + os.pathsep
+                + os.environ.get("PATH", "")
+            )
+            print(f'RUNNING WITH PATH {os.environ["PATH"]}')
+            env["PATH"] = os.environ["PATH"]
             echo_check_call(cmd, env=env)
         print(
             f"Building outside of manylinux environment does not require wheel fixups."
@@ -297,6 +320,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                 #  os-specific tools below
                 "wheel",
                 "auditwheel",
+                "patchelf",  # Needed for auditwheel
             ]
         )
         # Install dependencies

@@ -7,7 +7,8 @@ from pathlib import Path
 from build_python_instance_base import BuildPythonInstanceBase
 from macos_venv_utils import create_macos_venvs
 
-from wheel_builder_utils import echo_check_call, push_dir, _remove_tree
+from wheel_builder_utils import push_dir, _remove_tree
+from build_python_instance_base import echo_check_call
 
 
 class MacOSBuildPythonInstance(BuildPythonInstanceBase):

@@ -362,7 +362,8 @@ def generate_build_environment(argv: list[str]) -> int:
         reference_env_report = (
             build_env_report if Path(build_env_report).exists() else None
         )
-    reference_env_report = Path(reference_env_report)
+    if reference_env_report:
+        reference_env_report = Path(reference_env_report)
 
     debug(f"Input:   {reference_env_report or '<none>'}")
     debug(f"Output:  {build_env_report or '<none>'}")
@@ -400,25 +401,29 @@ def generate_build_environment(argv: list[str]) -> int:
     doxygen_exec = env.get("DOXYGEN_EXECUTABLE", None)
     ninja_exec = env.get("NINJA_EXECUTABLE", None)
     cmake_exec = env.get("CMAKE_EXECUTABLE", None)
+
     if doxygen_exec is None or ninja_exec is None or cmake_exec is None:
         print("Generating pixi installed resources.")
-        reference_env_report.parent.mkdir(parents=True, exist_ok=True)
+        build_dir.parent.mkdir(parents=True, exist_ok=True)
         run(
             [
                 "curl",
                 "-fsSL",
                 "https://pixi.sh/install.sh",
                 "-o",
-                str(reference_env_report.parent / "pixi_install.sh"),
+                str(build_dir.parent / "pixi_install.sh"),
             ]
         )
+        pixi_home = _ipp_dir / ".pixi"
+        pixi_home.mkdir(parents=True, exist_ok=True)
+        os.environ["PIXI_HOME"] = str(pixi_home)
+        pixi_install_dir = pixi_home / "bin"
         run(
             [
                 "/bin/sh",
-                str(reference_env_report.parent / "pixi_install.sh"),
+                str(build_dir.parent / "pixi_install.sh"),
             ]
         )
-        pixi_install_dir = Path.home() / ".pixi" / "bin"
         run(
             [
                 str(pixi_install_dir / "pixi"),
@@ -427,6 +432,7 @@ def generate_build_environment(argv: list[str]) -> int:
                 "doxygen",
                 "cmake",
                 "ninja",
+                "patchelf",
             ]
         )
         os.environ["PATH"] = (
@@ -589,6 +595,9 @@ def generate_build_environment(argv: list[str]) -> int:
             f"MANYLINUX_IMAGE_NAME={manylinux_image_name}",
             f"CONTAINER_SOURCE={container_source}",
         ]
+        tbb_dir = env.get("TBB_DIR", None)
+        if tbb_dir:
+            lines += [f"TBB_DIR={tbb_dir}"]
 
     if os_name == "darwin":
         # Standard build flags that may be present
@@ -607,7 +616,6 @@ def generate_build_environment(argv: list[str]) -> int:
             "PKG_CONFIG_LIBDIR",
             "LD_LIBRARY_PATH",
             "DYLD_LIBRARY_PATH",
-            "TBB_DIR",
         ]
         lines += [
             "",

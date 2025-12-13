@@ -6,7 +6,8 @@ from os import environ
 
 from build_python_instance_base import BuildPythonInstanceBase
 
-from wheel_builder_utils import echo_check_call, push_dir, _remove_tree
+from wheel_builder_utils import push_dir, _remove_tree
+from build_python_instance_base import echo_check_call
 
 
 class WindowsBuildPythonInstance(BuildPythonInstanceBase):

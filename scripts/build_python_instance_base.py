@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import sys
+import os
 from abc import ABC, abstractmethod
+from subprocess import check_call as subprocess_check_call
 from typing import Iterable
 
 import shutil
@@ -13,7 +15,6 @@ from cmake_argument_builder import CMakeArgumentBuilder
 from BuildManager import BuildManager
 from wheel_builder_utils import (
     _remove_tree,
-    echo_check_call,
     push_env,
     _which,
     push_dir,
@@ -64,10 +65,7 @@ class BuildPythonInstanceBase(ABC):
         )
         self.itk_module_deps = itk_module_deps
 
-        self._cmake_executable = None
-        self._doxygen_executable = None
         self._use_tbb = "ON"
-        self._tbb_dir = self.package_env_config.get("TBB_DIR", None)
         self._build_type = "Release"
         # Unified place to collect cmake -D definitions for this instance
         self.cmake_cmdline_definitions: CMakeArgumentBuilder = CMakeArgumentBuilder()
@@ -90,8 +88,8 @@ class BuildPythonInstanceBase(ABC):
         self.cmake_compiler_configurations.update(
             {
                 "CMAKE_BUILD_TYPE:STRING": f"{self._build_type}",
-                "CMAKE_CXX_FLAGS:STRING": "-O3 -DNDEBUG",
-                "CMAKE_C_FLAGS:STRING": "-O3 -DNDEBUG",
+                "CMAKE_CXX_FLAGS:STRING": "\"-O3 -DNDEBUG\"",
+                "CMAKE_C_FLAGS:STRING": "\"-O3 -DNDEBUG\"",
             }
         )
         # Set cmake flags for the compiler if CC or CXX are specified
@@ -136,7 +134,7 @@ class BuildPythonInstanceBase(ABC):
                 "ITK_WRAP_DOC:BOOL": "ON",
                 "DOXYGEN_EXECUTABLE:FILEPATH": f"{self.package_env_config['DOXYGEN_EXECUTABLE']}",
                 "Module_ITKTBB:BOOL": f"{self._use_tbb}",
-                "TBB_DIR:PATH": f"{self._tbb_dir}",
+                "TBB_DIR:PATH": f'{self.package_env_config.get("TBB_DIR", None)}',
                 # Python settings
                 "SKBUILD:BOOL": "ON",
             }
@@ -239,7 +237,7 @@ class BuildPythonInstanceBase(ABC):
             cmake_superbuild_argumets.update(self.cmake_cmdline_definitions.items())
 
         cmd = [
-            self._cmake_executable,
+            self.package_env_config["CMAKE_EXECUTABLE"],
             "-G",
             "Ninja",
         ]
@@ -647,8 +645,9 @@ class BuildPythonInstanceBase(ABC):
         print("#")
 
         # Build ITK python
-        cmd = [
-            "cmake",
+        cmd = ["pixi", "run", "-e", "manylinux228"]
+        cmd += [
+            self.package_env_config["CMAKE_EXECUTABLE"],
             "-G",
             "Ninja",
         ]
@@ -726,6 +725,9 @@ class BuildPythonInstanceBase(ABC):
 
         # Build each dependency in order
         for current_entry, entry in enumerate(normalized):
+            if len(entry) == 0:
+                continue
+            print(f"Get dependency module information for {entry}")
             org = entry.split("/", 1)[0]
             repo_tag = entry.split("/", 1)[1]
             repo = repo_tag.split("@", 1)[0]
@@ -822,8 +824,10 @@ class BuildPythonInstanceBase(ABC):
         tar_name = (
             f"ITKPythonBuilds-{self.package_env_config['OS_NAME']}{arch_postfix}.tar"
         )
-        tar_path = self.package_env_config["IPP_SOURCE_DIR"].parent / tar_name
-        zst_path = self.package_env_config["IPP_SOURCE_DIR"].parent / f"{tar_name}.zst"
+        tar_path = self.package_env_config["IPP_SOURCE_DIR"] / "build" / tar_name
+        zst_path = (
+            self.package_env_config["IPP_SOURCE_DIR"] / "build" / f"{tar_name}.zst"
+        )
 
         with push_dir(self.package_env_config["IPP_SOURCE_DIR"]):
             # ITK builds
@@ -891,3 +895,43 @@ class BuildPythonInstanceBase(ABC):
                     str(zst_path),
                 ]
             )
+
+
+def echo_check_call(
+    cmd: list[str | Path] | tuple[str | Path] | str | Path,
+    pixi_environment: str = "manylinux228",
+    **kwargs: dict,
+) -> int:
+    """Print the command then run subprocess.check_call.
+
+    Parameters
+    ----------
+    cmd :
+        Command to execute, same as subprocess.check_call.
+    **kwargs :
+        Additional keyword arguments forwarded to subprocess.check_call.
+    """
+    pixi_run_preamble: list[str] = []
+    if pixi_environment:
+        pixi_run_preamble = ["pixi", "run", "-e", pixi_environment]
+
+        # convert all items to strings (i.e. Path() to str)
+    cmd = pixi_run_preamble + [str(c) for c in cmd]
+    # Prepare a friendly command-line string for display
+    try:
+        if isinstance(cmd, (list, tuple)):
+            display_cmd = " ".join(cmd)
+        else:
+            display_cmd = str(cmd)
+    except Exception as e:
+        display_cmd = str(cmd)
+    print(f">>Start Running: {display_cmd} in {Path.cwd()}")
+    print("^" * 60)
+    print(cmd)
+    print("^" * 60)
+    print(kwargs)
+    print("^" * 60)
+    cmd_return_status: int = subprocess_check_call(cmd, **kwargs)
+    print("^" * 60)
+    print(f"<<Finished Running: cmd_return_status={cmd_return_status}")
+    return cmd_return_status

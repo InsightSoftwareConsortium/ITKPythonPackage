@@ -14,7 +14,6 @@ from pathlib import Path
 from os import environ as os_environ, chdir as os_chdir, environ
 from contextlib import contextmanager
 from functools import wraps
-from subprocess import check_call as subprocess_check_call
 
 
 def mkdir_p(path):
@@ -168,34 +167,6 @@ def _which(exe_name: str) -> str | Path | None:
             except OSError:
                 continue
     return None
-
-
-def echo_check_call(
-    cmd: list[str | Path] | tuple[str | Path] | str | Path, **kwargs: dict
-) -> int:
-    """Print the command then run subprocess.check_call.
-
-    Parameters
-    ----------
-    cmd :
-        Command to execute, same as subprocess.check_call.
-    **kwargs :
-        Additional keyword arguments forwarded to subprocess.check_call.
-    """
-    # convert all items to strings (i.e. Path() to str)
-    cmd = [str(c) for c in cmd]
-    # Prepare a friendly command-line string for display
-    try:
-        if isinstance(cmd, (list, tuple)):
-            display_cmd = " ".join(cmd)
-        else:
-            display_cmd = str(cmd)
-    except Exception as e:
-        display_cmd = str(cmd)
-    print(f">>Start Running: {display_cmd} in {Path.cwd()}")
-    cmd_return_status: int = subprocess_check_call(cmd, **kwargs)
-    print(f"<<Finished Running: cmd_return_status={cmd_return_status}")
-    return cmd_return_status
 
 
 def detect_platform() -> tuple[str, str]:

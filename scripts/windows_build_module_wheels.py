@@ -8,7 +8,8 @@ from os import environ, pathsep
 
 from wheel_builder_utils import read_env_file
 
-from wheel_builder_utils import _remove_tree, echo_check_call
+from wheel_builder_utils import _remove_tree
+from build_python_instance_base import echo_check_call
 from cmake_argument_builder import CMakeArgumentBuilder
 
 # Get module info

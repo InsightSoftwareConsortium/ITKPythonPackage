@@ -9,7 +9,7 @@ CONTAINER_ENV_FILE=${CONTAINER_PACKAGE_DIST}/container_package.env
 # Set BUILD_WHEELS_EXTRA_FLAGS="" to disable building the tarball or force cleanup
 BUILD_WHEELS_EXTRA_FLAGS=${BUILD_WHEELS_EXTRA_FLAGS:=" --build-itk-tarball-cache --no-cleanup "}
 PIXI_ENV=${PIXI_ENV:=manylinux228}
-PY_ENVS=${PYENVS:=3.11}
+PY_ENVS=${PY_ENVS:=3.11}
 
 # Use pixi to ensure all required tools are installed and
 # visible in the PATH

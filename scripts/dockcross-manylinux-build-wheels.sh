@@ -62,8 +62,8 @@ CONTAINER_ENV_FILE=${CONTAINER_PACKAGE_DIST}/container_package.env
 HOST_PACKAGE_DIST=${_ipp_dir}/dist
 HOST_TO_CONTAINER_ENV_FILE=${HOST_PACKAGE_DIST}/container_package.env
 mkdir -p ${HOST_PACKAGE_DIST}
-HOST_PACKAGE_BUILD_DIR=${_ipp_dir}/ITK-source_manylinux${MANYLINUX_VERSION}-x64_${IMAGE_TAG}
-mkdir -p ${HOST_PACKAGE_BUILD_DIR}
+#HOST_PACKAGE_BUILD_DIR=${_ipp_dir}/ITK-source_manylinux${MANYLINUX_VERSION}-x64_${IMAGE_TAG}
+#mkdir -p ${HOST_PACKAGE_BUILD_DIR}
 
 # Need to fixup path for container to find ITK, TODO: build_wheels.py should take in optional .env file
 sed "s#ITK_SOURCE_DIR=.*#ITK_SOURCE_DIR=${CONTAINER_ITK_SOURCE_DIR}#g"  ${package_env_file} \
@@ -83,6 +83,7 @@ DOCKER_ARGS="  -v ${_ipp_dir}/dist:${CONTAINER_WORK_DIR}/dist/ "
 DOCKER_ARGS+=" -v${ITK_SOURCE_DIR}:${CONTAINER_ITK_SOURCE_DIR} "
 DOCKER_ARGS+=" --env-file ${HOST_TO_CONTAINER_ENV_FILE} "  # Configure container to start with correct environment variables
 DOCKER_ARGS+=" -e PACKAGE_ENV_FILE=${CONTAINER_ENV_FILE} " # Choose the right env cache inside container (needed for subsequent scripts)
+DOCKER_ARGS+=" -e PYTHONUNBUFFERED=1 " # Turn off buffering of outputs in python
 
 BUILD_WHEELS_EXTRA_FLAGS=${BUILD_WHEELS_EXTRA_FLAGS:=" --build-itk-tarball-cache --no-cleanup "}
 #BUILD_WHEELS_EXTRA_FLAGS=\"${BUILD_WHEELS_EXTRA_FLAGS}\" \
@@ -91,7 +92,7 @@ PIXI_ENV=${PIXI_ENV:=manylinux228}
 # When building ITK wheels, --module-source-dir, --module-dependancies-root-dir, and --itk-module-deps to be empty
 cmd=$(echo bash -x ${_local_dockercross_script} \
   -a \"$DOCKER_ARGS\" \
-  /bin/bash ${CONTAINER_WORK_DIR}/scripts/environment_driver.sh \
+  /bin/bash -x ${CONTAINER_WORK_DIR}/scripts/docker_build_environment_driver.sh \
       PIXI_ENV=\"${PIXI_ENV}\" \
       PY_ENVS=\"${PY_ENVS}\"
 )

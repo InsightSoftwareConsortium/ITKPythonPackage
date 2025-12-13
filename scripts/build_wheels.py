@@ -43,7 +43,7 @@ def _set_main_variable_names(
     IPP_BuildWheelsSupport_DIR = IPP_SOURCE_DIR / "BuildWheelsSupport"
     package_env_config["IPP_BuildWheelsSupport_DIR"] = IPP_BuildWheelsSupport_DIR
 
-    IPP_SUPERBUILD_BINARY_DIR = IPP_SOURCE_DIR / "build" / "ITK-source"
+    IPP_SUPERBUILD_BINARY_DIR = IPP_SOURCE_DIR / "build" / "ITK-support-bld"
     package_env_config["IPP_SUPERBUILD_BINARY_DIR"] = IPP_SUPERBUILD_BINARY_DIR
 
     OS_NAME, ARCH = detect_platform()
@@ -51,6 +51,21 @@ def _set_main_variable_names(
     package_env_config["ARCH"] = ARCH
 
     return package_env_config
+
+
+def _set_os_environ():
+    os.environ["PATH"] = (
+        str(Path(__file__).parent) + os.pathsep + os.environ.get("PATH", "")
+    )
+    if Path("/work").is_dir():
+        pixi_home_path: Path = Path("/work/.pixi")
+        os.environ["PIXI_HOME"] = (
+            str(pixi_home_path) + os.pathsep + os.environ.get("PATH", "")
+        )
+        pixi_exec_path: Path = pixi_home_path / "bin"
+        os.environ["PATH"] = (
+            str(pixi_exec_path) + os.pathsep + os.environ.get("PATH", "")
+        )
 
 
 def main() -> None:
@@ -134,6 +149,7 @@ def main() -> None:
     package_env_config = _set_main_variable_names(
         SCRIPT_DIR=SCRIPT_DIR, PACKAGE_ENV_FILE=Path(args.package_env_file)
     )
+    _set_os_environ()
 
     with open(
         package_env_config["IPP_BuildWheelsSupport_DIR"] / "WHEEL_NAMES.txt",
