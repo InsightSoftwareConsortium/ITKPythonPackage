@@ -98,9 +98,6 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                 # Unpack, edit WHEEL tag, repack
                 metawheel_dir = self.package_env_config["IPP_SOURCE_DIR"] / "metawheel"
                 metawheel_dir.mkdir(parents=True, exist_ok=True)
-                metawheel_dist = (
-                    self.package_env_config["IPP_SOURCE_DIR"] / "metawheel-dist"
-                )
                 echo_check_call(
                     [
                         self.venv_info_dict["python_executable"],
@@ -129,17 +126,22 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                         else:
                             new.append(line)
                     wheel_file.write_text("\n".join(new) + "\n", encoding="utf-8")
-                echo_check_call(
-                    [
-                        self.venv_info_dict["python_executable"],
-                        "-m",
-                        "wheel",
-                        "pack",
-                        "--dest",
-                        str(metawheel_dist),
-                        str(metawheel_dir / "itk-*"),
-                    ]
-                )
+                for fixed_dir in metawheel_dir.glob("itk-*"):
+                    metawheel_dist = (
+                    self.package_env_config["IPP_SOURCE_DIR"] / "metawheel-dist"
+                    )
+                    metawheel_dist.mkdir(parents=True, exist_ok=True)
+                    echo_check_call(
+                        [
+                            self.venv_info_dict["python_executable"],
+                            "-m",
+                            "wheel",
+                            "pack",
+                            "--dest",
+                            str(metawheel_dist),
+                            str(fixed_dir),
+                        ]
+                    )
                 # Move and clean
                 for new_whl in metawheel_dist.glob("*.whl"):
                     shutil.move(
