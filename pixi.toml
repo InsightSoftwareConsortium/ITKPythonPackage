@@ -47,6 +47,7 @@ setuptools_scm = "==8.1.0"
 
 [feature.manylinux228-build]
 platforms = ["linux-64"]
+# Not supported by manylinux228 platforms = ["linux-aarch64"]
 
 [feature.manylinux228-build.dependencies]
 auditwheel = "*"
@@ -70,6 +71,16 @@ delocate = "*"
 
 [feature.macos-build.dependencies]
 cxx-compiler = "==1.10.0"
+
+[feature.windows-build]
+platforms = ["win-64"]
+
+[feature.windows-build.pypi-dependencies]
+# windows = "*"
+
+[feature.windows-build.dependencies]
+# cxx-compiler = "==1.10.0"
+
 
 ########################################
 # Environments: compose features per target
@@ -100,4 +111,5 @@ macos = [
 windows = [
   "build-dev-tools",
   "python-dev-pkgs",
+  "windows-build"
 ]
