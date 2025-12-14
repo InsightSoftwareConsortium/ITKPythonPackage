@@ -223,6 +223,8 @@ def default_manylinux(
             image_tag = image_tag or "2025.08.12-1"
         elif manylinux_version == "2014":
             image_tag = image_tag or "20240304-9e57d2b"
+        elif manylinux_version == "":
+            image_tag = ""
         else:
             raise RuntimeError(
                 f"FAILURE: Unknown manylinux version {manylinux_version}"
