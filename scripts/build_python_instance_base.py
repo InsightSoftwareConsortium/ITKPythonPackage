@@ -840,12 +840,10 @@ class BuildPythonInstanceBase(ABC):
         tar_name = (
             f"ITKPythonBuilds-{self.package_env_config['OS_NAME']}{arch_postfix}.tar"
         )
-        tar_path = self.package_env_config["IPP_SOURCE_DIR"] / "build" / tar_name
-        zst_path = (
-            self.package_env_config["IPP_SOURCE_DIR"] / "build" / f"{tar_name}.zst"
-        )
+        tar_path = self.build_dir_root / "build" / tar_name
+        zst_path = self.build_dir_root / "build" / f"{tar_name}.zst"
 
-        with push_dir(self.package_env_config["IPP_SOURCE_DIR"]):
+        with push_dir(self.build_dir_root):
             # ITK builds
             cache_directory_paths: list[Path] = [
                 p
