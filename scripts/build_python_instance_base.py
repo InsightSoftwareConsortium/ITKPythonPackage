@@ -836,7 +836,7 @@ class BuildPythonInstanceBase(ABC):
         """
         arch_postfix = f"-{self.package_env_config['ARCH']}"
         tar_name = (
-            f"ITKPythonBuilds-{self.package_env_config['OS_NAME']}{arch_postfix}.tar"
+            f"ITKPythonBuilds-{self.get_pixi_environment_name()}-{arch_postfix}.tar"
         )
         itk_packaging_reference_dir = self.build_dir_root.parent
 
