@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import copy
-from pathlib import Path
 from os import environ
+from pathlib import Path
 
 from build_python_instance_base import BuildPythonInstanceBase
 
@@ -25,8 +25,6 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         return "windows"
 
     def prepare_build_env(self) -> None:
-        # Windows
-
         # #############################################
         # ### Setup build tools
         self._build_type = "Release"
@@ -38,18 +36,26 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             / "cmake"
             / "TBB"
         )
-        self._cmake_executable = "cmake.exe"
+        # The interpreter is provided; ensure basic tools are available
         self.venv_paths()
         self.update_venv_itk_build_configurations()
-        self.cmake_compiler_configurations.update(
-            {
-                "CMAKE_MAKE_PROGRAM:FILEPATH": f"{self.venv_info_dict['ninja_executable']}",
-            }
+        self.cmake_compiler_configurations.set(
+            "CMAKE_MAKE_PROGRAM:FILEPATH", f"{self.venv_info_dict['ninja_executable']}"
         )
+        target_arch = self.package_env_config["ARCH"]
+        itk_binary_build_name: str = (
+            self.build_dir_root
+            / "build"
+            / f"ITK-{self.py_env}-{self.get_pixi_environment_name()}_{target_arch}"
+        )
+
         self.cmake_itk_source_build_configurations.set(
-            "ITK_BINARY_DIR:PATH",
-            str(self.build_dir_root / f"ITK-win_{self.py_env}"),
+            "ITK_BINARY_DIR:PATH", itk_binary_build_name
         )
+
+        # Keep values consistent with prior quoting behavior
+        # self.cmake_compiler_configurations.set("CMAKE_CXX_FLAGS:STRING", "-O3 -DNDEBUG")
+        # self.cmake_compiler_configurations.set("CMAKE_C_FLAGS:STRING", "-O3 -DNDEBUG")
 
     def post_build_fixup(self) -> None:
         # append the oneTBB-prefix\\bin directory for fixing wheels built with local oneTBB
@@ -63,15 +69,14 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         self.fixup_wheels(search_lib_paths_str)
 
     def post_build_cleanup(self) -> None:
-        """Clean Windows build artifacts (leave dist/ intact).
+        """Clean build artifacts
 
-        Mirrors the intent of dockcross-manylinux-cleanup.sh for Windows:
-        - remove oneTBB-prefix (symlink/dir)
+        Actions (leaving dist/ intact):
+        - remove oneTBB-prefix (symlink or dir)
         - remove ITKPythonPackage/, tools/, _skbuild/, build/
         - remove top-level *.egg-info
-        - remove ITK-win_* build trees
-        - remove ITKPythonBuilds-win*.tar.zst if present
-        - remove any module prereq clones from ITK_MODULE_PREQ env/config
+        - remove ITK-* build tree and tarballs
+        - if ITK_MODULE_PREQ is set ("org/name@ref:org2/name2@ref2"), remove cloned module dirs
         """
         base = Path(self.package_env_config["IPP_SOURCE_DIR"])
 
@@ -81,7 +86,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             except Exception:
                 pass
 
-        # oneTBB-prefix
+        # 1) unlink oneTBB-prefix if it's a symlink or file
         tbb = base / "oneTBB-prefix"
         try:
             if tbb.is_symlink() or tbb.is_file():
@@ -91,23 +96,25 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         except Exception:
             pass
 
-        # Common build dirs
+        # 2) standard build directories
         for rel in ("ITKPythonPackage", "tools", "_skbuild", "build"):
             rm(base / rel)
 
-        # egg-info
+        # 3) egg-info folders at top-level
         for p in base.glob("*.egg-info"):
             rm(p)
 
-        # ITK build tree(s)
-        for p in base.glob("ITK-win_*"):
+        # 4) ITK build tree and tarballs
+        target_arch = self.package_env_config["ARCH"]
+        for p in base.glob(f"ITK-*-{self.package_env_config}_{target_arch}"):
             rm(p)
 
-        # Tarballs (if used on Windows)
-        for p in base.glob("ITKPythonBuilds-win*.tar.zst"):
+        # Tarballs
+        for p in base.glob(f"ITKPythonBuilds-{self.package_env_config}*.tar.zst"):
             rm(p)
 
-        # Module prerequisites
+        # 5) Optional module prerequisites cleanup (ITK_MODULE_PREQ)
+        # Format: "InsightSoftwareConsortium/ITKModuleA@v1.0:Kitware/ITKModuleB@sha" -> remove repo names
         itk_preq = self.package_env_config.get("ITK_MODULE_PREQ") or environ.get(
             "ITK_MODULE_PREQ", ""
         )
@@ -155,15 +162,12 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
     def venv_paths(self) -> None:
         # Create venv related paths
         venv_executable = f"C:/Python{self.py_env}/Scripts/virtualenv.exe"
-        venv_base_dir = (
-            Path(self.package_env_config["ITK_SOURCE_DIR"]) / f"venv-{self.py_env}"
-        )
+        venv_base_dir = Path(self.build_dir_root) / f"venv-{self.py_env}"
         if not venv_base_dir.exists():
             self.echo_check_call([venv_executable, str(venv_base_dir)])
             local_pip_executable = venv_base_dir / "Scripts" / "pip.exe"
 
             # Install required tools into each venv
-
             self._pip_uninstall_itk_wildcard(self.venv_info_dict["pip_executable"])
             self.echo_check_call([local_pip_executable, "install", "--upgrade", "pip"])
             self.echo_check_call(
@@ -172,7 +176,6 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                     "install",
                     "--upgrade",
                     "build",
-                    "ninja",
                     "numpy",
                     "scikit-build-core",
                     #  os-specific tools below
@@ -231,12 +234,11 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
           ITKPythonBuilds-windows.zip at the parent directory of IPP (e.g., C:\P)
         - Fallback to Python's zip archive creation if 7-Zip is unavailable
         """
-        ipp_dir = Path(self.package_env_config["IPP_SOURCE_DIR"])
-        base_dir = ipp_dir.parent  # e.g., C:\P
-        out_zip = base_dir / "ITKPythonBuilds-windows.zip"
+
+        out_zip = self.build_dir_root / "build" / "ITKPythonBuilds-windows.zip"
 
         # 1) Clean IPP/dist contents (do not remove the directory itself)
-        dist_dir = ipp_dir / "dist"
+        dist_dir = self.build_dir_root / "dist"
         if dist_dir.exists():
             for p in dist_dir.glob("*"):
                 try:
@@ -282,7 +284,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
 
         if seven_zip is not None:
             # Match the PS1: run from C:\P and create archive of IPP directory
-            with push_dir(base_dir):
+            with push_dir(self.build_dir_root):
                 # Using -t7z in the PS1 but naming .zip; preserve behavior
                 cmd = [
                     str(seven_zip),
@@ -291,7 +293,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                     "-r",
                     str(out_zip),
                     "-w",
-                    str(ipp_dir),
+                    str(self.build_dir_root),
                 ]
                 self.echo_check_call(cmd)
             return
@@ -309,7 +311,10 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         base_name = str(out_zip.with_suffix("").with_suffix(""))
         # shutil.make_archive will append .zip
         _shutil.make_archive(
-            base_name, "zip", root_dir=str(base_dir), base_dir=str(ipp_dir.name)
+            base_name,
+            "zip",
+            root_dir=str(self.build_dir_root),
+            base_dir=str(self.build_dir_root.name),
         )
 
     def discover_python_venvs(

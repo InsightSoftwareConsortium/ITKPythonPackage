@@ -5,9 +5,10 @@ from os import environ
 from pathlib import Path
 
 from build_python_instance_base import BuildPythonInstanceBase
-from macos_venv_utils import create_macos_venvs
 
 from wheel_builder_utils import _remove_tree
+
+from macos_venv_utils import create_macos_venvs
 
 
 class MacOSBuildPythonInstance(BuildPythonInstanceBase):
@@ -37,7 +38,6 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             / "cmake"
             / "TBB"
         )
-        self._cmake_executable = "cmake"
         # The interpreter is provided; ensure basic tools are available
         self.venv_paths()
         self.update_venv_itk_build_configurations()
@@ -65,49 +65,53 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             "ITK_BINARY_DIR:PATH", itk_binary_build_name
         )
 
+        # Keep values consistent with prior quoting behavior
+        self.cmake_compiler_configurations.set("CMAKE_CXX_FLAGS:STRING", "-O3 -DNDEBUG")
+        self.cmake_compiler_configurations.set("CMAKE_C_FLAGS:STRING", "-O3 -DNDEBUG")
+
     def post_build_fixup(self) -> None:
         # delocate on macOS x86_64 only
-        if self.package_env_config["ARCH"] != "arm64":
+        if self.package_env_config["ARCH"] == "x86_64":
             self.fixup_wheels()
 
     def post_build_cleanup(self) -> None:
-        """Clean macOS build artifacts (leave dist/ intact).
+        """Clean build artifacts
 
-        Modeled after the manylinux cleanup, adapted to macOS naming:
+        Actions (leaving dist/ intact):
         - remove oneTBB-prefix (symlink or dir)
         - remove ITKPythonPackage/, tools/, _skbuild/, build/
         - remove top-level *.egg-info
-        - remove ITK-*-macosx_<arch>/
-        - remove ITKPythonBuilds-macosx*.tar.zst
-        - remove any module prereq clones from ITK_MODULE_PREQ
+        - remove ITK-* build tree and tarballs
+        - if ITK_MODULE_PREQ is set ("org/name@ref:org2/name2@ref2"), remove cloned module dirs
         """
         base = Path(self.package_env_config["IPP_SOURCE_DIR"])
 
-        def rm(p: Path):
+        def rm(tree_path: Path):
             try:
-                _remove_tree(p)
+                _remove_tree(tree_path)
             except Exception:
                 pass
 
-        # oneTBB-prefix
-        tbb = base / "oneTBB-prefix"
+        # 1) unlink oneTBB-prefix if it's a symlink or file
+        tbb_link = base / "oneTBB-prefix"
         try:
-            if tbb.is_symlink() or tbb.is_file():
-                tbb.unlink(missing_ok=True)  # type: ignore[arg-type]
-            elif tbb.exists():
-                rm(tbb)
+            if tbb_link.is_symlink() or tbb_link.is_file():
+                tbb_link.unlink(missing_ok=True)  # type: ignore[arg-type]
+            elif tbb_link.exists():
+                # If it is a directory (not expected), remove tree
+                rm(tbb_link)
         except Exception:
             pass
 
-        # Common build dirs
+        # 2) standard build directories
         for rel in ("ITKPythonPackage", "tools", "_skbuild", "build"):
             rm(base / rel)
 
-        # egg-info entries
+        # 3) egg-info folders at top-level
         for p in base.glob("*.egg-info"):
             rm(p)
 
-        # ITK build tree
+        # 4) ITK build tree and tarballs
         target_arch = (
             "arm64" if self.package_env_config["ARCH"] == "arm64" else "x86_64"
         )
@@ -115,10 +119,11 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             rm(p)
 
         # Tarballs
-        for p in base.glob("ITKPythonBuilds-{self.package_env_config}*.tar.zst"):
+        for p in base.glob(f"ITKPythonBuilds-{self.package_env_config}*.tar.zst"):
             rm(p)
 
-        # Module prerequisites
+        # 5) Optional module prerequisites cleanup (ITK_MODULE_PREQ)
+        # Format: "InsightSoftwareConsortium/ITKModuleA@v1.0:Kitware/ITKModuleB@sha" -> remove repo names
         itk_preq = self.package_env_config.get("ITK_MODULE_PREQ") or environ.get(
             "ITK_MODULE_PREQ", ""
         )
