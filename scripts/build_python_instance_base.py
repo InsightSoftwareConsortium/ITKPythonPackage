@@ -269,9 +269,7 @@ class BuildPythonInstanceBase(ABC):
     def fixup_wheels(self, lib_paths: str = ""):
         # TBB library fix-up (applies to itk_core wheel)
         tbb_wheel = "itk_core"
-        for wheel in (self.package_env_config["IPP_SOURCE_DIR"] / "dist").glob(
-            f"{tbb_wheel}*.whl"
-        ):
+        for wheel in (self.build_dir_root / "dist").glob(f"{tbb_wheel}*.whl"):
             self.fixup_wheel(str(wheel), lib_paths)
 
     def final_wheel_import_test(self, installed_dist_dir: Path):
@@ -859,9 +857,7 @@ class BuildPythonInstanceBase(ABC):
                 self.package_env_config["IPP_SUPERBUILD_BINARY_DIR"]
             )
             # venvs directory
-            cache_directory_paths.append(
-                self.package_env_config["IPP_SOURCE_DIR"] / "venvs"
-            )
+            cache_directory_paths.append(self.build_dir_root / "venvs")
 
             # requirements-dev.txt
             req = self.package_env_config["IPP_SOURCE_DIR"] / "requirements-dev.txt"

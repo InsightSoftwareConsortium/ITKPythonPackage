@@ -121,7 +121,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cmake_options=None):
                 "--verbose",
                 "--wheel",
                 "--outdir",
-                "dist",
+                self.build_dir_root / "dist",
                 "--no-isolation",
                 "--skip-dependency-check",
                 f"--config-setting=wheel.py-api={wheel_py_api}",
@@ -201,7 +201,7 @@ def fixup_wheel(py_envs, filepath, lib_paths: str = "", exclude_libs: str = ""):
             exclude_libs,
             "--ignore-in-wheel",
             "-w",
-            str(IPP_SOURCE_DIR / "dist"),
+            str(self.build_dir_root/ "dist"),
             filepath,
         ]
     )

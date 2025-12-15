@@ -48,7 +48,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         )
         self.cmake_itk_source_build_configurations.set(
             "ITK_BINARY_DIR:PATH",
-            str(self.package_env_config["IPP_SOURCE_DIR"] / f"ITK-win_{self.py_env}"),
+            str(self.build_dir_root / f"ITK-win_{self.py_env}"),
         )
 
     def post_build_fixup(self) -> None:
@@ -58,9 +58,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             if self.windows_extra_lib_paths
             else []
         )
-        search_lib_paths.append(
-            str(self.package_env_config["IPP_SOURCE_DIR"] / "oneTBB-prefix" / "bin")
-        )
+        search_lib_paths.append(str(self.build_dir_root / "oneTBB-prefix" / "bin"))
         search_lib_paths_str: str = ";".join(map(str, search_lib_paths))
         self.fixup_wheels(search_lib_paths_str)
 
@@ -149,7 +147,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             lib_paths,
             "--ignore-in-wheel",
             "-w",
-            str(self.package_env_config["IPP_SOURCE_DIR"] / "dist"),
+            str(self.build_dir_root / "dist"),
             str(filepath),
         ]
         self.echo_check_call(cmd)

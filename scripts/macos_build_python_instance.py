@@ -38,29 +38,31 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             / "TBB"
         )
         self._cmake_executable = "cmake"
-        # macOS: Assume venv already exists under IPP_SOURCE_DIR/venvs/<name>
-        # Install required tools into each venv
+        # The interpreter is provided; ensure basic tools are available
         self.venv_paths()
         self.update_venv_itk_build_configurations()
         self.cmake_compiler_configurations.set(
             "CMAKE_MAKE_PROGRAM:FILEPATH", f"{self.venv_info_dict['ninja_executable']}"
         )
-
         macosx_target = self.package_env_config.get("MACOSX_DEPLOYMENT_TARGET", "")
         if macosx_target:
             self.cmake_compiler_configurations.set(
                 "CMAKE_OSX_DEPLOYMENT_TARGET:STRING", macosx_target
             )
-        osx_arch = "arm64" if self.package_env_config["ARCH"] == "arm64" else "x86_64"
-        self.cmake_compiler_configurations.set(
-            "CMAKE_OSX_ARCHITECTURES:STRING", osx_arch
+        target_arch = (
+            "arm64" if self.package_env_config["ARCH"] == "arm64" else "x86_64"
         )
+        self.cmake_compiler_configurations.set(
+            "CMAKE_OSX_ARCHITECTURES:STRING", target_arch
+        )
+        itk_binary_build_name: str = (
+            self.build_dir_root
+            / "build"
+            / f"ITK-{self.py_env}-{self.get_pixi_environment_name()}_{target_arch}"
+        )
+
         self.cmake_itk_source_build_configurations.set(
-            "ITK_BINARY_DIR:PATH",
-            str(
-                self.package_env_config["IPP_SOURCE_DIR"]
-                / f"ITK-{self.py_env}-macosx_{osx_arch}"
-            ),
+            "ITK_BINARY_DIR:PATH", itk_binary_build_name
         )
 
     def post_build_fixup(self) -> None:
@@ -106,12 +108,14 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             rm(p)
 
         # ITK build tree
-        osx_arch = "arm64" if self.package_env_config["ARCH"] == "arm64" else "x86_64"
-        for p in base.glob(f"ITK-*-macosx_{osx_arch}"):
+        target_arch = (
+            "arm64" if self.package_env_config["ARCH"] == "arm64" else "x86_64"
+        )
+        for p in base.glob(f"ITK-*-{self.package_env_config}_{target_arch}"):
             rm(p)
 
         # Tarballs
-        for p in base.glob("ITKPythonBuilds-macosx*.tar.zst"):
+        for p in base.glob("ITKPythonBuilds-{self.package_env_config}*.tar.zst"):
             rm(p)
 
         # Module prerequisites
@@ -225,7 +229,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
 
         # Discover virtualenvs under project 'venvs' folder
         def _discover_ipp_venvs() -> list[str]:
-            venvs_dir = self.package_env_config["IPP_SOURCE_DIR"] / "venvs"
+            venvs_dir = self.build_dir_root / "venvs"
             if not venvs_dir.exists():
                 return []
             names.extend([p.name for p in venvs_dir.iterdir() if p.is_dir()])

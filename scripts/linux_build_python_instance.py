@@ -75,7 +75,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             / "TBB"
         )
         self._cmake_executable = "cmake"
-        # manylinux: the interpreter is provided; ensure basic tools are available
+        # The interpreter is provided; ensure basic tools are available
         self.venv_paths()
         self.update_venv_itk_build_configurations()
         self.cmake_compiler_configurations.set(
@@ -92,18 +92,15 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         self.cmake_compiler_configurations.set(
             "CMAKE_CXX_COMPILER_TARGET:STRING", target_triple
         )
+        target_arch = self.package_env_config["ARCH"]
         itk_binary_build_name: str = (
-            f"ITK-{self.py_env}-linux_{self.package_env_config['ARCH']}"
+            self.build_dir_root
+            / "build"
+            / f"ITK-{self.py_env}-{self.get_pixi_environment_name()}_{target_arch}"
         )
-        manylinux_ver = self.package_env_config.get("MANYLINUX_VERSION", "")
-        if len(manylinux_ver) > 0:
-            itk_binary_build_name: str = (
-                f"ITK-{self.py_env}-manylinux{manylinux_ver}_{self.package_env_config['ARCH']}"
-            )
 
         self.cmake_itk_source_build_configurations.set(
-            "ITK_BINARY_DIR:PATH",
-            str(self.package_env_config["IPP_SOURCE_DIR"] / itk_binary_build_name),
+            "ITK_BINARY_DIR:PATH", itk_binary_build_name
         )
 
         # Keep values consistent with prior quoting behavior
@@ -117,9 +114,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         if manylinux_ver:
             # Repair all produced wheels with auditwheel for packages with so elements (starts with itk_)
             whl = None
-            for whl in (self.package_env_config["IPP_SOURCE_DIR"] / "dist").glob(
-                "itk_*linux_*.whl"
-            ):
+            for whl in (self.build_dir_root / "dist").glob("itk_*linux_*.whl"):
                 if str(whl).startswith("itk-"):
                     print(
                         f"Skipping the itk-meta wheel that has nothing to fixup {whl}"
@@ -131,12 +126,10 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             # auditwheel does not process this "metawheel" correctly since it does not
             # have any native SO's.
             for metawhl in list(
-                (self.package_env_config["IPP_SOURCE_DIR"] / "dist").glob(
-                    "itk-*linux_*.whl"
-                )
+                (self.build_dir_root / "dist").glob("itk-*linux_*.whl")
             ):
                 # Unpack, edit WHEEL tag, repack
-                metawheel_dir = self.package_env_config["IPP_SOURCE_DIR"] / "metawheel"
+                metawheel_dir = self.build_dir_root / "metawheel"
                 metawheel_dir.mkdir(parents=True, exist_ok=True)
                 self.echo_check_call(
                     [
@@ -167,9 +160,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                             new.append(line)
                     wheel_file.write_text("\n".join(new) + "\n", encoding="utf-8")
                 for fixed_dir in metawheel_dir.glob("itk-*"):
-                    metawheel_dist = (
-                        self.package_env_config["IPP_SOURCE_DIR"] / "metawheel-dist"
-                    )
+                    metawheel_dist = self.build_dir_root / "metawheel-dist"
                     metawheel_dist.mkdir(parents=True, exist_ok=True)
                     self.echo_check_call(
                         [
@@ -186,10 +177,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                 for new_whl in metawheel_dist.glob("*.whl"):
                     shutil.move(
                         str(new_whl),
-                        str(
-                            (self.package_env_config["IPP_SOURCE_DIR"] / "dist")
-                            / new_whl.name
-                        ),
+                        str((self.build_dir_root / "dist") / new_whl.name),
                     )
                 # Remove old and temp
                 try:
@@ -220,7 +208,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             cmd += [
                 str(filepath),
                 "-w",
-                str(self.package_env_config["IPP_SOURCE_DIR"] / "dist"),
+                str(self.build_dir_root / "dist"),
             ]
             # Provide LD_LIBRARY_PATH for oneTBB and common system paths
             extra_lib = str(
@@ -297,7 +285,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             "TARGET_ARCH", ""
         )
         if manylinux_ver and target_arch:
-            for p in base.glob(f"ITK-*-*linux{manylinux_ver}_{target_arch}"):
+            for p in base.glob(f"ITK-*-{self.package_env_config}_{target_arch}"):
                 rm(p)
         # Tarballs: ITKPythonBuilds-linux-*linux*<ver>*.tar.zst
         if manylinux_ver:
@@ -340,7 +328,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             venv_dir = Path("/opt/python")
             local_pip_executable = _dockcross_pip_executable
         else:
-            venv_root_dir: Path = self.package_env_config["IPP_SOURCE_DIR"] / "venvs"
+            venv_root_dir: Path = self.build_dir_root / "venvs"
             _venvs_dir_list = create_linux_venvs(self.py_env, venv_root_dir)
             if len(_venvs_dir_list) != 1:
                 raise ValueError(
@@ -402,7 +390,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
 
         # Discover virtualenvs under project 'venvs' folder
         def _discover_ipp_venvs() -> list[str]:
-            venvs_dir = self.package_env_config["IPP_SOURCE_DIR"] / "venvs"
+            venvs_dir = self.build_dir_root / "venvs"
             if not venvs_dir.exists():
                 return []
             names.extend([p.name for p in venvs_dir.iterdir() if p.is_dir()])
