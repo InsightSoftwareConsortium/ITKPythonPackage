@@ -201,7 +201,7 @@ def fixup_wheel(py_envs, filepath, lib_paths: str = "", exclude_libs: str = ""):
             exclude_libs,
             "--ignore-in-wheel",
             "-w",
-            str(self.build_dir_root/ "dist"),
+            str(self.build_dir_root / "dist"),
             filepath,
         ]
     )
