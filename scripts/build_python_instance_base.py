@@ -838,73 +838,52 @@ class BuildPythonInstanceBase(ABC):
         tar_name = (
             f"ITKPythonBuilds-{self.package_env_config['OS_NAME']}{arch_postfix}.tar"
         )
-        tar_path = self.build_dir_root / "build" / tar_name
-        zst_path = self.build_dir_root / "build" / f"{tar_name}.zst"
+        itk_packaging_reference_dir = self.build_dir_root.parent
 
-        with push_dir(self.build_dir_root):
-            # ITK builds
-            cache_directory_paths: list[Path] = [
-                p
-                for p in self.package_env_config["IPP_SOURCE_DIR"].glob(
-                    f"ITK-*-{self.package_env_config['OS_NAME']}_{self.package_env_config['ARCH']}"
-                )
+        tar_path: Path = itk_packaging_reference_dir / tar_name
+        zst_path: Path = itk_packaging_reference_dir / f"{tar_name}.zst"
+
+        itk_resources_build_dir: Path = self.build_dir_root
+        tarball_include_paths = [
+            itk_resources_build_dir.relative_to(itk_packaging_reference_dir),
+            self.package_env_config["IPP_SOURCE_DIR"].relative_to(
+                itk_packaging_reference_dir
+            ),
+        ]
+
+        # Create tarball of
+        self.echo_check_call(
+            [
+                "tar",
+                "-C",
+                itk_packaging_reference_dir,
+                "-cf",
+                str(tar_path),
+                '--exclude="*.o"',  # Do not include object files
+                '--exclude="*/__pycache__/"',  # Do not include __pycache__
+                '--exclude="*/.git/"',
+                '--exclude="*/.idea/"',
+                '--exclude="*/.pixi/"',
+                '--exclude="*/CastXML/"',
+                '--exclude="*/castxml_inputs/"',
+                '--exclude="*/Wrapping/Modules/"',
+                *tarball_include_paths,
             ]
-            # oneTBB
-            cache_directory_paths.extend(
-                [x for x in self.package_env_config["IPP_SOURCE_DIR"].glob("oneTBB*")]
-            )
-            cache_directory_paths.append(
-                self.package_env_config["IPP_SUPERBUILD_BINARY_DIR"]
-            )
-            # venvs directory
-            cache_directory_paths.append(self.build_dir_root / "venvs")
+        )
 
-            # requirements-dev.txt
-            req = self.package_env_config["IPP_SOURCE_DIR"] / "requirements-dev.txt"
-            if req.exists():
-                cache_directory_paths.append(req)
-
-            # Build list of paths to include (expand existing patterns)
-            tarball_include_paths: list[str] = sorted(
-                [str(p) for p in cache_directory_paths]
-            )
-
-            # # Required extraction marker -- This file does not exist, and it is not clear how to create it
-            # req_file = self.package_env_config["IPP_SOURCE_DIR"] / "ITKPythonPackageRequiredExtractionDir.txt"
-            # if req_file.exists():
-            #     tarball_include_paths.append(str(req_file))
-
-            # scripts directory
-            if (self.package_env_config["IPP_SOURCE_DIR"] / "scripts").exists():
-                tarball_include_paths.append(
-                    str(self.package_env_config["IPP_SOURCE_DIR"] / "scripts")
-                )
-
-            # Create tar
-            self.echo_check_call(
-                [
-                    "tar",
-                    "-cf",
-                    str(tar_path),
-                    '--exclude="*.o"',  # Do not include object files
-                    '--exclude="__pycache__"',  # Do not include __pycache__
-                    *tarball_include_paths,
-                ]
-            )
-
-            # Compress with zstd
-            self.echo_check_call(
-                [
-                    "zstd",
-                    "-f",
-                    "-10",
-                    "-T6",
-                    "--long=31",
-                    str(tar_path),
-                    "-o",
-                    str(zst_path),
-                ]
-            )
+        # Compress with zstd
+        self.echo_check_call(
+            [
+                "zstd",
+                "-f",
+                "-10",
+                "-T6",
+                "--long=31",
+                str(tar_path),
+                "-o",
+                str(zst_path),
+            ]
+        )
 
     @abstractmethod
     def get_pixi_environment_name(self):
