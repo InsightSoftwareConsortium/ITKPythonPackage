@@ -39,7 +39,9 @@ def build_one_python_instance(
         MANYLINUX_VERSION: str = package_env_config.get("MANYLINUX_VERSION", "")
         # Native builds without dockercross need a separate dist dir to avoid conflicts with manylinux
         # dist_dir = IPP_SOURCE_DIR / f"{platform}_dist"
-        if len(MANYLINUX_VERSION) > 0 and (os.environ.get("CROSS_TRIPLE", None) is None ):
+        if len(MANYLINUX_VERSION) > 0 and (
+            os.environ.get("CROSS_TRIPLE", None) is None
+        ):
             print(
                 f"ERROR: MANYLINUX_VERSION={MANYLINUX_VERSION} but not building in dockcross."
             )
