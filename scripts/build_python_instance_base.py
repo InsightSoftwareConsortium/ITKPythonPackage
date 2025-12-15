@@ -34,6 +34,7 @@ class BuildPythonInstanceBase(ABC):
         self,
         *,
         py_env,
+        build_dir_root,
         wheel_names: Iterable[str],
         package_env_config: dict,
         cleanup: bool,
@@ -48,6 +49,7 @@ class BuildPythonInstanceBase(ABC):
         self.build_node_cpu_count: int = os.cpu_count() or 1
 
         self.py_env = py_env
+        self.build_dir_root = build_dir_root
         self.wheel_names = list(wheel_names)
         self.package_env_config = package_env_config
         del package_env_config
@@ -57,7 +59,7 @@ class BuildPythonInstanceBase(ABC):
         self.cmake_options = cmake_options
         # NEVER CLEANUP FOR DEBUGGGING cleanup
         self.windows_extra_lib_paths = windows_extra_lib_paths
-        self.dist_dir = dist_dir
+        self.dist_dir = self.build_dir_root / dist_dir
         # Needed for processing remote modules and their dependancies
         self.module_source_dir: Path = (
             Path(module_source_dir) if module_source_dir else None
@@ -564,6 +566,12 @@ class BuildPythonInstanceBase(ABC):
                 print(f"# Build ITK wheel {wheel_name} from {self.wheel_names}")
                 print("#")
                 # Configure pyproject.toml
+                wheel_configbuild_dir_root: Path = (
+                    self.build_dir_root
+                    / f"wheelbuilds"
+                    / f"{wheel_name}_{self.get_pixi_environment_name()}"
+                )
+                wheel_configbuild_dir_root.mkdir(parents=True, exist_ok=True)
                 self.echo_check_call(
                     [
                         str(self.venv_info_dict["python_executable"]),
@@ -571,13 +579,12 @@ class BuildPythonInstanceBase(ABC):
                         "--env-file",
                         self.package_env_config.get("PACKAGE_ENV_FILE"),
                         "--output-dir",
-                        self.package_env_config["IPP_SOURCE_DIR"]
-                        / "BuildWheelsSupport",
+                        wheel_configbuild_dir_root,
                         wheel_name,
                     ]
                 )
 
-                # Generate wheel
+                # Generate wheel using
                 cmd = [
                     str(self.venv_info_dict["python_executable"]),
                     "-m",
@@ -585,10 +592,12 @@ class BuildPythonInstanceBase(ABC):
                     "--verbose",
                     "--wheel",
                     "--outdir",
-                    str(self.package_env_config["IPP_SOURCE_DIR"] / "dist"),
+                    str(self.build_dir_root / "dist"),
                     "--no-isolation",
                     "--skip-dependency-check",
                     f"--config-setting=cmake.build-type={self._build_type}",
+                    f"--config-setting=cmake.source-dir={self.package_env_config['IPP_SOURCE_DIR'] / 'BuildWheelsSupport'}",
+                    f"--config-setting=build-dir={wheel_configbuild_dir_root/'build'}",
                 ]
                 # Build scikit-build defines via builder
                 scikitbuild_cmdline_args = CMakeArgumentBuilder()
@@ -615,9 +624,8 @@ class BuildPythonInstanceBase(ABC):
                     )
                     # Append all cmake.define entries
                 cmd += scikitbuild_cmdline_args.getPythonBuildCommandLineArguments()
-                cmd += [
-                    self.package_env_config["IPP_SOURCE_DIR"] / "BuildWheelsSupport"
-                ]
+                # The location of the generated pyproject.toml file
+                cmd += [wheel_configbuild_dir_root]
                 self.echo_check_call(cmd)
 
             # Remove unnecessary files for building against ITK
@@ -650,8 +658,7 @@ class BuildPythonInstanceBase(ABC):
         print("#")
 
         # Build ITK python
-        cmd = ["pixi", "run", "-e", "manylinux228"]
-        cmd += [
+        cmd = [
             self.package_env_config["CMAKE_EXECUTABLE"],
             "-G",
             "Ninja",
@@ -925,9 +932,17 @@ class BuildPythonInstanceBase(ABC):
         """
 
         pixi_environment: str = self.get_pixi_environment_name()
+        if pixi_environment != "macos":
+            print(f"$ pixi run {pixi_environment}")
         pixi_run_preamble: list[str] = []
+        env = {"PIXI_HOME": str(self.build_dir_root / ".pixi")}
         if pixi_environment:
-            pixi_run_preamble = ["pixi", "run", "-e", pixi_environment]
+            pixi_run_preamble = [
+                str(self.build_dir_root / "build" / ".pixi" / "bin" / "pixi"),
+                "run",
+                "-e",
+                pixi_environment,
+            ]
 
             # convert all items to strings (i.e. Path() to str)
         cmd = pixi_run_preamble + [str(c) for c in cmd]
@@ -945,7 +960,7 @@ class BuildPythonInstanceBase(ABC):
         print("^" * 60)
         print(kwargs)
         print("^" * 60)
-        cmd_return_status: int = subprocess_check_call(cmd, **kwargs)
+        cmd_return_status: int = subprocess_check_call(cmd, env=env, **kwargs)
         print("^" * 60)
         print(f"<<Finished Running: cmd_return_status={cmd_return_status}")
         return cmd_return_status

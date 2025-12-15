@@ -82,7 +82,11 @@ def git_describe_to_pep440(desc: str) -> str:
             semver_format += f"{prerelease_name}{prerelnum}"
         posttagcount = groupdict.get("posttagcount", None)
         dirty = groupdict.get("dirty", None)
-        if len(posttagcount) > 0 and int(posttagcount) == 0 and (dirty is None or len(dirty) == 0):
+        if (
+            len(posttagcount) > 0
+            and int(posttagcount) == 0
+            and (dirty is None or len(dirty) == 0)
+        ):
             # If exactly on a tag, then do not add post, or sha
             return semver_format
         else:
@@ -142,7 +146,7 @@ def load_env_file(path: Path) -> dict[str, str]:
     return env
 
 
-def get_git_id(repo_dir: Path, backup_version: str = "v0.0.0") -> str:
+def get_git_id(repo_dir: Path, backup_version: str = "v0.0.0") -> str | None:
     # 1. exact tag
     try:
         tag = run(
@@ -286,6 +290,7 @@ def generate_build_environment(argv: list[str]) -> int:
     parser.add_argument("pairs", nargs="*")
     parser.add_argument("-i", dest="input_file", default=None)
     parser.add_argument("-o", dest="output_file", default=None)
+    parser.add_argument("--build-dir-root", dest="build_dir_root", default=None)
     parser.add_argument("-h", action="store_true")
     args = parser.parse_args(argv)
 
@@ -295,14 +300,18 @@ def generate_build_environment(argv: list[str]) -> int:
         )
         return 0
 
-    _ipp_dir = Path(__file__).resolve().parent.parent
-    build_dir = _ipp_dir / "build"
-    build_env_report = args.output_file or str(build_dir / "package.env")
+    build_dir_root: Path = (
+        Path(args.build_dir_root)
+        if args.build_dir_root
+        else Path(__file__).resolve().parent.parent
+    )
+    build_dir_path: Path = build_dir_root / "build"
+    build_env_report = args.output_file or str(build_dir_path / "package.env")
 
     if args.input_file:
         reference_env_report = args.input_file
     else:
-        build_dir.mkdir(parents=True, exist_ok=True)
+        build_dir_path.mkdir(parents=True, exist_ok=True)
         reference_env_report = (
             build_env_report if Path(build_env_report).exists() else None
         )
@@ -348,57 +357,57 @@ def generate_build_environment(argv: list[str]) -> int:
 
     if doxygen_exec is None or ninja_exec is None or cmake_exec is None:
         print("Generating pixi installed resources.")
-        build_dir.parent.mkdir(parents=True, exist_ok=True)
+        build_dir_path.parent.mkdir(parents=True, exist_ok=True)
+        pixi_home = build_dir_path / ".pixi"
+        pixi_home.mkdir(parents=True, exist_ok=True)
+        pixi_install_script: Path = pixi_home / "pixi_install.sh"
+        os.environ["PIXI_HOME"] = str(pixi_home)
+        pixi_bin_dir = pixi_home / "bin"
+        os.environ["PATH"] = str(pixi_bin_dir) + os.pathsep + os.environ.get("PATH", "")
+
         run(
             [
                 "curl",
                 "-fsSL",
                 "https://pixi.sh/install.sh",
                 "-o",
-                str(build_dir.parent / "pixi_install.sh"),
+                str(pixi_install_script),
             ]
         )
-        pixi_home = _ipp_dir / ".pixi"
-        pixi_home.mkdir(parents=True, exist_ok=True)
-        os.environ["PIXI_HOME"] = str(pixi_home)
-        pixi_install_dir = pixi_home / "bin"
         run(
             [
                 "/bin/sh",
-                str(build_dir.parent / "pixi_install.sh"),
+                str(pixi_install_script),
             ]
         )
+        platform_pixi_packages = []
+        if os_name == "linux":
+            platform_pixi_packages = ["patchelf"]
         run(
             [
-                str(pixi_install_dir / "pixi"),
+                str(pixi_bin_dir / "pixi"),
                 "global",
                 "install",
                 "doxygen",
                 "cmake",
                 "ninja",
-                "patchelf",
             ]
-        )
-        os.environ["PATH"] = (
-            str(pixi_install_dir) + os.pathsep + os.environ.get("PATH", "")
+            + platform_pixi_packages
         )
 
     doxygen_exec = which_required("doxygen")
     ninja_exec = which_required("ninja")
     cmake_exec = which_required("cmake")
 
+    _ipp_dir_path: Path = Path(__file__).resolve().parent.parent
     ipp_latest_tag: str = get_git_id(
-        _ipp_dir, env.get("ITKPYTHONPACKAGE_TAG", "v0.0.0")
+        _ipp_dir_path, env.get("ITKPYTHONPACKAGE_TAG", "v0.0.0")
     )
-    # semver_from_tag: str = (
-    #    ipp_latest_tag[1:] if ipp_latest_tag.startswith("v") else ipp_latest_tag
-    # )
-    # pep440_tag: str = semver_to_pep440(semver_from_tag)
 
     itk_git_tag = env.get("ITK_GIT_TAG", ipp_latest_tag)
     # ITK repo handling
     itk_source_dir = Path(
-        env.get("ITK_SOURCE_DIR", str(_ipp_dir / "ITK-source" / "ITK"))
+        env.get("ITK_SOURCE_DIR", str(build_dir_path / "ITK-source" / "ITK"))
     )
     if not itk_source_dir.exists():
         itk_source_dir.parent.mkdir(parents=True, exist_ok=True)
@@ -446,7 +455,7 @@ def generate_build_environment(argv: list[str]) -> int:
     cxx_default = None
     if os_name == "darwin":
         if not env.get("CC") or not env.get("CXX"):
-            cc_default, cxx_default = cmake_compiler_defaults(build_dir)
+            cc_default, cxx_default = cmake_compiler_defaults(build_dir_path)
 
     # ITKPythonPackage origin/tag
     itkpp_org = env.get("ITKPYTHONPACKAGE_ORG", "InsightSoftwareConsortium")

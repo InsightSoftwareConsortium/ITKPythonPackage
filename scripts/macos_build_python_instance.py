@@ -166,7 +166,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             venv_dir = Path(self.py_env)
             local_pip_executable = _command_line_pip_executable
         else:
-            venv_root_dir: Path = self.package_env_config["IPP_SOURCE_DIR"] / "venvs"
+            venv_root_dir: Path = self.build_dir_root / "venvs"
             _venvs_dir_list = create_macos_venvs(self.py_env, venv_root_dir)
             if len(_venvs_dir_list) != 1:
                 raise ValueError(
@@ -182,7 +182,6 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
                 "install",
                 "--upgrade",
                 "build",
-                "ninja",
                 "numpy",
                 "scikit-build-core",
                 #  os-specific tools below

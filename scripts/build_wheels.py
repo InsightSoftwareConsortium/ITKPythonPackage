@@ -18,14 +18,17 @@ from pathlib import Path
 
 
 def _set_main_variable_names(
-    SCRIPT_DIR: Path, PACKAGE_ENV_FILE: Path
+    SCRIPT_DIR: Path, PACKAGE_ENV_FILE: Path, build_dir_root: Path
 ) -> dict[str, str | Path | None]:
-    # TODO: Hard-coded module must be 1 direectory above checked out ITKPythonPackage
-    # MODULE_EXAMPLESROOT_DIR: Path = SCRIPT_DIR.parent.parent.resolve()
-
+    PACKAGE_ENV_FILE.parent.mkdir(parents=True, exist_ok=True)
     # Primarily needed for docker-cross to fill in CMAKE_EXECUTABLE, NINJA_EXECUTABLE, and DOXYGEN_EXECUTABLE
     # from the environment defaults
-    generate_build_environment_update_args = ["-o", str(PACKAGE_ENV_FILE)]
+    generate_build_environment_update_args = [
+        "-o",
+        str(PACKAGE_ENV_FILE),
+        "--build-dir-root",
+        str(build_dir_root),
+    ]
     if not PACKAGE_ENV_FILE.exists():
         generate_build_environment_update_args.extend(["-i", str(PACKAGE_ENV_FILE)])
     generate_build_environment(generate_build_environment_update_args)
@@ -33,17 +36,15 @@ def _set_main_variable_names(
     PACKAGE_ENV_FILE = Path(os.environ.get("PACKAGE_ENV_FILE", PACKAGE_ENV_FILE))
     package_env_config: dict[str, str | Path | None] = read_env_file(PACKAGE_ENV_FILE)
     package_env_config["PACKAGE_ENV_FILE"] = PACKAGE_ENV_FILE
-
-    sys.path.insert(0, str(SCRIPT_DIR / "internal"))
     package_env_config["SCRIPT_DIR"] = SCRIPT_DIR
 
-    IPP_SOURCE_DIR = SCRIPT_DIR.parent.resolve()
+    IPP_SOURCE_DIR: Path = SCRIPT_DIR.parent.resolve()
     package_env_config["IPP_SOURCE_DIR"] = IPP_SOURCE_DIR
 
-    IPP_BuildWheelsSupport_DIR = IPP_SOURCE_DIR / "BuildWheelsSupport"
+    IPP_BuildWheelsSupport_DIR: Path = IPP_SOURCE_DIR / "BuildWheelsSupport"
     package_env_config["IPP_BuildWheelsSupport_DIR"] = IPP_BuildWheelsSupport_DIR
 
-    IPP_SUPERBUILD_BINARY_DIR = IPP_SOURCE_DIR / "build" / "ITK-support-bld"
+    IPP_SUPERBUILD_BINARY_DIR: Path = build_dir_root / "build" / "ITK-support-bld"
     package_env_config["IPP_SUPERBUILD_BINARY_DIR"] = IPP_SUPERBUILD_BINARY_DIR
 
     OS_NAME, ARCH = detect_platform()
@@ -53,19 +54,16 @@ def _set_main_variable_names(
     return package_env_config
 
 
-def _set_os_environ():
+def _set_os_environ(build_dir_root: Path):
+    # Add the scripts directory to PATH
     os.environ["PATH"] = (
         str(Path(__file__).parent) + os.pathsep + os.environ.get("PATH", "")
     )
-    if Path("/work").is_dir():
-        pixi_home_path: Path = Path("/work/.pixi")
-        os.environ["PIXI_HOME"] = (
-            str(pixi_home_path) + os.pathsep + os.environ.get("PATH", "")
-        )
-        pixi_exec_path: Path = pixi_home_path / "bin"
-        os.environ["PATH"] = (
-            str(pixi_exec_path) + os.pathsep + os.environ.get("PATH", "")
-        )
+    # Set pixi home and pixi bin path
+    pixi_home_path: Path = build_dir_root / "build" / ".pixi"
+    os.environ["PIXI_HOME"] = str(pixi_home_path)
+    pixi_exec_path: Path = pixi_home_path / "bin"
+    os.environ["PATH"] = str(pixi_exec_path) + os.pathsep + os.environ.get("PATH", "")
 
 
 def main() -> None:
@@ -135,9 +133,15 @@ def main() -> None:
     parser.add_argument(
         "--package-env-file",
         type=str,
-        default=f"{SCRIPT_DIR}/build/package.env",
+        default=f"",
         help=".env file with parameters used to control builds, default to build/package.env for native builds\n"
         + "and is commonly set to /work/dist/container_package.env for dockercross builds.",
+    )
+    parser.add_argument(
+        "--build-dir-root",
+        type=str,
+        default=f"{SCRIPT_DIR}/../",
+        help="The root of the build resources.",
     )
 
     args = parser.parse_args()
@@ -146,10 +150,20 @@ def main() -> None:
     print("= Building Wheels")
     print("=" * 80)
     print("=" * 80)
-    package_env_config = _set_main_variable_names(
-        SCRIPT_DIR=SCRIPT_DIR, PACKAGE_ENV_FILE=Path(args.package_env_file)
+
+    build_dir_root = Path(args.build_dir_root)
+    PACKAGE_ENV_FILE = (
+        Path(args.package_env_file)
+        if len(args.package_env_file) > 0
+        else build_dir_root / "build" / "package.env"
     )
-    _set_os_environ()
+
+    package_env_config = _set_main_variable_names(
+        SCRIPT_DIR=SCRIPT_DIR,
+        PACKAGE_ENV_FILE=PACKAGE_ENV_FILE,
+        build_dir_root=build_dir_root,
+    )
+    _set_os_environ(build_dir_root)
 
     with open(
         package_env_config["IPP_BuildWheelsSupport_DIR"] / "WHEEL_NAMES.txt",
@@ -165,6 +179,7 @@ def main() -> None:
     for py_env in normalized_python_versions:
         build_one_python_instance(
             py_env,
+            args.build_dir_root,
             wheel_names,
             package_env_config,
             args.no_cleanup,

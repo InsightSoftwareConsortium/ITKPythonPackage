@@ -4,6 +4,8 @@ import argparse
 import os
 import re
 import sys
+from pathlib import Path
+import shutil
 from packaging.version import Version
 from wheel_builder_utils import read_env_file
 
@@ -289,8 +291,6 @@ def main():
     SCRIPT_DIR = os.path.dirname(__file__)
     IPP_BuildWheelsSupport_DIR = os.path.join(SCRIPT_DIR, "..", "BuildWheelsSupport")
     SCRIPT_NAME = os.path.basename(__file__)
-    # Defaults
-    default_output_dir = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
 
     # Parse arguments
     parser = argparse.ArgumentParser(
@@ -323,7 +323,7 @@ Accepted values for `wheel_name` are ``itk`` and all values read from
         "--output-dir",
         type=str,
         help="Output directory for configured 'pyproject.toml'",
-        default=default_output_dir,
+        default=os.path.abspath(os.path.join(SCRIPT_DIR, "..")),
     )
     # Compute default env file relative to project root at runtime
     ipp_dir: str = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -354,9 +354,9 @@ Accepted values for `wheel_name` are ``itk`` and all values read from
         sys.exit(1)
 
     # Write itkVersion.py file to report ITK version in python.
-    write_itkVersion_py(
-        os.path.join(default_output_dir, "itkVersion.py"), PEP440_VERSION
-    )
+    write_itkVersion_py(Path(args.output_dir) / "itkVersion.py", PEP440_VERSION)
+    # Copy LICENSE file needed for each wheel
+    shutil.copy(Path(IPP_BuildWheelsSupport_DIR) / "LICENSE", args.output_dir)
 
     base_params = build_base_pyproject_parameters(
         package_env_config, SCRIPT_NAME, PEP440_VERSION

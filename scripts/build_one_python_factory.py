@@ -8,6 +8,7 @@ from pathlib import Path
 
 def build_one_python_instance(
     py_env,
+    build_dir_root,
     wheel_names,
     package_env_config,
     cleanup: bool,
@@ -21,10 +22,11 @@ def build_one_python_instance(
     """
     Backwards-compatible wrapper that now delegates to the new OOP builders.
     """
+    build_dir_root_path: Path = Path(build_dir_root)
     platform = package_env_config["OS_NAME"].lower()
 
     # Historical dist_dir name for compatibility with ITKRemoteModuleBuildTestPackageAction
-    dist_dir = package_env_config["IPP_SOURCE_DIR"] / "dist"
+    dist_dir = build_dir_root_path / "dist"
     if platform == "windows":
         from windows_build_python_instance import WindowsBuildPythonInstance
 
@@ -54,6 +56,7 @@ def build_one_python_instance(
     # Pass helper function callables and dist dir to avoid circular imports
     builder = builder_cls(
         py_env=py_env,
+        build_dir_root=build_dir_root_path,
         wheel_names=wheel_names,
         package_env_config=package_env_config,
         cleanup=cleanup,
