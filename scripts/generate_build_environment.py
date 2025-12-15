@@ -421,14 +421,14 @@ def generate_build_environment(argv: list[str]) -> int:
             ]
         )
 
-    run(["git", "fetch", "--tags", "origin"], cwd=itk_source_dir)
+    run(["git", "fetch", "--tags", "origin"], cwd=str(itk_source_dir))
     try:
-        run(["git", "checkout", itk_git_tag], cwd=itk_source_dir)
+        run(["git", "checkout", itk_git_tag], cwd=str(itk_source_dir))
     except subprocess.CalledProcessError:
         # try fetch then checkout
         print(f"WARNING: Failed to checkout {itk_git_tag}, reverting to 'main':")
         itk_git_tag = "main"
-        run(["git", "checkout", itk_git_tag], cwd=itk_source_dir)
+        run(["git", "checkout", itk_git_tag], cwd=str(itk_source_dir))
 
     itk_package_version = env.get(
         "ITK_PACKAGE_VERSION",
