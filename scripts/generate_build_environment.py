@@ -130,7 +130,7 @@ def parse_kv_overrides(pairs: list[str]) -> dict[str, str]:
     return result
 
 
-def load_env_file(path: Path) -> dict[str, str]:
+def load_env_file(path: Path, build_dir_root: Path) -> dict[str, str]:
     env: dict[str, str] = {}
     if not path.is_file():
         return env
@@ -142,6 +142,10 @@ def load_env_file(path: Path) -> dict[str, str]:
         k, v = line.split("=", 1)
         k = k.strip()
         v = v.strip()
+        if "${BUILD_DIR_ROOT}" in v:
+            print("HERE")
+            pass
+        v=v.replace("${BUILD_DIR_ROOT}", str(build_dir_root))
         env[k] = v
     return env
 
@@ -285,6 +289,14 @@ def cmake_compiler_defaults(build_dir: Path) -> tuple[str | None, str | None]:
     return cc, cxx
 
 
+def give_relative_path(bin_exec: Path, build_dir_root: Path) -> str:
+    bin_exec = Path(bin_exec).resolve()
+    build_dir_root = Path(build_dir_root).resolve()
+    if bin_exec.is_relative_to(build_dir_root):
+        return "${BUILD_DIR_ROOT}/" + str(bin_exec.relative_to(build_dir_root))
+    return str(bin_exec)
+
+
 def generate_build_environment(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("pairs", nargs="*")
@@ -334,7 +346,7 @@ def generate_build_environment(argv: list[str]) -> int:
     # Merge environments per priority
     env: dict[str, str] = dict(os.environ)
     if reference_env_report:
-        env_from_file = load_env_file(Path(reference_env_report))
+        env_from_file = load_env_file(Path(reference_env_report), Path(build_dir_root))
         env_from_file.update(
             env
         )  # Environmental settings override matching env_from_file settings
@@ -398,6 +410,10 @@ def generate_build_environment(argv: list[str]) -> int:
     doxygen_exec = which_required("doxygen")
     ninja_exec = which_required("ninja")
     cmake_exec = which_required("cmake")
+
+    doxygen_exec = give_relative_path(doxygen_exec, build_dir_root)
+    ninja_exec = give_relative_path(ninja_exec, build_dir_root)
+    cmake_exec = give_relative_path(cmake_exec, build_dir_root)
 
     _ipp_dir_path: Path = Path(__file__).resolve().parent.parent
     ipp_latest_tag: str = get_git_id(
@@ -470,6 +486,9 @@ def generate_build_environment(argv: list[str]) -> int:
     # Write out package.env
     out_path = Path(build_env_report)
     out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    relative_itk_source_dir = give_relative_path(itk_source_dir, build_dir_root)
+
     lines: list[str] = []
 
     lines += [
@@ -478,6 +497,7 @@ def generate_build_environment(argv: list[str]) -> int:
         "###  ITKPythonPackage Environment Variables  ###",
         "###  in .env format (KEY=VALUE)              ###",
         "",
+        f"BUILD_DIR_ROOT={str(build_dir_root)}",
         "# - 'ITK_GIT_TAG': Tag/branch/hash for ITKPythonBuilds build cache to use",
         "#   Which ITK git tag/hash/branch to use as reference for building wheels/modules",
         "#   https://github.com/InsightSoftwareConsortium/ITK.git@${ITK_GIT_TAG}",
@@ -489,7 +509,7 @@ def generate_build_environment(argv: list[str]) -> int:
         "#   on a given platform, explicitly setting the ITK_SOURCE_DIR options allow to",
         "#   speed up source-code downloads by re-using an existing repository.",
         "#   If the requested directory does not exist, manually clone and checkout ${ITK_GIT_TAG}",
-        f"ITK_SOURCE_DIR={itk_source_dir}",
+        f"ITK_SOURCE_DIR={relative_itk_source_dir}",
         "",
         "# - 'ITK_PACKAGE_VERSION' A valid PEP440 python version string.  This should be ITK_GIT_TAG without",
         "#   the preceding 'v' for tagged releases.",
