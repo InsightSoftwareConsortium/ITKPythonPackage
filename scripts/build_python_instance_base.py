@@ -911,6 +911,10 @@ class BuildPythonInstanceBase(ABC):
             print(f"$ pixi run {pixi_environment}")
         pixi_run_preamble: list[str] = []
         env = {"PIXI_HOME": str(self.build_dir_root / ".pixi")}
+        if self.package_env_config.get("CXX", None) is not None:
+            env["CXX"] = str(self.package_env_config["CXX"])
+        if self.package_env_config.get("CC", None) is not None:
+            env["CC"] = str(self.package_env_config["CC"])
         if pixi_environment:
             pixi_run_preamble = [
                 str(self.build_dir_root / "build" / ".pixi" / "bin" / "pixi"),
@@ -935,9 +939,13 @@ class BuildPythonInstanceBase(ABC):
         print("^" * 60)
         print(kwargs)
         print("^" * 60)
-        cmd_return_status: int = subprocess_check_call(
-            cmd, env=env, cwd=self.package_env_config["IPP_SOURCE_DIR"], **kwargs
-        )
+        try:
+            cmd_return_status: int = subprocess_check_call(
+                cmd, env=env, cwd=self.package_env_config["IPP_SOURCE_DIR"], **kwargs
+            )
+        except subprocess.CalledProcessError as e:
+            print(f"Command Failed: {e}")
+            raise e
         print("^" * 60)
         print(f"<<Finished Running: cmd_return_status={cmd_return_status}")
         return cmd_return_status
