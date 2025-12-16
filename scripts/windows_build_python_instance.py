@@ -161,7 +161,20 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
 
     def venv_paths(self) -> None:
         # Create venv related paths
-        venv_executable = f"C:/Python{self.py_env}/Scripts/virtualenv.exe"
+        major = self.py_env.split(".")[0]
+        minor = self.py_env.split(".")[1]
+        virtualenv_pattern = f"Python{major}*{minor}*/Scripts/virtualenv.exe"
+        all_glob_matches = [str(p) for p in Path("C:\\").glob(virtualenv_pattern)]
+        if len(all_glob_matches) > 1:
+            raise RuntimeError(
+                f"Multiple virtualenv.exe matches found: {all_glob_matches}"
+            )
+        elif len(all_glob_matches) == 0:
+            raise RuntimeError(
+                f"No virtualenv.exe matches found for Python {virtualenv_pattern}"
+            )
+
+        venv_executable = all_glob_matches[0]
         venv_base_dir = Path(self.build_dir_root) / f"venv-{self.py_env}"
         if not venv_base_dir.exists():
             self.echo_check_call([venv_executable, str(venv_base_dir)])
