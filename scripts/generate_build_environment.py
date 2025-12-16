@@ -25,7 +25,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from wheel_builder_utils import detect_platform, which_required
+from wheel_builder_utils import detect_platform, which_required, read_env_file
 
 
 def git_describe_to_pep440(desc: str) -> str:
@@ -128,26 +128,6 @@ def parse_kv_overrides(pairs: list[str]) -> dict[str, str]:
         else:
             result[key] = value
     return result
-
-
-def load_env_file(path: Path, build_dir_root: Path) -> dict[str, str]:
-    env: dict[str, str] = {}
-    if not path.is_file():
-        return env
-    for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
-        if not line or line.lstrip().startswith("#"):
-            continue
-        if "=" not in line:
-            continue
-        k, v = line.split("=", 1)
-        k = k.strip()
-        v = v.strip()
-        if "${BUILD_DIR_ROOT}" in v:
-            print("HERE")
-            pass
-        v=v.replace("${BUILD_DIR_ROOT}", str(build_dir_root))
-        env[k] = v
-    return env
 
 
 def get_git_id(repo_dir: Path, backup_version: str = "v0.0.0") -> str | None:
@@ -346,7 +326,7 @@ def generate_build_environment(argv: list[str]) -> int:
     # Merge environments per priority
     env: dict[str, str] = dict(os.environ)
     if reference_env_report:
-        env_from_file = load_env_file(Path(reference_env_report), Path(build_dir_root))
+        env_from_file = read_env_file(Path(reference_env_report), build_dir_root)
         env_from_file.update(
             env
         )  # Environmental settings override matching env_from_file settings

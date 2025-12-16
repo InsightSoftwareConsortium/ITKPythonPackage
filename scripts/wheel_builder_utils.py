@@ -109,7 +109,7 @@ def _remove_tree(path: Path) -> None:
         pass
 
 
-def read_env_file(file_path: os.PathLike | str) -> dict[str, str]:
+def read_env_file(file_path: os.PathLike | str, build_dir_root:os.PathLike| str) -> dict[str, str]:
     """Read a simple .env-style file and return a dict of key/value pairs.
 
     Supported syntax:
@@ -140,6 +140,7 @@ def read_env_file(file_path: os.PathLike | str) -> dict[str, str]:
         key, value = line.split("=", 1)
         key = key.strip()
         value = value.strip()
+        value = value.replace("${BUILD_DIR_ROOT}", str(build_dir_root))
         # Strip surrounding quotes if present
         if (len(value) >= 2) and (
             (value[0] == value[-1] == '"') or (value[0] == value[-1] == "'")

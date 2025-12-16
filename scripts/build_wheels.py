@@ -34,7 +34,7 @@ def _set_main_variable_names(
     generate_build_environment(generate_build_environment_update_args)
 
     PACKAGE_ENV_FILE = Path(os.environ.get("PACKAGE_ENV_FILE", PACKAGE_ENV_FILE))
-    package_env_config: dict[str, str | Path | None] = read_env_file(PACKAGE_ENV_FILE)
+    package_env_config: dict[str, str | Path | None] = read_env_file(PACKAGE_ENV_FILE, build_dir_root)
     package_env_config["PACKAGE_ENV_FILE"] = PACKAGE_ENV_FILE
     package_env_config["SCRIPT_DIR"] = SCRIPT_DIR
 

@@ -338,7 +338,7 @@ Accepted values for `wheel_name` are ``itk`` and all values read from
     args = parser.parse_args()
     print(f"Reading configuration settings from {args.env_file}")
 
-    package_env_config = read_env_file(args.env_file)
+    package_env_config = read_env_file(args.env_file, args.output_dir)
 
     # Version needs to be python PEP 440 compliant (no leading v)
     PEP440_VERSION: str = package_env_config["ITK_PACKAGE_VERSION"].removeprefix("v")
