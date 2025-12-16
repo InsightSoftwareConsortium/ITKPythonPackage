@@ -346,21 +346,15 @@ def generate_build_environment(argv: list[str]) -> int:
     # Platform detection
     os_name, arch = detect_platform()
 
-    # Required executables (paths recorded), always use internal pixi for build
-    doxygen_exec = None  # env.get("DOXYGEN_EXECUTABLE", None)
-    ninja_exec = None  # env.get("NINJA_EXECUTABLE", None)
-    cmake_exec = None  #  env.get("CMAKE_EXECUTABLE", None)
 
-    if doxygen_exec is None or ninja_exec is None or cmake_exec is None:
-        print("Generating pixi installed resources.")
-        build_dir_path.parent.mkdir(parents=True, exist_ok=True)
-        pixi_home = build_dir_path / ".pixi"
-        pixi_home.mkdir(parents=True, exist_ok=True)
+    build_dir_path.parent.mkdir(parents=True, exist_ok=True)
+    pixi_home = build_dir_path / ".pixi"
+    pixi_home.mkdir(parents=True, exist_ok=True)
+    os.environ["PIXI_HOME"] = str(pixi_home)
+    pixi_bin_dir = pixi_home / "bin"
+    os.environ["PATH"] = str(pixi_bin_dir) + os.pathsep + os.environ.get("PATH", "")
+    if not (pixi_bin_dir/"pixi").exists():
         pixi_install_script: Path = pixi_home / "pixi_install.sh"
-        os.environ["PIXI_HOME"] = str(pixi_home)
-        pixi_bin_dir = pixi_home / "bin"
-        os.environ["PATH"] = str(pixi_bin_dir) + os.pathsep + os.environ.get("PATH", "")
-
         run(
             [
                 "curl",
@@ -376,28 +370,29 @@ def generate_build_environment(argv: list[str]) -> int:
                 str(pixi_install_script),
             ]
         )
-        platform_pixi_packages = []
-        if os_name == "linux":
-            platform_pixi_packages = ["patchelf"]
+        del pixi_install_script
+    # Required executables (paths recorded), always use internal pixi for build
+    platform_pixi_packages = ["doxygen", "ninja", "cmake"]
+    if os_name == "linux":
+        platform_pixi_packages += "patchelf"
+
+    all_installed=True
+    for ppp in platform_pixi_packages:
+        if not (pixi_bin_dir/ppp).is_file():
+            all_installed=False
+    if not all_installed:
         run(
             [
                 str(pixi_bin_dir / "pixi"),
                 "global",
                 "install",
-                "doxygen",
-                "cmake",
-                "ninja",
             ]
             + platform_pixi_packages
         )
 
-    doxygen_exec = pixi_bin_dir / "doxygen"
-    ninja_exec = pixi_bin_dir / "ninja"
-    cmake_exec = pixi_bin_dir / "cmake"
-
-    doxygen_exec = give_relative_path(doxygen_exec, build_dir_root)
-    ninja_exec = give_relative_path(ninja_exec, build_dir_root)
-    cmake_exec = give_relative_path(cmake_exec, build_dir_root)
+    doxygen_exec = give_relative_path(pixi_bin_dir/"doxygen", build_dir_root)
+    ninja_exec = give_relative_path(pixi_bin_dir/"ninja", build_dir_root)
+    cmake_exec = give_relative_path(pixi_bin_dir/"cmake", build_dir_root)
 
     _ipp_dir_path: Path = Path(__file__).resolve().parent.parent
     ipp_latest_tag: str = get_git_id(
