@@ -341,11 +341,10 @@ def generate_build_environment(argv: list[str]) -> int:
     # Platform detection
     os_name, arch = detect_platform()
 
-    # Required executables (paths recorded)
-
-    doxygen_exec = env.get("DOXYGEN_EXECUTABLE", None)
-    ninja_exec = env.get("NINJA_EXECUTABLE", None)
-    cmake_exec = env.get("CMAKE_EXECUTABLE", None)
+    # Required executables (paths recorded), always use internal pixi for build
+    doxygen_exec = None # env.get("DOXYGEN_EXECUTABLE", None)
+    ninja_exec = None # env.get("NINJA_EXECUTABLE", None)
+    cmake_exec = None #  env.get("CMAKE_EXECUTABLE", None)
 
     if doxygen_exec is None or ninja_exec is None or cmake_exec is None:
         print("Generating pixi installed resources.")
