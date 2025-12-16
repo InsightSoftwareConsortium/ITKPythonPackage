@@ -73,6 +73,7 @@ delocate = "*"
 
 [feature.macos-build.dependencies]
 cxx-compiler = "==1.10.0"
+c-compiler = "==1.10.0"
 
 [feature.windows-build]
 platforms = ["win-64"]
@@ -82,6 +83,7 @@ platforms = ["win-64"]
 
 [feature.windows-build.dependencies]
 # cxx-compiler = "==1.10.0"
+# c-compiler = "==1.10.0"
 
 
 ########################################

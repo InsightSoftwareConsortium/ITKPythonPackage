@@ -106,11 +106,16 @@ def debug(msg: str, do_print=False) -> None:
 
 
 def run(
-    cmd: list[str], cwd: Path | None = None, check: bool = True
+    cmd: list[str], cwd: Path | None = None, env: dict = None, check: bool = True
 ) -> subprocess.CompletedProcess:
     print(f"Running >>>>>: {' '.join(cmd)}  ; # in cwd={cwd} with check={check}")
     return subprocess.run(
-        cmd, cwd=str(cwd) if cwd else None, check=check, capture_output=True, text=True
+        cmd,
+        cwd=str(cwd) if cwd else None,
+        env=env if env else None,
+        check=check,
+        capture_output=True,
+        text=True,
     )
 
 
@@ -342,9 +347,9 @@ def generate_build_environment(argv: list[str]) -> int:
     os_name, arch = detect_platform()
 
     # Required executables (paths recorded), always use internal pixi for build
-    doxygen_exec = None # env.get("DOXYGEN_EXECUTABLE", None)
-    ninja_exec = None # env.get("NINJA_EXECUTABLE", None)
-    cmake_exec = None #  env.get("CMAKE_EXECUTABLE", None)
+    doxygen_exec = None  # env.get("DOXYGEN_EXECUTABLE", None)
+    ninja_exec = None  # env.get("NINJA_EXECUTABLE", None)
+    cmake_exec = None  #  env.get("CMAKE_EXECUTABLE", None)
 
     if doxygen_exec is None or ninja_exec is None or cmake_exec is None:
         print("Generating pixi installed resources.")
@@ -386,9 +391,9 @@ def generate_build_environment(argv: list[str]) -> int:
             + platform_pixi_packages
         )
 
-    doxygen_exec = which_required("doxygen")
-    ninja_exec = which_required("ninja")
-    cmake_exec = which_required("cmake")
+    doxygen_exec = pixi_bin_dir / "doxygen"
+    ninja_exec = pixi_bin_dir / "ninja"
+    cmake_exec = pixi_bin_dir / "cmake"
 
     doxygen_exec = give_relative_path(doxygen_exec, build_dir_root)
     ninja_exec = give_relative_path(ninja_exec, build_dir_root)
@@ -413,7 +418,8 @@ def generate_build_environment(argv: list[str]) -> int:
                 "clone",
                 "https://github.com/InsightSoftwareConsortium/ITK.git",
                 str(itk_source_dir),
-            ]
+            ],
+            cwd=str(_ipp_dir_path),
         )
 
     run(["git", "fetch", "--tags", "origin"], cwd=str(itk_source_dir))
@@ -449,8 +455,36 @@ def generate_build_environment(argv: list[str]) -> int:
     cc_default = None
     cxx_default = None
     if os_name == "darwin":
-        if not env.get("CC") or not env.get("CXX"):
-            cc_default, cxx_default = cmake_compiler_defaults(build_dir_path)
+        process_output_CXX: subprocess.CompletedProcess = run(
+            [
+                str(pixi_bin_dir / "pixi"),
+                "run",
+                "-e",
+                "macos",
+                "--",
+                "bash",
+                "-c",
+                "which $CXX",
+            ],
+            cwd=_ipp_dir_path,
+            env={"PIXI_HOME": str(pixi_home)},
+        )
+        cxx_default = process_output_CXX.stdout
+        process_output_CC: subprocess.CompletedProcess = run(
+            [
+                str(pixi_bin_dir / "pixi"),
+                "run",
+                "-e",
+                "macos",
+                "--",
+                "bash",
+                "-c",
+                "which $CC",
+            ],
+            cwd=_ipp_dir_path,
+            env={"PIXI_HOME": str(pixi_home)},
+        )
+        cc_default = process_output_CC.stdout
 
     # ITKPythonPackage origin/tag
     itkpp_org = env.get("ITKPYTHONPACKAGE_ORG", "InsightSoftwareConsortium")
@@ -576,12 +610,14 @@ def generate_build_environment(argv: list[str]) -> int:
             "# Source this file before builds",
         ]
         # Include CC_DEFAULT/CXX_DEFAULT hints
-        if cc_default:
+        if len(cc_default) > 0:
             lines.append(f"CC_DEFAULT={cc_default}")
+            lines.append(f"CC={cc_default}")
         else:
             lines.append("## - CC_DEFAULT=")
-        if cxx_default:
+        if len(cxx_default) > 0:
             lines.append(f"CXX_DEFAULT={cxx_default}")
+            lines.append(f"CXX={cxx_default}")
         else:
             lines.append("## - CXX_DEFAULT=")
         for var in build_vars:
