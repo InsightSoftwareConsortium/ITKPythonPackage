@@ -935,7 +935,7 @@ class BuildPythonInstanceBase(ABC):
         print("^" * 60)
         print(kwargs)
         print("^" * 60)
-        cmd_return_status: int = subprocess_check_call(cmd, env=env, **kwargs)
+        cmd_return_status: int = subprocess_check_call(cmd, env=env, cwd =self.package_env_config["IPP_SOURCE_DIR"],**kwargs)
         print("^" * 60)
         print(f"<<Finished Running: cmd_return_status={cmd_return_status}")
         return cmd_return_status
