@@ -38,8 +38,10 @@ numpy = ">=1.26"
 packaging = ">=25.0,<26"
 pathspec = "*"
 pyproject-metadata = "*"
-scikit-build-core = "==0.10.7"
-setuptools_scm = "==8.1.0"
+scikit-build-core = ">=0.11.6,<0.12.0"
+setuptools_scm = ">=9.2.0"
+setuptools= ">=61"
+
 
 ########################################
 # Manylinux-specific feature
