@@ -17,7 +17,9 @@ import pkginfo
 SCRIPT_DIR = Path(__file__).parent
 IPP_SOURCE_DIR = SCRIPT_DIR.parent.resolve()
 IPP_SUPERBUILD_BINARY_DIR = IPP_SOURCE_DIR / "ITK-source"
-package_env_config = read_env_file(IPP_SOURCE_DIR / "build" / "package.env", args.output_dir)
+package_env_config = read_env_file(
+    IPP_SOURCE_DIR / "build" / "package.env", args.output_dir
+)
 ITK_SOURCE_DIR = package_env_config["ITK_SOURCE_DIR"]
 
 print(f"SCRIPT_DIR: {SCRIPT_DIR}")

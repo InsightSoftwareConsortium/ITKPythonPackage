@@ -325,10 +325,15 @@ Accepted values for `wheel_name` are ``itk`` and all values read from
         help="Output directory for configured 'pyproject.toml'",
         default=os.path.abspath(os.path.join(SCRIPT_DIR, "..")),
     )
+    parser.add_argument(
+        "--build-dir-root",
+        type=str,
+        default=f"{SCRIPT_DIR}/../",
+        help="The root of the build resources.",
+    )
     # Compute default env file relative to project root at runtime
     ipp_dir: str = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     default_env_file: str = os.path.join(ipp_dir, "build", "package.env")
-
     parser.add_argument(
         "--env-file",
         type=str,
@@ -338,7 +343,7 @@ Accepted values for `wheel_name` are ``itk`` and all values read from
     args = parser.parse_args()
     print(f"Reading configuration settings from {args.env_file}")
 
-    package_env_config = read_env_file(args.env_file, args.output_dir)
+    package_env_config = read_env_file(args.env_file, args.build_dir_root)
 
     # Version needs to be python PEP 440 compliant (no leading v)
     PEP440_VERSION: str = package_env_config["ITK_PACKAGE_VERSION"].removeprefix("v")

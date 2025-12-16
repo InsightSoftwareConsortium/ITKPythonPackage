@@ -578,6 +578,8 @@ class BuildPythonInstanceBase(ABC):
                         self.package_env_config.get("PACKAGE_ENV_FILE"),
                         "--output-dir",
                         wheel_configbuild_dir_root,
+                        "--build-dir-root",
+                        self.build_dir_root,
                         wheel_name,
                     ]
                 )

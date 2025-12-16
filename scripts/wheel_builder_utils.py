@@ -109,7 +109,9 @@ def _remove_tree(path: Path) -> None:
         pass
 
 
-def read_env_file(file_path: os.PathLike | str, build_dir_root:os.PathLike| str) -> dict[str, str]:
+def read_env_file(
+    file_path: os.PathLike | str, build_dir_root: os.PathLike | str
+) -> dict[str, str]:
     """Read a simple .env-style file and return a dict of key/value pairs.
 
     Supported syntax:
