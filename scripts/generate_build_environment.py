@@ -622,6 +622,26 @@ def generate_build_environment(argv: list[str]) -> int:
             else:
                 lines.append(f"## - {var}=")
 
+    # Ensure Windows executable search path includes pixi's bin directory
+    if os_name == "windows":
+        # Compute pixi home/bin relative to build dir so downstream scripts can locate pixi-installed tools
+        pixi_home = build_dir_path / ".pixi"
+        pixi_bin_dir = pixi_home / "bin"
+        current_path = env.get("PATH", "")
+        # Prepend pixi bin dir if not already present
+        path_parts = [p for p in current_path.split(";") if p]
+        pixi_bin_str = str(pixi_bin_dir)
+        if pixi_bin_str not in path_parts:
+            new_path = pixi_bin_str + (";" + current_path if current_path else "")
+        else:
+            new_path = current_path
+        lines += [
+            "",
+            "# Windows settings",
+            f"PIXI_HOME={pixi_home}",
+            f"PATH={new_path}",
+        ]
+
     out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     # Print the generated file content (parity with bash script)
