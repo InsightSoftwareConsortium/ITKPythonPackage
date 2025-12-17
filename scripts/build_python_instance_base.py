@@ -255,10 +255,12 @@ class BuildPythonInstanceBase(ABC):
         self.echo_check_call(cmd)
         self.echo_check_call(
             [
-                self.package_env_config["NINJA_EXECUTABLE"],
-                f"-j{self.build_node_cpu_count}",
-                f"-l{self.build_node_cpu_count}",
-                "-C",
+                # self.package_env_config["NINJA_EXECUTABLE"],
+                # f"-j{self.build_node_cpu_count}",
+                # f"-l{self.build_node_cpu_count}",
+                # "-C",
+                self.package_env_config["CMAKE_EXECUTABLE"],
+                "--build",
                 str(self.package_env_config["IPP_SUPERBUILD_BINARY_DIR"]),
             ]
         )
