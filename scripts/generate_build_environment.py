@@ -25,7 +25,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-from wheel_builder_utils import detect_platform, which_required, read_env_file
+from wheel_builder_utils import (
+    detect_platform,
+    read_env_file,
+    run_commandLine_subprocess,
+)
 
 
 def git_describe_to_pep440(desc: str) -> str:
@@ -105,20 +109,6 @@ def debug(msg: str, do_print=False) -> None:
         print(msg)
 
 
-def run(
-    cmd: list[str], cwd: Path | None = None, env: dict = None, check: bool = True
-) -> subprocess.CompletedProcess:
-    print(f"Running >>>>>: {' '.join(cmd)}  ; # in cwd={cwd} with check={check}")
-    return subprocess.run(
-        cmd,
-        cwd=str(cwd) if cwd else None,
-        env=env if env else None,
-        check=check,
-        capture_output=True,
-        text=True,
-    )
-
-
 def parse_kv_overrides(pairs: list[str]) -> dict[str, str]:
     result: dict[str, str] = {}
     for kv in pairs:
@@ -138,7 +128,7 @@ def parse_kv_overrides(pairs: list[str]) -> dict[str, str]:
 def get_git_id(repo_dir: Path, backup_version: str = "v0.0.0") -> str | None:
     # 1. exact tag
     try:
-        tag = run(
+        tag = run_commandLine_subprocess(
             ["git", "describe", "--tags", "--exact-match"], cwd=repo_dir
         ).stdout.strip()
         if tag:
@@ -147,7 +137,7 @@ def get_git_id(repo_dir: Path, backup_version: str = "v0.0.0") -> str | None:
         pass
     # 2. branch
     try:
-        branch = run(
+        branch = run_commandLine_subprocess(
             ["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=repo_dir
         ).stdout.strip()
         if branch and branch != "HEAD":
@@ -156,7 +146,7 @@ def get_git_id(repo_dir: Path, backup_version: str = "v0.0.0") -> str | None:
         pass
     # 3. short hash
     try:
-        short_version = run(
+        short_version = run_commandLine_subprocess(
             ["git", "rev-parse", "--short", "HEAD"], cwd=repo_dir
         ).stdout.strip()
         if short_version and short_version != "HEAD":
@@ -180,16 +170,16 @@ def compute_itk_package_version(
 ) -> str:
     # Try to compute from git describe
     try:
-        run(["git", "fetch", "--tags"], cwd=itk_dir)
+        run_commandLine_subprocess(["git", "fetch", "--tags"], cwd=itk_dir)
         try:
-            run(["git", "checkout", itk_git_tag], cwd=itk_dir)
+            run_commandLine_subprocess(["git", "checkout", itk_git_tag], cwd=itk_dir)
         except Exception as e:
             print(
                 f"WARNING: Failed to checkout {itk_git_tag}, reverting to 'main': {e}"
             )
             itk_git_tag = "main"
-            run(["git", "checkout", itk_git_tag], cwd=itk_dir)
-        desc = run(
+            run_commandLine_subprocess(["git", "checkout", itk_git_tag], cwd=itk_dir)
+        desc = run_commandLine_subprocess(
             ["git", "describe", "--tags", "--long", "--dirty", "--always"], cwd=itk_dir
         ).stdout.strip()
         version = git_describe_to_pep440(desc)
@@ -254,7 +244,7 @@ def cmake_compiler_defaults(build_dir: Path) -> tuple[str | None, str | None]:
     info = build_dir / "cmake_system_information"
     if not info.exists():
         try:
-            out = run(["cmake", "--system-information"]).stdout
+            out = run_commandLine_subprocess(["cmake", "--system-information"]).stdout
             info.write_text(out, encoding="utf-8")
         except Exception as e:
             print(f"WARNING: Failed to generate cmake_system_information: {e}")
@@ -359,7 +349,7 @@ def generate_build_environment(argv: list[str]) -> int:
         if os_name == "windows":
 
             # Use PowerShell to install pixi on Windows
-            run(
+            run_commandLine_subprocess(
                 [
                     "powershell",
                     "-NoProfile",
@@ -371,7 +361,7 @@ def generate_build_environment(argv: list[str]) -> int:
                 env={"PIXI_HOME": str(pixi_home)},
             )
         else:
-            run(
+            run_commandLine_subprocess(
                 [
                     "curl",
                     "-fsSL",
@@ -380,7 +370,7 @@ def generate_build_environment(argv: list[str]) -> int:
                     str(pixi_install_script),
                 ]
             )
-            run(
+            run_commandLine_subprocess(
                 [
                     "/bin/sh",
                     str(pixi_install_script),
@@ -400,7 +390,7 @@ def generate_build_environment(argv: list[str]) -> int:
         if not (pixi_bin_dir / ppp).is_file():
             all_installed = False
     if not all_installed:
-        run(
+        run_commandLine_subprocess(
             [
                 pixi_exec,
                 "global",
@@ -426,7 +416,7 @@ def generate_build_environment(argv: list[str]) -> int:
     if not itk_source_dir.exists():
         itk_source_dir.parent.mkdir(parents=True, exist_ok=True)
         debug(f"Cloning ITK into {itk_source_dir}...")
-        run(
+        run_commandLine_subprocess(
             [
                 "git",
                 "clone",
@@ -436,14 +426,20 @@ def generate_build_environment(argv: list[str]) -> int:
             cwd=str(_ipp_dir_path),
         )
 
-    run(["git", "fetch", "--tags", "origin"], cwd=str(itk_source_dir))
+    run_commandLine_subprocess(
+        ["git", "fetch", "--tags", "origin"], cwd=str(itk_source_dir)
+    )
     try:
-        run(["git", "checkout", itk_git_tag], cwd=str(itk_source_dir))
+        run_commandLine_subprocess(
+            ["git", "checkout", itk_git_tag], cwd=str(itk_source_dir)
+        )
     except subprocess.CalledProcessError:
         # try fetch then checkout
         print(f"WARNING: Failed to checkout {itk_git_tag}, reverting to 'main':")
         itk_git_tag = "main"
-        run(["git", "checkout", itk_git_tag], cwd=str(itk_source_dir))
+        run_commandLine_subprocess(
+            ["git", "checkout", itk_git_tag], cwd=str(itk_source_dir)
+        )
 
     itk_package_version = env.get(
         "ITK_PACKAGE_VERSION",
@@ -469,7 +465,7 @@ def generate_build_environment(argv: list[str]) -> int:
     cc_default = None
     cxx_default = None
     if os_name == "darwin":
-        process_output_CXX: subprocess.CompletedProcess = run(
+        process_output_CXX: subprocess.CompletedProcess = run_commandLine_subprocess(
             [
                 str(pixi_bin_dir / "pixi"),
                 "run",
@@ -484,7 +480,7 @@ def generate_build_environment(argv: list[str]) -> int:
             env={"PIXI_HOME": str(pixi_home)},
         )
         cxx_default = process_output_CXX.stdout
-        process_output_CC: subprocess.CompletedProcess = run(
+        process_output_CC: subprocess.CompletedProcess = run_commandLine_subprocess(
             [
                 str(pixi_bin_dir / "pixi"),
                 "run",
@@ -641,7 +637,7 @@ def generate_build_environment(argv: list[str]) -> int:
             else:
                 lines.append(f"## - {var}=")
 
-    # Ensure Windows executable search path includes pixi's bin directory
+    # Ensure a Windows executable search path includes pixi's bin directory
     if os_name == "windows":
         # Compute pixi home/bin relative to build dir so downstream scripts can locate pixi-installed tools
         pixi_home = build_dir_path / ".pixi"

@@ -17,7 +17,7 @@ from wheel_builder_utils import (
     _remove_tree,
     push_env,
     _which,
-    push_dir,
+    run_commandLine_subprocess,
 )
 
 
@@ -895,10 +895,6 @@ class BuildPythonInstanceBase(ABC):
             print(f"$ pixi run {pixi_environment}")
         pixi_run_preamble: list[str] = []
         env = {"PIXI_HOME": str(self.build_dir_root / ".pixi")}
-        if self.package_env_config.get("CXX", None) is not None:
-            env["CXX"] = str(self.package_env_config["CXX"])
-        if self.package_env_config.get("CC", None) is not None:
-            env["CC"] = str(self.package_env_config["CC"])
         if pixi_environment:
             pixi_run_preamble = [
                 str(self.build_dir_root / "build" / ".pixi" / "bin" / "pixi"),
@@ -923,13 +919,17 @@ class BuildPythonInstanceBase(ABC):
         print("^" * 60)
         print(kwargs)
         print("^" * 60)
-        try:
-            cmd_return_status: int = subprocess_check_call(
+        process_completion_info: subprocess.CompletedProcess = (
+            run_commandLine_subprocess(
                 cmd, env=env, cwd=self.package_env_config["IPP_SOURCE_DIR"], **kwargs
             )
-        except subprocess.CalledProcessError as e:
-            print(f"Command Failed: {e}")
-            raise e
+        )
+        cmd_return_status: int = process_completion_info.returncode
         print("^" * 60)
         print(f"<<Finished Running: cmd_return_status={cmd_return_status}")
+        print(" ====== stdout =====")
+        print(process_completion_info.stdout.decode("utf-8"))
+        print(" ====== stderr =====")
+        print(process_completion_info.stderr.decode("utf-8"))
+        print(" ===================")
         return cmd_return_status

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import subprocess
 import sys
 
 from pathlib import Path
@@ -216,3 +217,18 @@ def which_required(name: str) -> str:
             f"MISSING: {name} not found in PATH; aborting until required executables can be found"
         )
     return path
+
+
+def run_commandLine_subprocess(
+    cmd: list[str], cwd: Path | None = None, env: dict = None, check: bool = True
+) -> subprocess.CompletedProcess:
+    print(f"Running >>>>>: {' '.join(cmd)}  ; # in cwd={cwd} with check={check}")
+    completion_info = subprocess.run(
+        cmd,
+        cwd=str(cwd) if cwd else None,
+        env=env if env else None,
+        check=check,
+        capture_output=True,
+        text=True,
+    )
+    return completion_info
