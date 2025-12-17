@@ -92,8 +92,6 @@ class BuildPythonInstanceBase(ABC):
         self.cmake_compiler_configurations.update(
             {
                 "CMAKE_BUILD_TYPE:STRING": f"{self._build_type}",
-                "CMAKE_CXX_FLAGS:STRING": "-O3 -DNDEBUG",
-                "CMAKE_C_FLAGS:STRING": "-O3 -DNDEBUG",
             }
         )
         # Set cmake flags for the compiler if CC or CXX are specified

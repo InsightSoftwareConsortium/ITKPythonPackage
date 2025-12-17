@@ -495,6 +495,10 @@ def generate_build_environment(argv: list[str]) -> int:
             env={"PIXI_HOME": str(pixi_home)},
         )
         cc_default = process_output_CC.stdout
+    if os_name == "windows":
+        # TODO: Hardcoded for now, need more sophisticated way to figure these out
+        cc_default = "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.38.33130/bin/Hostx86/x86/cl.exe"
+        cxx_default = "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.38.33130/bin/Hostx86/x86/cl.exe"
 
     # ITKPythonPackage origin/tag
     itkpp_org = env.get("ITKPYTHONPACKAGE_ORG", "InsightSoftwareConsortium")
@@ -595,7 +599,7 @@ def generate_build_environment(argv: list[str]) -> int:
         if tbb_dir:
             lines += [f"TBB_DIR={tbb_dir}"]
 
-    if os_name == "darwin":
+    if os_name == "darwin" or os_name == "windows":
         # Standard build flags that may be present
         build_vars = [
             "CC",
