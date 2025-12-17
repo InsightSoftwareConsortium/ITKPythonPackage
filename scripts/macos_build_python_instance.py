@@ -42,7 +42,8 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         self.venv_paths()
         self.update_venv_itk_build_configurations()
         self.cmake_compiler_configurations.set(
-            "CMAKE_MAKE_PROGRAM:FILEPATH", f"{self.venv_info_dict['ninja_executable']}"
+            "CMAKE_MAKE_PROGRAM:FILEPATH",
+            f"{self.package_env_config['NINJA_EXECUTABLE']}",
         )
         macosx_target = self.package_env_config.get("MACOSX_DEPLOYMENT_TARGET", "")
         if macosx_target:
@@ -213,7 +214,6 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             python_include_dir,
             python_library,
             pip_executable,
-            ninja_executable,
             venv_bin_path,
             venv_base_dir,
         ) = self.find_unix_exectable_paths(venv_dir)
@@ -222,7 +222,6 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             "python_include_dir": python_include_dir,
             "python_library": python_library,
             "pip_executable": pip_executable,
-            "ninja_executable": ninja_executable,
             "venv_bin_path": venv_bin_path,
             "venv_base_dir": venv_base_dir,
         }

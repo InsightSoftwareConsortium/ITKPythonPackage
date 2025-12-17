@@ -150,7 +150,6 @@ class BuildPythonInstanceBase(ABC):
             # "python_include_dir": None,
             # "python_library": None,
             # "pip_executable": None,
-            # "ninja_executable": None,
             # "venv_bin_path": None,
             # "venv_base_dir": None,
         }
@@ -258,7 +257,7 @@ class BuildPythonInstanceBase(ABC):
         self.echo_check_call(cmd)
         self.echo_check_call(
             [
-                self.venv_info_dict["ninja_executable"],
+                self.package_env_config["NINJA_EXECUTABLE"],
                 f"-j{self.build_node_cpu_count}",
                 f"-l{self.build_node_cpu_count}",
                 "-C",
@@ -355,7 +354,7 @@ class BuildPythonInstanceBase(ABC):
     def find_unix_exectable_paths(
         self,
         venv_dir: Path,
-    ) -> tuple[str, str, str, str, str, str, Path]:
+    ) -> tuple[str, str, str, str, str, Path]:
         python_executable = venv_dir / "bin" / "python3"
         if not python_executable.exists():
             raise FileNotFoundError(f"Python executable not found: {python_executable}")
@@ -363,11 +362,6 @@ class BuildPythonInstanceBase(ABC):
         if not pip_executable.exists():
             raise FileNotFoundError(f"pip executable not found: {pip_executable}")
 
-        # Prefer venv's ninja, else fall back to PATH
-        ninja_executable_path: Path = venv_dir / "bin" / "ninja"
-        ninja_executable: Path = self.find_unix_ninja_executable(ninja_executable_path)
-        if not ninja_executable.exists():
-            raise FileNotFoundError(f"Ninja executable not found: {ninja_executable}")
         # Compute Python include dir using sysconfig for the given interpreter
         try:
             python_include_dir = (
@@ -395,19 +389,9 @@ class BuildPythonInstanceBase(ABC):
             python_include_dir,
             python_library,
             str(pip_executable),
-            str(ninja_executable),
             str(venv_bin_path),
             venv_dir,
         )
-
-    @staticmethod
-    def find_unix_ninja_executable(ninja_executable_path: Path) -> Path | None:
-        ninja_executable = (
-            str(ninja_executable_path)
-            if ninja_executable_path.exists()
-            else (shutil.which("ninja") or str(ninja_executable_path))
-        )
-        return Path(ninja_executable)
 
     @abstractmethod
     def clone(self):
@@ -679,7 +663,7 @@ class BuildPythonInstanceBase(ABC):
         self.echo_check_call(cmd)
         self.echo_check_call(
             [
-                self.venv_info_dict["ninja_executable"],
+                self.package_env_config["NINJA_EXECUTABLE"],
                 f"-j{self.build_node_cpu_count}",
                 f"-l{self.build_node_cpu_count}",
                 "-C",

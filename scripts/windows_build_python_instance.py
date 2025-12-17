@@ -40,7 +40,8 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         self.venv_paths()
         self.update_venv_itk_build_configurations()
         self.cmake_compiler_configurations.set(
-            "CMAKE_MAKE_PROGRAM:FILEPATH", f"{self.venv_info_dict['ninja_executable']}"
+            "CMAKE_MAKE_PROGRAM:FILEPATH",
+            f"{self.package_env_config['NINJA_EXECUTABLE']}",
         )
         target_arch = self.package_env_config["ARCH"]
         itk_binary_build_name: str = (
@@ -161,10 +162,12 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
 
     def venv_paths(self) -> None:
         # Create venv related paths
-        major = self.py_env.split(".")[0]
-        minor = self.py_env.split(".")[1]
-        virtualenv_pattern = f"Python{major}*{minor}*/Scripts/virtualenv.exe"
-        all_glob_matches = [str(p) for p in Path("C:\\").glob(virtualenv_pattern)]
+        python_major: int = int(self.py_env.split(".")[0])
+        python_minor: int = int(self.py_env.split(".")[1])
+        virtualenv_pattern = (
+            f"Python{python_major}*{python_minor}*/Scripts/virtualenv.exe"
+        )
+        all_glob_matches = [p for p in Path("C:\\").glob(virtualenv_pattern)]
         if len(all_glob_matches) > 1:
             raise RuntimeError(
                 f"Multiple virtualenv.exe matches found: {all_glob_matches}"
@@ -173,9 +176,11 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             raise RuntimeError(
                 f"No virtualenv.exe matches found for Python {virtualenv_pattern}"
             )
-
-        venv_executable = all_glob_matches[0]
-        venv_base_dir = Path(self.build_dir_root) / f"venv-{self.py_env}"
+        venv_executable = Path(all_glob_matches[0])
+        primary_python_base_dir: Path = venv_executable.parent.parent
+        venv_base_dir = (
+            Path(self.build_dir_root) / f"venv-{python_major}.{python_minor}"
+        )
         if not venv_base_dir.exists():
             self.echo_check_call([venv_executable, str(venv_base_dir)])
             local_pip_executable = venv_base_dir / "Scripts" / "pip.exe"
@@ -212,28 +217,24 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
 
         pip_executable = venv_base_dir / "Scripts" / "pip.exe"
         python_executable = venv_base_dir / "Scripts" / "python.exe"
-        python_include_dir = f"C:/Python{self.py_env}/include"
+        python_include_dir = primary_python_base_dir / "include"
 
-        # XXX It should be possible to query skbuild for the library dir associated
-        #     with a given interpreter.
-        xy_ver = self.py_env.split("-")[0]
-
-        if int(self.py_env.split("-")[0][1:]) >= 11:
+        if int(python_minor) >= 11:
             # Stable ABI
-            python_library = f"C:/Python{self.py_env}/libs/python3.lib"
+            python_library = python_include_dir / "libs" / "python3.lib"
         else:
-            python_library = f"C:/Python{self.py_env}/libs/python{xy_ver}.lib"
+            # XXX It should be possible to query skbuild for the library dir associated
+            #     with a given interpreter.
+            xy_lib_ver = f"{python_major}{python_minor}"
+            python_library = python_include_dir / "libs" / f"python{xy_lib_ver}.lib"
 
         # Update PATH
         venv_bin_path = venv_base_dir / "Scripts"
-        ninja_executable = venv_bin_path / "ninja.exe"
-
         self.venv_info_dict = {
             "python_executable": python_executable,
             "python_include_dir": python_include_dir,
             "python_library": python_library,
             "pip_executable": pip_executable,
-            "ninja_executable": ninja_executable,
             "venv_bin_path": venv_bin_path,
             "venv_base_dir": venv_base_dir,
         }

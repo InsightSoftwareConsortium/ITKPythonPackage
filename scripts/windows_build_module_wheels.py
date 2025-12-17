@@ -57,7 +57,6 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cmake_options=None):
             python_include_dir,
             python_library,
             pip,
-            ninja_executable,
             path,
         ) = venv_paths(py_env)
 
