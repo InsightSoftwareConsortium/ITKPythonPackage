@@ -346,53 +346,72 @@ def generate_build_environment(argv: list[str]) -> int:
     # Platform detection
     os_name, arch = detect_platform()
 
-
     build_dir_path.parent.mkdir(parents=True, exist_ok=True)
     pixi_home = build_dir_path / ".pixi"
     pixi_home.mkdir(parents=True, exist_ok=True)
     os.environ["PIXI_HOME"] = str(pixi_home)
     pixi_bin_dir = pixi_home / "bin"
     os.environ["PATH"] = str(pixi_bin_dir) + os.pathsep + os.environ.get("PATH", "")
-    if not (pixi_bin_dir/"pixi").exists():
+
+    pixi_bin_name: str = "pixi" if os_name != "windows" else "pixi.EXE"
+    if not (pixi_bin_dir / pixi_bin_name).exists():
         pixi_install_script: Path = pixi_home / "pixi_install.sh"
-        run(
-            [
-                "curl",
-                "-fsSL",
-                "https://pixi.sh/install.sh",
-                "-o",
-                str(pixi_install_script),
-            ]
-        )
-        run(
-            [
-                "/bin/sh",
-                str(pixi_install_script),
-            ]
-        )
+        if os_name == "windows":
+
+            # Use PowerShell to install pixi on Windows
+            run(
+                [
+                    "powershell",
+                    "-NoProfile",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-Command",
+                    "iwr -UseBasicParsing https://pixi.sh/install.ps1 | iex",
+                ],
+                env={"PIXI_HOME": str(pixi_home)},
+            )
+        else:
+            run(
+                [
+                    "curl",
+                    "-fsSL",
+                    "https://pixi.sh/install.sh",
+                    "-o",
+                    str(pixi_install_script),
+                ]
+            )
+            run(
+                [
+                    "/bin/sh",
+                    str(pixi_install_script),
+                ],
+                env={"PIXI_HOME": str(pixi_home)},
+            )
         del pixi_install_script
-    # Required executables (paths recorded), always use internal pixi for build
+    # Select pixi executable to use for subsequent operations
+    pixi_exec = str(pixi_bin_dir / pixi_bin_name)
+    # Required executables (paths recorded)
     platform_pixi_packages = ["doxygen", "ninja", "cmake"]
     if os_name == "linux":
         platform_pixi_packages += "patchelf"
 
-    all_installed=True
+    all_installed = True
     for ppp in platform_pixi_packages:
-        if not (pixi_bin_dir/ppp).is_file():
-            all_installed=False
+        if not (pixi_bin_dir / ppp).is_file():
+            all_installed = False
     if not all_installed:
         run(
             [
-                str(pixi_bin_dir / "pixi"),
+                pixi_exec,
                 "global",
                 "install",
             ]
             + platform_pixi_packages
         )
 
-    doxygen_exec = give_relative_path(pixi_bin_dir/"doxygen", build_dir_root)
-    ninja_exec = give_relative_path(pixi_bin_dir/"ninja", build_dir_root)
-    cmake_exec = give_relative_path(pixi_bin_dir/"cmake", build_dir_root)
+    doxygen_exec = give_relative_path(pixi_bin_dir / "doxygen", build_dir_root)
+    ninja_exec = give_relative_path(pixi_bin_dir / "ninja", build_dir_root)
+    cmake_exec = give_relative_path(pixi_bin_dir / "cmake", build_dir_root)
 
     _ipp_dir_path: Path = Path(__file__).resolve().parent.parent
     ipp_latest_tag: str = get_git_id(
