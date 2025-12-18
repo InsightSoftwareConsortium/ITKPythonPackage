@@ -92,7 +92,9 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cmake_options=None):
                     "SKBUILD:BOOL": "ON",
                     "PY_SITE_PACKAGES_PATH:PATH": ".",
                     "CMAKE_BUILD_TYPE:STRING": "Release",
-                    "CMAKE_MAKE_PROGRAM:FILEPATH": f"{ninja_executable}",
+                    # "CMAKE_MAKE_PROGRAM:FILEPATH": f"{self.package_env_config[
+                    #     'NINJA_EXECUTABLE'
+                    # ]}",
                     "ITK_DIR:PATH": f"{itk_build_path}",
                     "WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING": "PythonWheel",
                     "SWIG_EXECUTABLE:FILEPATH": f"{itk_build_path}/Wrapping/Generators/SwigInterface/swig/bin/swig.exe",

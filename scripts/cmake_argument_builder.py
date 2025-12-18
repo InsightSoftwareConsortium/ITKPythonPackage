@@ -3,6 +3,10 @@ from __future__ import annotations
 from typing import Dict, Iterable, Iterator, Mapping, MutableMapping, Tuple
 
 
+def drop_quotes(s: str) -> str:
+    return str(s).strip('"')
+
+
 class CMakeArgumentBuilder:
     """
     Utility to manage CMake-style key/value definitions and render them as
@@ -64,7 +68,7 @@ class CMakeArgumentBuilder:
         Returns a list like: ['-D<KEY>=<VALUE>', ...]
         where <KEY> may contain a CMake type suffix (e.g., ':STRING').
         """
-        return [f"-D{k}={v}" for k, v in self._defs.items()]
+        return [f"""-D{k}='{drop_quotes(v)}'""" for k, v in self._defs.items()]
 
     def getPythonBuildCommandLineArguments(self) -> list[str]:
         """
@@ -75,7 +79,7 @@ class CMakeArgumentBuilder:
         where <KEY> may contain a CMake type suffix (e.g., ':STRING').
         """
         prefix = "--config-setting=cmake.define."
-        return [f"{prefix}{k}={v}" for k, v in self._defs.items()]
+        return [f'{prefix}{k}="{drop_quotes(v)}"' for k, v in self._defs.items()]
 
 
 __all__ = ["CMakeArgumentBuilder"]

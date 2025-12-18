@@ -171,6 +171,7 @@ def main() -> None:
         SCRIPT_DIR=SCRIPT_DIR,
         PACKAGE_ENV_FILE=PACKAGE_ENV_FILE,
         build_dir_root=build_dir_root,
+        itk_git_tag=args.itk_git_tag,
     )
     _set_os_environ(build_dir_root)
 

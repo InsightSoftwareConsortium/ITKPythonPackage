@@ -238,7 +238,7 @@ class BuildPythonInstanceBase(ABC):
             cmake_superbuild_argumets.update(self.cmake_cmdline_definitions.items())
 
         cmd = [
-            self.package_env_config["CMAKE_EXECUTABLE"],
+            "cmake",
             "-G",
             "Ninja",
         ]
@@ -259,10 +259,10 @@ class BuildPythonInstanceBase(ABC):
                 # f"-j{self.build_node_cpu_count}",
                 # f"-l{self.build_node_cpu_count}",
                 # "-C",
-                self.package_env_config["CMAKE_EXECUTABLE"],
+                "cmake",
                 "--build",
                 str(self.package_env_config["IPP_SUPERBUILD_BINARY_DIR"]),
-            ]
+            ],
         )
 
     def fixup_wheels(self, lib_paths: str = ""):
@@ -878,6 +878,7 @@ class BuildPythonInstanceBase(ABC):
     def echo_check_call(
         self,
         cmd: list[str | Path] | tuple[str | Path] | str | Path,
+        use_pixi_env: bool = True,
         **kwargs: dict,
     ) -> int:
         """Print the command then run subprocess.check_call.
@@ -891,19 +892,27 @@ class BuildPythonInstanceBase(ABC):
         """
 
         pixi_environment: str = self.get_pixi_environment_name()
-        if pixi_environment != "macos":
-            print(f"$ pixi run {pixi_environment}")
+        pixi_executable: Path = self.package_env_config["PIXI_EXECUTABLE"]
         pixi_run_preamble: list[str] = []
-        env = {"PIXI_HOME": str(self.build_dir_root / ".pixi")}
-        if pixi_environment:
+        pixi_run_dir: Path = self.build_dir_root / "build"
+        pixi_env: dict[str, str] = os.environ.copy()
+        pixi_env.update(
+            {
+                "PIXI_HOME": str(pixi_run_dir / ".pixi"),
+                "TEMP": "C:\Temp",
+                "TMP": "C:\Temp",
+            }
+        )
+        if pixi_environment and use_pixi_env:
             pixi_run_preamble = [
-                str(self.build_dir_root / "build" / ".pixi" / "bin" / "pixi"),
+                str(pixi_executable),
                 "run",
                 "-e",
                 pixi_environment,
+                "--",
             ]
 
-            # convert all items to strings (i.e. Path() to str)
+        # convert all items to strings (i.e. Path() to str)
         cmd = pixi_run_preamble + [str(c) for c in cmd]
         # Prepare a friendly command-line string for display
         try:
@@ -913,23 +922,29 @@ class BuildPythonInstanceBase(ABC):
                 display_cmd = str(cmd)
         except Exception as e:
             display_cmd = str(cmd)
-        print(f">>Start Running: {display_cmd} in {Path.cwd()}")
+        print(f">>Start Running: cd {pixi_run_dir} && {display_cmd}")
         print("^" * 60)
         print(cmd)
         print("^" * 60)
         print(kwargs)
         print("^" * 60)
         process_completion_info: subprocess.CompletedProcess = (
-            run_commandLine_subprocess(
-                cmd, env=env, cwd=self.package_env_config["IPP_SOURCE_DIR"], **kwargs
-            )
+            run_commandLine_subprocess(cmd, env=pixi_env, cwd=pixi_run_dir, **kwargs)
         )
         cmd_return_status: int = process_completion_info.returncode
         print("^" * 60)
         print(f"<<Finished Running: cmd_return_status={cmd_return_status}")
         print(" ====== stdout =====")
-        print(process_completion_info.stdout.decode("utf-8"))
+        stdout_val = process_completion_info.stdout
+        if isinstance(stdout_val, bytes):
+            print(stdout_val.decode("utf-8"))
+        else:
+            print(stdout_val)
         print(" ====== stderr =====")
-        print(process_completion_info.stderr.decode("utf-8"))
+        stderr_val = process_completion_info.stderr
+        if isinstance(stderr_val, bytes):
+            print(stderr_val.decode("utf-8"))
+        else:
+            print(stderr_val)
         print(" ===================")
         return cmd_return_status

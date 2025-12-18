@@ -21,6 +21,7 @@ import argparse
 import os
 import re
 import shutil
+import filecmp
 import subprocess
 import sys
 from pathlib import Path
@@ -53,7 +54,6 @@ def git_describe_to_pep440(desc: str) -> str:
     6 local info not used in version ordering. I.e. ignored by package resolution rules
     """
     desc = desc.strip()
-    dirty = False
     semver_format = "0.0.0"
 
     m = re.match(
@@ -125,31 +125,43 @@ def parse_kv_overrides(pairs: list[str]) -> dict[str, str]:
     return result
 
 
-def get_git_id(repo_dir: Path, backup_version: str = "v0.0.0") -> str | None:
+def get_git_id(
+    repo_dir: Path, pixi_exec_path, env, backup_version: str = "v0.0.0"
+) -> str | None:
     # 1. exact tag
     try:
-        tag = run_commandLine_subprocess(
-            ["git", "describe", "--tags", "--exact-match"], cwd=repo_dir
-        ).stdout.strip()
-        if tag:
-            return tag
+        run_result = run_commandLine_subprocess(
+            ["git", "describe", "--tags", "--exact-match"],
+            cwd=repo_dir,
+            env=env,
+            check=False,
+        )
+
+        if run_result.returncode == 0:
+            return run_result.stdout.strip()
     except subprocess.CalledProcessError:
         pass
     # 2. branch
     try:
-        branch = run_commandLine_subprocess(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=repo_dir
-        ).stdout.strip()
-        if branch and branch != "HEAD":
+        run_result = run_commandLine_subprocess(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=repo_dir,
+            env=env,
+        )
+        branch = run_result.stdout.strip()
+        if run_result.returncode == 0 and branch != "HEAD":
             return branch
     except subprocess.CalledProcessError:
         pass
     # 3. short hash
     try:
-        short_version = run_commandLine_subprocess(
-            ["git", "rev-parse", "--short", "HEAD"], cwd=repo_dir
-        ).stdout.strip()
-        if short_version and short_version != "HEAD":
+        run_result = run_commandLine_subprocess(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=repo_dir,
+            env=env,
+        )
+        short_version = run_result.stdout.strip()
+        if run_result.returncode == 0 and short_version != "HEAD":
             return short_version
     except subprocess.CalledProcessError:
         pass
@@ -162,25 +174,46 @@ def get_git_id(repo_dir: Path, backup_version: str = "v0.0.0") -> str | None:
             )
             return backup_version
         print(f"ERROR: {repo_dir} is not a primary git repository")
-        return backup_version
+    return backup_version
 
 
 def compute_itk_package_version(
-    itk_dir: Path, itk_git_tag: str, ipp_latest_tag: str
+    itk_dir: Path, itk_git_tag: str, pixi_exec_path, env
 ) -> str:
     # Try to compute from git describe
     try:
-        run_commandLine_subprocess(["git", "fetch", "--tags"], cwd=itk_dir)
+        run_commandLine_subprocess(
+            ["git", "fetch", "--tags"],
+            cwd=itk_dir,
+            env=env,
+        )
         try:
-            run_commandLine_subprocess(["git", "checkout", itk_git_tag], cwd=itk_dir)
+            run_commandLine_subprocess(
+                ["git", "checkout", itk_git_tag],
+                cwd=itk_dir,
+                env=env,
+            )
         except Exception as e:
             print(
                 f"WARNING: Failed to checkout {itk_git_tag}, reverting to 'main': {e}"
             )
             itk_git_tag = "main"
-            run_commandLine_subprocess(["git", "checkout", itk_git_tag], cwd=itk_dir)
+            run_commandLine_subprocess(
+                ["git", "checkout", itk_git_tag],
+                cwd=itk_dir,
+                env=env,
+            )
         desc = run_commandLine_subprocess(
-            ["git", "describe", "--tags", "--long", "--dirty", "--always"], cwd=itk_dir
+            [
+                "git",
+                "describe",
+                "--tags",
+                "--long",
+                "--dirty",
+                "--always",
+            ],
+            cwd=itk_dir,
+            env=env,
         ).stdout.strip()
         version = git_describe_to_pep440(desc)
     except subprocess.CalledProcessError:
@@ -234,7 +267,7 @@ def resolve_oci_exe(env: dict[str, str]) -> str:
     if env.get("OCI_EXE"):
         return env["OCI_EXE"]
     for cand in ("docker", "podman", "nerdctl"):
-        if shutil.which(cand):  # NOTE ALWAYS RETURNS NONE ON WINDOWS
+        if shutil.which(cand):  # NOTE ALWAYS RETURNS NONE ON WINDOWS before 3.12
             return cand
     # Default to docker name if nothing found
     return "docker"
@@ -268,7 +301,7 @@ def give_relative_path(bin_exec: Path, build_dir_root: Path) -> str:
     bin_exec = Path(bin_exec).resolve()
     build_dir_root = Path(build_dir_root).resolve()
     if bin_exec.is_relative_to(build_dir_root):
-        return "${BUILD_DIR_ROOT}/" + str(bin_exec.relative_to(build_dir_root))
+        return "${BUILD_DIR_ROOT}" + os.sep + str(bin_exec.relative_to(build_dir_root))
     return str(bin_exec)
 
 
@@ -340,7 +373,9 @@ def generate_build_environment(argv: list[str]) -> int:
         shutil.copyfile(build_env_report, backup)
 
     # Merge environments per priority
-    env: dict[str, str] = dict(os.environ)
+    # If you pass env=..., you must include the full environment (use os.environ.copy()),
+    # otherwise you’ll lose PATH and everything breaks.
+    env: dict[str, str] = os.environ.copy()
     if reference_env_report:
         env_from_file = read_env_file(Path(reference_env_report), build_dir_root)
         env_from_file.update(
@@ -353,9 +388,11 @@ def generate_build_environment(argv: list[str]) -> int:
             env.pop(k, None)
         else:
             env[k] = v
+            os.environ[k] = v
 
     # Platform detection
     os_name, arch = detect_platform()
+    binary_ext: str = ".exe" if os_name == "windows" else ""
 
     build_dir_path.parent.mkdir(parents=True, exist_ok=True)
     pixi_home = build_dir_path / ".pixi"
@@ -363,26 +400,36 @@ def generate_build_environment(argv: list[str]) -> int:
     os.environ["PIXI_HOME"] = str(pixi_home)
     pixi_bin_dir = pixi_home / "bin"
     os.environ["PATH"] = str(pixi_bin_dir) + os.pathsep + os.environ.get("PATH", "")
+    os.environ["PIXI_HOME"] = str(pixi_home)
+    env["PIXI_HOME"] = str(pixi_home)
 
-    pixi_bin_name: str = "pixi" if os_name != "windows" else "pixi.EXE"
-    if not (pixi_bin_dir / pixi_bin_name).exists():
-        pixi_install_script: Path = pixi_home / "pixi_install.sh"
+    pixi_bin_name: str = "pixi" + binary_ext
+    # Attempt to find an existing pixi binary on the system first (cross-platform)
+    pixi_exec_path: Path = pixi_bin_dir / pixi_bin_name
+
+    # If not found, we will install into the local build .pixi
+    if pixi_exec_path.exists():
+        print("Previous install of pixi will be used.")
+    else:
         if os_name == "windows":
 
             # Use PowerShell to install pixi on Windows
-            run_commandLine_subprocess(
+            result = run_commandLine_subprocess(
                 [
                     "powershell",
                     "-NoProfile",
                     "-ExecutionPolicy",
                     "Bypass",
                     "-Command",
-                    "iwr -UseBasicParsing https://pixi.sh/install.ps1 | iex",
+                    "irm -UseBasicParsing https://pixi.sh/install.ps1 | iex",
                 ],
-                env={"PIXI_HOME": str(pixi_home)},
+                env=env,
             )
+            if result.returncode != 0:
+                raise RuntimeError(f"Failed to install pixi: {result.stderr}")
         else:
-            run_commandLine_subprocess(
+            pixi_install_script: Path = pixi_home / "pixi_install.sh"
+            result = run_commandLine_subprocess(
                 [
                     "curl",
                     "-fsSL",
@@ -391,12 +438,25 @@ def generate_build_environment(argv: list[str]) -> int:
                     str(pixi_install_script),
                 ]
             )
-            run_commandLine_subprocess(
+            if result.returncode != 0:
+                raise RuntimeError(
+                    f"Failed to download {pixi_install_script}: {result.stderr}"
+                )
+
+            result = run_commandLine_subprocess(
                 [
                     "/bin/sh",
                     str(pixi_install_script),
                 ],
-                env={"PIXI_HOME": str(pixi_home)},
+                env=env,
+            )
+            if result.returncode != 0:
+                raise RuntimeError(f"Failed to install pixi: {result.stderr}")
+            del pixi_install_script
+
+        if not pixi_exec_path.exists():
+            raise RuntimeError(
+                f"Failed to install {pixi_exec_path} pixi into {pixi_bin_dir}"
             )
 
     # Copy pixi.toml and pixi.index to build_dir_path (only if different)
@@ -408,29 +468,30 @@ def generate_build_environment(argv: list[str]) -> int:
     # Required executables (paths recorded)
     platform_pixi_packages = ["doxygen", "ninja", "cmake"]
     if os_name == "linux":
-        platform_pixi_packages += "patchelf"
+        platform_pixi_packages += ["patchelf"]
+    if os_name == "windows":
+        # Git is not always available in powershell by default
+        platform_pixi_packages += ["git"]
 
-    all_installed = True
+    missing_packages: list[str] = []
+
     for ppp in platform_pixi_packages:
-        if not (pixi_bin_dir / ppp).is_file():
-            all_installed = False
-    if not all_installed:
+        full_path: Path = pixi_bin_dir / (ppp + binary_ext)
+        if not full_path.is_file():
+            missing_packages.append(ppp)
+    if len(missing_packages) > 0:
         run_commandLine_subprocess(
             [
-                pixi_exec,
+                pixi_exec_path,
                 "global",
                 "install",
             ]
             + platform_pixi_packages
         )
 
-    doxygen_exec = give_relative_path(pixi_bin_dir / "doxygen", build_dir_root)
-    ninja_exec = give_relative_path(pixi_bin_dir / "ninja", build_dir_root)
-    cmake_exec = give_relative_path(pixi_bin_dir / "cmake", build_dir_root)
-
     _ipp_dir_path: Path = Path(__file__).resolve().parent.parent
     ipp_latest_tag: str = get_git_id(
-        _ipp_dir_path, env.get("ITKPYTHONPACKAGE_TAG", "v0.0.0")
+        _ipp_dir_path, pixi_exec_path, env, env.get("ITKPYTHONPACKAGE_TAG", "v0.0.0")
     )
 
     itk_git_tag = env.get("ITK_GIT_TAG", ipp_latest_tag)
@@ -441,34 +502,43 @@ def generate_build_environment(argv: list[str]) -> int:
     if not itk_source_dir.exists():
         itk_source_dir.parent.mkdir(parents=True, exist_ok=True)
         debug(f"Cloning ITK into {itk_source_dir}...")
-        run_commandLine_subprocess(
+        run_result = run_commandLine_subprocess(
             [
                 "git",
                 "clone",
                 "https://github.com/InsightSoftwareConsortium/ITK.git",
                 str(itk_source_dir),
             ],
-            cwd=str(_ipp_dir_path),
+            cwd=_ipp_dir_path,
+            env=env,
         )
+        if run_result.returncode != 0:
+            raise RuntimeError(f"Failed to clone ITK: {run_result.stderr}")
 
     run_commandLine_subprocess(
-        ["git", "fetch", "--tags", "origin"], cwd=str(itk_source_dir)
+        ["git", "fetch", "--tags", "origin"],
+        cwd=itk_source_dir,
+        env=env,
     )
     try:
         run_commandLine_subprocess(
-            ["git", "checkout", itk_git_tag], cwd=str(itk_source_dir)
+            ["git", "checkout", itk_git_tag],
+            cwd=itk_source_dir,
+            env=env,
         )
     except subprocess.CalledProcessError:
         # try fetch then checkout
         print(f"WARNING: Failed to checkout {itk_git_tag}, reverting to 'main':")
         itk_git_tag = "main"
         run_commandLine_subprocess(
-            ["git", "checkout", itk_git_tag], cwd=str(itk_source_dir)
+            ["git", "checkout", itk_git_tag],
+            cwd=itk_source_dir,
+            env=env,
         )
 
     itk_package_version = env.get(
         "ITK_PACKAGE_VERSION",
-        compute_itk_package_version(itk_source_dir, itk_git_tag, ipp_latest_tag),
+        compute_itk_package_version(itk_source_dir, itk_git_tag, pixi_exec_path, env),
     )
 
     # Manylinux/docker bits for Linux
@@ -490,9 +560,9 @@ def generate_build_environment(argv: list[str]) -> int:
     cc_default = None
     cxx_default = None
     if os_name == "darwin":
-        process_output_CXX: subprocess.CompletedProcess = run_commandLine_subprocess(
+        process_output_cxx: subprocess.CompletedProcess = run_commandLine_subprocess(
             [
-                str(pixi_bin_dir / "pixi"),
+                pixi_exec_path,
                 "run",
                 "-e",
                 "macos",
@@ -501,13 +571,13 @@ def generate_build_environment(argv: list[str]) -> int:
                 "-c",
                 "which $CXX",
             ],
-            cwd=_ipp_dir_path,
-            env={"PIXI_HOME": str(pixi_home)},
+            cwd=build_dir_path,
+            env=env,
         )
-        cxx_default = process_output_CXX.stdout
-        process_output_CC: subprocess.CompletedProcess = run_commandLine_subprocess(
+        cxx_default = process_output_cxx.stdout
+        process_output_cc: subprocess.CompletedProcess = run_commandLine_subprocess(
             [
-                str(pixi_bin_dir / "pixi"),
+                pixi_exec_path,
                 "run",
                 "-e",
                 "macos",
@@ -516,14 +586,28 @@ def generate_build_environment(argv: list[str]) -> int:
                 "-c",
                 "which $CC",
             ],
-            cwd=_ipp_dir_path,
-            env={"PIXI_HOME": str(pixi_home)},
+            cwd=build_dir_path,
+            env=env,
         )
-        cc_default = process_output_CC.stdout
+        cc_default = process_output_cc.stdout
     if os_name == "windows":
-        # TODO: Hardcoded for now, need more sophisticated way to figure these out
-        cc_default = "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.38.33130/bin/Hostx86/x86/cl.exe"
-        cxx_default = "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.38.33130/bin/Hostx86/x86/cl.exe"
+        process_output_cxx: subprocess.CompletedProcess = run_commandLine_subprocess(
+            [
+                pixi_exec_path,
+                "run",
+                "-e",
+                "windows",
+                "--",
+                "which",
+                "cl.exe",
+            ],
+            cwd=build_dir_path,
+            env=env,
+        )
+        cxx_default = Path(
+            process_output_cxx.stdout.strip().replace('"', "").replace("/c/", "C:/")
+        ).as_posix()
+        cc_default = cxx_default
 
     # ITKPythonPackage origin/tag
     itkpp_org = env.get("ITKPYTHONPACKAGE_ORG", "InsightSoftwareConsortium")
@@ -541,9 +625,18 @@ def generate_build_environment(argv: list[str]) -> int:
 
     relative_itk_source_dir = give_relative_path(itk_source_dir, build_dir_root)
 
-    lines: list[str] = []
+    doxygen_exec = give_relative_path(
+        pixi_bin_dir / ("doxygen" + binary_ext), build_dir_root
+    )
+    ninja_exec = give_relative_path(
+        pixi_bin_dir / ("ninja" + binary_ext), build_dir_root
+    )
+    cmake_exec = give_relative_path(
+        pixi_bin_dir / ("cmake" + binary_ext), build_dir_root
+    )
+    pixi_exec = give_relative_path(pixi_exec_path, build_dir_root)
 
-    lines += [
+    lines: list[str] = [
         "################################################",
         "################################################",
         "###  ITKPythonPackage Environment Variables  ###",
@@ -602,8 +695,9 @@ def generate_build_environment(argv: list[str]) -> int:
         "# - 'USE_CCACHE': Option to indicate that ccache should be used",
         "#   =1 <- Set cmake settings to use ccache for acclerating rebuilds, 0 <- no ccache usage",
         f"USE_CCACHE={use_ccache}",
+        f"PIXI_EXECUTABLE={pixi_exec}",
         f"DOXYGEN_EXECUTABLE={doxygen_exec}",
-        f"NINJA_EXECUTABLE={ninja_exec}",
+        f"NINJA_EXECUTABLE=ninja.exe",
         f"CMAKE_EXECUTABLE={cmake_exec}",
     ]
 
@@ -650,19 +744,16 @@ def generate_build_environment(argv: list[str]) -> int:
         ]
         # Include CC_DEFAULT/CXX_DEFAULT hints
         if len(cc_default) > 0:
-            lines.append(f"CC_DEFAULT={cc_default}")
-            lines.append(f"CC={cc_default}")
-        else:
-            lines.append("## - CC_DEFAULT=")
+            env["CC"] = cc_default
         if len(cxx_default) > 0:
-            lines.append(f"CXX_DEFAULT={cxx_default}")
-            lines.append(f"CXX={cxx_default}")
-        else:
-            lines.append("## - CXX_DEFAULT=")
+            env["CXX"] = cxx_default
         for var in build_vars:
             val = env.get(var, "")
             if val:
-                lines.append(f"{var}={val}")
+                if " " in val:
+                    lines.append(f'{var}="{val}"')
+                else:
+                    lines.append(f"{var}={val}")
             else:
                 lines.append(f"## - {var}=")
 
@@ -682,8 +773,8 @@ def generate_build_environment(argv: list[str]) -> int:
         lines += [
             "",
             "# Windows settings",
-            f"PIXI_HOME={pixi_home}",
-            f"PATH={new_path}",
+            f'PIXI_HOME="{pixi_home}"',
+            f'PATH="{new_path}"',
         ]
 
     out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")

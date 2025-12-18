@@ -220,15 +220,22 @@ def which_required(name: str) -> str:
 
 
 def run_commandLine_subprocess(
-    cmd: list[str], cwd: Path | None = None, env: dict = None, check: bool = True
+    cmd: list[str | Path], cwd: Path | None = None, env: dict = None, check: bool = True
 ) -> subprocess.CompletedProcess:
+    cmd = [str(x) for x in cmd]
     print(f"Running >>>>>: {' '.join(cmd)}  ; # in cwd={cwd} with check={check}")
     completion_info = subprocess.run(
         cmd,
         cwd=str(cwd) if cwd else None,
         env=env if env else None,
-        check=check,
+        check=False,
         capture_output=True,
         text=True,
     )
+    if completion_info.returncode != 0 and check:
+        error_msg = f"Command failed with exit code {completion_info.returncode}: {' '.join(cmd)}"
+        if completion_info.stderr:
+            error_msg += f"\nStderr:\n{completion_info.stderr}"
+        raise RuntimeError(error_msg)
+
     return completion_info

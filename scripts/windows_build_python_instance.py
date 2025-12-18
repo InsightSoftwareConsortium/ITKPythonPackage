@@ -39,12 +39,13 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         # The interpreter is provided; ensure basic tools are available
         self.venv_paths()
         self.update_venv_itk_build_configurations()
-        self.cmake_compiler_configurations.set(
-            "CMAKE_MAKE_PROGRAM:FILEPATH",
-            f"{self.package_env_config['NINJA_EXECUTABLE']}",
-        )
+        # Do not set path to Ninja on
+        # self.cmake_compiler_configurations.set(
+        #     "CMAKE_MAKE_PROGRAM:FILEPATH",
+        #     f"{str(Path(self.package_env_config['NINJA_EXECUTABLE']))}",
+        # )
         target_arch = self.package_env_config["ARCH"]
-        itk_binary_build_name: str = (
+        itk_binary_build_name: Path = (
             self.build_dir_root
             / "build"
             / f"ITK-{self.py_env}-{self.get_pixi_environment_name()}_{target_arch}"
@@ -182,12 +183,17 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             Path(self.build_dir_root) / f"venv-{python_major}.{python_minor}"
         )
         if not venv_base_dir.exists():
-            self.echo_check_call([venv_executable, str(venv_base_dir)])
+            self.echo_check_call(
+                [venv_executable, str(venv_base_dir)], use_pixi_env=False
+            )
             local_pip_executable = venv_base_dir / "Scripts" / "pip.exe"
 
             # Install required tools into each venv
-            self._pip_uninstall_itk_wildcard(self.venv_info_dict["pip_executable"])
-            self.echo_check_call([local_pip_executable, "install", "--upgrade", "pip"])
+            self._pip_uninstall_itk_wildcard(local_pip_executable)
+            self.echo_check_call(
+                [local_pip_executable, "install", "--upgrade", "pip"],
+                use_pixi_env=False,
+            )
             self.echo_check_call(
                 [
                     local_pip_executable,
@@ -199,7 +205,8 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                     #  os-specific tools below
                     "delvewheel",
                     "pkginfo",
-                ]
+                ],
+                use_pixi_env=False,
             )
             # Install dependencies
             self.echo_check_call(
@@ -212,7 +219,8 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                         self.package_env_config["IPP_SOURCE_DIR"]
                         / "requirements-dev.txt"
                     ),
-                ]
+                ],
+                use_pixi_env=False,
             )
 
         pip_executable = venv_base_dir / "Scripts" / "pip.exe"
