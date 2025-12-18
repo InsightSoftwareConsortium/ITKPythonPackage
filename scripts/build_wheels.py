@@ -18,7 +18,7 @@ from pathlib import Path
 
 
 def _set_main_variable_names(
-    SCRIPT_DIR: Path, PACKAGE_ENV_FILE: Path, build_dir_root: Path
+    SCRIPT_DIR: Path, PACKAGE_ENV_FILE: Path, build_dir_root: Path, itk_git_tag: str
 ) -> dict[str, str | Path | None]:
     PACKAGE_ENV_FILE.parent.mkdir(parents=True, exist_ok=True)
     # Primarily needed for docker-cross to fill in CMAKE_EXECUTABLE, NINJA_EXECUTABLE, and DOXYGEN_EXECUTABLE
@@ -28,6 +28,7 @@ def _set_main_variable_names(
         str(PACKAGE_ENV_FILE),
         "--build-dir-root",
         str(build_dir_root),
+        f"ITK_GIT_TAG={itk_git_tag}",
     ]
     if not PACKAGE_ENV_FILE.exists():
         generate_build_environment_update_args.extend(["-i", str(PACKAGE_ENV_FILE)])
@@ -144,6 +145,12 @@ def main() -> None:
         type=str,
         default=f"{SCRIPT_DIR}/../",
         help="The root of the build resources.",
+    )
+    parser.add_argument(
+        "--itk-git-tag",
+        type=str,
+        default=f"main",
+        help="The tag of ITK to build.",
     )
 
     args = parser.parse_args()
