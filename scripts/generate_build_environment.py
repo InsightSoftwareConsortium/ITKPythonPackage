@@ -272,6 +272,27 @@ def give_relative_path(bin_exec: Path, build_dir_root: Path) -> str:
     return str(bin_exec)
 
 
+def safe_copy_if_different(src: Path, dst: Path) -> None:
+    """Copy file only if destination is missing or contents differ.
+
+    This avoids unnecessary overwrites and timestamp churn when files are identical.
+    """
+    src = Path(src)
+    dst = Path(dst)
+    if not dst.exists():
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src, dst)
+        return
+    try:
+        same = filecmp.cmp(src, dst, shallow=False)
+    except Exception as e:
+        # On any comparison failure, fall back to copying to be safe
+        same = False
+        print(f"WARNING: Failed to compare {src} to {dst}: {e}")
+    if not same:
+        shutil.copyfile(src, dst)
+
+
 def generate_build_environment(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("pairs", nargs="*")
@@ -377,9 +398,13 @@ def generate_build_environment(argv: list[str]) -> int:
                 ],
                 env={"PIXI_HOME": str(pixi_home)},
             )
-        del pixi_install_script
-    # Select pixi executable to use for subsequent operations
-    pixi_exec = str(pixi_bin_dir / pixi_bin_name)
+
+    # Copy pixi.toml and pixi.index to build_dir_path (only if different)
+    pixi_toml_path = Path(__file__).resolve().parent.parent / "resources" / "pixi.toml"
+    pixi_index_path = Path(__file__).resolve().parent.parent / "resources" / "pixi.lock"
+    safe_copy_if_different(pixi_toml_path, build_dir_path / "pixi.toml")
+    safe_copy_if_different(pixi_index_path, build_dir_path / "pixi.lock")
+
     # Required executables (paths recorded)
     platform_pixi_packages = ["doxygen", "ninja", "cmake"]
     if os_name == "linux":
