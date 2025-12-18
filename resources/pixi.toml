@@ -25,7 +25,7 @@ platforms = ["linux-64", "linux-aarch64", "osx-64", "osx-arm64", "win-64"]
 
 # Build tooling shared by all platforms
 [feature.build-dev-tools.dependencies]
-cmake = ">=4.2.0,<5"
+cmake = ">=3.30,<4"
 doxygen = ">=1.13.2,<2"
 ninja = ">=1.13.2,<2"
 pkginfo = ">=1.12.1.2,<2"
