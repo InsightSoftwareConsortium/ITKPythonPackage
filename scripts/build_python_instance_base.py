@@ -70,6 +70,10 @@ class BuildPythonInstanceBase(ABC):
         self.itk_module_deps = itk_module_deps
 
         self._use_tbb = "ON"
+        self._tbb_dir = (
+            self.build_dir_root / "build" / "oneTBB-prefix" / "lib" / "cmake" / "TBB"
+        )
+
         self._build_type = "Release"
         # Unified place to collect cmake -D definitions for this instance
         self.cmake_cmdline_definitions: CMakeArgumentBuilder = CMakeArgumentBuilder()
@@ -136,7 +140,7 @@ class BuildPythonInstanceBase(ABC):
                 "ITK_WRAP_DOC:BOOL": "ON",
                 "DOXYGEN_EXECUTABLE:FILEPATH": f"{self.package_env_config['DOXYGEN_EXECUTABLE']}",
                 "Module_ITKTBB:BOOL": f"{self._use_tbb}",
-                "TBB_DIR:PATH": f'{self.package_env_config.get("TBB_DIR", None)}',
+                "TBB_DIR:PATH": f"{self._tbb_dir}",
                 # Python settings
                 "SKBUILD:BOOL": "ON",
             }
@@ -176,6 +180,9 @@ class BuildPythonInstanceBase(ABC):
                 "Python3_SABI_LIBRARY:FILEPATH",
                 f"{self.venv_info_dict['python_library']}",
             )
+        self.cmake_itk_source_build_configurations.set(
+            "Python3_ROOT_DIR:PATH", f"{self.venv_info_dict['python_root_dir']}"
+        )
 
     def run(self) -> None:
         """Run the full build flow for this Python instance."""

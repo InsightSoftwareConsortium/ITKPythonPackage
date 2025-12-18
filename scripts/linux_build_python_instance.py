@@ -67,13 +67,6 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         # ### Setup build tools
         self._build_type = "Release"
         self._use_tbb: str = "ON"
-        self._tbb_dir = (
-            self.package_env_config["IPP_SOURCE_DIR"]
-            / "oneTBB-prefix"
-            / "lib"
-            / "cmake"
-            / "TBB"
-        )
         # The interpreter is provided; ensure basic tools are available
         self.venv_paths()
         self.update_venv_itk_build_configurations()

@@ -714,9 +714,6 @@ def generate_build_environment(argv: list[str]) -> int:
             f"MANYLINUX_IMAGE_NAME={manylinux_image_name}",
             f"CONTAINER_SOURCE={container_source}",
         ]
-        tbb_dir = env.get("TBB_DIR", None)
-        if tbb_dir:
-            lines += [f"TBB_DIR={tbb_dir}"]
 
     if os_name == "darwin" or os_name == "windows":
         # Standard build flags that may be present
