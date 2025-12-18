@@ -158,28 +158,28 @@ class BuildPythonInstanceBase(ABC):
 
     def update_venv_itk_build_configurations(self) -> None:
         # TODO: Make this better later currently needs to be called after each platforms update of venv_info_dict
-        self.cmake_itk_source_build_configurations.set(
-            "Python3_EXECUTABLE:FILEPATH",
-            f"{self.venv_info_dict['python_executable']}",
-        )
-        if self.venv_info_dict["python_include_dir"]:
-            self.cmake_itk_source_build_configurations.set(
-                "Python3_INCLUDE_DIR:PATH",
-                f"{self.venv_info_dict['python_include_dir']}",
-            )
-            self.cmake_itk_source_build_configurations.set(
-                "Python3_INCLUDE_DIRS:PATH",
-                f"{self.venv_info_dict['python_include_dir']}",
-            )
-        if self.venv_info_dict["python_library"]:
-            self.cmake_itk_source_build_configurations.set(
-                "Python3_LIBRARY:FILEPATH",
-                f"{self.venv_info_dict['python_library']}",
-            )
-            self.cmake_itk_source_build_configurations.set(
-                "Python3_SABI_LIBRARY:FILEPATH",
-                f"{self.venv_info_dict['python_library']}",
-            )
+        # self.cmake_itk_source_build_configurations.set(
+        #     "Python3_EXECUTABLE:FILEPATH",
+        #     f"{self.venv_info_dict['python_executable']}",
+        # )
+        # if self.venv_info_dict["python_include_dir"]:
+        # self.cmake_itk_source_build_configurations.set(
+        #     "Python3_INCLUDE_DIR:PATH",
+        #     f"{self.venv_info_dict['python_include_dir']}",
+        # )
+        # self.cmake_itk_source_build_configurations.set(
+        #     "Python3_INCLUDE_DIRS:PATH",
+        #     f"{self.venv_info_dict['python_include_dir']}",
+        # )
+        # if self.venv_info_dict["python_library"]:
+        #     self.cmake_itk_source_build_configurations.set(
+        #         "Python3_LIBRARY:FILEPATH",
+        #         f"{self.venv_info_dict['python_library']}",
+        #     )
+        #     self.cmake_itk_source_build_configurations.set(
+        #         "Python3_SABI_LIBRARY:FILEPATH",
+        #         f"{self.venv_info_dict['python_library']}",
+        #     )
         self.cmake_itk_source_build_configurations.set(
             "Python3_ROOT_DIR:PATH", f"{self.venv_info_dict['python_root_dir']}"
         )
