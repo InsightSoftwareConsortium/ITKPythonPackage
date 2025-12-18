@@ -29,13 +29,6 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         # ### Setup build tools
         self._build_type = "Release"
         self._use_tbb: str = "ON"
-        self._tbb_dir = (
-            self.package_env_config["IPP_SOURCE_DIR"]
-            / "oneTBB-prefix"
-            / "lib"
-            / "cmake"
-            / "TBB"
-        )
         # The interpreter is provided; ensure basic tools are available
         self.venv_paths()
         self.update_venv_itk_build_configurations()
@@ -178,25 +171,46 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                 f"No virtualenv.exe matches found for Python {virtualenv_pattern}"
             )
         venv_executable = Path(all_glob_matches[0])
+        # On windows use base python interpreter, and not a virtual env
         primary_python_base_dir: Path = venv_executable.parent.parent
-        venv_base_dir = (
-            Path(self.build_dir_root) / f"venv-{python_major}.{python_minor}"
-        )
+        venv_base_dir: Path = primary_python_base_dir
+        venv_bin_path = venv_base_dir / "Scripts"
+        # venv_base_dir = (
+        #     Path(self.build_dir_root) / f"venv-{python_major}.{python_minor}"
+        # )
         if not venv_base_dir.exists():
             self.echo_check_call(
                 [venv_executable, str(venv_base_dir)], use_pixi_env=False
             )
-            local_pip_executable = venv_base_dir / "Scripts" / "pip.exe"
+
+        local_pip_executable = primary_python_base_dir / "Scripts" / "pip.exe"
+        pip_executable = primary_python_base_dir / "Scripts" / "pip.exe"
+        python_executable = primary_python_base_dir / "python.exe"
+        python_include_dir = primary_python_base_dir / "include"
+        if int(python_minor) >= 11:
+            # Stable ABI
+            python_library = primary_python_base_dir / "libs" / "python3.lib"
+        else:
+            # XXX It should be possible to query skbuild for the library dir associated
+            #     with a given interpreter.
+            xy_lib_ver = f"{python_major}{python_minor}"
+            python_library = (
+                primary_python_base_dir / "libs" / f"python{xy_lib_ver}.lib"
+            )
+
+        if venv_base_dir.exists():
 
             # Install required tools into each venv
             self._pip_uninstall_itk_wildcard(local_pip_executable)
             self.echo_check_call(
-                [local_pip_executable, "install", "--upgrade", "pip"],
+                [python_executable, "-m", "pip", "install", "--upgrade", "pip"],
                 use_pixi_env=False,
             )
             self.echo_check_call(
                 [
-                    local_pip_executable,
+                    python_executable,
+                    "-m",
+                    "pip",
                     "install",
                     "--upgrade",
                     "build",
@@ -211,7 +225,9 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             # Install dependencies
             self.echo_check_call(
                 [
-                    local_pip_executable,
+                    python_executable,
+                    "-m",
+                    "pip",
                     "install",
                     "--upgrade",
                     "-r",
@@ -223,21 +239,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                 use_pixi_env=False,
             )
 
-        pip_executable = venv_base_dir / "Scripts" / "pip.exe"
-        python_executable = venv_base_dir / "Scripts" / "python.exe"
-        python_include_dir = primary_python_base_dir / "include"
-
-        if int(python_minor) >= 11:
-            # Stable ABI
-            python_library = python_include_dir / "libs" / "python3.lib"
-        else:
-            # XXX It should be possible to query skbuild for the library dir associated
-            #     with a given interpreter.
-            xy_lib_ver = f"{python_major}{python_minor}"
-            python_library = python_include_dir / "libs" / f"python{xy_lib_ver}.lib"
-
         # Update PATH
-        venv_bin_path = venv_base_dir / "Scripts"
         self.venv_info_dict = {
             "python_executable": python_executable,
             "python_include_dir": python_include_dir,
@@ -245,13 +247,14 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             "pip_executable": pip_executable,
             "venv_bin_path": venv_bin_path,
             "venv_base_dir": venv_base_dir,
+            "python_root_dir": primary_python_base_dir,
         }
 
     def build_tarball(self):
         """Create an archive of the ITK Python package build tree (Windows).
 
         Mirrors scripts/windows-build-tarball.ps1 behavior:
-        - Remove contents of IPP\dist
+        - Remove contents of IPP/dist
         - Use 7-Zip, when present, to archive the full IPP tree into
           ITKPythonBuilds-windows.zip at the parent directory of IPP (e.g., C:\P)
         - Fallback to Python's zip archive creation if 7-Zip is unavailable
