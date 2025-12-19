@@ -70,10 +70,6 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         # The interpreter is provided; ensure basic tools are available
         self.venv_paths()
         self.update_venv_itk_build_configurations()
-        self.cmake_compiler_configurations.set(
-            "CMAKE_MAKE_PROGRAM:FILEPATH",
-            f"{self.package_env_config['NINJA_EXECUTABLE']}",
-        )
         if self.package_env_config["ARCH"] == "x64":
             target_triple = "x86_64-linux-gnu"
         elif self.package_env_config["ARCH"] in ("aarch64", "arm64"):
@@ -369,6 +365,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             "pip_executable": pip_executable,
             "venv_bin_path": venv_bin_path,
             "venv_base_dir": venv_base_dir,
+            "python_root_dir": Path(self.py_env),
         }
 
     def discover_python_venvs(

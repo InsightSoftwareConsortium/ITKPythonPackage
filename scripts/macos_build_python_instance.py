@@ -35,10 +35,6 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         # The interpreter is provided; ensure basic tools are available
         self.venv_paths()
         self.update_venv_itk_build_configurations()
-        self.cmake_compiler_configurations.set(
-            "CMAKE_MAKE_PROGRAM:FILEPATH",
-            f"{self.package_env_config['NINJA_EXECUTABLE']}",
-        )
         macosx_target = self.package_env_config.get("MACOSX_DEPLOYMENT_TARGET", "")
         if macosx_target:
             self.cmake_compiler_configurations.set(
@@ -218,6 +214,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             "pip_executable": pip_executable,
             "venv_bin_path": venv_bin_path,
             "venv_base_dir": venv_base_dir,
+            "python_root_dir": Path(self.py_env) ,
         }
 
     def discover_python_venvs(

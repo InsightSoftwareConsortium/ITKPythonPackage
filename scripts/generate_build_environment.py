@@ -697,7 +697,7 @@ def generate_build_environment(argv: list[str]) -> int:
         f"USE_CCACHE={use_ccache}",
         f"PIXI_EXECUTABLE={pixi_exec}",
         f"DOXYGEN_EXECUTABLE={doxygen_exec}",
-        f"NINJA_EXECUTABLE=ninja.exe",
+        f"NINJA_EXECUTABLE=ninja{binary_ext}",
         f"CMAKE_EXECUTABLE={cmake_exec}",
     ]
 
