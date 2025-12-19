@@ -32,6 +32,8 @@ import subprocess
 from pathlib import Path
 from typing import Iterable, List, Sequence
 
+from wheel_builder_utils import run_commandLine_subprocess
+
 DEFAULT_MACPYTHON_PREFIX = "/Library/Frameworks/Python.framework/Versions"
 
 
@@ -155,12 +157,11 @@ def create_macos_venvs(
             cmd = [str(python_exec), "-m", "venv", str(venv_dir)]
             print(f"Creating venv {venv_dir}: {' '.join(cmd)}")
 
-            subprocess.run(
-                cmd,
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+            result: subprocess.CompletedProcess = run_commandLine_subprocess(
+                    cmd, check= True,
             )
+            if result.returncode != 0:
+                raise RuntimeError(f"Failed to create venv {venv_dir}: {result.stderr}")
             created_penv.append(venv_dir)
         except subprocess.CalledProcessError as e:
             failures.append((py_dir, e.stderr.decode("utf-8", errors="replace")))
