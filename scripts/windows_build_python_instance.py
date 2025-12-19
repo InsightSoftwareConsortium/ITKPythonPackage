@@ -130,23 +130,18 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
     def fixup_wheel(self, filepath, lib_paths: str = "") -> None:
         # Windows fixup_wheel
         lib_paths = lib_paths.strip()
-        lib_paths = (
-            lib_paths + ";" if lib_paths else ""
-        ) + "C:/P/IPP/oneTBB-prefix/bin"
+        lib_paths = lib_paths + ";" if lib_paths else ""
         print(f"Library paths for fixup: {lib_paths}")
 
         delve_wheel = (
-            self.package_env_config["IPP_SOURCE_DIR"]
-            / f"venv-{self.py_env}"
-            / "Scripts"
-            / "delvewheel.exe"
+            self.venv_info_dict["python_root_dir"] / "Scripts" / "delvewheel.exe"
         )
         cmd = [
             str(delve_wheel),
             "repair",
             "--no-mangle-all",
             "--add-path",
-            lib_paths,
+            lib_paths.strip(";"),
             "--ignore-in-wheel",
             "-w",
             str(self.build_dir_root / "dist"),

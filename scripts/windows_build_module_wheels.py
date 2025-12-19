@@ -192,7 +192,7 @@ def fixup_wheel(py_envs, filepath, lib_paths: str = "", exclude_libs: str = ""):
     # delvewheel, i.e., __init__.py.
     rename_wheel_init(py_env, filepath, False)
 
-    delve_wheel = Path("C:/P/IPP") / ("venv-" + py_env) / "Scripts" / "delvewheel.exe"
+    delve_wheel = self.venv_info_dict["python_root_dir"] / "Scripts" / "delvewheel.exe"
     self.echo_check_call(
         [
             delve_wheel,
