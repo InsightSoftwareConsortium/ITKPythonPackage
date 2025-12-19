@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import copy
+import os
 from os import environ
 from pathlib import Path
 
 from build_python_instance_base import BuildPythonInstanceBase
+from macos_venv_utils import create_macos_venvs
+import shutil
 
 from wheel_builder_utils import _remove_tree
-
-from macos_venv_utils import create_macos_venvs
 
 
 class MacOSBuildPythonInstance(BuildPythonInstanceBase):
@@ -40,13 +41,14 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             self.cmake_compiler_configurations.set(
                 "CMAKE_OSX_DEPLOYMENT_TARGET:STRING", macosx_target
             )
-        target_arch = (
-            "arm64" if self.package_env_config["ARCH"] == "arm64" else "x86_64"
-        )
+
+        target_arch = self.package_env_config["ARCH"]
+
         self.cmake_compiler_configurations.set(
             "CMAKE_OSX_ARCHITECTURES:STRING", target_arch
         )
-        itk_binary_build_name: str = (
+
+        itk_binary_build_name: Path = (
             self.build_dir_root
             / "build"
             / f"ITK-{self.py_env}-{self.get_pixi_environment_name()}_{target_arch}"
@@ -77,6 +79,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         """
         base = Path(self.package_env_config["IPP_SOURCE_DIR"])
 
+        # Helper to remove arbitrary paths (files/dirs) quietly
         def rm(tree_path: Path):
             try:
                 _remove_tree(tree_path)
@@ -84,13 +87,13 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
                 pass
 
         # 1) unlink oneTBB-prefix if it's a symlink or file
-        tbb_link = base / "oneTBB-prefix"
+        tbb_prefix_dir = base / "oneTBB-prefix"
         try:
-            if tbb_link.is_symlink() or tbb_link.is_file():
-                tbb_link.unlink(missing_ok=True)  # type: ignore[arg-type]
-            elif tbb_link.exists():
+            if tbb_prefix_dir.is_symlink() or tbb_prefix_dir.is_file():
+                tbb_prefix_dir.unlink(missing_ok=True)  # type: ignore[arg-type]
+            elif tbb_prefix_dir.exists():
                 # If it is a directory (not expected), remove tree
-                rm(tbb_link)
+                rm(tbb_prefix_dir)
         except Exception:
             pass
 
@@ -103,9 +106,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             rm(p)
 
         # 4) ITK build tree and tarballs
-        target_arch = (
-            "arm64" if self.package_env_config["ARCH"] == "arm64" else "x86_64"
-        )
+        target_arch = self.package_env_config["ARCH"]
         for p in base.glob(f"ITK-*-{self.package_env_config}_{target_arch}"):
             rm(p)
 
@@ -129,32 +130,8 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
                     continue
                 rm(base / module_name)
 
-    def final_import_test(self) -> None:
-        self._final_import_test_fn(self.py_env, Path(self.dist_dir))
-
-    def fixup_wheel(self, filepath, lib_paths: str = "") -> None:
-        self.remove_apple_double_files()
-        # macOS fix-up with delocate (only needed for x86_64)
-        if self.package_env_config["ARCH"] != "arm64":
-            delocate_listdeps = (
-                self.venv_info_dict["venv_bin_path"] / "delocate-listdeps"
-            )
-            delocate_wheel = self.venv_info_dict["venv_bin_path"] / "delocate-wheel"
-            self.echo_check_call([str(delocate_listdeps), str(filepath)])
-            self.echo_check_call([str(delocate_wheel), str(filepath)])
-
     def build_tarball(self):
         self.create_posix_tarball()
-
-    def remove_apple_double_files(self):
-        try:
-            # Optional: clean AppleDouble files if tool is available
-            self.echo_check_call(
-                ["dot_clean", str(self.package_env_config["IPP_SOURCE_DIR"].name)]
-            )
-        except Exception:
-            # dot_clean may not be available; continue without it
-            pass
 
     def venv_paths(self) -> None:
         """Resolve virtualenv tool paths.
@@ -163,41 +140,56 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         # First determine if py_env is the full path to a python environment
         _command_line_pip_executable = Path(self.py_env) / "bin" / "pip3"
 
-        venv_dir = Path(self.py_env)
+        primary_python_base_dir = Path(self.py_env)
         if not _command_line_pip_executable.exists():
             venv_root_dir: Path = self.build_dir_root / "venvs"
-            _venvs_dir_list = create_macos_venvs(self.py_env, venv_root_dir)
+            _venvs_dir_list = create_macos_venvs(primary_python_base_dir, venv_root_dir)
             if len(_venvs_dir_list) != 1:
                 raise ValueError(
-                    f"Expected exactly one venv for {self.py_env}, found {_venvs_dir_list}"
+                    f"Expected exactly one venv for {primary_python_base_dir}, found {_venvs_dir_list}"
                 )
-            venv_dir = _venvs_dir_list[0]
-        python_executable = venv_dir / "bin" / "python3"
+            primary_python_base_dir = _venvs_dir_list[0]
+        python_executable = primary_python_base_dir / "bin" / "python3"
 
-        self.echo_check_call([python_executable, "-m", "pip",  "install", "--upgrade", "pip"])
-        self.echo_check_call(
-            [
-                python_executable, "-m", "pip",
-                "install",
-                "--upgrade",
-                "build",
-                "numpy",
-                "scikit-build-core",
-                #  os-specific tools below
-                "delocate",
-            ]
-        )
-        # Install dependencies
-        self.echo_check_call(
-            [
-                python_executable, "-m", "pip",
-                "install",
-                "--upgrade",
-                "-r",
-                str(self.package_env_config["IPP_SOURCE_DIR"] / "requirements-dev.txt"),
-            ]
-        )
-        self._pip_uninstall_itk_wildcard(python_executable)
+        if True:
+            # Install required tools into each venv
+            self._pip_uninstall_itk_wildcard(python_executable)
+            self.echo_check_call(
+                [python_executable, "-m", "pip", "install", "--upgrade", "pip"],
+                use_pixi_env=False,
+            )
+            self.echo_check_call(
+                [
+                    python_executable,
+                    "-m",
+                    "pip",
+                    "install",
+                    "--upgrade",
+                    "build",
+                    "numpy",
+                    "scikit-build-core",
+                    #  os-specific tools below
+                    "delocate",
+                ],
+                use_pixi_env=False,
+            )
+            # Install dependencies
+            self.echo_check_call(
+                [
+                    python_executable,
+                    "-m",
+                    "pip",
+                    "install",
+                    "--upgrade",
+                    "-r",
+                    str(
+                        self.package_env_config["IPP_SOURCE_DIR"]
+                        / "requirements-dev.txt"
+                    ),
+                ],
+                use_pixi_env=False,
+            )
+
         (
             python_executable,
             python_include_dir,
@@ -205,7 +197,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             pip_executable,
             venv_bin_path,
             venv_base_dir,
-        ) = self.find_unix_exectable_paths(venv_dir)
+        ) = self.find_unix_exectable_paths(primary_python_base_dir)
         self.venv_info_dict = {
             "python_executable": python_executable,
             "python_include_dir": python_include_dir,
@@ -213,7 +205,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             "pip_executable": pip_executable,
             "venv_bin_path": venv_bin_path,
             "venv_base_dir": venv_base_dir,
-            "python_root_dir": Path(self.py_env) ,
+            "python_root_dir": primary_python_base_dir,
         }
 
     def discover_python_venvs(
@@ -236,3 +228,27 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
 
     def _final_import_test_fn(self, py_env, param):
         pass
+
+    def final_import_test(self) -> None:
+        self._final_import_test_fn(self.py_env, Path(self.dist_dir))
+
+    def fixup_wheel(self, filepath, lib_paths: str = "") -> None:
+        self.remove_apple_double_files()
+        # macOS fix-up with delocate (only needed for x86_64)
+        if self.package_env_config["ARCH"] != "arm64":
+            delocate_listdeps = (
+                self.venv_info_dict["venv_bin_path"] / "delocate-listdeps"
+            )
+            delocate_wheel = self.venv_info_dict["venv_bin_path"] / "delocate-wheel"
+            self.echo_check_call([str(delocate_listdeps), str(filepath)])
+            self.echo_check_call([str(delocate_wheel), str(filepath)])
+
+    def remove_apple_double_files(self):
+        try:
+            # Optional: clean AppleDouble files if tool is available
+            self.echo_check_call(
+                ["dot_clean", str(self.package_env_config["IPP_SOURCE_DIR"].name)]
+            )
+        except Exception:
+            # dot_clean may not be available; continue without it
+            pass

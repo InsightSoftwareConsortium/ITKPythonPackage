@@ -78,11 +78,14 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             target_triple = "i686-linux-gnu"
         else:
             target_triple = f"{self.package_env_config['ARCH']}-linux-gnu"
+
+        target_arch = self.package_env_config["ARCH"]
+
         self.cmake_compiler_configurations.set(
             "CMAKE_CXX_COMPILER_TARGET:STRING", target_triple
         )
-        target_arch = self.package_env_config["ARCH"]
-        itk_binary_build_name: str = (
+
+        itk_binary_build_name: Path = (
             self.build_dir_root
             / "build"
             / f"ITK-{self.py_env}-{self.get_pixi_environment_name()}_{target_arch}"
@@ -247,14 +250,13 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                 pass
 
         # 1) unlink oneTBB-prefix if it's a symlink or file
-        tbb_link = base / "oneTBB-prefix"
+        tbb_prefix_dir = base / "oneTBB-prefix"
         try:
-            if tbb_link.exists() or tbb_link.is_symlink():
-                if tbb_link.is_symlink() or tbb_link.is_file():
-                    tbb_link.unlink(missing_ok=True)  # type: ignore[arg-type]
-                elif tbb_link.exists():
-                    # If it is a directory (not expected), remove tree
-                    rm(tbb_link)
+            if tbb_prefix_dir.is_symlink() or tbb_prefix_dir.is_file():
+                tbb_prefix_dir.unlink(missing_ok=True)  # type: ignore[arg-type]
+            elif tbb_prefix_dir.exists():
+                # If it is a directory (not expected), remove tree
+                rm(tbb_prefix_dir)
         except Exception:
             pass
 
@@ -267,12 +269,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             rm(p)
 
         # 4) ITK build tree and tarballs
-        manylinux_ver = self.package_env_config.get("MANYLINUX_VERSION") or environ.get(
-            "MANYLINUX_VERSION", ""
-        )
-        target_arch = self.package_env_config["ARCH"] or self.package_env_config.get(
-            "TARGET_ARCH", ""
-        )
+        target_arch = self.package_env_config["ARCH"]
         for p in base.glob(f"ITK-*-{self.package_env_config}_{target_arch}"):
             rm(p)
 
@@ -295,7 +292,6 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                 except Exception:
                     continue
                 rm(base / module_name)
-        # Note: dist/ and download scripts are intentionally preserved
 
     def build_tarball(self):
         self.create_posix_tarball()
@@ -308,9 +304,9 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         _command_line_pip_executable = Path(self.py_env) / "bin" / "pip3"
         _dockcross_pip_executable = Path("/opt/python") / "bin" / "pip3"
         if _command_line_pip_executable.exists():
-            venv_dir = Path(self.py_env)
+            primary_python_base_dir = Path(self.py_env)
         elif _dockcross_pip_executable.exists():
-            venv_dir = Path("/opt/python")
+            primary_python_base_dir = Path("/opt/python")
         else:
             venv_root_dir: Path = self.build_dir_root / "venvs"
             _venvs_dir_list = create_linux_venvs(self.py_env, venv_root_dir)
@@ -318,36 +314,47 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                 raise ValueError(
                     f"Expected exactly one venv for {self.py_env}, found {_venvs_dir_list}"
                 )
-            venv_dir = _venvs_dir_list[0]
-            python_executable = venv_dir / "bin" / "python3"
-
-        self.echo_check_call([python_executable, "-m", "pip",  "install", "--upgrade", "pip"])
-        self.echo_check_call(
-            [
-                python_executable, "-m", "pip",
-                "install",
-                "--upgrade",
-                "build",
-                "ninja",
-                "numpy",
-                "scikit-build-core",
-                #  os-specific tools below
-                "wheel",
-                "auditwheel",
-                "patchelf",  # Needed for auditwheel
-            ]
-        )
-        # Install dependencies
-        self.echo_check_call(
-            [
-                python_executable, "-m", "pip",
-                "install",
-                "--upgrade",
-                "-r",
-                str(self.package_env_config["IPP_SOURCE_DIR"] / "requirements-dev.txt"),
-            ]
-        )
-        self._pip_uninstall_itk_wildcard(python_executable)
+            primary_python_base_dir = _venvs_dir_list[0]
+        python_executable = primary_python_base_dir / "bin" / "python3"
+        if True:
+            self._pip_uninstall_itk_wildcard(python_executable)
+            self.echo_check_call(
+                [python_executable, "-m", "pip", "install", "--upgrade", "pip"],
+                use_pixi_env=False,
+            )
+            self.echo_check_call(
+                [
+                    python_executable,
+                    "-m",
+                    "pip",
+                    "install",
+                    "--upgrade",
+                    "build",
+                    "numpy",
+                    "scikit-build-core",
+                    #  os-specific tools below
+                    "wheel",
+                    "auditwheel",
+                    "patchelf",  # Needed for auditwheel
+                ],
+                use_pixi_env=False,
+            )
+            # Install dependencies
+            self.echo_check_call(
+                [
+                    python_executable,
+                    "-m",
+                    "pip",
+                    "install",
+                    "--upgrade",
+                    "-r",
+                    str(
+                        self.package_env_config["IPP_SOURCE_DIR"]
+                        / "requirements-dev.txt"
+                    ),
+                ],
+                use_pixi_env=False,
+            )
         (
             python_executable,
             python_include_dir,
@@ -355,7 +362,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             pip_executable,
             venv_bin_path,
             venv_base_dir,
-        ) = self.find_unix_exectable_paths(venv_dir)
+        ) = self.find_unix_exectable_paths(primary_python_base_dir)
         self.venv_info_dict = {
             "python_executable": python_executable,
             "python_include_dir": python_include_dir,
@@ -363,7 +370,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             "pip_executable": pip_executable,
             "venv_bin_path": venv_bin_path,
             "venv_base_dir": venv_base_dir,
-            "python_root_dir": Path(self.py_env),
+            "python_root_dir": primary_python_base_dir,
         }
 
     def discover_python_venvs(
@@ -381,14 +388,14 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             return sorted(names)
 
         # Discover available manylinux CPython installs under /opt/python
-        def _discover_local_pythons() -> list[str]:
+        def _discover_manylinuxlocal_pythons() -> list[str]:
             base = Path("/opt/python")
             if not base.exists():
                 return []
             names.extend([p.name for p in base.iterdir() if p.is_dir()])
             return sorted(names)
 
-        default_py_envs = _discover_local_pythons() + _discover_ipp_venvs()
+        default_py_envs = _discover_manylinuxlocal_pythons() + _discover_ipp_venvs()
 
         return default_py_envs
 

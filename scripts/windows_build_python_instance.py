@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import copy
+import os
 from os import environ
 from pathlib import Path
 
 from build_python_instance_base import BuildPythonInstanceBase
+
+import shutil
 
 from wheel_builder_utils import push_dir, _remove_tree
 
@@ -32,11 +35,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         # The interpreter is provided; ensure basic tools are available
         self.venv_paths()
         self.update_venv_itk_build_configurations()
-        # Do not set path to Ninja on
-        # self.cmake_compiler_configurations.set(
-        #     "CMAKE_MAKE_PROGRAM:FILEPATH",
-        #     f"{str(Path(self.package_env_config['NINJA_EXECUTABLE']))}",
-        # )
+
         target_arch = self.package_env_config["ARCH"]
         itk_binary_build_name: Path = (
             self.build_dir_root
@@ -75,19 +74,19 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         """
         base = Path(self.package_env_config["IPP_SOURCE_DIR"])
 
-        def rm(p: Path):
+        def rm(tree_path: Path):
             try:
-                _remove_tree(p)
+                _remove_tree(tree_path)
             except Exception:
                 pass
 
         # 1) unlink oneTBB-prefix if it's a symlink or file
-        tbb = base / "oneTBB-prefix"
+        tbb_prefix_dir = base / "oneTBB-prefix"
         try:
-            if tbb.is_symlink() or tbb.is_file():
-                tbb.unlink(missing_ok=True)  # type: ignore[arg-type]
-            elif tbb.exists():
-                rm(tbb)
+            if tbb_prefix_dir.is_symlink() or tbb_prefix_dir.is_file():
+                tbb_prefix_dir.unlink(missing_ok=True)  # type: ignore[arg-type]
+            elif tbb_prefix_dir.exists():
+                rm(tbb_prefix_dir)
         except Exception:
             pass
 
@@ -148,101 +147,6 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             str(filepath),
         ]
         self.echo_check_call(cmd)
-
-    def venv_paths(self) -> None:
-        # Create venv related paths
-        python_major: int = int(self.py_env.split(".")[0])
-        python_minor: int = int(self.py_env.split(".")[1])
-        virtualenv_pattern = (
-            f"Python{python_major}*{python_minor}*/Scripts/virtualenv.exe"
-        )
-        all_glob_matches = [p for p in Path("C:\\").glob(virtualenv_pattern)]
-        if len(all_glob_matches) > 1:
-            raise RuntimeError(
-                f"Multiple virtualenv.exe matches found: {all_glob_matches}"
-            )
-        elif len(all_glob_matches) == 0:
-            raise RuntimeError(
-                f"No virtualenv.exe matches found for Python {virtualenv_pattern}"
-            )
-        venv_executable = Path(all_glob_matches[0])
-        # On windows use base python interpreter, and not a virtual env
-        primary_python_base_dir: Path = venv_executable.parent.parent
-        venv_base_dir: Path = primary_python_base_dir
-        venv_bin_path = venv_base_dir / "Scripts"
-        # venv_base_dir = (
-        #     Path(self.build_dir_root) / f"venv-{python_major}.{python_minor}"
-        # )
-        if not venv_base_dir.exists():
-            self.echo_check_call(
-                [venv_executable, str(venv_base_dir)], use_pixi_env=False
-            )
-
-        pip_executable = primary_python_base_dir / "Scripts" / "pip.exe"
-        python_executable = primary_python_base_dir / "python.exe"
-        python_include_dir = primary_python_base_dir / "include"
-        if int(python_minor) >= 11:
-            # Stable ABI
-            python_library = primary_python_base_dir / "libs" / "python3.lib"
-        else:
-            # XXX It should be possible to query skbuild for the library dir associated
-            #     with a given interpreter.
-            xy_lib_ver = f"{python_major}{python_minor}"
-            python_library = (
-                primary_python_base_dir / "libs" / f"python{xy_lib_ver}.lib"
-            )
-
-        if venv_base_dir.exists():
-
-            # Install required tools into each venv
-            self._pip_uninstall_itk_wildcard(pip_executable)
-            self.echo_check_call(
-                [python_executable, "-m", "pip", "install", "--upgrade", "pip"],
-                use_pixi_env=False,
-            )
-            self.echo_check_call(
-                [
-                    python_executable,
-                    "-m",
-                    "pip",
-                    "install",
-                    "--upgrade",
-                    "build",
-                    "numpy",
-                    "scikit-build-core",
-                    #  os-specific tools below
-                    "delvewheel",
-                    "pkginfo",
-                ],
-                use_pixi_env=False,
-            )
-            # Install dependencies
-            self.echo_check_call(
-                [
-                    python_executable,
-                    "-m",
-                    "pip",
-                    "install",
-                    "--upgrade",
-                    "-r",
-                    str(
-                        self.package_env_config["IPP_SOURCE_DIR"]
-                        / "requirements-dev.txt"
-                    ),
-                ],
-                use_pixi_env=False,
-            )
-
-        # Update PATH
-        self.venv_info_dict = {
-            "python_executable": python_executable,
-            "python_include_dir": python_include_dir,
-            "python_library": python_library,
-            "pip_executable": pip_executable,
-            "venv_bin_path": venv_bin_path,
-            "venv_base_dir": venv_base_dir,
-            "python_root_dir": primary_python_base_dir,
-        }
 
     def build_tarball(self):
         """Create an archive of the ITK Python package build tree (Windows).
@@ -335,6 +239,98 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             root_dir=str(self.build_dir_root),
             base_dir=str(self.build_dir_root.name),
         )
+
+    def venv_paths(self) -> None:
+        # Create venv related paths
+        python_major: int = int(self.py_env.split(".")[0])
+        python_minor: int = int(self.py_env.split(".")[1])
+        virtualenv_pattern = (
+            f"Python{python_major}*{python_minor}*/Scripts/virtualenv.exe"
+        )
+        all_glob_matches = [p for p in Path("C:\\").glob(virtualenv_pattern)]
+        if len(all_glob_matches) > 1:
+            raise RuntimeError(
+                f"Multiple virtualenv.exe matches found: {all_glob_matches}"
+            )
+        elif len(all_glob_matches) == 0:
+            raise RuntimeError(
+                f"No virtualenv.exe matches found for Python {virtualenv_pattern}"
+            )
+        venv_executable = Path(all_glob_matches[0])
+        # On windows use base python interpreter, and not a virtual env
+        primary_python_base_dir: Path = venv_executable.parent.parent
+        venv_base_dir: Path = primary_python_base_dir
+        venv_bin_path = venv_base_dir / "Scripts"
+        # venv_base_dir = (
+        #     Path(self.build_dir_root) / f"venv-{python_major}.{python_minor}"
+        # )
+        if not venv_base_dir.exists():
+            self.echo_check_call(
+                [venv_executable, str(venv_base_dir)], use_pixi_env=False
+            )
+
+        pip_executable = primary_python_base_dir / "Scripts" / "pip.exe"
+        python_executable = primary_python_base_dir / "python.exe"
+        python_include_dir = primary_python_base_dir / "include"
+        if int(python_minor) >= 11:
+            # Stable ABI
+            python_library = primary_python_base_dir / "libs" / "python3.lib"
+        else:
+            # XXX It should be possible to query skbuild for the library dir associated
+            #     with a given interpreter.
+            xy_lib_ver = f"{python_major}{python_minor}"
+            python_library = (
+                primary_python_base_dir / "libs" / f"python{xy_lib_ver}.lib"
+            )
+
+        if venv_base_dir.exists():
+            # Install required tools into each venv
+            self._pip_uninstall_itk_wildcard(python_executable)
+            self.echo_check_call(
+                [python_executable, "-m", "pip", "install", "--upgrade", "pip"],
+                use_pixi_env=False,
+            )
+            self.echo_check_call(
+                [
+                    python_executable,
+                    "-m",
+                    "pip",
+                    "install",
+                    "--upgrade",
+                    "build",
+                    "numpy",
+                    "scikit-build-core",
+                    #  os-specific tools below
+                    "delvewheel",
+                    "pkginfo",
+                ],
+                use_pixi_env=False,
+            )
+            # Install dependencies
+            self.echo_check_call(
+                [
+                    python_executable,
+                    "-m",
+                    "pip",
+                    "install",
+                    "--upgrade",
+                    "-r",
+                    str(
+                        self.package_env_config["IPP_SOURCE_DIR"]
+                        / "requirements-dev.txt"
+                    ),
+                ],
+                use_pixi_env=False,
+            )
+        self.venv_info_dict = {
+            "python_executable": python_executable,
+            "python_include_dir": python_include_dir,
+            "python_library": python_library,
+            "pip_executable": pip_executable,
+            "venv_bin_path": venv_bin_path,
+            "venv_base_dir": venv_base_dir,
+            "python_root_dir": primary_python_base_dir,
+        }
 
     def discover_python_venvs(
         self, platform_os_name: str, platform_architechure: str
