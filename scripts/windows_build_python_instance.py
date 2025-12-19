@@ -178,7 +178,6 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                 [venv_executable, str(venv_base_dir)], use_pixi_env=False
             )
 
-        local_pip_executable = primary_python_base_dir / "Scripts" / "pip.exe"
         pip_executable = primary_python_base_dir / "Scripts" / "pip.exe"
         python_executable = primary_python_base_dir / "python.exe"
         python_include_dir = primary_python_base_dir / "include"
@@ -196,7 +195,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         if venv_base_dir.exists():
 
             # Install required tools into each venv
-            self._pip_uninstall_itk_wildcard(local_pip_executable)
+            self._pip_uninstall_itk_wildcard(pip_executable)
             self.echo_check_call(
                 [python_executable, "-m", "pip", "install", "--upgrade", "pip"],
                 use_pixi_env=False,

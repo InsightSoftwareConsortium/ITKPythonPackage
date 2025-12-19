@@ -323,7 +323,7 @@ class BuildPythonInstanceBase(ABC):
         )
         print("Documentation tests passed.")
 
-    def _pip_uninstall_itk_wildcard(self, pip_executable: str | Path):
+    def _pip_uninstall_itk_wildcard(self, python_executable: str | Path):
         """Uninstall all installed packages whose name starts with 'itk'.
 
         pip does not support shell-style wildcards directly for uninstall, so we:
@@ -331,16 +331,16 @@ class BuildPythonInstanceBase(ABC):
           - collect package names whose normalized name starts with 'itk'
           - call 'pip uninstall -y <names...>' if any are found
         """
-        pip_executable = str(pip_executable)
+        python_executable = str(python_executable)
         try:
             proc = subprocess.run(
-                [pip_executable, "list", "--format=freeze"],
+                [python_executable, "-m", "pip", "list", "--format=freeze"],
                 check=True,
                 capture_output=True,
                 text=True,
             )
         except subprocess.CalledProcessError as e:
-            print(f"Warning: failed to list packages with pip at {pip_executable}: {e}")
+            print(f"Warning: failed to list packages with pip at {python_executable}: {e}")
             return
 
         packages = []
@@ -356,7 +356,7 @@ class BuildPythonInstanceBase(ABC):
         if packages:
             print(f"Uninstalling existing ITK-related packages: {' '.join(packages)}")
             # Use echo_check_call for consistent logging/behavior
-            self.echo_check_call([pip_executable, "uninstall", "-y", *packages])
+            self.echo_check_call([python_executable, "-m", "pip", "uninstall", "-y", *packages])
 
     def find_unix_exectable_paths(
         self,

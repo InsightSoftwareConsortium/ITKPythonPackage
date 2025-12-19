@@ -164,7 +164,6 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         _command_line_pip_executable = Path(self.py_env) / "bin" / "pip3"
         if _command_line_pip_executable.exists():
             venv_dir = Path(self.py_env)
-            local_pip_executable = _command_line_pip_executable
         else:
             venv_root_dir: Path = self.build_dir_root / "venvs"
             _venvs_dir_list = create_macos_venvs(self.py_env, venv_root_dir)
@@ -173,12 +172,12 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
                     f"Expected exactly one venv for {self.py_env}, found {_venvs_dir_list}"
                 )
             venv_dir = _venvs_dir_list[0]
-            local_pip_executable = venv_dir / "bin" / "pip3"
+            python_executable = venv_dir / "bin" / "python3"
 
-        self.echo_check_call([local_pip_executable, "install", "--upgrade", "pip"])
+        self.echo_check_call([python_executable, "-m", "pip",  "install", "--upgrade", "pip"])
         self.echo_check_call(
             [
-                local_pip_executable,
+                python_executable, "-m", "pip",
                 "install",
                 "--upgrade",
                 "build",
@@ -191,14 +190,14 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         # Install dependencies
         self.echo_check_call(
             [
-                local_pip_executable,
+                python_executable, "-m", "pip",
                 "install",
                 "--upgrade",
                 "-r",
                 str(self.package_env_config["IPP_SOURCE_DIR"] / "requirements-dev.txt"),
             ]
         )
-        self._pip_uninstall_itk_wildcard(local_pip_executable)
+        self._pip_uninstall_itk_wildcard(python_executable)
         (
             python_executable,
             python_include_dir,
