@@ -162,9 +162,9 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         """
         # First determine if py_env is the full path to a python environment
         _command_line_pip_executable = Path(self.py_env) / "bin" / "pip3"
-        if _command_line_pip_executable.exists():
-            venv_dir = Path(self.py_env)
-        else:
+
+        venv_dir = Path(self.py_env)
+        if not _command_line_pip_executable.exists():
             venv_root_dir: Path = self.build_dir_root / "venvs"
             _venvs_dir_list = create_macos_venvs(self.py_env, venv_root_dir)
             if len(_venvs_dir_list) != 1:
@@ -172,7 +172,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
                     f"Expected exactly one venv for {self.py_env}, found {_venvs_dir_list}"
                 )
             venv_dir = _venvs_dir_list[0]
-            python_executable = venv_dir / "bin" / "python3"
+        python_executable = venv_dir / "bin" / "python3"
 
         self.echo_check_call([python_executable, "-m", "pip",  "install", "--upgrade", "pip"])
         self.echo_check_call(
