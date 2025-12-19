@@ -79,7 +79,7 @@ class CMakeArgumentBuilder:
         where <KEY> may contain a CMake type suffix (e.g., ':STRING').
         """
         prefix = "--config-setting=cmake.define."
-        return [f'{prefix}{k}="{drop_quotes(v)}"' for k, v in self._defs.items()]
+        return [f"""{prefix}{k}='{drop_quotes(v)}'""" for k, v in self._defs.items()]
 
 
 __all__ = ["CMakeArgumentBuilder"]
