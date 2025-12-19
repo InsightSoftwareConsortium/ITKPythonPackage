@@ -158,7 +158,8 @@ def create_macos_venvs(
             print(f"Creating venv {venv_dir}: {' '.join(cmd)}")
 
             result: subprocess.CompletedProcess = run_commandLine_subprocess(
-                    cmd, check= True,
+                cmd,
+                check=True,
             )
             if result.returncode != 0:
                 raise RuntimeError(f"Failed to create venv {venv_dir}: {result.stderr}")
