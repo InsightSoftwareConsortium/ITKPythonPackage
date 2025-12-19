@@ -340,7 +340,9 @@ class BuildPythonInstanceBase(ABC):
                 text=True,
             )
         except subprocess.CalledProcessError as e:
-            print(f"Warning: failed to list packages with pip at {python_executable}: {e}")
+            print(
+                f"Warning: failed to list packages with pip at {python_executable}: {e}"
+            )
             return
 
         packages = []
@@ -356,7 +358,9 @@ class BuildPythonInstanceBase(ABC):
         if packages:
             print(f"Uninstalling existing ITK-related packages: {' '.join(packages)}")
             # Use echo_check_call for consistent logging/behavior
-            self.echo_check_call([python_executable, "-m", "pip", "uninstall", "-y", *packages])
+            self.echo_check_call(
+                [python_executable, "-m", "pip", "uninstall", "-y", *packages]
+            )
 
     def find_unix_exectable_paths(
         self,
