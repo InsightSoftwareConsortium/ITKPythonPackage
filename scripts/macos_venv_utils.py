@@ -65,6 +65,8 @@ def _discover_python_versions(
             add_unique(Path(d) for d in glob.glob(os.path.join(pref, "*")))
     else:
         for pref in prefixes:
+            if isinstance(versions, str) or isinstance(versions, Path):
+                versions = [versions]
             for ver in versions:
                 pattern = os.path.join(pref, f"*{ver}*")
                 add_unique(Path(d) for d in glob.glob(pattern))
