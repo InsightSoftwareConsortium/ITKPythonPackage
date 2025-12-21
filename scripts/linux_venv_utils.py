@@ -170,7 +170,7 @@ def create_linux_venvs(
         python_exec = exe_map[ver]
         venv_dir = venvs_root / ver
 
-        if venv_dir.exists():
+        if (venv_dir / "bin" / "python3").exists():
             created_venvs.append(venv_dir)
             continue
 

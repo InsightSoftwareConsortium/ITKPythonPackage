@@ -29,7 +29,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         manylinux_ver: str | None = self.package_env_config.get(
             "MANYLINUX_VERSION", None
         )
-        if not manylinux_ver:
+        if not manylinux_ver or len(manylinux_ver) == 0:
             # Building native on linux, packages have very limited distribution utility
             return "linux"
         manylinux_ver = manylinux_ver.strip().lower()

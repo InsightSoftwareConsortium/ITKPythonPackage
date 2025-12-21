@@ -233,9 +233,13 @@ def run_commandLine_subprocess(
         text=True,
     )
     if completion_info.returncode != 0 and check:
-        error_msg = f"Command failed with exit code {completion_info.returncode}: {' '.join(cmd)}"
+        error_msg = "!~" * 40
+        if completion_info.stdout:
+            error_msg += f"\nStdout:\n {completion_info.stdout}"
         if completion_info.stderr:
-            error_msg += f"\nStderr:\n{completion_info.stderr}"
+            error_msg += f"\nStderr:\n {completion_info.stderr}"
+        error_msg += f"Command failed with exit code {completion_info.returncode}: {' '.join(cmd)}"
+
         raise RuntimeError(error_msg)
 
     return completion_info
