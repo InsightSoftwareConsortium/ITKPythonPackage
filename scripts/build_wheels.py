@@ -18,7 +18,11 @@ from pathlib import Path
 
 
 def _set_main_variable_names(
-    SCRIPT_DIR: Path, PACKAGE_ENV_FILE: Path, build_dir_root: Path, itk_git_tag: str
+    SCRIPT_DIR: Path,
+    PACKAGE_ENV_FILE: Path,
+    build_dir_root: Path,
+    itk_git_tag: str,
+    manylinux_version: str,
 ) -> dict[str, str | Path | None]:
     PACKAGE_ENV_FILE.parent.mkdir(parents=True, exist_ok=True)
     # Primarily needed for docker-cross to fill in CMAKE_EXECUTABLE, NINJA_EXECUTABLE, and DOXYGEN_EXECUTABLE
@@ -29,6 +33,7 @@ def _set_main_variable_names(
         "--build-dir-root",
         str(build_dir_root),
         f"ITK_GIT_TAG={itk_git_tag}",
+        f"MANYLINUX_VERSION={manylinux_version}",
     ]
     if not PACKAGE_ENV_FILE.exists():
         generate_build_environment_update_args.extend(["-i", str(PACKAGE_ENV_FILE)])
@@ -152,6 +157,12 @@ def main() -> None:
         default=f"main",
         help="The tag of ITK to build.",
     )
+    parser.add_argument(
+        "--manylinux-version",
+        type=str,
+        default=f"",
+        help="default manylinux version, if empty, build native linux instead of cross compiling",
+    )
 
     args = parser.parse_args()
     print("=" * 80)
@@ -172,6 +183,7 @@ def main() -> None:
         PACKAGE_ENV_FILE=PACKAGE_ENV_FILE,
         build_dir_root=build_dir_root,
         itk_git_tag=args.itk_git_tag,
+        manylinux_version=args.manylinux_version,
     )
     _set_os_environ(build_dir_root)
 
