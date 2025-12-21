@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 import os
 import sys
 
@@ -7,9 +9,9 @@ from build_one_python_factory import build_one_python_instance
 from generate_build_environment import generate_build_environment
 from wheel_builder_utils import read_env_file, detect_platform
 
-if sys.version_info < (3, 10):
+if sys.version_info < (3, 9):
     sys.stderr.write(
-        "Python 3.10+ required for the python packaging script execution.\n"
+        "Python 3.9+ required for the python packaging script execution.\n"
     )
     sys.exit(1)
 
