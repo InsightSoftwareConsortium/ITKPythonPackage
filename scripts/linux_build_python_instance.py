@@ -34,33 +34,32 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             return "linux"
         manylinux_ver = manylinux_ver.strip().lower()
 
-        match manylinux_ver:
-            case "manylinux1":
-                # PEP 513; glibc 2.5 (CentOS 5 era); obsolete and effectively unusable today.
-                return "manylinux1"
-            case "manylinux2010":
-                # PEP 571; glibc 2.12 (CentOS 6 era); deprecated/EOL in most ecosystems.
-                return "manylinux2010"
-            case "manylinux2014":
-                # PEP 599; glibc 2.17 (CentOS 7 era); broadest modern compatibility (workhorse).
-                return "manylinux2014"
-            case "manylinux_2_24":
-                # PEP 600; glibc 2.24 (Debian 9 era); transitional, less commonly targeted explicitly.
-                return "manylinux224"
-            case "manylinux_2_28":
-                # PEP 600; glibc 2.28 (RHEL/Alma 8 era); modern default for many projects.
-                return "manylinux228"
-            case "manylinux_2_31":
-                # PEP 600; glibc 2.31 (Debian 11/Ubuntu 20.04 era); narrower audience than 2_28.
-                return "manylinux231"
-            case "manylinux_2_34":
-                # PEP 600; glibc 2.34 (RHEL/Alma 9 era); cutting-edge, reduced downstream coverage.
-                return "manylinux234"
-            case _ if manylinux_ver.startswith("manylinux_2_"):
-                # PEP 600 family; glibc baseline is encoded in the tag; higher means newer, narrower.
-                return manylinux_ver.replace("_", "")
-            case _:
-                return f"Unknown/unsupported manylinux tag: {manylinux_ver!r}"
+        if manylinux_ver == "manylinux1":
+            # PEP 513; glibc 2.5 (CentOS 5 era); obsolete and effectively unusable today.
+            return "manylinux1"
+        elif manylinux_ver == "manylinux2010":
+            # PEP 571; glibc 2.12 (CentOS 6 era); deprecated/EOL in most ecosystems.
+            return "manylinux2010"
+        elif manylinux_ver == "manylinux2014":
+            # PEP 599; glibc 2.17 (CentOS 7 era); broadest modern compatibility (workhorse).
+            return "manylinux2014"
+        elif manylinux_ver == "manylinux_2_24":
+            # PEP 600; glibc 2.24 (Debian 9 era); transitional, less commonly targeted explicitly.
+            return "manylinux224"
+        elif manylinux_ver == "manylinux_2_28":
+            # PEP 600; glibc 2.28 (RHEL/Alma 8 era); modern default for many projects.
+            return "manylinux228"
+        elif manylinux_ver == "manylinux_2_31":
+            # PEP 600; glibc 2.31 (Debian 11/Ubuntu 20.04 era); narrower audience than 2_28.
+            return "manylinux231"
+        elif manylinux_ver == "manylinux_2_34":
+            # PEP 600; glibc 2.34 (RHEL/Alma 9 era); cutting-edge, reduced downstream coverage.
+            return "manylinux234"
+        elif manylinux_ver.startswith("manylinux_2_"):
+            # PEP 600 family; glibc baseline is encoded in the tag; higher means newer, narrower.
+            return manylinux_ver.replace("_", "")
+        else:
+            return f"Unknown/unsupported manylinux tag: {manylinux_ver!r}"
 
     def prepare_build_env(self) -> None:
         # #############################################
