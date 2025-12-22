@@ -6,7 +6,6 @@ from os import environ
 from pathlib import Path
 
 from build_python_instance_base import BuildPythonInstanceBase
-from linux_venv_utils import create_linux_venvs
 import shutil
 
 from wheel_builder_utils import _remove_tree
@@ -31,7 +30,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         )
         if not manylinux_ver or len(manylinux_ver) == 0:
             # Building native on linux, packages have very limited distribution utility
-            return "linux"
+            return f"linux-py39"
         manylinux_ver = manylinux_ver.strip().lower()
 
         if manylinux_ver == "manylinux1":
@@ -87,7 +86,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         itk_binary_build_name: Path = (
             self.build_dir_root
             / "build"
-            / f"ITK-{self.py_env}-{self.get_pixi_environment_name()}_{target_arch}"
+            / f"ITK-{self.platform_env}-{self.get_pixi_environment_name()}_{target_arch}"
         )
 
         self.cmake_itk_source_build_configurations.set(
@@ -95,8 +94,8 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         )
 
         # Keep values consistent with prior quoting behavior
-        self.cmake_compiler_configurations.set("CMAKE_CXX_FLAGS:STRING", "-O3 -DNDEBUG")
-        self.cmake_compiler_configurations.set("CMAKE_C_FLAGS:STRING", "-O3 -DNDEBUG")
+        # self.cmake_compiler_configurations.set("CMAKE_CXX_FLAGS:STRING", "-O3 -DNDEBUG")
+        # self.cmake_compiler_configurations.set("CMAKE_C_FLAGS:STRING", "-O3 -DNDEBUG")
 
     def post_build_fixup(self) -> None:
         manylinux_ver: str | None = self.package_env_config.get(
@@ -179,7 +178,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                 _remove_tree(metawheel_dist)
 
     def final_import_test(self) -> None:
-        self._final_import_test_fn(self.py_env, Path(self.dist_dir))
+        self._final_import_test_fn(self.platform_env, Path(self.dist_dir))
 
     def fixup_wheel(self, filepath, lib_paths: str = "") -> None:
         # Use auditwheel to repair wheels and set manylinux tags
@@ -297,68 +296,15 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
 
     def venv_paths(self) -> None:
         """Resolve virtualenv tool paths.
-        py_env may be a name under IPP_SOURCE_DIR/venvs or an absolute/relative path to a venv.
+        platform_env may be a name under IPP_SOURCE_DIR/venvs or an absolute/relative path to a venv.
         """
-        # First determine if py_env is the full path to a python environment
-        _command_line_pip_executable = Path(self.py_env) / "bin" / "pip3"
-        _dockcross_pip_executable = Path("/opt/python") / "bin" / "pip3"
-        if _command_line_pip_executable.exists():
-            primary_python_base_dir = Path(self.py_env)
-        elif _dockcross_pip_executable.exists():
-            primary_python_base_dir = Path("/opt/python")
-        else:
-            venv_root_dir: Path = self.build_dir_root / "venvs"
-            _venvs_dir_list = create_linux_venvs(self.py_env, venv_root_dir)
-            if len(_venvs_dir_list) != 1:
-                raise ValueError(
-                    f"Expected exactly one venv for {self.py_env}, found {_venvs_dir_list}"
-                )
-            primary_python_base_dir = _venvs_dir_list[0]
-        python_executable = primary_python_base_dir / "bin" / "python3"
+        primary_python_base_dir = self.python_executable.parent.parent
         if True:
-            self._pip_uninstall_itk_wildcard(python_executable)
-            self.echo_check_call(
-                [python_executable, "-m", "pip", "install", "--upgrade", "pip"],
-                use_pixi_env=False,
-            )
-            self.echo_check_call(
-                [
-                    python_executable,
-                    "-m",
-                    "pip",
-                    "install",
-                    "--upgrade",
-                    "build",
-                    "numpy",
-                    "scikit-build-core",
-                    #  os-specific tools below
-                    "wheel",
-                    "auditwheel",
-                    "patchelf",  # Needed for auditwheel
-                ],
-                use_pixi_env=False,
-            )
-            # Install dependencies
-            self.echo_check_call(
-                [
-                    python_executable,
-                    "-m",
-                    "pip",
-                    "install",
-                    "--upgrade",
-                    "-r",
-                    str(
-                        self.package_env_config["IPP_SOURCE_DIR"]
-                        / "requirements-dev.txt"
-                    ),
-                ],
-                use_pixi_env=False,
-            )
+            self._pip_uninstall_itk_wildcard(self.python_executable)
         (
             python_executable,
             python_include_dir,
             python_library,
-            pip_executable,
             venv_bin_path,
             venv_base_dir,
         ) = self.find_unix_exectable_paths(primary_python_base_dir)
@@ -366,7 +312,6 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             "python_executable": python_executable,
             "python_include_dir": python_include_dir,
             "python_library": python_library,
-            "pip_executable": pip_executable,
             "venv_bin_path": venv_bin_path,
             "venv_base_dir": venv_base_dir,
             "python_root_dir": primary_python_base_dir,
@@ -394,9 +339,9 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             names.extend([p.name for p in base.iterdir() if p.is_dir()])
             return sorted(names)
 
-        default_py_envs = _discover_manylinuxlocal_pythons() + _discover_ipp_venvs()
+        default_platform_envs = _discover_manylinuxlocal_pythons() + _discover_ipp_venvs()
 
-        return default_py_envs
+        return default_platform_envs
 
-    def _final_import_test_fn(self, py_env, param):
+    def _final_import_test_fn(self, platform_env, param):
         pass

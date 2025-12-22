@@ -64,13 +64,13 @@ def _set_main_variable_names(
     return package_env_config
 
 
-def _set_os_environ(build_dir_root: Path):
+def _set_os_environ(ipp_dir_root: Path):
     # Add the scripts directory to PATH
     os.environ["PATH"] = (
         str(Path(__file__).parent) + os.pathsep + os.environ.get("PATH", "")
     )
     # Set pixi home and pixi bin path
-    pixi_home_path: Path = build_dir_root / "build" / ".pixi"
+    pixi_home_path: Path = ipp_dir_root / ".pixi"
     os.environ["PIXI_HOME"] = str(pixi_home_path)
     pixi_exec_path: Path = pixi_home_path / "bin"
     os.environ["PATH"] = str(pixi_exec_path) + os.pathsep + os.environ.get("PATH", "")
@@ -82,13 +82,16 @@ def main() -> None:
         description="Driver script to build ITK Python wheels."
     )
     parser.add_argument(
-        "--py-envs",
+        "--platform-env",
         nargs="+",
         default=None,
         help=(
-            "A list of python environments to build for:\n"
-            + "    - Windows: Python versions like '310-x64' '311-x64'.\n"
-            + " macOS & linux: names or paths of venvs under 'venvs/'. like '3.11' or 'cp311'"
+            """A platform environment name or path: 
+               linux-py39, linux-py310, linux-py311,
+               manylinux228-py39, manylinux228-py310, manylinux228-py311,
+               windows-py39, windows-py310, windows-py311,
+               macos-py39, macos-py310, macos-py311
+            """
         ),
     )
     parser.add_argument(
@@ -187,7 +190,7 @@ def main() -> None:
         itk_git_tag=args.itk_git_tag,
         manylinux_version=args.manylinux_version,
     )
-    _set_os_environ(build_dir_root)
+    _set_os_environ(SCRIPT_DIR.parent)
 
     with open(
         package_env_config["IPP_BuildWheelsSupport_DIR"] / "WHEEL_NAMES.txt",
@@ -196,24 +199,21 @@ def main() -> None:
     ) as content:
         wheel_names = [wheel_name.strip() for wheel_name in content.readlines()]
 
-    normalized_python_versions: list[str] = [
-        p.replace("cp3", "3.") for p in args.py_envs
-    ]
-
-    for py_env in normalized_python_versions:
-        build_one_python_instance(
-            py_env,
-            args.build_dir_root,
-            wheel_names,
-            package_env_config,
-            args.no_cleanup,
-            args.build_itk_tarball_cache,
-            args.cmake_options,
-            args.lib_paths,
-            args.module_source_dir,
-            args.module_dependancies_root_dir,
-            args.itk_module_deps,
-        )
+    for each_platform in args.platform_env:
+        print(f"Building wheels for platform: {each_platform}")
+    build_one_python_instance(
+        each_platform,
+        args.build_dir_root,
+        wheel_names,
+        package_env_config,
+        args.no_cleanup,
+        args.build_itk_tarball_cache,
+        args.cmake_options,
+        args.lib_paths,
+        args.module_source_dir,
+        args.module_dependancies_root_dir,
+        args.itk_module_deps,
+    )
 
 
 if __name__ == "__main__":

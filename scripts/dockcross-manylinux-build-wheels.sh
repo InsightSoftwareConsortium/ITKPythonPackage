@@ -45,7 +45,6 @@ for v in "${required_vars[@]}"; do
   fi
 done
 
-
 _local_dockercross_script=${_ipp_dir}/build/runner_dockcross-${MANYLINUX_VERSION}-x64_${IMAGE_TAG}.sh
 # Generate dockcross scripts
 $OCI_EXE run --env-file "${_ipp_dir}/build/package.env" \

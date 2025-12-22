@@ -24,15 +24,15 @@ platforms = ["linux-64", "linux-aarch64", "osx-64", "osx-arm64", "win-64"]
 ########################################
 
 # Build tooling shared by all platforms
+[feature.build-dev-tools]
 [feature.build-dev-tools.dependencies]
 cmake = ">=3.30,<4"
 doxygen = ">=1.13.2,<2"
 ninja = ">=1.13.2,<2"
 pkginfo = ">=1.12.1.2,<2"
-# Python driving the build (not the package runtime Python)
-python = ">=3.13,<3.14"
 
 # Python packaging/build support shared by all platforms
+[feature.python-dev-pkgs]
 [feature.python-dev-pkgs.dependencies]
 numpy = ">=1.26"
 packaging = ">=25.0,<26"
@@ -47,6 +47,20 @@ tomli="*"
 ########################################
 # Manylinux-specific feature
 ########################################
+[feature.linux-build]
+platforms = ["linux-64"]
+
+[feature.linux-build.dependencies]
+cxx-compiler = "==1.11.0"
+c-compiler = "==1.11.0"
+libhwloc = "*"  # Needed for tbb
+auditwheel = "*"
+patchelf = "*"  # Needed for auditwheel
+wheel = "*"
+
+[feature.linux-build.pypi-dependencies]
+build = "*"
+
 
 [feature.manylinux228-build]
 platforms = ["linux-64"]
@@ -54,7 +68,11 @@ platforms = ["linux-64"]
 
 [feature.manylinux228-build.dependencies]
 auditwheel = "*"
-patchelf = "*"
+patchelf = "*"# Needed for auditwheel
+wheel = "*"
+
+[feature.manylinux228-build.pypi-dependencies]
+build = "*"
 
 # tighten manylinux228 ABI (if you care)
 [feature.manylinux228-build.system-requirements]
@@ -75,9 +93,38 @@ delocate = "*"
 [feature.macos-build.dependencies]
 cxx-compiler = "==1.10.0"
 c-compiler = "==1.10.0"
+#libhwloc = "*" # Needed for tbb
 
 [feature.windows-build]
 platforms = ["win-64"]
+
+
+[feature.py39]
+[feature.py39.dependencies]
+python = ">=3.9,<3.10"
+
+[feature.py310]
+[feature.py310.dependencies]
+python = ">=3.10,<3.11"
+
+
+[feature.py311]
+[feature.py311.dependencies]
+python = ">=3.11,<3.12"
+
+#
+#[feature.py312]
+#[feature.py312.dependencies]
+#python = ">=3.12,<3.13"
+#
+#[feature.py313]
+#[feature.py313.dependencies]
+#python = ">=3.13,<3.14"
+#
+#[feature.py314]
+#[feature.py314.dependencies]
+#python = ">=3.14,<3.15"
+#
 
 [feature.windows-build.pypi-dependencies]
 # windows = "*"
@@ -93,27 +140,92 @@ platforms = ["win-64"]
 
 [environments]
 # Linux build env (non-manylinux228)
-linux = [
+#linux = [
+#  "build-dev-tools",
+#  "python-dev-pkgs",
+#]
+
+linux-py39 = [
+  "py39",
+  "linux-build",
+  "build-dev-tools",
+  "python-dev-pkgs",
+]
+
+linux-py310 = [
+  "py310",
+  "linux-build",
+  "build-dev-tools",
+  "python-dev-pkgs",
+]
+
+linux-py311 = [
+  "py311",
+  "linux-build",
   "build-dev-tools",
   "python-dev-pkgs",
 ]
 
 # Manylinux wheel-build env (docker manylinux228 images, CI, etc.)
-manylinux228 = [
+manylinux228-py39 = [
+  "py39",
+  "manylinux228-build",
   "build-dev-tools",
   "python-dev-pkgs",
+]
+manylinux228-py310 = [
+  "py310",
   "manylinux228-build",
+  "build-dev-tools",
+  "python-dev-pkgs",
+]
+
+manylinux228-py311 = [
+  "py311",
+  "manylinux228-build",
+  "build-dev-tools",
+  "python-dev-pkgs",
 ]
 
 # macOS build env (both Intel and Apple Silicon)
-macos = [
+macos-py39 = [
+  "py39",
+  "build-dev-tools",
+  "python-dev-pkgs",
+  "macos-build",
+]
+
+# macOS build env (both Intel and Apple Silicon)
+macos-py310 = [
+  "py310",
+  "build-dev-tools",
+  "python-dev-pkgs",
+  "macos-build",
+]
+
+macos-py311 = [
+  "py311",
   "build-dev-tools",
   "python-dev-pkgs",
   "macos-build",
 ]
 
 # Windows build env
-windows = [
+windows-py39 = [
+  "py39",
+  "build-dev-tools",
+  "python-dev-pkgs",
+  "windows-build"
+]
+windows-py310 = [
+  "py310",
+  "build-dev-tools",
+  "python-dev-pkgs",
+  "windows-build"
+]
+
+windows-py311 = [
+  "py311",
   "build-dev-tools",
   "python-dev-pkgs",
   "windows-build"

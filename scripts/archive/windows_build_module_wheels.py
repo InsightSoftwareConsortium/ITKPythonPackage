@@ -48,17 +48,17 @@ def install_and_import(package):
         globals()[package] = importlib.import_module(package)
 
 
-def build_wheels(py_envs=DEFAULT_PY_ENVS, cmake_options=None):
+def build_wheels(platform_envs=DEFAULT_PY_ENVS, cmake_options=None):
     if cmake_options is None:
         cmake_options = []
-    for py_env in py_envs:
+    for platform_env in platform_envs:
         (
             python_executable,
             python_include_dir,
             python_library,
             pip,
             path,
-        ) = venv_paths(py_env)
+        ) = venv_paths(platform_env)
 
         with push_env(PATH=f"{path}{pathsep}{environ['PATH']}"):
             # Install dependencies
@@ -76,10 +76,10 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cmake_options=None):
             self.echo_check_call([pip, "install", "ninja", "--upgrade"])
             self.echo_check_call([pip, "install", "delvewheel"])
 
-            itk_build_path = (SCRIPT_DIR.parent / f"ITK-win_{py_env}").resolve()
+            itk_build_path = (SCRIPT_DIR.parent / f"ITK-win_{platform_env}").resolve()
             print(f"ITKDIR: {itk_build_path}")
 
-            minor_version = py_env.split("-")[0][1:]
+            minor_version = platform_env.split("-")[0][1:]
             if int(minor_version) >= 11:
                 # Stable ABI
                 wheel_py_api = f"cp3{minor_version}"
@@ -135,7 +135,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cmake_options=None):
             self.echo_check_call(cmd)
 
 
-def rename_wheel_init(py_env, filepath, add_module_name=True):
+def rename_wheel_init(platform_env, filepath, add_module_name=True):
     """
     Rename module __init__ (if add_module_name is True) or __init_module__ (if
     add_module_name is False) file in wheel.  This is required to prevent
@@ -152,7 +152,7 @@ def rename_wheel_init(py_env, filepath, add_module_name=True):
         pip,
         ninja_executable,
         path,
-    ) = venv_paths(py_env)
+    ) = venv_paths(platform_env)
 
     w = pkginfo.Wheel(filepath)
     module_name = w.name.split("itk-")[-1]
@@ -182,15 +182,15 @@ def rename_wheel_init(py_env, filepath, add_module_name=True):
     _remove_tree(wheel_dir)
 
 
-def fixup_wheel(py_envs, filepath, lib_paths: str = "", exclude_libs: str = ""):
+def fixup_wheel(platform_envs, filepath, lib_paths: str = "", exclude_libs: str = ""):
     lib_paths = ";".join(["C:/P/IPP/oneTBB-prefix/bin", lib_paths.strip()]).strip(";")
     print(f"Library paths for fixup: {lib_paths}")
 
-    py_env = py_envs[0]
+    platform_env = platform_envs[0]
 
     # Make sure the module __init_module__.py file has the expected name for
     # delvewheel, i.e., __init__.py.
-    rename_wheel_init(py_env, filepath, False)
+    rename_wheel_init(platform_env, filepath, False)
 
     delve_wheel = self.venv_info_dict["python_root_dir"] / "Scripts" / "delvewheel.exe"
     self.echo_check_call(
@@ -212,13 +212,13 @@ def fixup_wheel(py_envs, filepath, lib_paths: str = "", exclude_libs: str = ""):
     # The delve_wheel patch loading shared libraries is added to the module
     # __init__ file. Rename this file here to prevent conflicts on installation.
     # The renamed __init__ file will be executed when loading ITK.
-    rename_wheel_init(py_env, filepath)
+    rename_wheel_init(platform_env, filepath)
 
 
-def fixup_wheels(py_envs, lib_paths: str = "", exclude_libs: str = ""):
+def fixup_wheels(platform_envs, lib_paths: str = "", exclude_libs: str = ""):
     # shared library fix-up
     for wheel in (IPP_SOURCE_DIR / "dist").glob("*.whl"):
-        fixup_wheel(py_envs, wheel, lib_paths, exclude_libs)
+        fixup_wheel(platform_envs, wheel, lib_paths, exclude_libs)
 
 
 if __name__ == "__main__":
@@ -256,9 +256,9 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    build_wheels(py_envs=args.py_envs, cmake_options=args.cmake_options)
+    build_wheels(platform_envs=args.platform_envs, cmake_options=args.cmake_options)
     # append the oneTBB-prefix\\bin directory for fixing wheels built with local oneTBB
     search_lib_paths = [s for s in args.lib_paths.rstrip(";") if s]
     search_lib_paths.append(f"{IPP_SOURCE_DIR}\\oneTBB-prefix\\bin")
     search_lib_paths_str: str = ";".join(search_lib_paths)
-    fixup_wheels(args.py_envs, ";".join(args.lib_paths), search_lib_paths_str)
+    fixup_wheels(args.platform_envs, ";".join(args.lib_paths), search_lib_paths_str)

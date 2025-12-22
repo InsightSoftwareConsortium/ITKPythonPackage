@@ -6,7 +6,6 @@ from os import environ
 from pathlib import Path
 
 from build_python_instance_base import BuildPythonInstanceBase
-from macos_venv_utils import create_macos_venvs
 import shutil
 
 from wheel_builder_utils import _remove_tree
@@ -51,7 +50,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         itk_binary_build_name: Path = (
             self.build_dir_root
             / "build"
-            / f"ITK-{self.py_env}-{self.get_pixi_environment_name()}_{target_arch}"
+            / f"ITK-{self.platform_env}-{self.get_pixi_environment_name()}_{target_arch}"
         )
 
         self.cmake_itk_source_build_configurations.set(
@@ -59,8 +58,8 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         )
 
         # Keep values consistent with prior quoting behavior
-        self.cmake_compiler_configurations.set("CMAKE_CXX_FLAGS:STRING", "-O3 -DNDEBUG")
-        self.cmake_compiler_configurations.set("CMAKE_C_FLAGS:STRING", "-O3 -DNDEBUG")
+        # self.cmake_compiler_configurations.set("CMAKE_CXX_FLAGS:STRING", "-O3 -DNDEBUG")
+        # self.cmake_compiler_configurations.set("CMAKE_C_FLAGS:STRING", "-O3 -DNDEBUG")
 
     def post_build_fixup(self) -> None:
         # delocate on macOS x86_64 only
@@ -135,20 +134,8 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
 
     def venv_paths(self) -> None:
         """Resolve virtualenv tool paths.
-        py_env may be a name under IPP_SOURCE_DIR/venvs or an absolute/relative path to a venv.
-        """
-        # First determine if py_env is the full path to a python environment
-        _command_line_pip_executable = Path(self.py_env) / "bin" / "pip3"
+        platform_env may be a name under IPP_SOURCE_DIR/venvs or an absolute/relative path to a venv.
 
-        primary_python_base_dir = Path(self.py_env)
-        if not _command_line_pip_executable.exists():
-            venv_root_dir: Path = self.build_dir_root / "venvs"
-            _venvs_dir_list = create_macos_venvs(primary_python_base_dir, venv_root_dir)
-            if len(_venvs_dir_list) != 1:
-                raise ValueError(
-                    f"Expected exactly one venv for {primary_python_base_dir}, found {_venvs_dir_list}"
-                )
-            primary_python_base_dir = _venvs_dir_list[0]
         python_executable = primary_python_base_dir / "bin" / "python3"
 
         if True:
@@ -194,7 +181,6 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             python_executable,
             python_include_dir,
             python_library,
-            pip_executable,
             venv_bin_path,
             venv_base_dir,
         ) = self.find_unix_exectable_paths(primary_python_base_dir)
@@ -202,7 +188,6 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             "python_executable": python_executable,
             "python_include_dir": python_include_dir,
             "python_library": python_library,
-            "pip_executable": pip_executable,
             "venv_bin_path": venv_bin_path,
             "venv_base_dir": venv_base_dir,
             "python_root_dir": primary_python_base_dir,
@@ -222,15 +207,15 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             # Sort for stable order
             return sorted(names)
 
-        default_py_envs = _discover_ipp_venvs()
+        default_platform_envs = _discover_ipp_venvs()
 
-        return default_py_envs
+        return default_platform_envs
 
-    def _final_import_test_fn(self, py_env, param):
+    def _final_import_test_fn(self, platform_env, param):
         pass
 
     def final_import_test(self) -> None:
-        self._final_import_test_fn(self.py_env, Path(self.dist_dir))
+        self._final_import_test_fn(self.platform_env, Path(self.dist_dir))
 
     def fixup_wheel(self, filepath, lib_paths: str = "") -> None:
         self.remove_apple_double_files()

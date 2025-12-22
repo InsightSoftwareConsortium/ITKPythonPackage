@@ -459,12 +459,6 @@ def generate_build_environment(argv: list[str]) -> int:
                 f"Failed to install {pixi_exec_path} pixi into {pixi_bin_dir}"
             )
 
-    # Copy pixi.toml and pixi.index to build_dir_path (only if different)
-    pixi_toml_path = Path(__file__).resolve().parent.parent / "resources" / "pixi.toml"
-    pixi_index_path = Path(__file__).resolve().parent.parent / "resources" / "pixi.lock"
-    safe_copy_if_different(pixi_toml_path, build_dir_path / "pixi.toml")
-    safe_copy_if_different(pixi_index_path, build_dir_path / "pixi.lock")
-
     # Required executables (paths recorded)
     platform_pixi_packages = ["doxygen", "ninja", "cmake"]
     if os_name == "linux":

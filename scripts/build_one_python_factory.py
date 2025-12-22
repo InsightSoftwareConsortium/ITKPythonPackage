@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import os
+import subprocess
 import sys
 
 from pathlib import Path
 
+from wheel_builder_utils import (
+    run_commandLine_subprocess,
+)
+
 
 def build_one_python_instance(
-    py_env,
+    platform_env,
     build_dir_root,
     wheel_names,
     package_env_config,
@@ -53,9 +58,18 @@ def build_one_python_instance(
     else:
         raise ValueError(f"Unknown platform {platform}")
 
+    cmd = ["pixi", "run", "-e", platform_env, "which", "python3"]
+
+    _ipp_dir: Path = Path(__file__).parent.parent
+    result :subprocess.CompletedProcess =run_commandLine_subprocess(cmd=cmd, cwd =_ipp_dir )
+    if result.returncode != 0:
+        raise ValueError(f"Failed to find python3 executable for platform_env {platform_env}")
+    python_executable: Path = Path(result.stdout.strip())
+
     # Pass helper function callables and dist dir to avoid circular imports
     builder = builder_cls(
-        py_env=py_env,
+        platform_env=platform_env,
+        python_executable=python_executable,
         build_dir_root=build_dir_root_path,
         wheel_names=wheel_names,
         package_env_config=package_env_config,

@@ -33,7 +33,8 @@ class BuildPythonInstanceBase(ABC):
     def __init__(
         self,
         *,
-        py_env,
+        platform_env,
+            python_executable,
         build_dir_root,
         wheel_names: Iterable[str],
         package_env_config: dict,
@@ -48,7 +49,9 @@ class BuildPythonInstanceBase(ABC):
     ) -> None:
         self.build_node_cpu_count: int = os.cpu_count() or 1
 
-        self.py_env = py_env
+        self.platform_env = platform_env
+        self.python_executable =python_executable
+        self.ipp_dir = Path(__file__).parent.parent
         self.build_dir_root = build_dir_root
         self.wheel_names = list(wheel_names)
         self.package_env_config = package_env_config
@@ -57,7 +60,7 @@ class BuildPythonInstanceBase(ABC):
         self.cleanup = False
         self.build_itk_tarball_cache = build_itk_tarball_cache
         self.cmake_options = cmake_options
-        # NEVER CLEANUP FOR DEBUGGGING cleanup
+        # NEVER CLEANUP FOR DEBUGGING cleanup
         self.windows_extra_lib_paths = windows_extra_lib_paths
         self.dist_dir = self.build_dir_root / dist_dir
         # Needed for processing remote modules and their dependancies
@@ -151,7 +154,6 @@ class BuildPythonInstanceBase(ABC):
             # "python_executable": None,
             # "python_include_dir": None,
             # "python_library": None,
-            # "pip_executable": None,
             # "venv_bin_path": None,
             # "venv_base_dir": None,
         }
@@ -210,7 +212,7 @@ class BuildPythonInstanceBase(ABC):
             ] = self.build_tarball
 
         self.dist_dir.mkdir(parents=True, exist_ok=True)
-        build_report_fn: Path = self.dist_dir / f"build_log_{self.py_env}.json"
+        build_report_fn: Path = self.dist_dir / f"build_log_{self.platform_env}.json"
         build_manager: BuildManager = BuildManager(
             build_report_fn, list(python_package_build_steps.keys())
         )
@@ -281,7 +283,7 @@ class BuildPythonInstanceBase(ABC):
     def final_wheel_import_test(self, installed_dist_dir: Path):
         self.echo_check_call(
             [
-                self.venv_info_dict["pip_executable"],
+                self.python_executable, "-m", "pip",
                 "install",
                 "itk",
                 "--no-cache-dir",
@@ -369,9 +371,6 @@ class BuildPythonInstanceBase(ABC):
         python_executable = venv_dir / "bin" / "python3"
         if not python_executable.exists():
             raise FileNotFoundError(f"Python executable not found: {python_executable}")
-        pip_executable = venv_dir / "bin" / "pip3"
-        if not pip_executable.exists():
-            raise FileNotFoundError(f"pip executable not found: {pip_executable}")
 
         # Compute Python include dir using sysconfig for the given interpreter
         try:
@@ -399,7 +398,6 @@ class BuildPythonInstanceBase(ABC):
             str(python_executable),
             python_include_dir,
             python_library,
-            str(pip_executable),
             str(venv_bin_path),
             venv_dir,
         )
@@ -905,15 +903,21 @@ class BuildPythonInstanceBase(ABC):
         pixi_environment: str = self.get_pixi_environment_name()
         pixi_executable: Path = self.package_env_config["PIXI_EXECUTABLE"]
         pixi_run_preamble: list[str] = []
-        pixi_run_dir: Path = self.build_dir_root / "build"
+        pixi_run_dir: Path = self.ipp_dir
         pixi_env: dict[str, str] = os.environ.copy()
         pixi_env.update(
             {
                 "PIXI_HOME": str(pixi_run_dir / ".pixi"),
-                "TEMP": "C:\Temp",
-                "TMP": "C:\Temp",
             }
         )
+        # if self.pa == "windows":
+        #     pixi_env.update(
+        #         {
+        #             "TEMP": "C:\Temp",
+        #             "TMP": "C:\Temp",
+        #         }
+        #     )
+
         if pixi_environment and use_pixi_env:
             pixi_run_preamble = [
                 str(pixi_executable),

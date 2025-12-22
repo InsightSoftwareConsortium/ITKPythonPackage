@@ -40,7 +40,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         itk_binary_build_name: Path = (
             self.build_dir_root
             / "build"
-            / f"ITK-{self.py_env}-{self.get_pixi_environment_name()}_{target_arch}"
+            / f"ITK-{self.platform_env}-{self.get_pixi_environment_name()}_{target_arch}"
         )
 
         self.cmake_itk_source_build_configurations.set(
@@ -124,7 +124,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                 rm(base / module_name)
 
     def final_import_test(self) -> None:
-        self._final_import_test_fn(self.py_env, Path(self.dist_dir))
+        self._final_import_test_fn(self.platform_env, Path(self.dist_dir))
 
     def fixup_wheel(self, filepath, lib_paths: str = "") -> None:
         # Windows fixup_wheel
@@ -242,8 +242,8 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
 
     def venv_paths(self) -> None:
         # Create venv related paths
-        python_major: int = int(self.py_env.split(".")[0])
-        python_minor: int = int(self.py_env.split(".")[1])
+        python_major: int = int(self.platform_env.split(".")[0])
+        python_minor: int = int(self.platform_env.split(".")[1])
         virtualenv_pattern = (
             f"Python{python_major}*{python_minor}*/Scripts/virtualenv.exe"
         )
@@ -269,7 +269,6 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                 [venv_executable, str(venv_base_dir)], use_pixi_env=False
             )
 
-        pip_executable = primary_python_base_dir / "Scripts" / "pip.exe"
         python_executable = primary_python_base_dir / "python.exe"
         python_include_dir = primary_python_base_dir / "include"
         if int(python_minor) >= 11:
@@ -326,7 +325,6 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             "python_executable": python_executable,
             "python_include_dir": python_include_dir,
             "python_library": python_library,
-            "pip_executable": pip_executable,
             "venv_bin_path": venv_bin_path,
             "venv_base_dir": venv_base_dir,
             "python_root_dir": primary_python_base_dir,
@@ -335,12 +333,12 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
     def discover_python_venvs(
         self, platform_os_name: str, platform_architechure: str
     ) -> list[str]:
-        default_py_envs = [
+        default_platform_envs = [
             f"39-{platform_architechure}",
             f"310-{platform_architechure}",
             f"311-{platform_architechure}",
         ]
-        return default_py_envs
+        return default_platform_envs
 
-    def _final_import_test_fn(self, py_env, param):
+    def _final_import_test_fn(self, platform_env, param):
         pass
