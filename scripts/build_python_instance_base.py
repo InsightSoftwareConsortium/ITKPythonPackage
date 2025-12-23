@@ -944,7 +944,8 @@ class BuildPythonInstanceBase(ABC):
             else:
                 display_cmd = str(cmd)
         except Exception as e:
-            display_cmd = str(cmd)
+            display_cmd = f"{str(cmd)}\nERROR: {e}"
+            sys.exit(1)
         print(f">>Start Running: cd {pixi_run_dir} && {display_cmd}")
         print("^" * 60)
         print(cmd)
