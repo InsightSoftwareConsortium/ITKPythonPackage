@@ -114,7 +114,7 @@ def main() -> None:
     parser.add_argument(
         "--manylinux-version",
         type=str,
-        default=f"",
+        default="",
         help="default manylinux version, if empty, build native linux instead of cross compiling",
     )
 

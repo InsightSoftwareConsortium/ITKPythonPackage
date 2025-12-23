@@ -226,7 +226,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             env["PATH"] = os.environ["PATH"]
             self.echo_check_call(cmd, env=env)
         print(
-            f"Building outside of manylinux environment does not require wheel fixups."
+            "Building outside of manylinux environment does not require wheel fixups."
         )
         return
 

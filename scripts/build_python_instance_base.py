@@ -581,7 +581,7 @@ class BuildPythonInstanceBase(ABC):
             # Configure pyproject.toml
             wheel_configbuild_dir_root: Path = (
                 self.build_dir_root
-                / f"wheelbuilds"
+                / "wheelbuilds"
                 / f"{wheel_name}_{self.get_pixi_environment_name()}"
             )
             wheel_configbuild_dir_root.mkdir(parents=True, exist_ok=True)

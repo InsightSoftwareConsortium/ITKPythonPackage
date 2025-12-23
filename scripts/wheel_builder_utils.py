@@ -308,7 +308,7 @@ def git_describe_to_pep440(desc: str) -> str:
             if sha:
                 semver_format += f"+g{sha.lower()}"
             if dirty:
-                semver_format += f".dirty"
+                semver_format += ".dirty"
     return semver_format
 
 
