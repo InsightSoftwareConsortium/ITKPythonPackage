@@ -4,40 +4,36 @@ These functions have been copied from scikit-build project.
 See https://github.com/scikit-build/scikit-build
 """
 
-from __future__ import annotations # Needed for python 3.9 to support python 3.10 style typehints
+from __future__ import (
+    annotations,
+)  # Needed for python 3.9 to support python 3.10 style typehints
 
+import filecmp
 import os
+import re
 import shutil
 import subprocess
 import sys
 
 from pathlib import Path
-from os import environ as os_environ, chdir as os_chdir, environ
-from contextlib import contextmanager
+from os import chdir as os_chdir, environ
+
+# from contextlib import contextmanager
 from functools import wraps
 
-
-def mkdir_p(path):
-    """Ensure directory ``path`` exists. If needed, parent directories are created.
-
-    Uses pathlib with parents=True and exist_ok=True.
-    """
-    Path(path).mkdir(parents=True, exist_ok=True)
-
-
-@contextmanager
-def push_env(**kwargs):
-    """This context manager allow to set/unset environment variables."""
-    saved_env = dict(os_environ)
-    for var, value in kwargs.items():
-        if value is not None:
-            os_environ[var] = value
-        elif var in os_environ:
-            del os_environ[var]
-    yield
-    os_environ.clear()
-    for saved_var, saved_value in saved_env.items():
-        os_environ[saved_var] = saved_value
+# @contextmanager
+# def push_env(**kwargs):
+#     """This context manager allow to set/unset environment variables."""
+#     saved_env = dict(os_environ)
+#     for var, value in kwargs.items():
+#         if value is not None:
+#             os_environ[var] = value
+#         elif var in os_environ:
+#             del os_environ[var]
+#     yield
+#     os_environ.clear()
+#     for saved_var, saved_value in saved_env.items():
+#         os_environ[saved_var] = saved_value
 
 
 class ContextDecorator:
@@ -84,7 +80,7 @@ class push_dir(ContextDecorator):
         self.old_cwd = Path.cwd()
         if self.directory:
             if self.make_directory:
-                mkdir_p(self.directory)
+                Path(self.directory).mkdir(parents=True, exist_ok=True)
             os_chdir(self.directory)
         return self
 
@@ -243,3 +239,296 @@ def run_commandLine_subprocess(
         raise RuntimeError(error_msg)
 
     return completion_info
+
+
+def git_describe_to_pep440(desc: str) -> str:
+    """
+    Convert `git describe --tags --long --dirty --always` output
+
+    # v6.0b03-3-g1a2b3c4
+    # │   |   │   └── abbreviated commit hash
+    # │   |   └────── commits since tag
+    # |   └────────── pre-release type and number
+    # └────────────── nearest tag
+    to a PEP 440–compatible version string.
+
+    [N!]N(.N)*[{a|b|rc}N][.postN][.devN]+<localinfo>
+    111122222233333333333444444445555555666666666666
+    1 Epoch segment: N!
+    2 Release segment: N(.N)*
+    3 Pre-release segment: {a|b|rc}N
+    4 Post-release segment: .postN
+    5 Development release segment: .devN
+    6 local info not used in version ordering. I.e. ignored by package resolution rules
+    """
+    desc = desc.strip()
+    semver_format = "0.0.0"
+
+    m = re.match(
+        r"^(v)*(?P<majorver>\d+)(?P<minor>\.\d+)(?P<patch>\.\d+)*(?P<pretype>a|b|rc|alpha|beta)*0*(?P<prerelnum>\d*)-*(?P<posttagcount>\d*)-*g*(?P<sha>[0-9a-fA-F]+)*(?P<dirty>.dirty)*$",
+        desc,
+    )
+    if m:
+        groupdict = m.groupdict()
+
+        semver_format = (
+            f"{groupdict.get('majorver','')}" + f"{groupdict.get('minor','')}"
+        )
+        patch = groupdict.get("patch", None)
+        if patch:
+            semver_format += f"{patch}"
+        else:
+            semver_format += ".0"
+
+        prereleasemapping = {
+            "alpha": "a",
+            "a": "a",
+            "beta": "b",
+            "b": "b",
+            "rc": "rc",
+            "": "",
+        }
+        prerelease_name = prereleasemapping.get(groupdict.get("pretype", ""), None)
+        prerelnum = groupdict.get("prerelnum", None)
+        if prerelease_name and prerelnum and len(prerelease_name) > 0:
+            semver_format += f"{prerelease_name}{prerelnum}"
+        posttagcount = groupdict.get("posttagcount", None)
+        dirty = groupdict.get("dirty", None)
+        if (
+            len(posttagcount) > 0
+            and int(posttagcount) == 0
+            and (dirty is None or len(dirty) == 0)
+        ):
+            # If exactly on a tag, then do not add post, or sha
+            return semver_format
+        else:
+            if posttagcount and int(posttagcount) > 0:
+                semver_format += f".post{posttagcount}"
+            sha = groupdict.get("sha", None)
+            if sha:
+                semver_format += f"+g{sha.lower()}"
+            if dirty:
+                semver_format += f".dirty"
+    return semver_format
+
+
+def debug(msg: str, do_print=False) -> None:
+    if do_print:
+        print(msg)
+
+
+def parse_kv_overrides(pairs: list[str]) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for kv in pairs:
+        if "=" not in kv:
+            raise SystemExit(f"ERROR: Trailing argument '{kv}' is not KEY=VALUE")
+        key, value = kv.split("=", 1)
+        if not key or not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", key):
+            raise SystemExit(f"ERROR: Invalid variable name '{key}' in '{kv}'")
+        if value == "UNSET":
+            # Explicitly remove if present later
+            result[key] = None  # type: ignore
+        else:
+            result[key] = value
+    return result
+
+
+def get_git_id(
+    repo_dir: Path, pixi_exec_path, env, backup_version: str = "v0.0.0"
+) -> str | None:
+    # 1. exact tag
+    try:
+        run_result = run_commandLine_subprocess(
+            ["git", "describe", "--tags", "--exact-match"],
+            cwd=repo_dir,
+            env=env,
+            check=False,
+        )
+
+        if run_result.returncode == 0:
+            return run_result.stdout.strip()
+    except subprocess.CalledProcessError:
+        pass
+    # 2. branch
+    try:
+        run_result = run_commandLine_subprocess(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=repo_dir,
+            env=env,
+        )
+        branch = run_result.stdout.strip()
+        if run_result.returncode == 0 and branch != "HEAD":
+            return branch
+    except subprocess.CalledProcessError:
+        pass
+    # 3. short hash
+    try:
+        run_result = run_commandLine_subprocess(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=repo_dir,
+            env=env,
+        )
+        short_version = run_result.stdout.strip()
+        if run_result.returncode == 0 and short_version != "HEAD":
+            return short_version
+    except subprocess.CalledProcessError:
+        pass
+
+    # 4. punt and give dummy backup_version identifier
+    if not (repo_dir / ".git").is_dir():
+        if (repo_dir / ".git").is_file():
+            print(
+                f"WARNING: {str(repo_dir)} is a secondary git worktree, and may not resolve from within dockercross build"
+            )
+            return backup_version
+        print(f"ERROR: {repo_dir} is not a primary git repository")
+    return backup_version
+
+
+def compute_itk_package_version(
+    itk_dir: Path, itk_git_tag: str, pixi_exec_path, env
+) -> str:
+    # Try to compute from git describe
+    try:
+        run_commandLine_subprocess(
+            ["git", "fetch", "--tags"],
+            cwd=itk_dir,
+            env=env,
+        )
+        try:
+            run_commandLine_subprocess(
+                ["git", "checkout", itk_git_tag],
+                cwd=itk_dir,
+                env=env,
+            )
+        except Exception as e:
+            print(
+                f"WARNING: Failed to checkout {itk_git_tag}, reverting to 'main': {e}"
+            )
+            itk_git_tag = "main"
+            run_commandLine_subprocess(
+                ["git", "checkout", itk_git_tag],
+                cwd=itk_dir,
+                env=env,
+            )
+        desc = run_commandLine_subprocess(
+            [
+                "git",
+                "describe",
+                "--tags",
+                "--long",
+                "--dirty",
+                "--always",
+            ],
+            cwd=itk_dir,
+            env=env,
+        ).stdout.strip()
+        version = git_describe_to_pep440(desc)
+    except subprocess.CalledProcessError:
+        version = itk_git_tag.lstrip("v")
+
+    return version
+
+
+def default_manylinux(
+    os_name: str, arch: str, env: dict[str, str]
+) -> tuple[str, str, str, str]:
+    manylinux_version = env.get("MANYLINUX_VERSION", "_2_28")
+    image_tag = env.get("IMAGE_TAG", "")
+    container_source = env.get("CONTAINER_SOURCE", "")
+    image_name = env.get("MANYLINUX_IMAGE_NAME", "")
+
+    if os_name == "linux":
+        if arch == "x64" and manylinux_version == "_2_34":
+            image_tag = image_tag or "latest"
+        elif arch == "x64" and manylinux_version == "_2_28":
+            image_tag = image_tag or "20250913-6ea98ba"
+        elif arch == "aarch64" and manylinux_version == "_2_28":
+            image_tag = image_tag or "2025.08.12-1"
+        elif manylinux_version == "2014":
+            image_tag = image_tag or "20240304-9e57d2b"
+        elif manylinux_version == "":
+            image_tag = ""
+        else:
+            raise RuntimeError(
+                f"FAILURE: Unknown manylinux version {manylinux_version}"
+            )
+
+        if arch == "x64":
+            image_name = (
+                image_name or f"manylinux{manylinux_version}-{arch}:{image_tag}"
+            )
+            container_source = container_source or f"docker.io/dockcross/{image_name}"
+        elif arch == "aarch64":
+            image_name = (
+                image_name or f"manylinux{manylinux_version}_{arch}:{image_tag}"
+            )
+            container_source = container_source or f"quay.io/pypa/{image_name}"
+        else:
+            raise RuntimeError(f"Unknown target architecture {arch}")
+
+    return manylinux_version, image_tag, image_name, container_source
+
+
+def resolve_oci_exe(env: dict[str, str]) -> str:
+    # Mirror scripts/oci_exe.sh best-effort by picking an available OCI tool.
+    if env.get("OCI_EXE"):
+        return env["OCI_EXE"]
+    for cand in ("docker", "podman", "nerdctl"):
+        if shutil.which(cand):  # NOTE ALWAYS RETURNS NONE ON WINDOWS before 3.12
+            return cand
+    # Default to docker name if nothing found
+    return "docker"
+
+
+# def cmake_compiler_defaults(build_dir: Path) -> tuple[str | None, str | None]:
+#     info = build_dir / "cmake_system_information"
+#     if not info.exists():
+#         try:
+#             out = run_commandLine_subprocess(["cmake", "--system-information"]).stdout
+#             info.write_text(out, encoding="utf-8")
+#         except Exception as e:
+#             print(f"WARNING: Failed to generate cmake_system_information: {e}")
+#             return None, None
+#     text = info.read_text(encoding="utf-8", errors="ignore")
+#     cc = None
+#     cxx = None
+#     for line in text.splitlines():
+#         if "CMAKE_C_COMPILER == " in line:
+#             parts = re.split(r"\s+", line.strip())
+#             if len(parts) >= 4:
+#                 cc = parts[3]
+#         if "CMAKE_CXX_COMPILER == " in line:
+#             parts = re.split(r"\s+", line.strip())
+#             if len(parts) >= 4:
+#                 cxx = parts[3]
+#     return cc, cxx
+
+
+def give_relative_path(bin_exec: Path, build_dir_root: Path) -> str:
+    bin_exec = Path(bin_exec).resolve()
+    build_dir_root = Path(build_dir_root).resolve()
+    if bin_exec.is_relative_to(build_dir_root):
+        return "${BUILD_DIR_ROOT}" + os.sep + str(bin_exec.relative_to(build_dir_root))
+    return str(bin_exec)
+
+
+def safe_copy_if_different(src: Path, dst: Path) -> None:
+    """Copy file only if destination is missing or contents differ.
+
+    This avoids unnecessary overwrites and timestamp churn when files are identical.
+    """
+    src = Path(src)
+    dst = Path(dst)
+    if not dst.exists():
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src, dst)
+        return
+    try:
+        same = filecmp.cmp(src, dst, shallow=False)
+    except Exception as e:
+        # On any comparison failure, fall back to copying to be safe
+        same = False
+        print(f"WARNING: Failed to compare {src} to {dst}: {e}")
+    if not same:
+        shutil.copyfile(src, dst)
