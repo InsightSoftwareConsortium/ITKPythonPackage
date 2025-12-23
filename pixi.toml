@@ -42,7 +42,10 @@ scikit-build-core = ">=0.11.6,<0.12.0"
 setuptools_scm = ">=9.2.0"
 setuptools= ">=61"
 tomli="*"
+pip = "*"
 
+[feature.python-dev-pkgs.pypi-dependencies]
+build = "*"
 
 ########################################
 # Manylinux-specific feature
@@ -57,9 +60,6 @@ libhwloc = "*"  # Needed for tbb
 auditwheel = "*"
 patchelf = "*"  # Needed for auditwheel
 wheel = "*"
-
-[feature.linux-build.pypi-dependencies]
-build = "*"
 
 
 [feature.manylinux228-build]
@@ -230,3 +230,10 @@ windows-py311 = [
   "python-dev-pkgs",
   "windows-build"
 ]
+
+[dependencies]
+# pixi-pycharm and conda are only needed to support development in pycharm
+# https://pixi.prefix.dev/v0.21.1/ide_integration/pycharm/#how-to-use
+pixi-pycharm = ">=0.0.10,<0.0.11"
+conda = ">=25.7.0,<26"
+
