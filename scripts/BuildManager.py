@@ -1,4 +1,6 @@
-from __future__ import annotations # Needed for python 3.9 to support python 3.10 style typehints
+from __future__ import (
+    annotations,
+)  # Needed for python 3.9 to support python 3.10 style typehints
 
 import json
 import time
