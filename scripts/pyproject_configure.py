@@ -7,7 +7,7 @@ import re
 import sys
 from pathlib import Path
 import shutil
-from packaging.version import Version
+
 from wheel_builder_utils import read_env_file
 
 
@@ -78,7 +78,7 @@ def configure(template_file, parameters, output_file):
         for line in lines:
             append = True
             for key in parameters.keys():
-                value = parameters[key].strip()
+                value = str(parameters[key]).strip()
                 if (
                     key in line
                     and not value
