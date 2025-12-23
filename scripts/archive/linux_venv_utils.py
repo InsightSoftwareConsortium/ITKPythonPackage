@@ -28,7 +28,7 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Dict, Iterable, List, Mapping, Sequence, Tuple
+from typing import List, Mapping, Sequence
 
 try:
     from shutil import which  # type: ignore

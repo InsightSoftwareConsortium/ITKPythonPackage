@@ -3,12 +3,10 @@ from __future__ import (
 )  # Needed for python 3.9 to support python 3.10 style typehints
 
 import copy
-import os
 from os import environ
 from pathlib import Path
 
 from build_python_instance_base import BuildPythonInstanceBase
-import shutil
 
 from wheel_builder_utils import _remove_tree
 
