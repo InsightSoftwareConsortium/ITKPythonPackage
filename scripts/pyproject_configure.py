@@ -12,6 +12,8 @@ import shutil
 
 from wheel_builder_utils import read_env_file
 
+from packaging.version import Version
+
 
 def parameter_option(key, option):
     """Return value of `option` associated with parameter `key`.
@@ -290,12 +292,8 @@ def build_base_pyproject_parameters(
 
 
 def main():
-    # Resolve script information locally
-    SCRIPT_DIR = os.path.dirname(__file__)
-    IPP_BuildWheelsSupport_DIR = os.path.join(SCRIPT_DIR, "..", "BuildWheelsSupport")
-    SCRIPT_NAME = os.path.basename(__file__)
-
     # Parse arguments
+    SCRIPT_DIR = os.path.dirname(__file__)
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="""CLI allowing to configure ``pyproject.toml`` found in the `` ITKPythonPackage ``
@@ -334,20 +332,18 @@ Accepted values for `wheel_name` are ``itk`` and all values read from
         default=f"{SCRIPT_DIR}/../",
         help="The root of the build resources.",
     )
-    # Compute default env file relative to project root at runtime
-    ipp_dir: str = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    default_env_file: str = os.path.join(ipp_dir, "build", "package.env")
-    parser.add_argument(
-        "--env-file",
-        type=str,
-        help=".env file with parameters used to configured 'pyproject.toml'",
-        default=default_env_file,
-    )
     args = parser.parse_args()
     print(f"Reading configuration settings from {args.env_file}")
-
     package_env_config = read_env_file(args.env_file, args.build_dir_root)
 
+    configure_one_pyproject_file(
+        SCRIPT_DIR, package_env_config, args.output_dir, args.wheel_name
+    )
+
+
+def configure_one_pyproject_file(
+    SCRIPT_DIR: str | bytes, package_env_config, output_dir, wheel_name: str = "itk"
+):
     # Version needs to be python PEP 440 compliant (no leading v)
     PEP440_VERSION: str = package_env_config["ITK_PACKAGE_VERSION"].removeprefix("v")
     try:
@@ -356,15 +352,16 @@ Accepted values for `wheel_name` are ``itk`` and all values read from
         )  # Raise InvalidVersion exception if not PEP 440 compliant
     except ValueError:
         print(f"Invalid PEP 440 version: {PEP440_VERSION}")
-        print(
-            f"Please check the ITK_PACKAGE_VERSION environment variable in {args.env_file}."
-        )
         sys.exit(1)
 
+    # Resolve script information locally
+
+    IPP_BuildWheelsSupport_DIR = os.path.join(SCRIPT_DIR, "..", "BuildWheelsSupport")
+    SCRIPT_NAME = os.path.basename(__file__)
     # Write itkVersion.py file to report ITK version in python.
-    write_itkVersion_py(Path(args.output_dir) / "itkVersion.py", PEP440_VERSION)
+    write_itkVersion_py(Path(output_dir) / "itkVersion.py", PEP440_VERSION)
     # Copy LICENSE file needed for each wheel
-    shutil.copy(Path(IPP_BuildWheelsSupport_DIR) / "LICENSE", args.output_dir)
+    shutil.copy(Path(IPP_BuildWheelsSupport_DIR) / "LICENSE", output_dir)
 
     base_params = build_base_pyproject_parameters(
         package_env_config, SCRIPT_NAME, PEP440_VERSION
@@ -386,27 +383,18 @@ Accepted values for `wheel_name` are ``itk`` and all values read from
         )
     )
 
-    if args.wheel_name not in PYPROJECT_PY_PARAMETERS.keys():
-        print(f"Unknown wheel name '{args.wheel_name}'")
+    if wheel_name not in PYPROJECT_PY_PARAMETERS.keys():
+        print(f"Unknown wheel name '{wheel_name}'")
         sys.exit(1)
 
     # Configure 'pyproject.toml'
-    output_file = os.path.join(args.output_dir, "pyproject.toml")
+    output_file = os.path.join(output_dir, "pyproject.toml")
     print(f"Generating: {output_file}")
     template = os.path.join(SCRIPT_DIR, "pyproject.toml.in")
-    configure(template, PYPROJECT_PY_PARAMETERS[args.wheel_name], output_file)
-
-    # Configure or remove 'itk/__init__.py'
-    # init_py = os.path.join(args.output_dir, "itk", "__init__.py")
-    # if args.wheel_name in ["itk", "itk-core"]:
-    # with open(init_py, 'w') as file_:
-    # file_.write("# Stub required for package\n")
-    # else:
-    # if os.path.exists(init_py):
-    # os.remove(init_py)
+    configure(template, PYPROJECT_PY_PARAMETERS[wheel_name], output_file)
 
 
-def write_itkVersion_py(filename: str, itk_package_version: str):
+def write_itkVersion_py(filename: str | Path, itk_package_version: str):
     itk_version_python_code = f"""
 VERSION: str = '{itk_package_version}'
 
