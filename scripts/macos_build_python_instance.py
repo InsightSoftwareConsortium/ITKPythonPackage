@@ -1,4 +1,6 @@
-from __future__ import annotations # Needed for python 3.9 to support python 3.10 style typehints
+from __future__ import (
+    annotations,
+)  # Needed for python 3.9 to support python 3.10 style typehints
 
 import copy
 import os
@@ -24,7 +26,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         # The pixi environment name is the same as the manylinux version
         # and is related to the environment setups defined in pixi.toml
         # in the root of this git directory that contains these scripts.
-        return "macos"
+        return self.platform_env
 
     def prepare_build_env(self) -> None:
         # #############################################
@@ -135,48 +137,10 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
     def venv_paths(self) -> None:
         """Resolve virtualenv tool paths.
         platform_env may be a name under IPP_SOURCE_DIR/venvs or an absolute/relative path to a venv.
-
-        python_executable = primary_python_base_dir / "bin" / "python3"
-
+        """
+        primary_python_base_dir = self.python_executable.parent.parent
         if True:
-            # Install required tools into each venv
-            self._pip_uninstall_itk_wildcard(python_executable)
-            self.echo_check_call(
-                [python_executable, "-m", "pip", "install", "--upgrade", "pip"],
-                use_pixi_env=False,
-            )
-            self.echo_check_call(
-                [
-                    python_executable,
-                    "-m",
-                    "pip",
-                    "install",
-                    "--upgrade",
-                    "build",
-                    "numpy",
-                    "scikit-build-core",
-                    #  os-specific tools below
-                    "delocate",
-                ],
-                use_pixi_env=False,
-            )
-            # Install dependencies
-            self.echo_check_call(
-                [
-                    python_executable,
-                    "-m",
-                    "pip",
-                    "install",
-                    "--upgrade",
-                    "-r",
-                    str(
-                        self.package_env_config["IPP_SOURCE_DIR"]
-                        / "requirements-dev.txt"
-                    ),
-                ],
-                use_pixi_env=False,
-            )
-
+            self._pip_uninstall_itk_wildcard(self.python_executable)
         (
             python_executable,
             python_include_dir,

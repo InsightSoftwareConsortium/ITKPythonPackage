@@ -1,4 +1,6 @@
-from __future__ import annotations # Needed for python 3.9 to support python 3.10 style typehints
+from __future__ import (
+    annotations,
+)  # Needed for python 3.9 to support python 3.10 style typehints
 
 import copy
 import os
@@ -30,7 +32,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
         )
         if not manylinux_ver or len(manylinux_ver) == 0:
             # Building native on linux, packages have very limited distribution utility
-            return f"linux-py39"
+            return self.platform_env
         manylinux_ver = manylinux_ver.strip().lower()
 
         if manylinux_ver == "manylinux1":
@@ -339,7 +341,9 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             names.extend([p.name for p in base.iterdir() if p.is_dir()])
             return sorted(names)
 
-        default_platform_envs = _discover_manylinuxlocal_pythons() + _discover_ipp_venvs()
+        default_platform_envs = (
+            _discover_manylinuxlocal_pythons() + _discover_ipp_venvs()
+        )
 
         return default_platform_envs
 
