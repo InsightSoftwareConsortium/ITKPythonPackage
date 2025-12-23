@@ -15,7 +15,6 @@ from BuildManager import BuildManager
 from pyproject_configure import configure_one_pyproject_file
 from wheel_builder_utils import (
     _remove_tree,
-    push_env,
     _which,
     run_commandLine_subprocess,
 )
