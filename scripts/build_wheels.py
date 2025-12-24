@@ -69,13 +69,13 @@ def main() -> None:
     )
     parser.add_argument(
         "--module-source-dir",
-        type=Path,
+        type=str,
         default=None,
         help="Path to the (remote) module source directory to build.",
     )
     parser.add_argument(
         "--module-dependencies-root-dir",
-        type=Path,
+        type=str,
         default=None,
         help="Path to the root directory for module dependencies.\n"
         + "This is the path where a remote module dependencies (other remote modules)\n"
