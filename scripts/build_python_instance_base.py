@@ -92,7 +92,7 @@ class BuildPythonInstanceBase(ABC):
         self.cmake_options = cmake_options
         # NEVER CLEANUP FOR DEBUGGING cleanup
         self.windows_extra_lib_paths = windows_extra_lib_paths
-        self.dist_dir = self.build_dir_root / dist_dir
+        self.dist_dir = dist_dir
         # Needed for processing remote modules and their dependencies
         self.module_source_dir: Path = (
             Path(module_source_dir) if module_source_dir else None

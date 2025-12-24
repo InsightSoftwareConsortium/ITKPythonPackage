@@ -3,6 +3,7 @@ from __future__ import (
 )  # Needed for python 3.9 to support python 3.10 style typehints
 
 import copy
+import re
 from os import environ
 from pathlib import Path
 
@@ -25,7 +26,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         # The pixi environment name is the same as the manylinux version
         # and is related to the environment setups defined in pixi.toml
         # in the root of this git directory that contains these scripts.
-        return "windows"
+        return self.platform_env
 
     def prepare_build_env(self) -> None:
         # #############################################
@@ -241,39 +242,27 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         )
 
     def venv_paths(self) -> None:
-        # Create venv related paths
-        python_major: int = int(self.platform_env.split(".")[0])
-        python_minor: int = int(self.platform_env.split(".")[1])
-        virtualenv_pattern = (
-            f"Python{python_major}*{python_minor}*/Scripts/virtualenv.exe"
-        )
-        all_glob_matches = [p for p in Path("C:\\").glob(virtualenv_pattern)]
-        if len(all_glob_matches) > 1:
-            raise RuntimeError(
-                f"Multiple virtualenv.exe matches found: {all_glob_matches}"
-            )
-        elif len(all_glob_matches) == 0:
-            raise RuntimeError(
-                f"No virtualenv.exe matches found for Python {virtualenv_pattern}"
-            )
-        venv_executable = Path(all_glob_matches[0])
-        # On windows use base python interpreter, and not a virtual env
-        primary_python_base_dir: Path = venv_executable.parent.parent
-        venv_base_dir: Path = primary_python_base_dir
-        venv_bin_path = venv_base_dir / "Scripts"
-        # venv_base_dir = (
-        #     Path(self.build_dir_root) / f"venv-{python_major}.{python_minor}"
-        # )
-        if not venv_base_dir.exists():
-            self.echo_check_call(
-                [venv_executable, str(venv_base_dir)], use_pixi_env=False
-            )
+        def get_python_version(platform_env: str) -> None | tuple[int, int]:
+            pattern = re.compile(r"py3(?P<minor>\d+)")
+            m = pattern.search(platform_env)
+            if not m:
+                return None
+            return 3, int(m.group("minor"))
 
-        python_executable = primary_python_base_dir / "python.exe"
+        # Create venv related paths
+        # On windows use base python interpreter, and not a virtual env
+        primary_python_base_dir: Path = self.python_executable.parent.parent
+        venv_base_dir: Path = primary_python_base_dir
+        venv_bin_path = self.python_executable.parent
+
+        python_executable = self.python_executable
         python_include_dir = primary_python_base_dir / "include"
-        if int(python_minor) >= 11:
+        python_major, python_minor = get_python_version(self.platform_env)
+        if python_minor >= 11:
             # Stable ABI
-            python_library = primary_python_base_dir / "libs" / "python3.lib"
+            python_library = (
+                primary_python_base_dir / "libs" / f"python{python_major}.lib"
+            )
         else:
             # XXX It should be possible to query skbuild for the library dir associated
             #     with a given interpreter.
@@ -282,45 +271,6 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                 primary_python_base_dir / "libs" / f"python{xy_lib_ver}.lib"
             )
 
-        if venv_base_dir.exists():
-            # Install required tools into each venv
-            self._pip_uninstall_itk_wildcard(python_executable)
-            self.echo_check_call(
-                [python_executable, "-m", "pip", "install", "--upgrade", "pip"],
-                use_pixi_env=False,
-            )
-            self.echo_check_call(
-                [
-                    python_executable,
-                    "-m",
-                    "pip",
-                    "install",
-                    "--upgrade",
-                    "build",
-                    "numpy",
-                    "scikit-build-core",
-                    #  os-specific tools below
-                    "delvewheel",
-                    "pkginfo",
-                ],
-                use_pixi_env=False,
-            )
-            # Install dependencies
-            self.echo_check_call(
-                [
-                    python_executable,
-                    "-m",
-                    "pip",
-                    "install",
-                    "--upgrade",
-                    "-r",
-                    str(
-                        self.package_env_config["IPP_SOURCE_DIR"]
-                        / "requirements-dev.txt"
-                    ),
-                ],
-                use_pixi_env=False,
-            )
         self.venv_info_dict = {
             "python_executable": python_executable,
             "python_include_dir": python_include_dir,

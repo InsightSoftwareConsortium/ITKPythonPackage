@@ -474,7 +474,7 @@ def default_manylinux(
         else:
             raise RuntimeError(f"Unknown target architecture {arch}")
 
-    return manylinux_version, image_tag, image_name, container_source
+    return image_tag, image_name, container_source
 
 
 def resolve_oci_exe(env: dict[str, str]) -> str:
