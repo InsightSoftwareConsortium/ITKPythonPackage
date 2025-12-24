@@ -97,6 +97,13 @@ c-compiler = "==1.10.0"
 
 [feature.windows-build]
 platforms = ["win-64"]
+[feature.windows-build.dependencies]
+git = "*" # Git is not always available in PowerShell by default
+cxx-compiler = "==1.10.0"
+c-compiler = "==1.10.0"
+
+[feature.windows-build.pypi-dependencies]
+# windows = "*"
 
 
 [feature.py39]
@@ -125,13 +132,6 @@ python = ">=3.11,<3.12"
 #[feature.py314.dependencies]
 #python = ">=3.14,<3.15"
 #
-
-[feature.windows-build.pypi-dependencies]
-# windows = "*"
-
-[feature.windows-build.dependencies]
-# cxx-compiler = "==1.10.0"
-# c-compiler = "==1.10.0"
 
 
 ########################################
