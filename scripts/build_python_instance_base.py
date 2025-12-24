@@ -67,16 +67,6 @@ class BuildPythonInstanceBase(ABC):
             )
         self.python_executable: Path = Path(result.stdout.strip())
 
-        cmd = ["pixi", "run", "-e", self.platform_env, "which", "doxygen"]
-        result: subprocess.CompletedProcess = run_commandLine_subprocess(
-            cmd=cmd, cwd=self.ipp_dir
-        )
-        if result.returncode != 0:
-            raise ValueError(
-                f"Failed to find doxygen executable for platform_env {platform_env}"
-            )
-        self.package_env_config["DOXYGEN_EXECUTABLE"] = Path(result.stdout.strip())
-
         with open(
             IPP_BuildWheelsSupport_DIR / "WHEEL_NAMES.txt",
             "r",
