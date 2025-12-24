@@ -149,12 +149,16 @@ def read_env_file(
     return result
 
 
-def _which(exe_name: str) -> str | Path | None:
+def _which(exe_name: str) -> Path | None:
     """Simple PATH-based lookup using pathlib only."""
-    pathext: list[str] = environ.get("PATHEXT", ".EXE;.BAT;.CMD").split(";")
-    paths: list[str] = environ.get("PATH", "").split(";")
+    # shutil.which only works on windows after python 3.12.
+    pathext: list[str] = environ.get("PATHEXT", ".EXE;.BAT;.CMD;.exe;.bat;.cmd").split(
+        ";"
+    )
+    paths: list[str] = environ.get("PATH", "").split(os.pathsep)
     exe: Path = Path(exe_name)
-    candidates = [exe] if exe.suffix else [Path(exe_name + ext) for ext in pathext]
+    candidates : list[Path]= [exe] if exe.suffix else [Path(exe_name + ext) for ext in pathext]
+    candidates = [exe] + candidates
     for p in paths:
         if not p:
             continue
