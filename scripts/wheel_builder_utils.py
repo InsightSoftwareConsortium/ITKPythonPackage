@@ -440,7 +440,7 @@ def compute_itk_package_version(
 
 def default_manylinux(
     manylinux_version: str, os_name: str, arch: str, env: dict[str, str]
-) -> tuple[str, str, str, str]:
+) -> tuple[str, str, str]:
     image_tag = env.get("IMAGE_TAG", "")
     container_source = env.get("CONTAINER_SOURCE", "")
     image_name = env.get("MANYLINUX_IMAGE_NAME", "")

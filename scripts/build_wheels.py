@@ -105,13 +105,6 @@ def build_wheels_main() -> None:
         action="store_true",
         help="Build an uploadable tarball.  The tarball can be used as a cache for remote module builds.",
     )
-    # parser.add_argument(
-    #     "--package-env-file",
-    #     type=str,
-    #     default=f"",
-    #     help=".env file with parameters used to control builds, default to build/package.env for native builds\n"
-    #     + "and is commonly set to /work/dist/container_package.env for dockercross builds.",
-    # )
 
     default_build_dir_root = Path(ipp_script_dir).parent / "ITKPythonPackage-build"
     parser.add_argument(
