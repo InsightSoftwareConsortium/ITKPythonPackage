@@ -219,14 +219,16 @@ def run_commandLine_subprocess(
     cmd: list[str | Path], cwd: Path | None = None, env: dict = None, check: bool = True
 ) -> subprocess.CompletedProcess:
     cmd = [str(x) for x in cmd]
-    print(f"Running >>>>>: {' '.join(cmd)}  ; # in cwd={cwd} with check={check}")
+    print(f"Running >>>>>: {' '.join(cmd)}  ; # in cwd={cwd} with check={check}\n")
+    # if env:
+    #     for k, v in env.items():
+    #         print(f"{k}={v}")
     completion_info = subprocess.run(
         cmd,
         cwd=str(cwd) if cwd else None,
-        env=env if env else None,
-        check=False,
         capture_output=True,
         text=True,
+        env=env if env else None,
     )
     if completion_info.returncode != 0 and check:
         error_msg = "!~" * 40
