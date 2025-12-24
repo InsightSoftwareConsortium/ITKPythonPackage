@@ -886,6 +886,7 @@ class BuildPythonInstanceBase(ABC):
         self,
         cmd: list[str | Path] | tuple[str | Path] | str | Path,
         use_pixi_env: bool = True,
+        env=None,
         **kwargs: dict,
     ) -> int:
         """Print the command then run subprocess.check_call.
@@ -903,6 +904,8 @@ class BuildPythonInstanceBase(ABC):
         pixi_run_preamble: list[str] = []
         pixi_run_dir: Path = self.ipp_dir
         pixi_env: dict[str, str] = os.environ.copy()
+        if env is not None:
+            pixi_env.update(env)
         pixi_env.update(
             {
                 "PIXI_HOME": str(pixi_run_dir / ".pixi"),

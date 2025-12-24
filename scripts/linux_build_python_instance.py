@@ -183,11 +183,6 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
                     "/usr/lib",
                 ]
             )
-            os.environ["PATH"] = (
-                str(Path(self.venv_info_dict["python_executable"]).parent)
-                + os.pathsep
-                + os.environ.get("PATH", "")
-            )
             print(f'RUNNING WITH PATH {os.environ["PATH"]}')
             env["PATH"] = os.environ["PATH"]
             self.echo_check_call(cmd, env=env)
