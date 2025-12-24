@@ -33,7 +33,6 @@ def main() -> None:
     )
     parser.add_argument(
         "--platform-env",
-        nargs="+",
         default=None,
         help=(
             """A platform environment name or path: 
