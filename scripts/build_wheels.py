@@ -124,7 +124,7 @@ def build_wheels_main() -> None:
         "--manylinux-version",
         type=str,
         default="",
-        help="default manylinux version, if empty, build native linux instead of cross compiling",
+        help="default manylinux version (_2_28, _2_34, ...), if empty, build native linux instead of cross compiling",
     )
 
     parser.add_argument(
@@ -332,23 +332,7 @@ def build_wheels_main() -> None:
     package_env_config["NINJA_EXECUTABLE"] = _which("ninja")
     package_env_config["DOXYGEN_EXECUTABLE"] = _which("doxygen")
 
-    # Manylinux/docker bits for Linux
-
-    if os_name == "linux":
-
-        target_arch = os.environ.get("TARGET_ARCH") or arch
-
-        manylinux_version, image_tag, manylinux_image_name, container_source = (
-            default_manylinux(os_name, target_arch, os.environ.copy())
-        )
-        oci_exe = resolve_oci_exe(os.environ.copy())
-        package_env_config["MANYLINUX_VERSION"] = manylinux_version
-        package_env_config["IMAGE_TAG"] = image_tag
-        package_env_config["MANYLINUX_IMAGE_NAME"] = manylinux_image_name
-        package_env_config["CONTAINER_SOURCE"] = container_source
-        package_env_config["TARGET_ARCH"] = target_arch
-    else:
-        oci_exe = os.environ.get("OCI_EXE", "")
+    oci_exe = resolve_oci_exe(os.environ.copy())
     package_env_config["OCI_EXE"] = oci_exe
     del oci_exe
 
@@ -365,16 +349,34 @@ def build_wheels_main() -> None:
     elif platform == "linux":
         from linux_build_python_instance import LinuxBuildPythonInstance
 
-        manylinux_version: str = package_env_config.get("MANYLINUX_VERSION", "")
-        # Native builds without dockercross need a separate dist dir to avoid conflicts with manylinux
-        # dist_dir = IPP_SOURCE_DIR / f"{platform}_dist"
-        if len(manylinux_version) > 0 and (
-            os.environ.get("CROSS_TRIPLE", None) is None
-        ):
-            print(
-                f"ERROR: MANYLINUX_VERSION={manylinux_version} but not building in dockcross."
+        # Manylinux/docker bits for Linux
+        target_arch = os.environ.get("TARGET_ARCH") or arch
+
+        manylinux_version: str = args.manylinux_version
+        if manylinux_version and len(manylinux_version) > 0:
+            if (
+                os.environ.get("MANYLINUX_VERSION", manylinux_version)
+                != manylinux_version
+            ):
+                print(
+                    f"WARNING: environment variable MANYLINUX_VERSION={manylinux_version} is changed to comand line value of {manylinux_version}."
+                )
+            package_env_config["MANYLINUX_VERSION"] = manylinux_version
+            image_tag, manylinux_image_name, container_source = default_manylinux(
+                manylinux_version, os_name, target_arch, os.environ.copy()
             )
-            sys.exit(1)
+            package_env_config["IMAGE_TAG"] = image_tag
+            package_env_config["MANYLINUX_IMAGE_NAME"] = manylinux_image_name
+            package_env_config["CONTAINER_SOURCE"] = container_source
+            package_env_config["TARGET_ARCH"] = target_arch
+
+            # Native builds without dockercross need a separate dist dir to avoid conflicts with manylinux
+            # dist_dir = IPP_SOURCE_DIR / f"{platform}_dist"
+            if os.environ.get("CROSS_TRIPLE", None) is None:
+                print(
+                    f"ERROR: MANYLINUX_VERSION={manylinux_version} but not building in dockcross."
+                )
+                sys.exit(1)
 
         builder_cls = LinuxBuildPythonInstance
     else:

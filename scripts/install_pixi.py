@@ -9,7 +9,7 @@ def download_and_install_pixi(
 ) -> Path:
     pixi_bin_name: str = "pixi" + binary_ext
     # Attempt to find an existing pixi binary on the system first (cross-platform)
-    pixi_exec_path: Path = pixi_home / "bin" / pixi_bin_name
+    pixi_exec_path: Path = Path(pixi_home) / "bin" / pixi_bin_name
 
     pixi_install_env = os.environ.copy()
     pixi_install_env["PIXI_NO_PATH_UPDATE"] = "1"
@@ -87,7 +87,7 @@ def install_pixi_tools(platform_env: str = "default"):
     os_name, arch = detect_platform()
     binary_ext: str = ".exe" if os_name == "windows" else ""
 
-    pixi_home: Path = (
+    pixi_home: Path = Path(
         os.environ.get("PIXI_HOME")
         if "PIXI_HOME" in os.environ
         else _ipp_dir_path / ".pixi"

@@ -157,7 +157,9 @@ def _which(exe_name: str) -> Path | None:
     )
     paths: list[str] = environ.get("PATH", "").split(os.pathsep)
     exe: Path = Path(exe_name)
-    candidates : list[Path]= [exe] if exe.suffix else [Path(exe_name + ext) for ext in pathext]
+    candidates: list[Path] = (
+        [exe] if exe.suffix else [Path(exe_name + ext) for ext in pathext]
+    )
     candidates = [exe] + candidates
     for p in paths:
         if not p:
@@ -437,9 +439,8 @@ def compute_itk_package_version(
 
 
 def default_manylinux(
-    os_name: str, arch: str, env: dict[str, str]
+    manylinux_version: str, os_name: str, arch: str, env: dict[str, str]
 ) -> tuple[str, str, str, str]:
-    manylinux_version = env.get("MANYLINUX_VERSION", "_2_28")
     image_tag = env.get("IMAGE_TAG", "")
     container_source = env.get("CONTAINER_SOURCE", "")
     image_name = env.get("MANYLINUX_IMAGE_NAME", "")
