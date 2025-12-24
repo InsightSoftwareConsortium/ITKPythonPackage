@@ -6,6 +6,8 @@ from __future__ import (
 import os
 import subprocess
 import sys
+import argparse
+from pathlib import Path
 
 
 from wheel_builder_utils import (
@@ -14,7 +16,9 @@ from wheel_builder_utils import (
     default_manylinux,
     compute_itk_package_version,
     resolve_oci_exe,
+    _which,
 )
+
 
 if sys.version_info < (3, 9):
     sys.stderr.write(
@@ -22,11 +26,17 @@ if sys.version_info < (3, 9):
     )
     sys.exit(1)
 
-import argparse
-from pathlib import Path
+
+def in_pixi_env() -> bool:
+    """
+    Determine if we are running inside a pixi enviornment.
+    Returns
+    -------
+    """
+    return "PIXI_ENVIRONMENT_NAME" in os.environ and "PIXI_PROJECT_ROOT" in os.environ
 
 
-def main() -> None:
+def build_wheels_main() -> None:
     ipp_script_dir: Path = Path(__file__).parent
     parser = argparse.ArgumentParser(
         description="Driver script to build ITK Python wheels."
@@ -182,13 +192,60 @@ def main() -> None:
          -  Option to indicate that ccache should be used
          """,
     )
+    parser.add_argument(
+        "--no-pixi-test",
+        action="store_false",
+        help="""
+         -  Option to indicate that pixi is not required for building.  This means that the development
+         environment must supply all the required resources outside of pixi.
+         """,
+    )
+
+    parser.add_argument(
+        "--install-local-pixi",
+        action="store_true",
+        help="""
+            Installs pixi locally if not found and quits.
+         """,
+    )
 
     args = parser.parse_args()
+
     print("=" * 80)
     print("=" * 80)
     print("= Building Wheels")
     print("=" * 80)
     print("=" * 80)
+
+    # Historical dist_dir name for compatibility with ITKRemoteModuleBuildTestPackageAction
+    _ipp_dir_path: Path = Path(__file__).resolve().parent.parent
+    dist_dir: Path = Path(args.build_dir_root) / "dist"
+
+    # Platform detection
+    os_name, arch = detect_platform()
+    binary_ext: str = ".exe" if os_name == "windows" else ""
+    os.environ["PATH"] = (
+        str(_ipp_dir_path / ".pixi" / "bin") + os.pathsep + os.environ.get("PATH", "")
+    )
+    pixi_exec_path: Path = _which("pixi" + binary_ext)
+    pixi_bin_path: Path = pixi_exec_path.parent
+    # Required executables (paths recorded)
+    # platform_pixi_packages = ["doxygen", "ninja", "cmake", "git"]
+    # if os_name == "linux":
+    #     platform_pixi_packages += ["patchelf"]
+    #
+    # missing_packages: list[str] = []
+    # for ppp in platform_pixi_packages:
+    #     # Search for binaries  herefull_path: Path = pixi_exec_path / (ppp + binary_ext)
+    #     if not full_path.is_file():
+    #         missing_packages.append(ppp)
+    # if len(missing_packages) > 0:
+    #   print diagnostic messaging and exit
+
+    # NOT NEEDED
+    # ipp_latest_tag: str = get_git_id(
+    #     _ipp_dir_path, pixi_exec_path, os.environ, os.environ.get("ITKPYTHONPACKAGE_TAG", "v0.0.0")
+    # )
 
     package_env_config: dict[str, str | Path | None] = {}
 
@@ -199,14 +256,9 @@ def main() -> None:
     args.itk_source_dir = Path(args.itk_source_dir)
     package_env_config["ITK_SOURCE_DIR"] = Path(args.itk_source_dir)
 
-    # Historical dist_dir name for compatibility with ITKRemoteModuleBuildTestPackageAction
-    _ipp_dir_path: Path = Path(__file__).resolve().parent.parent
-    dist_dir = args.build_dir_root / "dist"
-
     ipp_superbuild_binary_dir: Path = args.build_dir_root / "build" / "ITK-support-bld"
     package_env_config["IPP_SUPERBUILD_BINARY_DIR"] = ipp_superbuild_binary_dir
 
-    os_name, arch = detect_platform()
     package_env_config["OS_NAME"] = os_name
     package_env_config["ARCH"] = arch
 
@@ -371,10 +423,10 @@ def main() -> None:
     package_env_config["NO_SUDO"] = no_sudo
     package_env_config["ITK_MODULE_NO_CLEANUP"] = module_no_cleanup
     package_env_config["USE_CCACHE"] = use_ccache
-    package_env_config["PIXI_EXECUTABLE"] = pixi_bin_path / ("pixi" + binary_ext)
-    package_env_config["CMAKE_EXECUTABLE"] = pixi_bin_path / ("cmake" + binary_ext)
-    package_env_config["NINJA_EXECUTABLE"] = pixi_bin_path / ("ninja" + binary_ext)
-    package_env_config["DOXYGEN_EXECUTABLE"] = pixi_bin_path / ("doxygen" + binary_ext)
+    package_env_config["PIXI_EXECUTABLE"] = _which("pixi")
+    package_env_config["CMAKE_EXECUTABLE"] = _which("cmake")
+    package_env_config["NINJA_EXECUTABLE"] = _which("ninja")
+    package_env_config["DOXYGEN_EXECUTABLE"] = _which("doxygen")
 
     # Manylinux/docker bits for Linux
 
@@ -424,24 +476,23 @@ def main() -> None:
     else:
         raise ValueError(f"Unknown platform {platform}")
 
-    for each_platform in args.platform_env:
-        print(f"Building wheels for platform: {each_platform}")
-        # Pass helper function callables and dist dir to avoid circular imports
-        builder = builder_cls(
-            platform_env=each_platform,
-            build_dir_root=args.build_dir_root,
-            package_env_config=package_env_config,
-            cleanup=args.cleanup,
-            build_itk_tarball_cache=args.build_itk_tarball_cache,
-            cmake_options=args.cmake_options,
-            windows_extra_lib_paths=args.lib_paths,
-            dist_dir=dist_dir,
-            module_source_dir=args.module_source_dir,
-            module_dependencies_root_dir=args.module_dependencies_root_dir,
-            itk_module_deps=args.itk_module_deps,
-        )
-        builder.run()
+    print(f"Building wheels for platform: {args.platform_env}")
+    # Pass helper function callables and dist dir to avoid circular imports
+    builder = builder_cls(
+        platform_env=args.platform_env,
+        build_dir_root=args.build_dir_root,
+        package_env_config=package_env_config,
+        cleanup=args.cleanup,
+        build_itk_tarball_cache=args.build_itk_tarball_cache,
+        cmake_options=args.cmake_options,
+        windows_extra_lib_paths=args.lib_paths,
+        dist_dir=dist_dir,
+        module_source_dir=args.module_source_dir,
+        module_dependencies_root_dir=args.module_dependencies_root_dir,
+        itk_module_deps=args.itk_module_deps,
+    )
+    builder.run()
 
 
 if __name__ == "__main__":
-    main()
+    build_wheels_main()
