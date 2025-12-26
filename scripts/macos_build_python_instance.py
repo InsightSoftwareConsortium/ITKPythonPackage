@@ -137,8 +137,8 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         platform_env may be a name under IPP_SOURCE_DIR/venvs or an absolute/relative path to a venv.
         """
         primary_python_base_dir = self.python_executable.parent.parent
-        if True:
-            self._pip_uninstall_itk_wildcard(self.python_executable)
+        # if True:
+        #     self._pip_uninstall_itk_wildcard(self.python_executable)
         (
             python_executable,
             python_include_dir,
