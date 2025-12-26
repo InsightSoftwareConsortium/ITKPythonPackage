@@ -26,9 +26,9 @@ platforms = ["linux-64", "linux-aarch64", "osx-64", "osx-arm64", "win-64"]
 # Build tooling shared by all platforms
 [feature.build-dev-tools]
 [feature.build-dev-tools.dependencies]
-cmake = ">=3.30,<4"
-doxygen = ">=1.13.2,<2"
-ninja = ">=1.13.2,<2"
+cmake = ">=3.26,<4"
+doxygen = "<2"
+ninja = ">=1.11.1,<2"
 pkginfo = ">=1.12.1.2,<2"
 
 # Python packaging/build support shared by all platforms
@@ -85,6 +85,7 @@ libc = { family = "glibc", version = "2.28" }
 
 [feature.macos-build]
 platforms = ["osx-64", "osx-arm64"]
+system-requirements =  {macos = "10.7"}
 
 # delocate is a Python tool; cxx-compiler is the macOS toolchain meta-package
 [feature.macos-build.pypi-dependencies]
@@ -235,5 +236,5 @@ windows-py311 = [
 # pixi-pycharm and conda are only needed to support development in pycharm
 # https://pixi.prefix.dev/v0.21.1/ide_integration/pycharm/#how-to-use
 pixi-pycharm = ">=0.0.10,<0.0.11"
-conda = ">=25.7.0,<26"
+conda = "*"
 
