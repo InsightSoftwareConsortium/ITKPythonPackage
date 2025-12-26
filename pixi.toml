@@ -238,3 +238,8 @@ windows-py311 = [
 pixi-pycharm = ">=0.0.10,<0.0.11"
 conda = "*"
 
+[tasks.build-itk-wheels]
+cmd = [
+"python3", "scripts/build_wheels.py",
+  "--platform-env","{{ pixi.environment.name }}", 
+]
