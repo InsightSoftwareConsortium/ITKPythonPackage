@@ -199,8 +199,6 @@ taplo = "fmt pixi.toml"
 
 [tasks.build-itk-wheels]
 cmd = [
-  "python3",
+  "python",
   "scripts/build_wheels.py",
-  "--platform-env",
-  "{{ pixi.environment.name }}",
 ]

@@ -155,7 +155,7 @@ def build_wheels_main() -> None:
     default_build_dir_root = (
         ipp_dir.parent / "ITKPythonPackage-build"
         if os_name != "windows"
-        else Path("C:") / "BDR"
+        else Path("C:/") / "BDR"
     )
     parser.add_argument(
         "--build-dir-root",
@@ -189,7 +189,7 @@ def build_wheels_main() -> None:
     default_itk_source_dir = (
         ipp_dir.parent / "ITKPythonPackage-build" / "ITK"
         if os_name != "windows"
-        else Path("C:") / "BDR" / "ITK"
+        else Path("C:/") / "BDR" / "ITK"
     )
     parser.add_argument(
         "--itk-source-dir",
@@ -277,7 +277,7 @@ def build_wheels_main() -> None:
         str(_ipp_dir_path / ".pixi" / "bin") + os.pathsep + os.environ.get("PATH", "")
     )
     pixi_exec_path: Path = _which("pixi" + binary_ext)
-    #pixi_bin_path: Path = pixi_exec_path.parent
+    # pixi_bin_path: Path = pixi_exec_path.parent
     # Required executables (paths recorded)
     # platform_pixi_packages = ["doxygen", "ninja", "cmake", "git"]
     # if os_name == "linux":
