@@ -11,7 +11,7 @@ authors = [
   "LucasGandel <lucas.gandel@gmail.com>",
   "Davis Marc Vigneault <davis.vigneault@gmail.com>",
   "Jon Haitz Legarreta Gorroño <jon.haitz.legarreta@gmail.com>",
-  "Lee Newberg <lee.newberg@kitware.com>"
+  "Lee Newberg <lee.newberg@kitware.com>",
 ]
 
 name = "ITKPythonPackage"
@@ -40,8 +40,8 @@ pathspec = "*"
 pyproject-metadata = "*"
 scikit-build-core = ">=0.11.6,<0.12.0"
 setuptools_scm = ">=9.2.0"
-setuptools= ">=61"
-tomli="*"
+setuptools = ">=61"
+tomli = "*"
 pip = "*"
 
 [feature.python-dev-pkgs.pypi-dependencies]
@@ -56,9 +56,9 @@ platforms = ["linux-64"]
 [feature.linux-build.dependencies]
 cxx-compiler = "==1.11.0"
 c-compiler = "==1.11.0"
-libhwloc = "*"  # Needed for tbb
+libhwloc = "*"            # Needed for tbb
 auditwheel = "*"
-patchelf = "*"  # Needed for auditwheel
+patchelf = "*"            # Needed for auditwheel
 wheel = "*"
 
 
@@ -68,7 +68,7 @@ platforms = ["linux-64"]
 
 [feature.manylinux228-build.dependencies]
 auditwheel = "*"
-patchelf = "*"# Needed for auditwheel
+patchelf = "*"   # Needed for auditwheel
 wheel = "*"
 
 [feature.manylinux228-build.pypi-dependencies]
@@ -85,7 +85,7 @@ libc = { family = "glibc", version = "2.28" }
 
 [feature.macos-build]
 platforms = ["osx-64", "osx-arm64"]
-system-requirements =  {macos = "10.7"}
+system-requirements = { macos = "10.7" }
 
 # delocate is a Python tool; cxx-compiler is the macOS toolchain meta-package
 [feature.macos-build.pypi-dependencies]
@@ -99,7 +99,7 @@ c-compiler = "==1.10.0"
 [feature.windows-build]
 platforms = ["win-64"]
 [feature.windows-build.dependencies]
-git = "*" # Git is not always available in PowerShell by default
+git = "*"                 # Git is not always available in PowerShell by default
 cxx-compiler = "==1.10.0"
 c-compiler = "==1.10.0"
 
@@ -146,26 +146,11 @@ python = ">=3.11,<3.12"
 #  "python-dev-pkgs",
 #]
 
-linux-py39 = [
-  "py39",
-  "linux-build",
-  "build-dev-tools",
-  "python-dev-pkgs",
-]
+linux-py39 = ["py39", "linux-build", "build-dev-tools", "python-dev-pkgs"]
 
-linux-py310 = [
-  "py310",
-  "linux-build",
-  "build-dev-tools",
-  "python-dev-pkgs",
-]
+linux-py310 = ["py310", "linux-build", "build-dev-tools", "python-dev-pkgs"]
 
-linux-py311 = [
-  "py311",
-  "linux-build",
-  "build-dev-tools",
-  "python-dev-pkgs",
-]
+linux-py311 = ["py311", "linux-build", "build-dev-tools", "python-dev-pkgs"]
 
 # Manylinux wheel-build env (docker manylinux228 images, CI, etc.)
 manylinux228-py39 = [
@@ -189,57 +174,33 @@ manylinux228-py311 = [
 ]
 
 # macOS build env (both Intel and Apple Silicon)
-macos-py39 = [
-  "py39",
-  "build-dev-tools",
-  "python-dev-pkgs",
-  "macos-build",
-]
+macos-py39 = ["py39", "build-dev-tools", "python-dev-pkgs", "macos-build"]
 
 # macOS build env (both Intel and Apple Silicon)
-macos-py310 = [
-  "py310",
-  "build-dev-tools",
-  "python-dev-pkgs",
-  "macos-build",
-]
+macos-py310 = ["py310", "build-dev-tools", "python-dev-pkgs", "macos-build"]
 
-macos-py311 = [
-  "py311",
-  "build-dev-tools",
-  "python-dev-pkgs",
-  "macos-build",
-]
+macos-py311 = ["py311", "build-dev-tools", "python-dev-pkgs", "macos-build"]
 
 # Windows build env
-windows-py39 = [
-  "py39",
-  "build-dev-tools",
-  "python-dev-pkgs",
-  "windows-build"
-]
-windows-py310 = [
-  "py310",
-  "build-dev-tools",
-  "python-dev-pkgs",
-  "windows-build"
-]
+windows-py39 = ["py39", "build-dev-tools", "python-dev-pkgs", "windows-build"]
+windows-py310 = ["py310", "build-dev-tools", "python-dev-pkgs", "windows-build"]
 
-windows-py311 = [
-  "py311",
-  "build-dev-tools",
-  "python-dev-pkgs",
-  "windows-build"
-]
+windows-py311 = ["py311", "build-dev-tools", "python-dev-pkgs", "windows-build"]
 
 [dependencies]
 # pixi-pycharm and conda are only needed to support development in pycharm
 # https://pixi.prefix.dev/v0.21.1/ide_integration/pycharm/#how-to-use
 pixi-pycharm = ">=0.0.10,<0.0.11"
 conda = "*"
+taplo = ">=0.8.1,<0.11"
+
+[tasks]
+taplo = "fmt pixi.toml"
 
 [tasks.build-itk-wheels]
 cmd = [
-"python3", "scripts/build_wheels.py",
-  "--platform-env","{{ pixi.environment.name }}", 
+  "python3",
+  "scripts/build_wheels.py",
+  "--platform-env",
+  "{{ pixi.environment.name }}",
 ]
