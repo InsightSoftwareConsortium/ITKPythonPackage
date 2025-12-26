@@ -20,21 +20,21 @@ from wheel_builder_utils import (
 )
 
 
-def remotemodulebuildandtestaction() -> dict[str,str]:
-    ITKRemoteModuleBuildTestPackageAction_ENV_MAPPING: dict[str, str] = {
-        "ITK_PACKAGE_VERSION": "inputs.itk-wheel-tag",#
-        "ITKPYTHONPACKAGE_TAG":"inputs.itk-python-package-tag", #
-        "ITKPYTHONPACKAGE_ORG": "inputs.itk-python-package-org", #
-        "ITK_MODULE_PREQ": "inputs.itk-module-deps",#
-        "CMAKE_OPTIONS" : "inputs.cmake-options", #
-        "MANYLINUX_PLATFORM": "matrix.manylinux-platform", #--- No longer used, computed internally
-        "MANYLINUX_VERSION": "computed as first part of MANYLINUX_PLATFORM",#
-        "TARGET_ARCH": "computed as second part of MANYLINUX_PLATFORM",# --- No longer used, computed internally
-        "MACOSX_DEPLOYMENT_TARGET": "inputs.macosx-deployment-target"
+def remotemodulebuildandtestaction() -> dict[str, str]:
+    itk_remote_module_build_test_package_action_env_mapping: dict[str, str] = {
+        "ITK_PACKAGE_VERSION": "inputs.itk-wheel-tag",  #
+        "ITKPYTHONPACKAGE_TAG": "inputs.itk-python-package-tag",  #
+        "ITKPYTHONPACKAGE_ORG": "inputs.itk-python-package-org",  #
+        "ITK_MODULE_PREQ": "inputs.itk-module-deps",  #
+        "CMAKE_OPTIONS": "inputs.cmake-options",  #
+        "MANYLINUX_PLATFORM": "matrix.manylinux-platform",  # --- No longer used, computed internally
+        "MANYLINUX_VERSION": "computed as first part of MANYLINUX_PLATFORM",  #
+        "TARGET_ARCH": "computed as second part of MANYLINUX_PLATFORM",  # --- No longer used, computed internally
+        "MACOSX_DEPLOYMENT_TARGET": "inputs.macosx-deployment-target",
     }
     remote_module_build_dict: dict[str, str] = {}
-    for key in ITKRemoteModuleBuildTestPackageAction_ENV_MAPPING.keys():
-        remote_module_build_dict[key] =  os.environ.get(key,"")
+    for key in itk_remote_module_build_test_package_action_env_mapping.keys():
+        remote_module_build_dict[key] = os.environ.get(key, "")
     return remote_module_build_dict
 
     """
@@ -57,8 +57,9 @@ def in_pixi_env() -> bool:
     """
     return "PIXI_ENVIRONMENT_NAME" in os.environ and "PIXI_PROJECT_ROOT" in os.environ
 
-def get_default_platform_build(default_python_version:str = "py311") -> str:
-    from_pixi = os.get("PIXI_ENVIRONMENT_NAME", None)
+
+def get_default_platform_build(default_python_version: str = "py311") -> str:
+    from_pixi = os.environ.get("PIXI_ENVIRONMENT_NAME", None)
     if from_pixi:
         return from_pixi
     else:
@@ -68,13 +69,17 @@ def get_default_platform_build(default_python_version:str = "py311") -> str:
             return f"linux-{default_python_version}"
         elif os.name == "macos":
             return f"macos-{default_python_version}"
+    return "unkown-platform"
+
 
 def build_wheels_main() -> None:
     os_name, arch = detect_platform()
     ipp_script_dir: Path = Path(__file__).parent
-    ipp_dir : Path = ipp_script_dir.parent
-    if ipp_dir/".pixi"/"bin":
-        os.environ["PATH"] = str(ipp_dir/".pixi"/"bin") + os.pathsep + os.environ["PATH"]
+    ipp_dir: Path = ipp_script_dir.parent
+    if ipp_dir / ".pixi" / "bin":
+        os.environ["PATH"] = (
+            str(ipp_dir / ".pixi" / "bin") + os.pathsep + os.environ["PATH"]
+        )
 
     remote_module_build_dict = remotemodulebuildandtestaction()
     parser = argparse.ArgumentParser(
@@ -147,7 +152,11 @@ def build_wheels_main() -> None:
     )
 
     # set the default build_dir_root to a very short path on windows to avoid path too long errors
-    default_build_dir_root = ipp_dir.parent / "ITKPythonPackage-build" if os_name != "windows"  else Path("C:") / "BDR"
+    default_build_dir_root = (
+        ipp_dir.parent / "ITKPythonPackage-build"
+        if os_name != "windows"
+        else Path("C:") / "BDR"
+    )
     parser.add_argument(
         "--build-dir-root",
         type=str,
@@ -164,7 +173,9 @@ def build_wheels_main() -> None:
     parser.add_argument(
         "--itk-git-tag",
         type=str,
-        default=os.environ.get("ITK_GIT_TAG", os.environ.get("ITK_PACKAGE_VERSION","main")),
+        default=os.environ.get(
+            "ITK_GIT_TAG", os.environ.get("ITK_PACKAGE_VERSION", "main")
+        ),
         help="""
         - 'ITK_GIT_TAG': Tag/branch/hash for the ITK source code to use in packaging.
            Which ITK git tag/hash/branch to use as reference for building wheels/modules
@@ -175,7 +186,11 @@ def build_wheels_main() -> None:
     )
 
     # set the default build_dir_root to a very short path on windows to avoid path too long errors
-    default_itk_source_dir =  ipp_dir.parent / "ITKPythonPackage-build" / "ITK" if os_name != "windows" else Path("C:") / "BDR"/"ITK"
+    default_itk_source_dir = (
+        ipp_dir.parent / "ITKPythonPackage-build" / "ITK"
+        if os_name != "windows"
+        else Path("C:") / "BDR" / "ITK"
+    )
     parser.add_argument(
         "--itk-source-dir",
         type=str,
@@ -202,7 +217,7 @@ def build_wheels_main() -> None:
     parser.add_argument(
         "--itk-pythonpackage-org",
         type=str,
-        default=remote_module_build_dict["ITK_PYTHONPACKAGE_ORG"],
+        default=remote_module_build_dict["ITKPYTHONPACKAGE_ORG"],
         help="""
          - 'ITKPYTHONPACKAGE_ORG':Github organization or user to use for ITKPythonPackage build scripts
            Which script version to use in generating python packages
@@ -262,7 +277,7 @@ def build_wheels_main() -> None:
         str(_ipp_dir_path / ".pixi" / "bin") + os.pathsep + os.environ.get("PATH", "")
     )
     pixi_exec_path: Path = _which("pixi" + binary_ext)
-    pixi_bin_path: Path = pixi_exec_path.parent
+    #pixi_bin_path: Path = pixi_exec_path.parent
     # Required executables (paths recorded)
     # platform_pixi_packages = ["doxygen", "ninja", "cmake", "git"]
     # if os_name == "linux":
