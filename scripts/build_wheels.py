@@ -509,7 +509,7 @@ def build_wheels_main() -> None:
     print("= Building Wheels with effetive command line")
     print("\n\n")
     cmdline:str=f"{get_effective_command_line(parser, args)}"
-    with open(f"{args.build_dir_root}/effective_cmdline.sh", "w") as f:
+    with open(f"{args.build_dir_root}/effective_cmdline_{args.platform_env}.sh", "w") as f:
         f.write(cmdline)
     print(f"cmdline: {cmdline}")
     print("\n\n\n\n")
