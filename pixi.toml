@@ -92,20 +92,19 @@ system-requirements = { macos = "10.7" }
 delocate = "*"
 
 [feature.macos-build.dependencies]
-cxx-compiler = "==1.10.0"
-c-compiler = "==1.10.0"
+cxx-compiler = "==1.10.0"  # XCode 16.0 before castxml required updates
+c-compiler = "==1.10.0"    # XCode 16.0 before castxml required updates
 #libhwloc = "*" # Needed for tbb
 
 [feature.windows-build]
 platforms = ["win-64"]
 [feature.windows-build.dependencies]
 git = "*"                 # Git is not always available in PowerShell by default
-cxx-compiler = "==1.10.0"
-c-compiler = "==1.10.0"
+cxx-compiler = "==1.11.0" # MSVC 2022
+c-compiler = "==1.11.0"   # MSVC 2022
 
 [feature.windows-build.pypi-dependencies]
 # windows = "*"
-
 
 [feature.py39]
 [feature.py39.dependencies]
@@ -115,12 +114,10 @@ python = ">=3.9,<3.10"
 [feature.py310.dependencies]
 python = ">=3.10,<3.11"
 
-
 [feature.py311]
 [feature.py311.dependencies]
 python = ">=3.11,<3.12"
 
-#
 #[feature.py312]
 #[feature.py312.dependencies]
 #python = ">=3.12,<3.13"
@@ -132,7 +129,6 @@ python = ">=3.11,<3.12"
 #[feature.py314]
 #[feature.py314.dependencies]
 #python = ">=3.14,<3.15"
-#
 
 
 ########################################
@@ -140,16 +136,8 @@ python = ">=3.11,<3.12"
 ########################################
 
 [environments]
-# Linux build env (non-manylinux228)
-#linux = [
-#  "build-dev-tools",
-#  "python-dev-pkgs",
-#]
-
 linux-py39 = ["py39", "linux-build", "build-dev-tools", "python-dev-pkgs"]
-
 linux-py310 = ["py310", "linux-build", "build-dev-tools", "python-dev-pkgs"]
-
 linux-py311 = ["py311", "linux-build", "build-dev-tools", "python-dev-pkgs"]
 
 # Manylinux wheel-build env (docker manylinux228 images, CI, etc.)
@@ -165,7 +153,6 @@ manylinux228-py310 = [
   "build-dev-tools",
   "python-dev-pkgs",
 ]
-
 manylinux228-py311 = [
   "py311",
   "manylinux228-build",
@@ -175,16 +162,12 @@ manylinux228-py311 = [
 
 # macOS build env (both Intel and Apple Silicon)
 macos-py39 = ["py39", "build-dev-tools", "python-dev-pkgs", "macos-build"]
-
-# macOS build env (both Intel and Apple Silicon)
 macos-py310 = ["py310", "build-dev-tools", "python-dev-pkgs", "macos-build"]
-
 macos-py311 = ["py311", "build-dev-tools", "python-dev-pkgs", "macos-build"]
 
 # Windows build env
 windows-py39 = ["py39", "build-dev-tools", "python-dev-pkgs", "windows-build"]
 windows-py310 = ["py310", "build-dev-tools", "python-dev-pkgs", "windows-build"]
-
 windows-py311 = ["py311", "build-dev-tools", "python-dev-pkgs", "windows-build"]
 
 [dependencies]

@@ -7,6 +7,7 @@ import os
 import subprocess
 import sys
 import argparse
+import shlex
 from pathlib import Path
 
 
@@ -21,6 +22,8 @@ from wheel_builder_utils import (
 
 
 def remotemodulebuildandtestaction() -> dict[str, str]:
+    # This mapping is not used, but it holds the mapping of environment variables to GitHub Actions inputs
+    # to help define compatibility between the different build environments.
     itk_remote_module_build_test_package_action_env_mapping: dict[str, str] = {
         "ITK_PACKAGE_VERSION": "inputs.itk-wheel-tag",  #
         "ITKPYTHONPACKAGE_TAG": "inputs.itk-python-package-tag",  #
@@ -32,9 +35,20 @@ def remotemodulebuildandtestaction() -> dict[str, str]:
         "TARGET_ARCH": "computed as second part of MANYLINUX_PLATFORM",  # --- No longer used, computed internally
         "MACOSX_DEPLOYMENT_TARGET": "inputs.macosx-deployment-target",
     }
+    default_values: dict[str, str] = {
+        "ITK_PACKAGE_VERSION": "auto",  #
+        "ITKPYTHONPACKAGE_TAG": "auto",  #
+        "ITKPYTHONPACKAGE_ORG": "InsightSoftwareConsortium",  #
+        "ITK_MODULE_PREQ": "",  #
+        "CMAKE_OPTIONS": "",  #
+        "MANYLINUX_PLATFORM": "",  # --- No longer used, computed internally
+        "MANYLINUX_VERSION": "",  #
+        "TARGET_ARCH": "",  # --- No longer used, computed internally
+        "MACOSX_DEPLOYMENT_TARGET": "10.7", # 10.7 is very outdated, but provides backward compatibility
+    }
     remote_module_build_dict: dict[str, str] = {}
     for key in itk_remote_module_build_test_package_action_env_mapping.keys():
-        remote_module_build_dict[key] = os.environ.get(key, "")
+        remote_module_build_dict[key] = os.environ.get(key, default_values[key])
     return remote_module_build_dict
 
     """
@@ -51,7 +65,7 @@ if sys.version_info < (3, 9):
 
 def in_pixi_env() -> bool:
     """
-    Determine if we are running inside a pixi enviornment.
+    Determine if we are running inside a pixi environment.
     Returns
     -------
     """
@@ -70,6 +84,43 @@ def get_default_platform_build(default_python_version: str = "py311") -> str:
         elif os.name == "macos":
             return f"macos-{default_python_version}"
     return "unkown-platform"
+
+
+def get_effective_command_line(
+    parser: argparse.ArgumentParser, args: argparse.Namespace
+) -> str:
+    """Reconstruct the command line from the parser and its parsed arguments."""
+    pixi_executable: str = os.environ.get("PIXI_EXE", "pixi")
+    effective_command = [pixi_executable, "run", "-e", args.platform_env, "--", sys.executable, sys.argv[0]]
+    for action in parser._actions:
+        if isinstance(action, argparse._HelpAction):
+            continue
+        dest = action.dest
+        value = getattr(args, dest, None)
+        if value is None:
+            continue
+        if action.option_strings:
+            option_string = action.option_strings[0]
+            if isinstance(action, argparse._StoreTrueAction):
+                if value:
+                    effective_command.append(option_string)
+            elif isinstance(action, argparse._StoreFalseAction):
+                if not value:
+                    effective_command.append(option_string)
+            else:
+                if isinstance(value, list):
+                    if value:
+                        effective_command.append(option_string)
+                        effective_command.extend([str(v) for v in value])
+                else:
+                    effective_command.append(option_string)
+                    effective_command.append(str(value))
+        else:
+            if isinstance(value, list):
+                effective_command.extend([str(v) for v in value])
+            else:
+                effective_command.append(str(value))
+    return shlex.join(effective_command)
 
 
 def build_wheels_main() -> None:
@@ -228,9 +279,43 @@ def build_wheels_main() -> None:
          """,
     )
 
+    # This may not be necessary any longer.  Will review later
+    parser.add_argument(
+        "--itk-pythonpackage-tag",
+        type=str,
+        default=remote_module_build_dict["ITKPYTHONPACKAGE_TAG"],
+        help="""
+             - 'ITKPYTHONPACKAGE_TAG': The source code tag for ITKPythonPackage to use
+               Which script version to use in generating python packages
+               https://github.com/InsightSoftwareConsortium/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage.git@${ITKPYTHONPACKAGE_TAG}
+               build script source. Default is InsightSoftwareConsortium.
+               Ignored if ITKPYTHONPACKAGE_TAG is empty.
+               (in github action ITKRemoteModuleBuildTestPackage itk-python-package-org is used to set this value)
+             """,
+    )
+
+    parser.add_argument(
+        "--macos-deployment-target",
+        type=str,
+        default=remote_module_build_dict["MACOSX_DEPLOYMENT_TARGET"],
+        help="""
+        The MacOSX deployment target to use for building wheels.
+         """,
+    )
+
     parser.add_argument(
         "--use-sudo",
         action="store_true",
+        dest="use_sudo",
+        default=False,
+        help="""
+         - Enable if running docker requires sudo privileges
+         """,
+    )
+    parser.add_argument(
+        "--no-use-sudo",
+        action="store_false",
+        dest="use_sudo",
         help="""
          - Enable if running docker requires sudo privileges
          """,
@@ -239,33 +324,23 @@ def build_wheels_main() -> None:
     parser.add_argument(
         "--use-ccache",
         action="store_true",
+        dest="use_ccache",
+        default=False,
         help="""
          -  Option to indicate that ccache should be used
          """,
     )
     parser.add_argument(
-        "--no-pixi-test",
+        "--no-use-ccache",
         action="store_false",
+        dest="use_ccache",
         help="""
-         -  Option to indicate that pixi is not required for building.  This means that the development
-         environment must supply all the required resources outside of pixi.
+         -  Option to indicate that ccache should not be used
          """,
     )
-    parser.add_argument(
-        "--install-local-pixi",
-        action="store_true",
-        help="""
-            Installs pixi locally if not found and quits.
-         """,
-    )
+
 
     args = parser.parse_args()
-
-    print("=" * 80)
-    print("=" * 80)
-    print("= Building Wheels")
-    print("=" * 80)
-    print("=" * 80)
 
     # Historical dist_dir name for compatibility with ITKRemoteModuleBuildTestPackageAction
     _ipp_dir_path: Path = Path(__file__).resolve().parent.parent
@@ -349,30 +424,28 @@ def build_wheels_main() -> None:
             env=os.environ.copy(),
         )
 
-    itk_package_version: str = os.environ.get(
-        "ITK_PACKAGE_VERSION",
-        compute_itk_package_version(
-            args.itk_source_dir, args.itk_git_tag, pixi_exec_path, os.environ
-        ),
-    )
+    if args.itk_package_version == "auto" or args.itk_package_version is None or len(args.itk_package_version) == 0:
+        args.itk_package_version: str = os.environ.get(
+            "ITK_PACKAGE_VERSION",
+            compute_itk_package_version(
+                args.itk_source_dir, args.itk_git_tag, pixi_exec_path, os.environ
+            ),
+        )
 
     # ITKPythonPackage origin/tag
-    # itkpp_org = os.environ.get("ITKPYTHONPACKAGE_ORG", "InsightSoftwareConsortium")
-    # itkpp_tag = os.environ.get("ITKPYTHONPACKAGE_TAG", ipp_latest_tag)
-
     # NO_SUDO, ITK_MODULE_NO_CLEANUP, USE_CCACHE
     no_sudo = os.environ.get("NO_SUDO", "0")
     module_no_cleanup = os.environ.get("ITK_MODULE_NO_CLEANUP", "1")
     use_ccache = os.environ.get("USE_CCACHE", "0")
-    itk_module_preq = os.environ.get("ITK_MODULE_PREQ", "")
 
     package_env_config["BUILD_DIR_ROOT"] = str(args.build_dir_root)
     package_env_config["ITK_GIT_TAG"] = args.itk_git_tag
     package_env_config["ITK_SOURCE_DIR"] = args.itk_source_dir
-    package_env_config["ITK_PACKAGE_VERSION"] = itk_package_version
-    # package_env_config["ITKPYTHONPACKAGE_ORG"] = itkpp_org
-    # package_env_config["ITKPYTHONPACKAGE_TAG"] = itkpp_tag
-    package_env_config["ITK_MODULE_PREQ"] = itk_module_preq
+    package_env_config["ITK_PACKAGE_VERSION"] = args.itk_package_version
+    package_env_config["ITKPYTHONPACKAGE_ORG"] = args.itk_pythonpackage_org
+    package_env_config["ITKPYTHONPACKAGE_TAG"] = args.itk_pythonpackage_tag
+    package_env_config["MACOSX_DEPLOYMENT_TARGET"] = args.macos_deployment_target
+    package_env_config["ITK_MODULE_PREQ"] = args.itk_module_deps
     package_env_config["NO_SUDO"] = no_sudo
     package_env_config["ITK_MODULE_NO_CLEANUP"] = module_no_cleanup
     package_env_config["USE_CCACHE"] = use_ccache
@@ -431,6 +504,17 @@ def build_wheels_main() -> None:
     else:
         raise ValueError(f"Unknown platform {platform}")
 
+    print("=" * 80)
+    print("=" * 80)
+    print("= Building Wheels with effetive command line")
+    print("\n\n")
+    cmdline:str=f"{get_effective_command_line(parser, args)}"
+    with open(f"{args.build_dir_root}/effective_cmdline.sh", "w") as f:
+        f.write(cmdline)
+    print(f"cmdline: {cmdline}")
+    print("\n\n\n\n")
+    print("=" * 80)
+    print("=" * 80)
     print(f"Building wheels for platform: {args.platform_env}")
     # Pass helper function callables and dist dir to avoid circular imports
     builder = builder_cls(
