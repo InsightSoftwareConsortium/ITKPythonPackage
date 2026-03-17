@@ -243,6 +243,7 @@ endif()
 message(STATUS "SuperBuild -   Python3_INCLUDE_DIR: ${Python3_INCLUDE_DIR}")
 message(STATUS "SuperBuild -   Python3_INCLUDE_DIRS: ${Python3_INCLUDE_DIRS}")
 message(STATUS "SuperBuild -   Python3_LIBRARY: ${Python3_LIBRARY}")
+message(STATUS "SuperBuild -   Python3_SABI_LIBRARY: ${Python3_SABI_LIBRARY}")
 message(STATUS "SuperBuild -   Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
 message(STATUS "SuperBuild - Searching for python[OK]")
 message(STATUS "SuperBuild -   DOXYGEN_EXECUTABLE: ${DOXYGEN_EXECUTABLE}")
@@ -306,6 +307,7 @@ if(NOT ITKPythonPackage_ITK_BINARY_REUSE)
             -DDOXYGEN_EXECUTABLE:FILEPATH=${DOXYGEN_EXECUTABLE}
             -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR}
             -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY}
+            -DPython3_SABI_LIBRARY:FILEPATH=${Python3_SABI_LIBRARY}
             -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE}
             ${ep_common_cmake_cache_args} ${tbb_args} ${ep_itk_cmake_cache_args}
             ${ep_download_extract_timestamp_arg}

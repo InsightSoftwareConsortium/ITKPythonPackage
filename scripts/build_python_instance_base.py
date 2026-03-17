@@ -1,3 +1,4 @@
+import copy
 import os
 import shutil
 import subprocess
@@ -5,6 +6,7 @@ import sys
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from collections.abc import Callable
+from os import environ
 from pathlib import Path
 
 from BuildManager import BuildManager
@@ -19,12 +21,41 @@ from wheel_builder_utils import (
 
 
 class BuildPythonInstanceBase(ABC):
-    """
-    Abstract base class to build wheels for a single Python environment.
+    """Abstract base class to build wheels for a single Python environment.
 
-    Concrete subclasses implement platform-specific details by delegating to
-    injected helper functions. This avoids circular imports with the script
-    that defines those helpers.
+    Concrete subclasses implement platform-specific details (environment
+    setup, wheel fixup, tarball creation) while this class provides the
+    shared build orchestration, CMake configuration, and wheel-building
+    logic.
+
+    Parameters
+    ----------
+    platform_env : str
+        Platform/environment identifier (e.g. ``'manylinux228-py311'``).
+    build_dir_root : Path
+        Root directory for all build artifacts.
+    package_env_config : dict
+        Mutable configuration dictionary populated throughout the build.
+    cleanup : bool
+        Whether to remove intermediate build artifacts.
+    build_itk_tarball_cache : bool
+        Whether to create a reusable tarball of the ITK build tree.
+    cmake_options : list[str]
+        Extra ``-D`` options forwarded to CMake.
+    windows_extra_lib_paths : list[str]
+        Additional library paths for Windows wheel fixup (delvewheel).
+    dist_dir : Path
+        Output directory for built wheel files.
+    module_source_dir : Path, optional
+        Path to an external ITK remote module to build.
+    module_dependencies_root_dir : Path, optional
+        Directory where remote module dependencies are cloned.
+    itk_module_deps : str, optional
+        Colon-delimited dependency specifications for remote modules.
+    skip_itk_build : bool, optional
+        Skip the ITK C++ build step.
+    skip_itk_wheel_build : bool, optional
+        Skip the ITK wheel build step.
     """
 
     def __init__(
@@ -166,6 +197,7 @@ class BuildPythonInstanceBase(ABC):
         )
 
     def update_venv_itk_build_configurations(self) -> None:
+        """Set ``Python3_ROOT_DIR`` in ITK build configurations from venv info."""
         # Python3_EXECUTABLE, Python3_INCLUDE_DIR, and Python3_LIBRARY are validated
         # and resolved by find_package(Python3) in cmake/ITKPythonPackage_SuperBuild.cmake
         # when not already defined. Python3_ROOT_DIR is set here to guide that search.
@@ -248,6 +280,7 @@ class BuildPythonInstanceBase(ABC):
             print("=" * 80)
 
     def build_superbuild_support_components(self):
+        """Configure and build the superbuild support components (ITK source, TBB)."""
         # -----------------------------------------------------------------------
         # Build required components (optional local ITK source, TBB builds) used to populate the archive cache
 
@@ -297,13 +330,22 @@ class BuildPythonInstanceBase(ABC):
         )
 
     def fixup_wheels(self, lib_paths: str = ""):
+        """Apply platform-specific fixups to ``itk_core`` wheels for TBB linkage."""
         # TBB library fix-up (applies to itk_core wheel)
         tbb_wheel = "itk_core"
         for wheel in (self.build_dir_root / "dist").glob(f"{tbb_wheel}*.whl"):
             self.fixup_wheel(str(wheel), lib_paths)
 
     def final_wheel_import_test(self, installed_dist_dir: Path):
-        self.echo_check_call(
+        """Install and smoke-test all ITK wheels from *installed_dist_dir*.
+
+        Parameters
+        ----------
+        installed_dist_dir : Path
+            Directory containing the built ``.whl`` files to install and
+            verify.
+        """
+        exit_status = self.echo_check_call(
             [
                 self.package_env_config["PYTHON_EXECUTABLE"],
                 "-m",
@@ -316,7 +358,10 @@ class BuildPythonInstanceBase(ABC):
                 str(installed_dist_dir),
             ]
         )
-        print("Wheel successfully installed.")
+        if exit_status == 0:
+            print("Wheels successfully installed.")
+        else:
+            print(f"Failed to install wheels: {exit_status}")
         # Basic imports
         self.echo_check_call(
             [self.package_env_config["PYTHON_EXECUTABLE"], "-c", "import itk;"]
@@ -392,6 +437,24 @@ class BuildPythonInstanceBase(ABC):
         self,
         venv_dir: Path,
     ) -> tuple[str, str, str, str, str]:
+        """Resolve Python interpreter and virtualenv paths on Unix.
+
+        Parameters
+        ----------
+        venv_dir : Path
+            Root of the Python virtual environment.
+
+        Returns
+        -------
+        tuple[str, str, str, str, str]
+            ``(python_executable, python_include_dir, python_library,
+            venv_bin_path, venv_base_dir)``.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the Python executable does not exist under *venv_dir*.
+        """
         python_executable = venv_dir / "bin" / "python"
         if not python_executable.exists():
             raise FileNotFoundError(f"Python executable not found: {python_executable}")
@@ -426,48 +489,170 @@ class BuildPythonInstanceBase(ABC):
             str(venv_dir),
         )
 
-    @abstractmethod
     def clone(self):
-        # each subclass must implement this method that is used to clone itself
-        pass
+        """Return a deep copy of this instance for building a dependency.
 
-    @abstractmethod
-    def venv_paths(self):
-        pass
+        Uses ``self.__class__`` so the returned object is the same concrete
+        subclass as the original (e.g. ``LinuxBuildPythonInstance``).
+        """
+        cls = self.__class__
+        new = cls.__new__(cls)
+        new.__dict__ = copy.deepcopy(self.__dict__)
+        return new
+
+    def venv_paths(self) -> None:
+        """Populate ``venv_info_dict`` from the pixi-managed Python interpreter.
+
+        Default Unix implementation shared by Linux and macOS.  Windows
+        overrides this method with its own path conventions.
+        """
+        primary_python_base_dir = Path(
+            self.package_env_config["PYTHON_EXECUTABLE"]
+        ).parent.parent
+        (
+            python_executable,
+            python_include_dir,
+            python_library,
+            venv_bin_path,
+            venv_base_dir,
+        ) = self.find_unix_exectable_paths(primary_python_base_dir)
+        self.venv_info_dict = {
+            "python_executable": python_executable,
+            "python_include_dir": python_include_dir,
+            "python_library": python_library,
+            "venv_bin_path": venv_bin_path,
+            "venv_base_dir": venv_base_dir,
+            "python_root_dir": primary_python_base_dir,
+        }
 
     @abstractmethod
     def fixup_wheel(
         self, filepath, lib_paths: str = "", remote_module_wheel: bool = False
     ):  # pragma: no cover - abstract
+        """Apply platform-specific wheel repairs (auditwheel, delocate, delvewheel).
+
+        Parameters
+        ----------
+        filepath : str
+            Path to the ``.whl`` file to fix.
+        lib_paths : str, optional
+            Additional library search paths (semicolon-delimited on Windows).
+        remote_module_wheel : bool, optional
+            True when fixing a wheel for an external remote module.
+        """
         pass
 
     @abstractmethod
     def build_tarball(self):
+        """Create a compressed archive of the ITK build tree for caching."""
         pass
 
-    @abstractmethod
-    def post_build_cleanup(self):
-        pass
+    def post_build_cleanup(self) -> None:
+        """Remove intermediate build artifacts, leaving ``dist/`` intact.
+
+        Actions:
+        - remove oneTBB-prefix (symlink or dir)
+        - remove ITKPythonPackage/, tools/, _skbuild/, build/
+        - remove top-level *.egg-info
+        - remove ITK-* build tree and tarballs
+        - if ITK_MODULE_PREQ is set, remove cloned module dirs
+        """
+        base = Path(self.package_env_config["IPP_SOURCE_DIR"])
+
+        def rm(tree_path: Path):
+            try:
+                _remove_tree(tree_path)
+            except Exception:
+                pass
+
+        # 1) unlink oneTBB-prefix if it's a symlink or file
+        tbb_prefix_dir = base / "oneTBB-prefix"
+        try:
+            if tbb_prefix_dir.is_symlink() or tbb_prefix_dir.is_file():
+                tbb_prefix_dir.unlink(missing_ok=True)  # type: ignore[arg-type]
+            elif tbb_prefix_dir.exists():
+                rm(tbb_prefix_dir)
+        except Exception:
+            pass
+
+        # 2) standard build directories
+        for rel in ("ITKPythonPackage", "tools", "_skbuild", "build"):
+            rm(base / rel)
+
+        # 3) egg-info folders at top-level
+        for p in base.glob("*.egg-info"):
+            rm(p)
+
+        # 4) ITK build tree and tarballs
+        target_arch = self.package_env_config["ARCH"]
+        for p in base.glob(f"ITK-*-{self.package_env_config}_{target_arch}"):
+            rm(p)
+
+        # Tarballs
+        for p in base.glob(f"ITKPythonBuilds-{self.package_env_config}*.tar.zst"):
+            rm(p)
+
+        # 5) Optional module prerequisites cleanup (ITK_MODULE_PREQ)
+        # Format: "InsightSoftwareConsortium/ITKModuleA@v1.0:Kitware/ITKModuleB@sha"
+        itk_preq = self.package_env_config.get("ITK_MODULE_PREQ") or environ.get(
+            "ITK_MODULE_PREQ", ""
+        )
+        if itk_preq:
+            for entry in itk_preq.split(":"):
+                entry = entry.strip()
+                if not entry:
+                    continue
+                try:
+                    module_name = entry.split("@", 1)[0].split("/", 1)[1]
+                except Exception:
+                    continue
+                rm(base / module_name)
 
     @abstractmethod
     def prepare_build_env(self) -> None:  # pragma: no cover - abstract
+        """Set up platform-specific build environment and CMake configurations.
+
+        Must populate ``self.venv_info_dict``, configure TBB settings,
+        and set the ITK binary build directory in
+        ``self.cmake_itk_source_build_configurations``.
+        """
         pass
 
     @abstractmethod
     def post_build_fixup(self) -> None:  # pragma: no cover - abstract
+        """Run platform-specific post-build wheel fixups.
+
+        Called after all wheels are built but before the final import
+        test. Typically invokes ``fixup_wheel`` or ``fixup_wheels``.
+        """
         pass
 
-    @abstractmethod
-    def final_import_test(self) -> None:  # pragma: no cover - abstract
-        pass
+    def final_import_test(self) -> None:  # pragma: no cover
+        """Install and smoke-test the built wheels."""
+        self.final_wheel_import_test(installed_dist_dir=self.dist_dir)
 
     @abstractmethod
     def discover_python_venvs(
         self, platform_os_name: str, platform_architechure: str
     ) -> list[str]:
+        """Return available Python environment names for the given platform.
+
+        Parameters
+        ----------
+        platform_os_name : str
+            Operating system identifier.
+        platform_architechure : str
+            CPU architecture identifier.
+
+        Returns
+        -------
+        list[str]
+            Sorted list of discovered environment names.
+        """
         pass
 
     def build_external_module_python_wheel(self):
+        """Build a wheel for an external ITK remote module via scikit-build-core."""
         self.module_source_dir = Path(self.module_source_dir)
         out_dir = self.module_source_dir / "dist"
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -546,6 +731,14 @@ class BuildPythonInstanceBase(ABC):
         if py_include:
             defs.set("Python3_INCLUDE_DIR:PATH", py_include)
 
+        # Pass Python library paths when explicitly known (Windows)
+        py_library = self.venv_info_dict.get("python_library", "")
+        if py_library:
+            defs.set("Python3_LIBRARY:FILEPATH", str(py_library))
+        py_sabi_library = self.venv_info_dict.get("python_sabi_library", "")
+        if py_sabi_library:
+            defs.set("Python3_SABI_LIBRARY:FILEPATH", str(py_sabi_library))
+
         # Allow command-line cmake -D overrides to win last
         if self.cmake_cmdline_definitions:
             defs.update(self.cmake_cmdline_definitions.items())
@@ -567,6 +760,7 @@ class BuildPythonInstanceBase(ABC):
             self.fixup_wheel(str(wheel), remote_module_wheel=True)
 
     def build_itk_python_wheels(self):
+        """Build all ITK Python wheels listed in ``WHEEL_NAMES.txt``."""
         # Build wheels
         for wheel_name in self.wheel_names:
             print("#")
@@ -640,6 +834,7 @@ class BuildPythonInstanceBase(ABC):
                 _remove_tree(bp / "Wrapping" / "Generators" / "CastXML")
 
     def build_wrapped_itk_cplusplus(self):
+        """Configure and build the ITK C++ libraries with Python wrapping."""
         # Clean up previous invocations
         if (
             self.cleanup
@@ -940,9 +1135,14 @@ class BuildPythonInstanceBase(ABC):
         if issues:
             print("Compatibility warnings above - review before using in CI/CD")
 
-    @abstractmethod
     def get_pixi_environment_name(self):
-        pass
+        """Return the pixi environment name for this build instance.
+
+        The pixi environment name is the same as the platform_env and
+        is related to the environment setups defined in pixi.toml
+        in the root of this git directory that contains these scripts.
+        """
+        return self.platform_env
 
     def echo_check_call(
         self,
