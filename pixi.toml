@@ -175,9 +175,16 @@ windows-py311 = ["py311", "build-dev-tools", "python-dev-pkgs", "windows-build"]
 pixi-pycharm = ">=0.0.10,<0.0.11"
 conda = "*"
 taplo = ">=0.8.1,<0.11"
+pre-commit = "*"
 
 [tasks]
 taplo = "fmt pixi.toml"
 
 [tasks.build-itk-wheels]
 cmd = ["python", "scripts/build_wheels.py"]
+
+[tasks.pre-commit-install]
+cmd = "pre-commit install -f -t pre-commit -t prepare-commit-msg -t commit-msg --hook-type commit-msg --install-hooks"
+
+[tasks.pre-commit-run]
+cmd = "pre-commit run --all-files"

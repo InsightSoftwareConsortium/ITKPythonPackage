@@ -43,7 +43,6 @@ lib
 lib64
 MANIFEST
 oneTBB-prefix/
-pyproject.toml
 
 # Installer logs
 pip-log.txt
@@ -73,3 +72,7 @@ docs/_build
 # IDE junk
 .idea/*
 *.swp
+/itkVersion.py
+# pixi environments
+.pixi/*
+!.pixi/config.toml
