@@ -1,0 +1,21 @@
+# Root-level pyproject.toml — developer tooling configuration only.
+# This file configures linters/formatters for the ITKPythonPackage build scripts.
+# It does NOT define a Python package; wheel-specific pyproject.toml files are
+# generated dynamically by scripts/pyproject_configure.py into build subdirectories.
+
+[tool.black]
+line-length = 88
+target-version = ["py310", "py311"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+# E/F: pycodestyle errors + pyflakes
+# I:   isort import ordering
+# UP:  pyupgrade (modernise syntax for Python 3.10+)
+# B:   flake8-bugbear (opinionated bug detection)
+select = ["E", "F", "I", "UP", "B"]
+# E501 (line-too-long) is handled by black; suppress here to avoid duplication
+ignore = ["E501"]

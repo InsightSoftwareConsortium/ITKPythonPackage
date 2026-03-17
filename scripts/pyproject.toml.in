@@ -9,7 +9,7 @@ name = "@PYPROJECT_NAME@"
 version = "@PYPROJECT_VERSION@"
 
 description = "@PYPROJECT_DESCRIPTION@"
-readme = "ITK-source/ITK/README.md"
+readme = "@ITK_SOURCE_README@"
 license = {file = "LICENSE"}
 authors = [
     { name = "Insight Software Consortium", email = "community@itk.org" },
@@ -39,7 +39,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Medical Science Apps.",
     "Topic :: Software Development :: Libraries",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     @PYPROJECT_DEPENDENCIES@
 ]
@@ -96,7 +96,7 @@ sdist.include = ["CMakeLists.txt", "cmake/*.cmake", "README.md", "itkVersion.py"
 sdist.exclude = ["scripts"]
 
 # The Python tags. The default (empty string) will use the default Python
-# version. You can also set this to "cp37" to enable the CPython 3.7+ Stable ABI
+# version. You can also set this to "cp310" to enable the CPython 3.10+ Stable ABI
 # / Limited API (only on CPython and if the version is sufficient, otherwise
 # this has no effect). Or you can set it to "py3" or "py2.py3" to ignore Python
 # ABI compatibility. The ABI tag is inferred from this tag.
