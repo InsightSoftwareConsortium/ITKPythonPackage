@@ -1,238 +1,322 @@
 =====================================
-Build ITK Module Python packages
-======================================
+Build ITK Module Python Packages
+=====================================
 
-ITK is organized into *modules*. Modules for ITK can be developed outside the
-ITK source tree as *remote modules*. The *remote module* can be made
-available in ITK's `CMake <https://www.cmake.org>`_ configuration by
-`contributing it
-<https://github.com/InsightSoftwareConsortium/ITKModuleTemplate#remote-module>`_
-as a *remote module*. Python packages can also be generated for remote
-modules and uploaded to the `Python Package Index (PyPI) <https://pypi.org>`_
+ITK is organized into *modules*. Community members can extend ITK by developing
+an ITK *external module* in a separate repository. When a module meets community
+standards for documentation and maintenance it may be included in the ITK build
+as a *remote module*.
 
-This section describes how to create, build, and upload ITK remote
-module Python packages to PyPI.
+This section describes how to create, build, and publish Python packages for
+ITK remote and external modules to PyPI.
 
 
-.. include:: Prerequisites.rst
+Create a Module
+===============
 
-
-Create the module
-=================
-
-To create an ITK module with Python wrapping, first run cookiecutter::
+To scaffold a new ITK module with Python wrapping, use the official template::
 
   python -m pip install cookiecutter
   python -m cookiecutter gh:InsightSoftwareConsortium/ITKModuleTemplate
   # Fill in the information requested at the prompts
 
+Fill in the prompts, then add your C++ filter classes. See
+`Chapter 9 of the ITK Software Guide
+<https://itk.org/ITKSoftwareGuide/html/Book1/ITKSoftwareGuide-Book1ch9.html>`_
+for guidance on populating the module and writing ``.wrap`` files for SWIG.
 
-Then, add your classes. Reference documentation on `how to populate the module
-<https://itk.org/ITKSoftwareGuide/html/Book1/ITKSoftwareGuide-Book1ch9.html#x50-1430009>`_
-can be found in the `ITK Software Guide
-<https://itk.org/ITKSoftwareGuide/html/>`_.
 
+GitHub Actions Workflows
+==============================
 
-GitHub automated CI package builds
-==================================
+For most ITK external modules, the recommended and easiest path to building, testing, and
+publishing Python wheels is the
+`ITKRemoteModuleBuildTestPackageAction
+<https://github.com/InsightSoftwareConsortium/ITKRemoteModuleBuildTestPackageAction>`_
+reusable workflow. It handles fetching, configuring, and running
+ITKPythonPackage build scripts automatically.
 
-Freely available GitHub Actions continous integration (CI) build and test
-services for open source repositories are provided by
-`GitHub <https://github.com/>`_. These services will build and test the C++
-code for your module and also generate Linux, macOS, and Windows Python
-packages for your module.
+Every pull request and push triggers a build that:
 
-For every pull request and push to the GitHub repository, a GitHub Action will
-run that builds and runs the repository's C++ tests and reports the results to
-the `ITK CDash Dashboard <https://open.cdash.org/index.php?project=Insight>`_.
-Python packages are also generated for every commit. Packages for a commit's
-build can be downloaded from the GitHub Action result page in the *Artifacts*
-Section.
+- Compiles and runs your module's C++ tests
+- Generates Linux, macOS, and Windows Python wheels
+
+Wheel artifacts are downloadable from the **Artifacts** section of the
+GitHub Actions run page.
 
 .. figure:: images/GitHubActionArtifacts.png
-  :alt: GitHub Action Artifacts
+   :alt: GitHub Action Artifacts
 
-Reusable workflows available in
-[ITKRemoteModuleBuildTestPackageAction](https://github.com/InsightSoftwareConsortium/ITKRemoteModuleBuildTestPackageAction)
-can be used to handle the build-test-package process
-for a majority of ITK external modules with minimal extra development.
+To pin the specific ITKPythonPackage version used by the workflow (defaults are shown below):
 
-Upload the packages to PyPI
-----------------------------
+.. code-block:: yaml
 
-First, `register for an account on PyPI <https://pypi.org>`_.
+   uses: InsightSoftwareConsortium/ITKRemoteModuleBuildTestPackageAction/.github/workflows/build-test-package.yml@v5.4.5
+   with:
+     itk-python-package-org: InsightSoftwareConsortium
+     itk-python-package-tag: main
 
-Next, create a `~/.pypirc` file with your login credentials::
+.. include:: Prerequisites.rst
 
-  [distutils]
-  index-servers =
-    pypi
-    pypitest
+Manual Builds
+=============
 
-  [pypi]
-  username=<your-username>
-  password=<your-password>
+For cases where the reusable workflow is not a good fit, the
+download-and-build scripts can be run locally. Each script:
 
-  [pypitest]
-  repository=https://test.pypi.org/legacy/
-  username=<your-username>
-  password=<your-password>
+1. Downloads and installs the necessary build packages
+2. Downloads the pre-built ITK binary tarball for the target platform from
+   `ITKPythonBuilds <https://github.com/InsightSoftwareConsortium/ITKPythonBuilds>`_
+3. Extracts it to a local build directory
+4. Builds your module wheels against the pre-built ITK
 
-where `<your-username>` and `<your-password>` correspond to your PyPI account.
+.. important::
+    Place and run the script from your module's root directory. Or specify exact paths using the environment variables below
 
-Then, upload wheels to the testing server. The wheels of dist/* are those that
-you have built locally or have downloaded from a recent build listed at
-`https://github.com/InsightSoftwareConsortium/<your-long-module-name>/actions`.
-::
+Set the ITK PEP 440 compliant version before running any script::
 
-  python -m pip install twine
-  python -m twine upload -r pypitest dist/*
+   export ITK_PACKAGE_VERSION=v6.0b01   # Linux / macOS
+   $env:ITK_PACKAGE_VERSION = "v6.0b01" # Windows PowerShell
 
-Check out the packages on `<https://test.pypi.org/>`_ the testing server.
+Linux (manylinux)
+-----------------
 
-Finally, upload the wheel packages to the production PyPI server::
+Requires Docker. Produces ``manylinux_2_28`` portable wheels.
 
-  python -m twine upload dist/*
+.. code-block:: bash
 
-Congratulations! Your packages can be installed with the commands::
+   cd ~/ITKMyModule
+   # First build — downloads ITK cache, then builds module wheels
+   export MODULE_SRC_DIRECTORY=/path/to/module
+   bash ITKPythonPackage/scripts/dockcross-manylinux-download-cache-and-build-module-wheels.sh cp310
 
-  python -m pip install --upgrade pip
-  python -m pip install itk-<your-short-module-name>
+   # Subsequent builds — reuses the downloaded cache
+   bash ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh cp310
 
-where `itk-<your-short-module-name>` is the short name for your module that is
-specified in the configured `pyproject.toml`  file.
+Omit the Python version argument to build all supported versions (cp310 and cp311):
 
-Automate PyPI Package Uploads
------------------------------
+.. code-block:: bash
 
-Automated uploads of Python packages to the Python package index, `PyPI
-<https://pypi.org>`_ will occur after adding a PyPI upload token to GitHub and
-creating a Git tag. Create a PyPI API token by logging in to
-`<https://pypi.org/manage/account/token/>`_. Generally, for the token name
-use::
-
-  itk-<your-short-module-name>-github-action
-
-and for the scope use::
-
-  itk-<your-short-module-name>
-
-where `<your-short-module-name>` is the short name for your module that is
-specified in your configured `pyproject.toml` file. That scope will be available if you have
-already uploaded a first set of wheels via twine as described above; and that
-is the recommended approach. Otherwise, if you are creating the project at
-this time, choose an unlimited scope, but be careful with the created token.
-
-.. figure:: images/PyPIToken.png
-  :alt: PyPI Token
-
-Then, add the API token to the GitHub repository
-`https://github.com/InsightSoftwareConsortium/<your-long-module-name>`. Choose
-the *Settings -> Secrets* page and add a key called *pypi_password*, setting
-the password to be the token string that begins with `pypi-`. Note that this
-will be a *token* instead of a password. Limit the scope of the token to the
-individual package as a best practice.
-
-.. figure:: images/GitHubPyPISecret.png
-  :alt: GitHub PyPI token secret
-
-To push packages to PyPI, first, make sure to update the `version` for your
-package in the *pyproject.toml* file. The initial version might be `0.1.0` or
-`1.0.0`. Subsequent versions should follow
-`semantic versioning <https://semver.org/>`_.
-
-Then, create a Git tag corresponding to the version. A Git tag can be created
-in the GitHub user interface via *Releases -> Draft a new release*.
-
-.. figure:: images/GitHubReleaseTag.png
-  :alt: GitHub Release Tag
-
-
-Automated platform scripts
-==========================
-
-Automated scripts are available in this repository to build Python packages
-that are binary compatible with the Python distributions provided by
-Python.org, Anaconda, and package managers like apt or Homebrew.
-The following sections outline how to use the associated scripts for Linux,
-macOS, and Windows.
-
-Once the builds are complete, Python packages will be available in the `dist`
-directory.
-
-Linux
------
-
-To build portable Python packages on Linux, first `install Docker
-<https://docs.docker.com/engine/installation/>`_.
-
-For the first local build, clone the `ITKPythonPackage` repository inside your
-and download the required ITK binary builds::
-
-  cd ~/ITKMyModule
-  git clone https://github.com/InsightSoftwareConsortium/ITKPythonPackage
-  ./ITKPythonPackage/scripts/dockcross-manylinux-download-cache-and-build-module-wheels.sh
-
-For subsequent builds, just call the build script::
-
-  ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh
+   export MODULE_SRC_DIRECTORY=/path/to/module
+   bash ITKPythonPackage/scripts/dockcross-manylinux-download-cache-and-build-module-wheels.sh
 
 macOS
 -----
 
-First, install the Python.org macOS Python distributions. This step requires sudo::
+.. code-block:: bash
 
-  cd ~/ITKMyModule
-  git clone https://github.com/InsightSoftwareConsortium/ITKPythonPackage
-  ./ITKPythonPackage/scripts/macpython-install-python.sh
-
-Then, build the wheels::
-
-  ./ITKPythonPackage/scripts/macpython-build-wheels.sh
+   cd ~/ITKMyModule
+   export MODULE_SRC_DIRECTORY=/path/to/module
+   bash ITKPythonPackage/scripts/macpython-download-cache-and-build-module-wheels.sh 3.10 3.11
 
 Windows
 -------
 
-First, install Microsoft Visual Studio 2022, Git, and CMake, which should be added to the system PATH environmental variable.
+Open a PowerShell terminal:
 
-Open a PowerShell terminal as Administrator, and install Python::
+.. code-block:: powershell
 
-	PS C:\> Set-ExecutionPolicy Unrestricted
-	PS C:\> $pythonArch = "64"
-	PS C:\> iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/scikit-build/scikit-ci-addons/master/windows/install-python.ps1'))
+   cd C:\ITKMyModule
+   $env:ITK_PACKAGE_VERSION = "v6.0b01"
+   $env:MODULE_SRC_DIRECTORY = /path/to/module
+   .\ITKPythonPackage\scripts\windows-download-cache-and-build-module-wheels.ps1 -python_version_minor 10
 
-In a PowerShell prompt, run the `windows-build-wheels.ps1` script::
+Build multiple Python versions:
 
-	PS C:\Windows> cd C:\ITKMyModule
-	PS C:\ITKMyModule> git clone https://github.com/InsightSoftwareConsortium/ITKPythonPackage.git IPP
-	PS C:\ITKMyModule> .\ITKPythonPackage\scripts\windows-download-cache-and-build-module-wheels.ps1
+.. code-block:: powershell
 
-Other Notes
------------
+   foreach ($v in @(10, 11)) {
+       .\ITKPythonPackage\scripts\windows-download-cache-and-build-module-wheels.ps1 -python_version_minor $v
+   }
 
-ITK modules sometimes depend on third-party libraries. To include third-party libraries
-in development wheels for distribution, first add the library path to `LD_LIBRARY_PATH`
-on Linux, `DYLD_LIBRARY_PATH` on MacOS, or `PATH` on Windows. Then, run the platform
-build script.
+.. important::
+   Use a short build path (e.g. ``C:\BDR``) to avoid Windows 260-character
+   path length limits. See the Troubleshooting section in
+   :doc:`Build_ITK_Python_packages` for details.
 
-ITK modules sometimes depend on other ITK modules. For instance, to build
-[ITKBSplineGradient](https://github.com/InsightSoftwareConsortium/ITKBSplineGradient)
-the user must first build ITK and then [ITKMeshToPolyData](https://github.com/InsightSoftwareConsortium/ITKmeshtopolydata).
-ITKPythonPackage scripts support iterative prerequisite ITK module dependencies with the `ITK_MODULE_PREQ`
-environment variable.
+Key environment variables:
 
-For Python build scripts, the ordered list of ITK module dependencies must be formatted as follows:
+.. list-table::
+   :header-rows: 1
+   :widths: 30 20 50
 
-```
-ITK_MODULE_PREQ=<module_org>/<module_name>@<module_tag>:<module_org>/<module_name>@<module_tag>:...
-```
+   * - Variable
+     - Default
+     - Description
+   * - ``ITK_PACKAGE_VERSION``
+     - ``v6.0b01``
+     - PEP 440 ITK release to build against
+   * - ``TARGET_ARCH``
+     - ``x64``
+     - ``x64`` or ``aarch64``
+   * - ``IMAGE_TAG``
+     - ``20250913-6ea98ba``
+     - Dockcross Docker image tag
+   * - ``MODULE_SRC_DIRECTORY``
+     - script directory
+     - Path to your module source
+   * - ``MODULE_DEPS_DIR``
+     - platform dependant
+     - Root directory for module dependency checkouts
+   * - ``DASHBOARD_BUILD_DIRECTORY``
+     - platform dependant
+     - Root directory for build artifacts
+   * - ``MANYLINUX_VERSION``
+     - ``_2_28``
+     - Manylinux compatibility standard
+   * - ``CMAKE_OPTIONS``
+     - *(empty)*
+     - Extra CMake ``-D`` definitions
+   * - ``ITKPYTHONPACKAGE_TAG``
+     - ``main``
+     - ITKPythonPackage branch/tag to fetch
+   * - ``ITKPYTHONPACKAGE_ORG``
+     - ``InsightSoftwareConsortium``
+     - ITKPythonPackage organization to fetch
+   * - ``NO_SUDO``
+     - *(unset)*
+     - Set to skip ``sudo`` for Docker commands
+   * - ``DYLD_LIBRARY_PATH``
+     - *(unset)*
+     - Extra library paths to bundle into wheels
 
-Where
-- `module_org` is the name of a Github organization to use to fetch the module, i.e. "InsightSoftwareConsortium";
-- `module_name` is the name of the module, i.e. "ITKMeshToPolyData";
-- `module_tag` is the git tag or commit hash to use to fetch the module, i.e. "v1.0.0"
 
-Module names must be provided in order of dependencies for the build to succeed.
+Use the Build Script Directly
+====================================
 
-For more information see the
-[build scripts directory](https://github.com/InsightSoftwareConsortium/ITKPythonPackage/tree/master/scripts).
+For more control over build option, call ``build_wheels.py`` directly with
+``--module-source-dir``. This approach will create a local ITK build by default:
+
+.. code-block:: bash
+
+   pixi run python3 scripts/build_wheels.py \
+     --platform-env macosx-py310 \
+     --itk-git-tag v6.0b01 \
+     --module-source-dir /path/to/ITKMyModule \
+     --no-skip-itk-build \
+     --no-skip-itk-wheel-build \
+     --no-build-itk-tarball-cache
+
+
+Module Dependencies
+===================
+
+If your module depends on other ITK external modules, list them with
+``--itk-module-deps`` (or the ``ITK_MODULE_PREQ`` environment variable for the
+shell scripts):
+
+.. code-block:: bash
+
+   pixi run python3 scripts/build_wheels.py \
+     --platform-env macosx-py310 \
+     --itk-git-tag v6.0b01 \
+     --module-source-dir /path/to/ITKMyModule \
+     --itk-module-deps "InsightSoftwareConsortium/ITKMeshToPolyData@v1.0.0" \
+     --no-build-itk-tarball-cache
+
+For multiple dependencies, separate them with colons in **dependency order**
+(each module listed before the modules that depend on it):
+
+.. code-block:: bash
+
+   --itk-module-deps "org/ITKModA@v1.0:org/ITKModB@v2.1:org/ITKModC@main"
+
+The format for each entry is ``<github-org>/<repo-name>@<git-tag-or-commit>``.
+
+For the download-and-build shell scripts, set ``ITK_MODULE_PREQ`` instead:
+
+.. code-block:: bash
+
+   export ITK_MODULE_PREQ="org/ITKModA@v1.0:org/ITKModB@v2.1"
+   bash ITKPythonPackage/scripts/dockcross-manylinux-download-cache-and-build-module-wheels.sh cp310
+
+Dependencies are cloned to ``<module-dependencies-root-dir>/`` before the
+main module build begins.
+
+
+Third-Party Libraries
+=====================
+
+If your module links against a third-party library that is not part of ITK,
+the wheel repair tools (``auditwheel``, ``delocate``, ``delvewheel``) need
+to be able to find it to bundle it into the wheel.
+
+**Linux**: add the library's directory to ``LD_LIBRARY_PATH`` before running
+the build script::
+
+   export LD_LIBRARY_PATH=/path/to/mylib/lib:$LD_LIBRARY_PATH
+
+**macOS**: add the directory to ``DYLD_LIBRARY_PATH``::
+
+   export DYLD_LIBRARY_PATH=/path/to/mylib/lib:$DYLD_LIBRARY_PATH
+
+**Windows**: pass the library directory via ``--lib-paths`` (or the
+``-setup_options`` parameter of the PowerShell script):
+
+.. code-block:: powershell
+
+   .\windows-download-cache-and-build-module-wheels.ps1 `
+     -python_version_minor 10 `
+     -setup_options "--exclude-libs nvcuda.dll"
+
+
+Output
+======
+
+Finished wheels are placed in ``dist/`` inside your module directory
+(or ``<module-src-directory>/dist/`` when running ``build_wheels.py`` directly).
+
+Example output::
+
+   dist/
+   itk-mymodule-1.0.0-cp310-cp310-manylinux_2_28_x86_64.whl
+   itk-mymodule-1.0.0-cp310-cp310-macosx_13_0_arm64.whl
+   itk-mymodule-1.0.0-cp310-cp310-win_amd64.whl
+
+
+Uploading to PyPI
+=================
+
+Manual Upload
+-------------
+
+Test on TestPyPI first::
+
+   pip install twine
+   twine upload -r testpypi dist/*.whl
+
+Then upload to production PyPI::
+
+   twine upload dist/*.whl
+
+Your package can then be installed with::
+
+   pip install itk-<your-short-module-name>
+
+Automated Upload via GitHub Actions
+-------------------------------------
+
+To automate publishing on every tagged release:
+
+1. Create a PyPI API token at `<https://pypi.org/manage/account/token/>`_.
+   Name it ``itk-<your-module-name>-github-action`` and scope it to your
+   package (scope becomes available after the first manual upload).
+
+   .. figure:: images/PyPIToken.png
+      :alt: PyPI Token
+
+2. In your GitHub repository, go to **Settings → Secrets → Actions** and
+   add a secret named ``pypi_password`` with the token value (starts with
+   ``pypi-``).
+
+   .. figure:: images/GitHubPyPISecret.png
+      :alt: GitHub PyPI token secret
+
+3. Create a GitHub Release (via **Releases → Draft a new release**).
+   The tag name should match the version in your ``pyproject.toml``.
+
+   .. figure:: images/GitHubReleaseTag.png
+      :alt: GitHub Release Tag
+
+The ``ITKRemoteModuleBuildTestPackageAction`` workflow will detect the tag
+and upload wheels automatically.
