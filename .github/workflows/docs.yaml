@@ -1,0 +1,31 @@
+name: docs
+
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+      - ".readthedocs.yml"
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - ".readthedocs.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r docs/requirements-docs.txt
+      - name: Build docs
+        run: sphinx-build -W --keep-going -b html docs docs/_build/html
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: docs-html
+          path: docs/_build/html
+          retention-days: 7
