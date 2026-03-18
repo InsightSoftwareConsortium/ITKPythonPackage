@@ -1,14 +1,13 @@
-======================================
-Build ITK Python packages
-======================================
+==============================
+Build ITK Python Packages
+==============================
 
-This section describes how to builds ITK's Python packages. In most cases, the
-:ref:`pre-built ITK binary wheels can be used <quick-start>`.
+This section describes how to build ITK's core Python wheels
+(``itk-core``, ``itk-numerics``, ``itk-io``, ``itk-filtering``,
+``itk-registration``, ``itk-segmentation``, and ``itk-meta``). In most cases, the pre-built ITK binary wheels can be used.
 
-ITK Python packages are built nightly on Kitware build systems and uploaded to
-the `ITKPythonPackage GitHub releases page
-<https://github.com/InsightSoftwareConsortium/ITKPythonPackage/releases>`_.
-
+You may only need to build ITK from source if you need a custom patch, a specific unreleased
+commit, or are developing ITK core itself.
 
 .. include:: Prerequisites.rst
 
@@ -19,167 +18,329 @@ Steps required to build wheels on Linux, macOS and Windows have been
 automated. The following sections outline how to use the associated scripts.
 
 
-Setup Instructions
-==================
+Overview
+========
 
-1. Clone the ITKPythonPackage repository::
+The build is driven by ``scripts/build_wheels.py``, which orchestrates up to
+seven sequential steps:
 
-    $ git clone https://github.com/InsightSoftwareConsortium/ITKPythonPackage.git
-    $ cd ITKPythonPackage
+1. Build SuperBuild support components (oneTBB and other ITK dependencies)
+2. Build ITK C++ with Python wrapping
+3. Build Python wheels for each ITK subpackage
+4. Fix up wheels if platform requires (``auditwheel`` / ``delocate`` / ``delvewheel``)
+5. Import test
+6. *(optional)* Build a remote module against the ITK build
+7. *(optional)* Create a reusable ITK build tarball cache
 
-.. note::
-   You can replace ``InsightSoftwareConsortium`` with a different organization if using a fork.
-
-2. Configure the build environment (optional)
-
-The following environment variables can be set to customize the build:
-
-**MODULE_SRC_DIRECTORY**
-    Directory where the ITK remote module is located. Default: Current Directory
-
-**DASHBOARD_BUILD_DIRECTORY**
-    Directory where build artifacts will be created. Default: /Users/svc-dashboard/D/P
-
-**ITK_GIT_TAG**
-    ITK version to build (branch name or commit hash). Default: ``main``
-
-**ITK_PACKAGE_VERSION**
-    ITK version tag to build against. Essentially the same as ITK_GIT_TAG for backwards compatability
-
-**TARGET_ARCH**
-    Target architecture. Default: ``x64`` (Linux), auto-detected (macOS)
-
-**ITKPYTHONPACKAGE_ORG**
-    GitHub organization hosting ITKPythonPackage. Default: ``InsightSoftwareConsortium``
-
-**ITKPYTHONPACKAGE_TAG**
-    Optional: specific tag/branch of build scripts to use. Default: ``main``
-
-**MANYLINUX_VERSION** (manylinux only)
-    Manylinux standard version. Default: ``_2_28``
-
-**IMAGE_TAG** (Linux only)
-    Docker image tag for manylinux builds. Default: ``20250913-6ea98ba``
+Step state is persisted to ``<build-dir-root>/dist/build_report-<platform>.json`` so that a
+build interrupted part-way through can be resumed by re-running the same command.
 
 
-For example::
+Setup
+=====
 
-    $ export ITK_GIT_TAG=v5.4.0
-    $ export MANYLINUX_VERSION=_2_28
+Clone the repository::
+
+   git clone https://github.com/InsightSoftwareConsortium/ITKPythonPackage.git
+   cd ITKPythonPackage
+
+
+Platform Environments
+=====================
+
+Each Pixi environment targets a specific OS and Python version. Pass the
+environment name to ``--platform-env``:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - ``--platform-env``
+     - Notes
+   * - ``linux-py310``
+     - Native Linux (GCC, glibc of host)
+   * - ``linux-py311``
+     - Native Linux (GCC, glibc of host)
+   * - ``manylinux228-py310``
+     - Portable Linux ≥ glibc 2.28 (x86_64 or aarch64 via Docker)
+   * - ``manylinux228-py311``
+     - Portable Linux ≥ glibc 2.28 (x86_64 or aarch64 via Docker)
+   * - ``macosx-py310``
+     - macOS (x86_64 and arm64)
+   * - ``macosx-py311``
+     - macOS (x86_64 and arm64)
+   * - ``windows-py310``
+     - Windows x86_64 (MSVC 2022)
+   * - ``windows-py311``
+     - Windows x86_64 (MSVC 2022)
+
+If ``--platform-env`` is omitted, the platform is auto-detected from the
+host OS and defaults to Python 3.10.
 
 
 Building Wheels
 ===============
 
-All build processes download pre-built ITK artifacts and builds wheels
-using from the `ITKPythonBuilds repository <https://github.com/InsightSoftwareConsortium/ITKPythonBuilds>`_ distributions.
+manylinux
+---------
+
+On any linux distribution with docker and bash installed, running the script dockcross-manylinux-build-wheels.sh will create 64-bit wheels for python 3.10+ in the dist directory.
+
+.. code-block:: bash
+
+   ./scripts/dockcross-manylinux-build-wheels.sh  # py310 optionally specify python version
+
+Or you can build using a specific platform environment using:
 
 Linux
 -----
 
-You can download the Python builds for your specific system and architecture using the following script::
+.. code-block:: bash
 
-    $ ./scripts/dockcross-manylinux-download-cache.sh
-
-On any linux distribution with docker and bash installed, running the script `dockcross-manylinux-build-wheels.sh` will create 64-bit wheels for python 3.9+ in the dist directory.::
-
-    $ ./scripts/dockcross-manylinux-build-wheels.sh
-
-Build for specific Python version(s)::
-
-    $ ./scripts/dockcross-manylinux-build-wheels.sh cp310
-    $ ./scripts/dockcross-manylinux-build-wheels.sh cp39 cp310 cp311
-
-.. note::
-   Python versions can be specified as ``cp39``, ``cp310``, ``cp311``, or
-   ``py39``, ``py310``, ``py311`` - both formats are supported.
-
-After the build completes, wheels will be located in the `DASHBOARD_BUILD_DIRECTORY` directory, for example::
-
-    $ ls -1 ${DASHBOARD_BUILD_DIRECTORY}/ITKPythonPackage-build/dist/
-    itk-6.0.0-cp39-cp39-manylinux_2_28_x86_64.whl
-    itk-6.0.0-cp310-cp310-manylinux_2_28_x86_64.whl
-    itk-6.0.0-cp311-cp311-manylinux_2_28_x86_64.whl
+   pixi run python3 scripts/build_wheels.py \
+     --platform-env linux-py310 \
+     --itk-git-tag v6.0b01 \
+     --no-build-itk-tarball-cache
 
 macOS
 -----
 
-Build all default Python versions::
+.. code-block:: bash
 
-    $ ./scripts/macpython-download-cache-and-build-module-wheels.sh
-
-Build for specific Python version(s)::
-
-    $ ./scripts/macpython-download-cache-and-build-module-wheels.sh py310
-    $ ./scripts/macpython-download-cache-and-build-module-wheels.sh py39 py310 py311
-
-
-After the build completes, similarly, builds can be found in::
-
-    $ ls -1 ${DASHBOARD_BUILD_DIRECTORY}/ITKPythonPackage-build/dist/
-    itk-6.0.0-cp39-cp39-macosx_10_9_x86_64.whl
-    itk-6.0.0-cp310-cp310-macosx_10_9_x86_64.whl
-    itk-6.0.0-cp311-cp311-macosx_10_9_x86_64.whl
+   pixi run python3 scripts/build_wheels.py \
+     --platform-env macosx-py310 \
+     --itk-git-tag v6.0b01 \
+     --no-build-itk-tarball-cache
 
 Windows
 -------
 
-.. important::
-   We need to work in a short directory to avoid path length limitations on
-   Windows. The examples below use ``C:\IPP`` for this reason.
+Similarly, on windows
+
+.. code-block:: powershell
+
+   pixi run python3 scripts/build_wheels.py `
+     --platform-env windows-py310 `
+     --itk-git-tag v6.0b01 `
+     --no-build-itk-tarball-cache
+
+
+Finished wheels are placed in ``<build-dir-root>/dist/``.
+
+.. note::
+   Building ITK from source takes 1–2 hours on typical hardware. Pass
+   ``--build-itk-tarball-cache`` to save the result as a reusable tarball
+   and avoid rebuilding on subsequent runs.
+
+
+Key Options
+===========
+
+.. list-table::
+   :header-rows: 1
+   :widths: 35 15 50
+
+   * - Option
+     - Default
+     - Description
+   * - ``--platform-env``
+     - auto-detected
+     - Target platform and Python version (see table above)
+   * - ``--itk-git-tag``
+     - ``main``
+     - ITK version, branch, or commit to build
+   * - ``--itk-package-version``
+     - auto (git describe)
+     - PEP 440 version string embedded in the wheels
+   * - ``--build-dir-root``
+     - ``../ITKPythonPackage-build``
+     - Root directory for all build artifacts
+   * - ``--manylinux-version``
+     - ``_2_28``
+     - Manylinux compatibility standard (e.g. ``_2_28``, ``_2_34``)
+   * - ``--itk-source-dir``
+     - cloned automatically
+     - Path to a local ITK checkout (skips git clone)
+   * - ``--module-source-dir``
+     - *(none)*
+     - Path to an ITK external module to build against the ITK build
+   * - ``--itk-module-deps``
+     - *(none)*
+     - Colon-delimited prerequisite modules (``org/repo@tag:org/repo@tag``)
+   * - ``--build-itk-tarball-cache``
+     - off
+     - Package the ITK build as a reusable ``.tar.zst`` / ``.zip``
+   * - ``--no-build-itk-tarball-cache``
+     - *(default)*
+     - Skip tarball generation
+   * - ``--skip-itk-build`` / ``--no-skip-itk-build``
+     - off
+     - Skip step 2 (ITK C++ build) when a build already exists
+   * - ``--skip-itk-wheel-build`` / ``--no-skip-itk-wheel-build``
+     - off
+     - Skip step 3 (wheel build) when wheels already exist
+   * - ``--cleanup``
+     - off
+     - Remove intermediate build files after completion
+   * - ``--use-ccache``
+     - off
+     - Enable ccache to speed up recompilation
+   * - ``--macosx-deployment-target``
+     - ``10.7``
+     - Minimum macOS version for compiled binaries
+   * - ``--use-sudo`` / ``--no-use-sudo``
+     - off
+     - Pass ``sudo`` to Docker commands (manylinux only)
+
+Any remaining positional arguments are forwarded to CMake as ``-D`` definitions,
+for example::
+
+   pixi run python3 scripts/build_wheels.py \
+     --platform-env macosx-py310 \
+     --itk-git-tag v6.0b01 \
+     -DBUILD_SHARED_LIBS:BOOL=OFF
+
+
+Environment Variable Equivalents
+---------------------------------
+
+All ``--`` options can alternatively be set as environment variables, which is
+useful in CI pipelines:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 35 65
+
+   * - Environment Variable
+     - Equivalent Option
+   * - ``ITK_GIT_TAG``
+     - ``--itk-git-tag``
+   * - ``ITK_PACKAGE_VERSION``
+     - ``--itk-package-version``
+   * - ``ITK_SOURCE_DIR``
+     - ``--itk-source-dir``
+   * - ``MANYLINUX_VERSION``
+     - ``--manylinux-version``
+   * - ``TARGET_ARCH``
+     - target architecture (``x64`` or ``aarch64``)
+   * - ``IMAGE_TAG``
+     - Docker image tag for manylinux builds
+   * - ``NO_SUDO``
+     - ``--no-use-sudo``
+   * - ``USE_CCACHE``
+     - ``--use-ccache``
+   * - ``CMAKE_OPTIONS``
+     - extra CMake ``-D`` definitions
+   * - ``MACOSX_DEPLOYMENT_TARGET``
+     - ``--macosx-deployment-target``
+
+
+Building from a Local ITK Source
+=================================
+
+If you have a local ITK checkout with custom patches or an unreleased fix, pass
+``--itk-source-dir`` to use it instead of cloning from GitHub:
+
+.. code-block:: bash
+
+   pixi run python3 scripts/build_wheels.py \
+     --platform-env macosx-py310 \
+     --itk-source-dir /path/to/your/ITK \
+     --itk-git-tag my-bugfix-branch \
+     --no-build-itk-tarball-cache
+
+For manylinux, use the shell wrapper which handles Docker volume mounting:
+
+.. code-block:: bash
+
+   ITK_SOURCE_DIR=/path/to/your/ITK \
+   bash scripts/dockcross-manylinux-build-wheels.sh cp310
+
+
+Building ITK Tarball Caches
+============================
+
+Tarball caches package the entire ITK build output (headers, libraries, wrapper
+artifacts) so that external module builds can skip the costly ITK compilation step.
+These are the same caches distributed via `ITKPythonBuilds
+<https://github.com/InsightSoftwareConsortium/ITKPythonBuilds>`_ releases.
+
+By default these scripts build for python version 3.10 and 3.11 but you can optionally add a specific version to build for
+
+Linux / macOS:
+
+.. code-block:: bash
+
+   ITK_GIT_TAG=v6.0b01
+   bash scripts/make_tarballs.sh py310
+
+Windows (PowerShell):
+
+.. code-block:: powershell
+
+   $env:ITK_GIT_TAG = "v6.0b01"
+   .\scripts\make_windows_zip.ps1 py310
+
+Or via ``build_wheels.py`` directly:
+
+.. code-block:: bash
+
+   pixi run python3 scripts/build_wheels.py \
+     --platform-env macosx-py310 \
+     --itk-git-tag v6.0b01 \
+     --build-itk-tarball-cache
 
 .. important::
-   Disable antivirus checking on the build directory (e.g., ``C:\IPP``).
-   The build system creates and deletes many files quickly, which can conflict
-   with antivirus software and result in "Access Denied" errors. Windows
-   Defender should be configured to exclude this directory.
+   Build caches embed absolute paths. They must be extracted to the same path
+   they were built from or CMake will fail to locate required files. The
+   standard CI/CD paths are:
 
-Open a PowerShell terminal as Administrator, and install Python::
+   - **manylinux (Docker)**: ``/work/ITKPythonPackage-build``
+   - **macOS**: ``/Users/svc-dashboard/D/P/ITKPythonPackage-build``
+   - **Windows**: ``C:\BDR``
 
-	PS C:\> Set-ExecutionPolicy Unrestricted
-	PS C:\> $pythonArch = "64"
-	PS C:\> iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/scikit-build/scikit-ci-addons/master/windows/install-python.ps1'))
-
-In a PowerShell prompt, clone into a short path::
-
-    PS C:\> cd C:\
-    PS C:\> git clone https://github.com/InsightSoftwareConsortium/ITKPythonPackage.git IPP
-    PS C:\> cd IPP
-
-After the build completes::
-
-    PS C:\IPP> ls dist
-        Directory: C:\IPP\dist
-
-        Mode                LastWriteTime         Length Name
-        ----                -------------         ------ ----
-        -a----         1/1/2026  11:14 PM       63274441 itk-6.0.0-cp39-cp39-win_amd64.whl
-        -a----         1/1/2026  11:45 PM       63257220 itk-6.0.0-cp310-cp310-win_amd64.whl
+   The ``make_tarballs.sh`` and ``make_windows_zip.ps1`` scripts enforce these
+   paths automatically.
 
 
-Testing and Deployment
-======================
+Output Artifacts
+================
 
-Testing Wheels Locally
-----------------------
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
 
-Install and test a built wheel::
+   * - Artifact
+     - Location
+   * - Built wheels
+     - ``<build-dir-root>/dist/*.whl``
+   * - Effective command line
+     - ``<build-dir-root>/effective_cmdline_<env>.sh``
+   * - manylinux tarball caches
+     - ``<build-dir-root>/ITKPythonBuilds-manylinux_2_28-*.tar.zst``
+   * - Linux tarball caches
+     - ``<build-dir-root>/ITKPythonBuilds-linux-*.tar.zst``
+   * - macOS tarball caches
+     - ``<build-dir-root>/ITKPythonBuilds-macosx-*.tar.zst``
+   * - Windows ZIP cache
+     - ``<build-dir-root>/ITKPythonBuilds-windows.zip``
 
-    $ pip install dist/itk-6.0.0-cp310-cp310-macosx_10_9_x86_64.whl
-    $ python -c "import itk; print(dir(itk))"
+Example wheel names::
 
-Publishing Wheels
------------------
+   itk-6.0.0-cp310-cp310-manylinux_2_28_x86_64.whl
+   itk-6.0.0-cp310-cp310-macosx_13_0_arm64.whl
+   itk-6.0.0-cp310-cp310-win_amd64.whl
 
-Once you've built and tested the wheels, you can:
 
-* Upload to PyPI using ``twine``::
+Testing Built Wheels
+====================
 
-    $ pip install twine
-    $ twine upload dist/*.whl
+Install and smoke-test a wheel directly from the ``dist/`` directory:
 
-* Upload to a private package index
-* Distribute directly to users
+.. code-block:: bash
+
+   pip install dist/itk-6.0.0-cp310-cp310-macosx_13_0_arm64.whl
+   python -c "import itk; print(itk.__version__)"
 
 
 Troubleshooting
@@ -190,131 +351,31 @@ Path Length Issues (Windows)
 
 If you encounter path length errors:
 
-* Use a shorter build directory (e.g., ``C:\IPP`` instead of ``C:\Users\YourName\Documents\Projects\ITKPythonPackage``)
-* Enable long path support in Windows 10/11::
+Windows has a 260-character path limit by default. Use a short build directory
+(e.g. ``C:\BDR``) and optionally enable long path support:
 
-    PS C:\> New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
+.. code-block:: powershell
+
+   New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" `
+     -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
 
 Antivirus Conflicts (Windows)
 ------------------------------
 
-Configure Windows Defender to exclude the build directory:
+The build creates and deletes large numbers of files rapidly, which can trigger
+Windows Defender and produce "Access Denied" errors. Add the build directory to
+Windows Defender exclusions:
 
-1. Open Windows Security
-2. Go to "Virus & threat protection"
-3. Under "Virus & threat protection settings", click "Manage settings"
-4. Scroll to "Exclusions" and click "Add or remove exclusions"
-5. Add the build directory (e.g., ``C:\IPP``)
+1. Open **Windows Security → Virus & threat protection → Manage settings**
+2. Scroll to **Exclusions → Add or remove exclusions**
+3. Add the build root (e.g. ``C:\BDR``)
 
-.. Linux
-.. -----
+Docker Permissions (Linux)
+---------------------------
 
-.. On any linux distribution with docker and bash installed, running the script dockcross-manylinux-build-wheels.sh will create 64-bit wheels for python 3.9+ in the dist directory.
+If Docker requires ``sudo``, pass ``--use-sudo`` to ``build_wheels.py`` or set
+``NO_SUDO=`` (empty string) before running the manylinux shell script. To add
+your user to the ``docker`` group instead::
 
-.. For example::
-
-..	$ git clone https://github.com/InsightSoftwareConsortium/ITKPythonPackage.git
-..	[...]
-..
-..	$ ./scripts/dockcross-manylinux-build-wheels.sh
-..	[...]
-
-..	$ ls -1 dist/
-..	itk-6.0.1.dev20251126-cp39-cp39m-manylinux2014_x86_64.whl
-..	itk-6.0.1.dev20251126-cp39-cp39mu-manylinux2014_x86_64.whl
-..	itk-6.0.1.dev20251126-cp39-cp39m-manylinux2014_x86_64.whl
-..	itk-6.0.1.dev20251126-cp39-cp39m-manylinux2014_x86_64.whl
-..	itk-6.0.1.dev20251126-cp39-cp39m-manylinux2014_x86_64.whl
-
-.. macOS
-.. -----
-
-.. First, install the Python.org macOS Python distributions. This step requires sudo::
-
-.. 	./scripts/macpython-install-python.sh
-
-
-.. Then, build the wheels::
-
-..	$ ./scripts/macpython-build-wheels.sh
-..	[...]
-..
-..	$ ls -1 dist/
-..	itk-6.0.1.dev20251126-cp39-cp39m-macosx_10_6_x86_64.whl
-..	itk-6.0.1.dev20251126-cp39-cp39m-macosx_10_6_x86_64.whl
-..	itk-6.0.1.dev20251126-cp39-cp39m-macosx_10_6_x86_64.whl
-..	itk-6.0.1.dev20251126-cp39-cp39m-macosx_10_6_x86_64.whl
-
-.. Windows
-.. -------
-
-.. First, install Microsoft Visual Studio 2015, Git, and CMake, which should be added to the system PATH environmental variable.
-
-.. Open a PowerShell terminal as Administrator, and install Python::
-
-..	PS C:\> Set-ExecutionPolicy Unrestricted
-..	PS C:\> $pythonArch = "64"
-..	PS C:\> iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/scikit-build/scikit-ci-addons/master/windows/install-python.ps1'))
-
-.. In a PowerShell prompt::
-
-..	PS C:\Windows> cd C:\
-..	PS C:\> git clone https://github.com/InsightSoftwareConsortium/ITKPythonPackage.git IPP
-..	PS C:\> cd IPP
-..	PS C:\IPP> .\scripts\windows-build-wheels.ps1
-..	[...]
-
-..	PS C:\IPP> ls dist
-..	    Directory: C:\IPP\dist
-
-
-..	    Mode                LastWriteTime         Length Name
-..	    ----                -------------         ------ ----
-..	    -a----         4/9/2017  11:14 PM       63274441 itk-6.0.1.dev20251126-cp39-cp39m-win_amd64.whl
-..	    -a----        4/10/2017   2:08 AM       63257220 itk-6.0.1.dev20251126-cp39-cp39m-win_amd64.whl
-
-.. We need to work in a short directory to avoid path length limitations on
-.. Windows, so the repository is cloned into C:\IPP.
-
-.. Also, it is very important to disable antivirus checking on the C:\IPP
-.. directory. Otherwise, the build system conflicts with the antivirus when many
-.. files are created and deleted quickly, which can result in Access Denied
-.. errors. Windows 10 ships with an antivirus application, Windows Defender, that
-.. is enabled by default.
-
-.. The below instructions are outdated and need to be re-written
-.. sdist
-.. -----
-..
-.. To create source distributions, sdist's, that will be used by pip to compile a wheel for installation if a binary wheel is not available for the current Python version or platform::
-..
-.. 	$ python -m build --sdist
-.. 	[...]
-..
-.. 	$ ls -1 dist/
-.. 	itk-6.0.1.dev20251126.tar.gz
-.. 	itk-6.0.1.dev20251126.zip
-..
-.. Manual builds (not recommended)
-.. ===============================
-..
-.. Building ITK Python wheels
-.. --------------------------
-..
-.. Build the ITK Python wheel with the following command::
-..
-.. 	python3 -m venv build-itk
-.. 	./build-itk/bin/pip install --upgrade pip
-.. 	./build-itk/bin/pip install -r requirements-dev.txt
-.. 	./build-itk/bin/python -m build
-..
-.. Build a wheel for a custom version of ITK
-.. -----------------------------------------
-..
-.. To build a wheel for a custom version of ITK, point to your ITK git repository
-.. with the `ITK_SOURCE_DIR` CMake variable::
-..
-..      ./build-itk/bin/python -m build --wheel -- \
-.. 	  -DITK_SOURCE_DIR:PATH=/path/to/ITKPythonPackage-core-build/ITK
-..
-.. Other CMake variables can also be passed with `-D` after the double dash.
+   sudo usermod -aG docker $USER
+   # Then log out and back in
