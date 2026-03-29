@@ -277,8 +277,34 @@ Example output::
 Uploading to PyPI
 =================
 
+Using the Publish Environment
+-----------------------------
+
+ITKPythonPackage provides a ``publish`` Pixi environment with ``twine``
+pre-configured. Set your PyPI credentials (see ``.pypirc.example`` in the
+repository root) and run:
+
+.. code-block:: bash
+
+   export TWINE_USERNAME=__token__
+   export TWINE_PASSWORD=pypi-<your-token>
+
+   # Test on TestPyPI first
+   pixi run -e publish publish-wheels \
+     --dist-directory /path/to/module/dist \
+     --test
+
+   # Then upload to production PyPI
+   pixi run -e publish publish-wheels \
+     --dist-directory /path/to/module/dist
+
+Pass ``--skip-existing`` to skip already-uploaded wheels when re-running after
+a partial upload failure.
+
 Manual Upload
 -------------
+
+Alternatively, install and use ``twine`` directly.
 
 Test on TestPyPI first::
 

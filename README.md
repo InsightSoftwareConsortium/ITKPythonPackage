@@ -1,7 +1,7 @@
 # ITK Python Package
 
 This project configures pyproject.toml files and manages environmental
-variables needed to build ITK Python binary wheels on MacOS, Linux, and Windows platforms.
+variables needed to build ITK Python binary wheels on macOS, Linux, and Windows platforms.
 Scripts are available for both [ITK infrastructure](https://github.com/insightSoftwareConsortium/ITK) and
 ITK external module Python packages.
 
@@ -20,7 +20,7 @@ or at the [ITK GitHub homepage](https://github.com/insightSoftwareConsortium/ITK
 ## Building Remote Modules with ITKPythonPackage
 
 ITK reusable workflows are available to build and package Python wheels as
-part of Continuous Integration (CI) via Github Actions runners.
+part of Continuous Integration (CI) via GitHub Actions runners.
 Those workflows can handle the overhead of fetching, configuring, and
 running ITKPythonPackage build scripts for most ITK external modules.
 See [ITKRemoteModuleBuildTestPackageAction](https://github.com/InsightSoftwareConsortium/ITKRemoteModuleBuildTestPackageAction)
@@ -31,7 +31,7 @@ for more information.
 
 For special cases where ITK reusable workflows are not a good fit,
 ITKPythonPackage scripts can be directly used to build Python wheels
-to target Windows, Linux, and MacOS platforms. See
+to target Windows, Linux, and macOS platforms. See
 below or the [ITKPythonPackage ReadTheDocs](https://itkpythonpackage.readthedocs.io/en/latest/Build_ITK_Module_Python_packages.html)
 documentation for more information on building wheels by hand.
 
@@ -273,8 +273,43 @@ On Windows systems
 
 To build caches for local use, you can run the `build_wheels.py` script with the `--build-itk-tarball-cache`
 
+#### Publish Tarball Caches
+
+To publish the tarball caches to a GitHub Release, you can run:
+
+> [!NOTE]
+> This requires the `GH_TOKEN` environment variable to be set or `gh auth login` to have been run beforehand.
+> Tarballs are expected in the parent directory of `--build-dir-root` (POSIX `.tar.zst`) or inside it (Windows `.zip`).
+
+```bash
+pixi run -e publish publish-tarball-cache --itk-package-version v6.0b02 --build-dir-root /path/to/build/root
+```
+
+Users can also specify the GitHub repository to publish to using `--repo` (defaults to ITKPythonBuilds) and
+`--create-release` to create the release if it does not already exist.
+
 </details>
 
+To see how to publish wheels see this section:
+
+<details>
+<summary><strong>Publishing Wheels</strong></summary>
+This repository contains a script for publishing wheels to PyPI and TestPyPI.
+
+The script can be run with the pixi environment as such:
+
+> [!NOTE]
+> This script assumes you have the `TWINE_USERNAME` and `TWINE_PASSWORD` environment variables set or the
+> `.pypirc` file configured on your machine. An example `.pypirc` can be seen in the root of this repository
+
+```bash
+pixi run -e publish publish-wheels --dist-directory /path/to/dist/
+```
+
+You can also optionally pass in `--test` to publish to TestPyPI for validation before uploading to production,
+`--repository-url` to specify a custom package index, or `--skip-existing` to skip already-uploaded wheels.
+
+</details>
 
 ---
 ## Frequently Asked Questions
