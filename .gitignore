@@ -73,6 +73,9 @@ docs/_build
 .idea/*
 *.swp
 /itkVersion.py
+# PyPI credentials
+.pypirc
+
 # pixi environments
 .pixi/*
 !.pixi/config.toml

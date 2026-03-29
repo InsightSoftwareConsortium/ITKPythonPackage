@@ -343,6 +343,103 @@ Install and smoke-test a wheel directly from the ``dist/`` directory:
    python -c "import itk; print(itk.__version__)"
 
 
+Publishing
+==========
+
+ITKPythonPackage provides a lightweight ``publish`` Pixi environment with
+`twine <https://twine.readthedocs.io/>`_ for uploading wheels to PyPI and the
+`GitHub CLI <https://cli.github.com/>`_ for uploading tarball caches to GitHub
+Releases. Install it with::
+
+   pixi install -e publish
+
+
+Publishing Wheels to PyPI
+-------------------------
+
+The ``publish-wheels`` task validates wheel metadata with ``twine check`` and
+then uploads all ``.whl`` files from a ``dist/`` directory.
+
+**Authentication** — set environment variables or configure ``~/.pypirc``
+(see ``.pypirc.example`` in the repository root):
+
+.. code-block:: bash
+
+   export TWINE_USERNAME=__token__
+   export TWINE_PASSWORD=pypi-<your-token>
+
+Upload to **TestPyPI** first for validation:
+
+.. code-block:: bash
+
+   pixi run -e publish publish-wheels \
+     --dist-directory /path/to/dist \
+     --test
+
+Then upload to **production PyPI**:
+
+.. code-block:: bash
+
+   pixi run -e publish publish-wheels \
+     --dist-directory /path/to/dist
+
+Additional options:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Option
+     - Description
+   * - ``--test``
+     - Upload to TestPyPI (``https://test.pypi.org/legacy/``)
+   * - ``--repository-url``
+     - Custom package index URL (overrides ``--test``)
+   * - ``--skip-existing``
+     - Skip already-uploaded wheels instead of failing
+
+
+Publishing Tarball Caches to GitHub Releases
+--------------------------------------------
+
+The ``publish-tarball-cache`` task uploads ``.tar.zst`` (POSIX) and ``.zip``
+(Windows) build caches to a GitHub Release on the
+`ITKPythonBuilds <https://github.com/InsightSoftwareConsortium/ITKPythonBuilds>`_
+repository.
+
+**Authentication** — set the ``GH_TOKEN`` environment variable or run
+``gh auth login`` beforehand.
+
+.. code-block:: bash
+
+   pixi run -e publish publish-tarball-cache \
+     --itk-package-version v6.0b02 \
+     --build-dir-root /path/to/build \
+     --create-release
+
+Additional options:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Option
+     - Description
+   * - ``--itk-package-version``
+     - **(required)** Release tag name (e.g. ``v6.0b02``)
+   * - ``--build-dir-root``
+     - Root of the build directory; tarballs are found in its parent
+       (POSIX ``.tar.zst``) or inside it (Windows ``.zip``)
+   * - ``--repo``
+     - Target GitHub repository (default: ``InsightSoftwareConsortium/ITKPythonBuilds``)
+   * - ``--create-release``
+     - Create the GitHub Release if it does not already exist
+
+.. note::
+   The ``--clobber`` flag is used internally so re-uploading a tarball for the
+   same platform replaces the existing asset without manual cleanup.
+
+
 Troubleshooting
 ===============
 

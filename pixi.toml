@@ -135,12 +135,25 @@ python = ">=3.11,<3.12"
 #[feature.py314.dependencies]
 #python = ">=3.14,<3.15"
 
+########################################
+# Publishing feature (no compilers needed)
+########################################
+[feature.publish]
+[feature.publish.dependencies]
+python = ">=3.10"
+gh = "*"
+zstd = "*"
+
+[feature.publish.pypi-dependencies]
+twine = ">=6.0"
+
 
 ########################################
 # Environments: compose features per target
 ########################################
 
 [environments]
+publish = ["publish"]
 linux-py310 = ["py310", "linux-build", "build-dev-tools", "python-dev-pkgs"]
 linux-py311 = ["py311", "linux-build", "build-dev-tools", "python-dev-pkgs"]
 
@@ -188,3 +201,11 @@ cmd = "pre-commit install -f -t pre-commit -t prepare-commit-msg -t commit-msg -
 
 [tasks.pre-commit-run]
 cmd = "pre-commit run --all-files"
+
+[tasks.publish-wheels]
+cmd = ["python", "scripts/publish_wheels.py"]
+description = "Upload built wheels to PyPI (or TestPyPI with --test)"
+
+[tasks.publish-tarball-cache]
+cmd = ["python", "scripts/publish_tarball_cache.py"]
+description = "Upload .tar.zst/.zip build caches to GitHub Releases"
