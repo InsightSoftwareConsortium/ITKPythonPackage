@@ -1,24 +1,46 @@
 #!/bin/bash
-# Build ITK + all remote module Python wheels from latest main branches.
-# Usage: ./scripts/build-all-latest-wheels.sh [platform-env]
-# Example: ./scripts/build-all-latest-wheels.sh linux-py311
+# Build ITK + all remote module Python wheels.
+# Usage: ./scripts/build-all-latest-wheels.sh [options]
+#   --platform-env ENV    Pixi environment (default: linux-py311)
+#   --itk-ref REF         ITK branch, tag, or commit hash (default: main)
+#   --itk-repo URL        ITK git URL
+#   --ipp-branch BRANCH   ITKPythonPackage branch (default: python-build-system)
+#   --ipp-repo URL        ITKPythonPackage git URL
+# Example:
+#   ./scripts/build-all-latest-wheels.sh --itk-ref v6.0b02 --platform-env linux-py311
 set -euo pipefail
 
-PLATFORM_ENV="${1:-linux-py311}"
-TIMESTAMP=$(date +%Y%m%d%H%M%S)
-WORKDIR="/tmp/${TIMESTAMP}_LatestITKPython"
-DIST_DIR="${WORKDIR}/dist"
+# Defaults
+PLATFORM_ENV="linux-py311"
+ITK_REF="main"
 ITK_REPO="https://github.com/InsightSoftwareConsortium/ITK.git"
 IPP_REPO="https://github.com/BRAINSia/ITKPythonPackage.git"
 IPP_BRANCH="python-build-system"
 
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --platform-env) PLATFORM_ENV="$2"; shift 2 ;;
+    --itk-ref)      ITK_REF="$2"; shift 2 ;;
+    --itk-repo)     ITK_REPO="$2"; shift 2 ;;
+    --ipp-branch)   IPP_BRANCH="$2"; shift 2 ;;
+    --ipp-repo)     IPP_REPO="$2"; shift 2 ;;
+    *) echo "Unknown option: $1"; exit 1 ;;
+  esac
+done
+
+TIMESTAMP=$(date +%Y%m%d%H%M%S)
+WORKDIR="/tmp/${TIMESTAMP}_LatestITKPython"
+DIST_DIR="${WORKDIR}/dist"
+
 mkdir -p "${DIST_DIR}"
 echo "=== Build directory: ${WORKDIR}"
 echo "=== Platform: ${PLATFORM_ENV}"
+echo "=== ITK ref: ${ITK_REF}"
 
 # 1) Clone ITK
-echo "=== Cloning ITK (main)..."
-git clone --depth 1 --branch main "${ITK_REPO}" "${WORKDIR}/ITK"
+echo "=== Cloning ITK (${ITK_REF})..."
+git clone "${ITK_REPO}" "${WORKDIR}/ITK"
+git -C "${WORKDIR}/ITK" checkout "${ITK_REF}"
 
 # 2) Clone ITKPythonPackage
 echo "=== Cloning ITKPythonPackage (${IPP_BRANCH})..."
@@ -70,7 +92,7 @@ for name in "${module_list[@]}"; do
   echo "=== Building ${name}..."
   if pixi run -e "${PLATFORM_ENV}" -- python scripts/build_wheels.py \
     --platform-env "${PLATFORM_ENV}" \
-    --itk-git-tag main \
+    --itk-git-tag "${ITK_REF}" \
     --itk-source-dir "${WORKDIR}/ITK" \
     --module-source-dir "${MODULES_DIR}/${name}" \
     --no-build-itk-tarball-cache \

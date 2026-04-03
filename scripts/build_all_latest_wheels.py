@@ -21,8 +21,10 @@ def run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, check=True, **kwargs)
 
 
-def clone(repo: str, dest: Path, branch: str | None = None) -> bool:
-    cmd = ["git", "clone", "--depth", "1"]
+def clone(repo: str, dest: Path, branch: str | None = None, depth: int | None = 1) -> bool:
+    cmd = ["git", "clone"]
+    if depth is not None:
+        cmd += ["--depth", str(depth)]
     if branch:
         cmd += ["--branch", branch]
     cmd += [repo, str(dest)]
@@ -50,6 +52,7 @@ def build_wheels(
     platform_env: str,
     build_dir: Path,
     itk_source: Path,
+    itk_ref: str = "main",
     module_source: Path | None = None,
     skip_itk: bool = False,
 ) -> bool:
@@ -64,7 +67,7 @@ def build_wheels(
         "--platform-env",
         platform_env,
         "--itk-git-tag",
-        "main",
+        itk_ref,
         "--itk-source-dir",
         str(itk_source),
         "--no-build-itk-tarball-cache",
@@ -104,6 +107,11 @@ def main():
         default="https://github.com/InsightSoftwareConsortium/ITK.git",
         help="ITK git URL",
     )
+    parser.add_argument(
+        "--itk-ref",
+        default="main",
+        help="ITK branch, tag, or commit hash (default: main)",
+    )
     args = parser.parse_args()
 
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -114,11 +122,13 @@ def main():
 
     print(f"=== Build directory: {workdir}")
     print(f"=== Platform: {args.platform_env}")
+    print(f"=== ITK ref: {args.itk_ref}")
 
     # 1) Clone ITK
-    print("=== Cloning ITK (main)...")
+    print(f"=== Cloning ITK ({args.itk_ref})...")
     itk_dir = workdir / "ITK"
-    clone(args.itk_repo, itk_dir, branch="main")
+    clone(args.itk_repo, itk_dir, depth=None)
+    run(["git", "checkout", args.itk_ref], cwd=itk_dir)
 
     # 2) Clone ITKPythonPackage
     print(f"=== Cloning ITKPythonPackage ({args.ipp_branch})...")
@@ -147,7 +157,7 @@ def main():
 
     # 4) Build ITK wheels
     print("=== Building ITK Python wheels...")
-    if not build_wheels(ipp_dir, args.platform_env, build_dir, itk_dir):
+    if not build_wheels(ipp_dir, args.platform_env, build_dir, itk_dir, args.itk_ref):
         print("FATAL: ITK wheel build failed")
         sys.exit(1)
 
@@ -165,6 +175,7 @@ def main():
             args.platform_env,
             build_dir,
             itk_dir,
+            args.itk_ref,
             module_source=mod_dir,
             skip_itk=True,
         ):
