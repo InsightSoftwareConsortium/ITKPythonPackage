@@ -651,11 +651,74 @@ class BuildPythonInstanceBase(ABC):
         """
         pass
 
+    @staticmethod
+    def _update_module_itk_deps(pyproject_path: Path, itk_version: str) -> bool:
+        """Rewrite ITK dependency pins in a remote module's pyproject.toml.
+
+        Replaces hard-coded ITK sub-package version pins (e.g.
+        ``itk-io == 5.4.*``) with a pin matching the ITK version being
+        built against (e.g. ``itk-io >= 5.4``).  This ensures that
+        wheels produced for ITK 6 can be installed alongside ITK 6
+        packages without pip dependency conflicts.
+
+        Parameters
+        ----------
+        pyproject_path : Path
+            Path to the module's ``pyproject.toml``.
+        itk_version : str
+            The ITK PEP 440 version string being built (e.g. ``6.0.0b2``).
+            Used to compute the minimum major version for the ``>=`` pin.
+
+        Returns
+        -------
+        bool
+            *True* if any dependency was rewritten.
+        """
+        import re
+
+        text = pyproject_path.read_text(encoding="utf-8")
+        # Match lines like:  "itk-core == 5.4.*"  or  "itk-filtering==5.4.*"
+        pattern = re.compile(
+            r'"(itk-[a-z]+)\s*==\s*[\d]+\.[\d]+\.\*"'
+        )
+
+        # Determine the minimum version floor from the ITK version being built.
+        # For "6.0.0b2.post757" -> major "6", floor "5.4" (backward compat).
+        # For "5.4.0" -> floor "5.4".
+        try:
+            major = int(itk_version.split(".")[0])
+        except (ValueError, IndexError):
+            major = 5
+        min_floor = "5.4" if major >= 5 else itk_version.rsplit(".", 1)[0]
+
+        changed = False
+        def _replace(m: re.Match) -> str:
+            nonlocal changed
+            changed = True
+            pkg = m.group(1)
+            return f'"{pkg} >= {min_floor}"'
+
+        new_text = pattern.sub(_replace, text)
+        if changed:
+            pyproject_path.write_text(new_text, encoding="utf-8")
+            print(
+                f"Updated ITK dependency pins in {pyproject_path} "
+                f"(>= {min_floor} for ITK {itk_version})"
+            )
+        return changed
+
     def build_external_module_python_wheel(self):
         """Build a wheel for an external ITK remote module via scikit-build-core."""
         self.module_source_dir = Path(self.module_source_dir)
         out_dir = self.module_source_dir / "dist"
         out_dir.mkdir(parents=True, exist_ok=True)
+
+        # Dynamically update ITK dependency pins to match the version being built
+        module_pyproject = self.module_source_dir / "pyproject.toml"
+        if module_pyproject.is_file():
+            itk_ver = self.package_env_config.get("ITK_PACKAGE_VERSION", "")
+            if itk_ver:
+                self._update_module_itk_deps(module_pyproject, itk_ver)
 
         # Ensure venv tools are first in PATH
         py_exe = str(self.package_env_config["PYTHON_EXECUTABLE"])  # Python3_EXECUTABLE
