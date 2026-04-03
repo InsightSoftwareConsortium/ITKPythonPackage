@@ -778,13 +778,14 @@ class BuildPythonInstanceBase(ABC):
                 )
 
         # Determine the minimum version floor from the ITK version being built.
-        # For "6.0.0b2.post757" -> major "6", floor "5.4" (backward compat).
-        # For "5.4.0" -> floor "5.4".
+        # Pin to vMAJOR.MINOR of the ITK version so the wheel is only
+        # installable alongside the ITK series it was compiled against.
+        # For "6.0.0b2.post757" -> "6.0", for "5.4.0" -> "5.4".
+        parts = itk_version.split(".")
         try:
-            major = int(itk_version.split(".")[0])
-        except (ValueError, IndexError):
-            major = 5
-        min_floor = "5.4" if major >= 5 else itk_version.rsplit(".", 1)[0]
+            min_floor = f"{parts[0]}.{parts[1]}"
+        except IndexError:
+            min_floor = itk_version
 
         changed = False
         def _replace(m: re.Match) -> str:
