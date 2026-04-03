@@ -19,3 +19,47 @@ target-version = "py310"
 select = ["E", "F", "I", "UP", "B"]
 # E501 (line-too-long) is handled by black; suppress here to avoid duplication
 ignore = ["E501"]
+
+[tool.commitizen]
+name = "cz_customize"
+
+[tool.commitizen.customize]
+message_template = "{{change_type}}: {{message}}"
+example = "ENH: Add support for Python 3.12"
+schema = "<type>: <description>"
+schema_pattern = "(BUG|COMP|DOC|ENH|PERF|STYLE): [A-Z].*"
+bump_pattern = "^(ENH|BUG|COMP|PERF)"
+bump_map = { "ENH" = "MINOR", "BUG" = "PATCH", "COMP" = "PATCH", "PERF" = "PATCH" }
+commit_parser = "^(?P<change_type>BUG|COMP|DOC|ENH|PERF|STYLE): (?P<message>.*)"
+changelog_pattern = "^(BUG|COMP|DOC|ENH|PERF|STYLE)?(!)?"
+change_type_map = { "ENH" = "Enhancements", "BUG" = "Bug Fixes", "COMP" = "Build Fixes", "DOC" = "Documentation", "PERF" = "Performance", "STYLE" = "Style" }
+change_type_order = ["Enhancements", "Bug Fixes", "Build Fixes", "Performance", "Documentation", "Style"]
+info = """
+ITK commit message convention: PREFIX: Description
+
+Valid prefixes:
+  BUG:   a bug fix
+  COMP:  a compilation/build fix
+  DOC:   documentation changes
+  ENH:   new feature or enhancement
+  PERF:  performance improvement
+  STYLE: code style/formatting (no logic change)
+"""
+
+[[tool.commitizen.customize.questions]]
+type = "list"
+name = "change_type"
+message = "Select the type of change:"
+choices = [
+  { value = "ENH", name = "ENH:   A new feature or enhancement", key = "e" },
+  { value = "BUG", name = "BUG:   A bug fix", key = "b" },
+  { value = "COMP", name = "COMP:  A compilation/build fix", key = "c" },
+  { value = "DOC", name = "DOC:   Documentation changes", key = "d" },
+  { value = "PERF", name = "PERF:  A performance improvement", key = "p" },
+  { value = "STYLE", name = "STYLE: Code style/formatting (no logic change)", key = "s" },
+]
+
+[[tool.commitizen.customize.questions]]
+type = "input"
+name = "message"
+message = "Commit description (start with capital letter):"
