@@ -41,7 +41,7 @@ if [[ "${TARGET_ARCH}" == "aarch64" ]]; then
   IMAGE_TAG=${IMAGE_TAG:=2025.08.12-1}
   CONTAINER_SOURCE=${CONTAINER_SOURCE:="quay.io/pypa/manylinux${MANYLINUX_VERSION}_${TARGET_ARCH}:${IMAGE_TAG}"}
 else
-  # if x64 arch then supported manylinux versions are _2_28 and 2014
+  # if x64 arch then supported manylinux versions are _2_28 and _2_34
   IMAGE_TAG=${IMAGE_TAG:=20260203-3dfb3ff}
   CONTAINER_SOURCE=${CONTAINER_SOURCE:="docker.io/dockcross/manylinux${MANYLINUX_VERSION}-${TARGET_ARCH}:${IMAGE_TAG}"}
 fi

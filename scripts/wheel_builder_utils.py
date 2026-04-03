@@ -582,7 +582,7 @@ def default_manylinux(
     Parameters
     ----------
     manylinux_version : str
-        Manylinux specification (e.g. ``'_2_28'``, ``'2014'``).
+        Manylinux specification (e.g. ``'_2_28'``, ``'_2_34'``).
     os_name : str
         Operating system name (only ``'linux'`` triggers resolution).
     arch : str
@@ -612,8 +612,6 @@ def default_manylinux(
             image_tag = image_tag or "20250913-6ea98ba"
         elif arch == "aarch64" and manylinux_version == "_2_28":
             image_tag = image_tag or "2025.08.12-1"
-        elif manylinux_version == "2014":
-            image_tag = image_tag or "20240304-9e57d2b"
         elif manylinux_version == "":
             image_tag = ""
         else:
@@ -735,8 +733,6 @@ def get_default_platform_build(default_python_version: str = "py311") -> str:
     from_pixi = os.environ.get("PIXI_ENVIRONMENT_NAME", None)
     if from_pixi and "-" in from_pixi:
         manylinux_pixi_to_pattern_renaming: dict[str, str] = {
-            "manylinux1": "manylinux1",
-            "manylinux2014": "manylinux2014",
             "manylinux228": "manylinux_2_28",
             "manylinux234": "manylinux_2_34",
         }
