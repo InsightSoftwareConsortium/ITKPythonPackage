@@ -777,11 +777,17 @@ class BuildPythonInstanceBase(ABC):
                     f"cross-dep {m.group(0)} — review manually"
                 )
 
-        # Remote modules must support installation across the full
-        # ITK 5.4 → latest range.  Use a fixed floor of 5.4 so that a
-        # wheel built against any ITK version (5.4.x, 6.0.x, etc.) is
-        # installable with any ITK >= 5.4.
-        min_floor = "5.4"
+        # The minimum version floor is the MAJOR.MINOR of the ITK version
+        # being built.  A wheel compiled against ITK 6.0 requires ITK >= 6.0
+        # at install time; one compiled against ITK 5.4 requires >= 5.4.
+        # The build system itself supports building against any ITK from
+        # v5.4 through the latest (v5.5, v6.0, v7.1, etc.) — the floor
+        # simply reflects which ITK the wheel was actually linked against.
+        parts = itk_version.split(".")
+        try:
+            min_floor = f"{parts[0]}.{parts[1]}"
+        except IndexError:
+            min_floor = itk_version
 
         changed = False
         def _replace(m: re.Match) -> str:
