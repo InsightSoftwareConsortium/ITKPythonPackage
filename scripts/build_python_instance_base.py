@@ -746,10 +746,36 @@ class BuildPythonInstanceBase(ABC):
 
         # --- Strategy 1: build-time rewrite (fallback) ------------------------
         text = pyproject_path.read_text(encoding="utf-8")
-        # Match lines like:  "itk-core == 5.4.*"  or  "itk-filtering==5.4.*"
-        pattern = re.compile(
-            r'"(itk-[a-z]+)\s*==\s*[\d]+\.[\d]+\.\*"'
+
+        # Only rewrite ITK *base* sub-packages whose versions are tied to
+        # the ITK release.  Remote module cross-deps (e.g.
+        # itk-meshtopolydata == 0.12.*) are versioned independently and
+        # must NOT be rewritten — flag them for manual review instead.
+        _ITK_BASE_PACKAGES = (
+            "itk-core",
+            "itk-numerics",
+            "itk-io",
+            "itk-filtering",
+            "itk-registration",
+            "itk-segmentation",
         )
+        _base_pkg_alt = "|".join(re.escape(p) for p in _ITK_BASE_PACKAGES)
+        pattern = re.compile(
+            rf'"({_base_pkg_alt})\s*==\s*[\d]+\.[\d]+\.\*"'
+        )
+
+        # Warn about pinned remote-module cross-deps that may also need
+        # attention but should not be auto-rewritten.
+        cross_dep_pattern = re.compile(
+            r'"(itk-[a-z][a-z0-9-]*)\s*==\s*[\d]+\.[\d]+\.\*"'
+        )
+        for m in cross_dep_pattern.finditer(text):
+            pkg = m.group(1)
+            if pkg not in _ITK_BASE_PACKAGES:
+                print(
+                    f"  WARNING: {pyproject_path.name} pins remote module "
+                    f"cross-dep {m.group(0)} — review manually"
+                )
 
         # Determine the minimum version floor from the ITK version being built.
         # For "6.0.0b2.post757" -> major "6", floor "5.4" (backward compat).
