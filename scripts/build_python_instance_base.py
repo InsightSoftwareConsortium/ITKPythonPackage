@@ -719,6 +719,32 @@ class BuildPythonInstanceBase(ABC):
         """
         import re
 
+        try:
+            import tomllib
+        except ModuleNotFoundError:
+            import tomli as tomllib  # Python < 3.11
+
+        with open(pyproject_path, "rb") as f:
+            pyproject_data = tomllib.load(f)
+
+        # --- Strategy 3: module declares dynamic dependencies -----------------
+        dynamic_fields = (
+            pyproject_data.get("project", {}).get("dynamic", [])
+        )
+        if "dependencies" in dynamic_fields:
+            # The module has opted into dynamic dependency resolution.
+            # Set ITK_PACKAGE_VERSION in the environment so the
+            # scikit-build-core metadata provider (itk-build-metadata)
+            # can emit the correct Requires-Dist at build time.
+            os.environ["ITK_PACKAGE_VERSION"] = itk_version
+            print(
+                f"Strategy 3: {pyproject_path.name} declares "
+                f"dynamic=[\"dependencies\"]; set ITK_PACKAGE_VERSION="
+                f"{itk_version} for metadata provider"
+            )
+            return False  # no file modification needed
+
+        # --- Strategy 1: build-time rewrite (fallback) ------------------------
         text = pyproject_path.read_text(encoding="utf-8")
         # Match lines like:  "itk-core == 5.4.*"  or  "itk-filtering==5.4.*"
         pattern = re.compile(
@@ -745,7 +771,7 @@ class BuildPythonInstanceBase(ABC):
         if changed:
             pyproject_path.write_text(new_text, encoding="utf-8")
             print(
-                f"Updated ITK dependency pins in {pyproject_path} "
+                f"Strategy 1: Updated ITK dependency pins in {pyproject_path} "
                 f"(>= {min_floor} for ITK {itk_version})"
             )
         return changed
