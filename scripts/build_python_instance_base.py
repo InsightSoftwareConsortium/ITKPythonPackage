@@ -661,6 +661,49 @@ class BuildPythonInstanceBase(ABC):
         wheels produced for ITK 6 can be installed alongside ITK 6
         packages without pip dependency conflicts.
 
+        .. note:: Strategy 1 (build-time rewrite) — interim solution.
+
+           This approach rewrites the module's pyproject.toml on disk,
+           builds the wheel, then restores the original. It works today
+           with zero changes to remote modules but is inherently fragile
+           (regex-based, modifies the source tree).
+
+           **Plan to migrate to Strategy 3 (scikit-build-core dynamic
+           metadata provider):**
+
+           1. Create a small installable package ``itk-build-metadata``
+              that implements the scikit-build-core dynamic metadata
+              provider interface (see scikit-build-core docs:
+              ``tool.scikit-build.metadata.<field>.provider``).
+
+           2. The provider inspects the build environment at wheel-build
+              time to discover the ITK version — either from the
+              ``ITK_PACKAGE_VERSION`` env var (set by this build system),
+              from ``ITKConfig.cmake`` on ``CMAKE_PREFIX_PATH``, or from
+              an already-installed ``itk-core`` package.
+
+           3. It emits the correct ``Requires-Dist`` entries (e.g.
+              ``itk-io >= 5.4``) into the wheel metadata without
+              touching ``pyproject.toml`` on disk at all.
+
+           4. Remote modules opt in by declaring dynamic dependencies::
+
+                [project]
+                dynamic = ["dependencies"]
+
+                [tool.scikit-build.metadata.dependencies]
+                provider = "itk_build_metadata"
+                provider-path = "."   # or from installed package
+
+           5. Roll out incrementally: update ITKModuleTemplate first,
+              then migrate existing modules via the ``/update-itk-deps``
+              skill (in REMOTE_MODULES/.claude/skills/). Modules that
+              have not migrated continue to work via this Strategy 1
+              fallback, so both approaches coexist during the transition.
+
+           6. Once all ~60 remote modules have adopted Strategy 3,
+              this method can be removed.
+
         Parameters
         ----------
         pyproject_path : Path
