@@ -713,12 +713,20 @@ class BuildPythonInstanceBase(ABC):
         out_dir = self.module_source_dir / "dist"
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        # Dynamically update ITK dependency pins to match the version being built
+        # Dynamically update ITK dependency pins to match the version being built.
+        # Back up the original pyproject.toml so the working tree is restored
+        # after the wheel is produced.
         module_pyproject = self.module_source_dir / "pyproject.toml"
+        pyproject_orig = module_pyproject.with_suffix(".toml.orig")
+        pyproject_whl = module_pyproject.with_suffix(".toml.whl")
+        deps_rewritten = False
         if module_pyproject.is_file():
             itk_ver = self.package_env_config.get("ITK_PACKAGE_VERSION", "")
             if itk_ver:
-                self._update_module_itk_deps(module_pyproject, itk_ver)
+                shutil.copy2(module_pyproject, pyproject_orig)
+                deps_rewritten = self._update_module_itk_deps(
+                    module_pyproject, itk_ver
+                )
 
         # Ensure venv tools are first in PATH
         py_exe = str(self.package_env_config["PYTHON_EXECUTABLE"])  # Python3_EXECUTABLE
@@ -816,11 +824,21 @@ class BuildPythonInstanceBase(ABC):
         # Module source directory to build
         cmd += [self.module_source_dir]
 
-        self.echo_check_call(cmd)
+        try:
+            self.echo_check_call(cmd)
 
-        # Post-process produced wheels (e.g., delocate on macOS x86_64)
-        for wheel in out_dir.glob("*.whl"):
-            self.fixup_wheel(str(wheel), remote_module_wheel=True)
+            # Post-process produced wheels (e.g., delocate on macOS x86_64)
+            for wheel in out_dir.glob("*.whl"):
+                self.fixup_wheel(str(wheel), remote_module_wheel=True)
+        finally:
+            # Restore original pyproject.toml so the working tree stays clean
+            if deps_rewritten and pyproject_orig.is_file():
+                shutil.copy2(module_pyproject, pyproject_whl)
+                shutil.move(str(pyproject_orig), str(module_pyproject))
+                print(
+                    f"Restored {module_pyproject} "
+                    f"(modified version saved as {pyproject_whl.name})"
+                )
 
     def build_itk_python_wheels(self):
         """Build all ITK Python wheels listed in ``WHEEL_NAMES.txt``."""
