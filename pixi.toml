@@ -203,9 +203,9 @@ cmd = "pre-commit install -f -t pre-commit -t prepare-commit-msg -t commit-msg -
 cmd = "pre-commit run --all-files"
 
 [tasks.publish-wheels]
-cmd = ["python", "scripts/publish_wheels.py"]
+cmd = ["python", "Utilities/scripts/publish_wheels.py"]
 description = "Upload built wheels to PyPI (or TestPyPI with --test)"
 
 [tasks.publish-tarball-cache]
-cmd = ["python", "scripts/publish_tarball_cache.py"]
+cmd = ["python", "Utilities/scripts/publish_tarball_cache.py"]
 description = "Upload .tar.zst/.zip build caches to GitHub Releases"
