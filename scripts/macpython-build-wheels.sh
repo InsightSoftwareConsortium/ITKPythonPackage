@@ -180,6 +180,7 @@ for VENV in "${VENVS[@]}"; do
           -DITK_WRAP_DOC:BOOL=ON \
           -DModule_ITKTBB:BOOL=${use_tbb} \
           -DTBB_DIR:PATH=${tbb_dir} \
+          -DITK_DEFAULT_THREADER:STRING=Pool \
           ${CMAKE_OPTIONS} \
           -G Ninja \
           ${source_path} \
