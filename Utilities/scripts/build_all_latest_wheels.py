@@ -21,7 +21,9 @@ def run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, check=True, **kwargs)
 
 
-def clone(repo: str, dest: Path, branch: str | None = None, depth: int | None = 1) -> bool:
+def clone(
+    repo: str, dest: Path, branch: str | None = None, depth: int | None = 1
+) -> bool:
     cmd = ["git", "clone"]
     if depth is not None:
         cmd += ["--depth", str(depth)]

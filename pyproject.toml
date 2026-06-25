@@ -33,7 +33,14 @@ bump_map = { "ENH" = "MINOR", "BUG" = "PATCH", "COMP" = "PATCH", "PERF" = "PATCH
 commit_parser = "^(?P<change_type>BUG|COMP|DOC|ENH|PERF|STYLE): (?P<message>.*)"
 changelog_pattern = "^(BUG|COMP|DOC|ENH|PERF|STYLE)?(!)?"
 change_type_map = { "ENH" = "Enhancements", "BUG" = "Bug Fixes", "COMP" = "Build Fixes", "DOC" = "Documentation", "PERF" = "Performance", "STYLE" = "Style" }
-change_type_order = ["Enhancements", "Bug Fixes", "Build Fixes", "Performance", "Documentation", "Style"]
+change_type_order = [
+  "Enhancements",
+  "Bug Fixes",
+  "Build Fixes",
+  "Performance",
+  "Documentation",
+  "Style",
+]
 info = """
 ITK commit message convention: PREFIX: Description
 

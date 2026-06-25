@@ -19,12 +19,30 @@ IPP_BRANCH="python-build-system"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --platform-env) PLATFORM_ENV="$2"; shift 2 ;;
-    --itk-ref)      ITK_REF="$2"; shift 2 ;;
-    --itk-repo)     ITK_REPO="$2"; shift 2 ;;
-    --ipp-branch)   IPP_BRANCH="$2"; shift 2 ;;
-    --ipp-repo)     IPP_REPO="$2"; shift 2 ;;
-    *) echo "Unknown option: $1"; exit 1 ;;
+  --platform-env)
+    PLATFORM_ENV="$2"
+    shift 2
+    ;;
+  --itk-ref)
+    ITK_REF="$2"
+    shift 2
+    ;;
+  --itk-repo)
+    ITK_REPO="$2"
+    shift 2
+    ;;
+  --ipp-branch)
+    IPP_BRANCH="$2"
+    shift 2
+    ;;
+  --ipp-repo)
+    IPP_REPO="$2"
+    shift 2
+    ;;
+  *)
+    echo "Unknown option: $1"
+    exit 1
+    ;;
   esac
 done
 
@@ -63,7 +81,7 @@ for rc in "${WORKDIR}"/ITK/Modules/Remote/*.remote.cmake; do
     if [ -d "${MODULES_DIR}/${name}/wrapping" ] && [ -f "${MODULES_DIR}/${name}/pyproject.toml" ]; then
       module_list+=("${name}")
     else
-      rm -rf "${MODULES_DIR}/${name}"
+      rm -rf "${MODULES_DIR:?}/${name}"
     fi
   else
     echo "  WARNING: Failed to clone ${name}, skipping"
@@ -111,7 +129,7 @@ done
 echo ""
 echo "=== Build complete ==="
 echo "Wheels: ${DIST_DIR}"
-ls -1 "${DIST_DIR}"/*.whl 2>/dev/null | wc -l
+find "${DIST_DIR}" -maxdepth 1 -name '*.whl' | wc -l
 echo "total wheels produced"
 
 if [ ${#failed_modules[@]} -gt 0 ]; then

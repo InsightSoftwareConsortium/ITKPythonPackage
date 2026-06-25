@@ -728,9 +728,7 @@ class BuildPythonInstanceBase(ABC):
             pyproject_data = tomllib.load(f)
 
         # --- Strategy 3: module declares dynamic dependencies -----------------
-        dynamic_fields = (
-            pyproject_data.get("project", {}).get("dynamic", [])
-        )
+        dynamic_fields = pyproject_data.get("project", {}).get("dynamic", [])
         if "dependencies" in dynamic_fields:
             # The module has opted into dynamic dependency resolution.
             # Set ITK_PACKAGE_VERSION in the environment so the
@@ -739,7 +737,7 @@ class BuildPythonInstanceBase(ABC):
             os.environ["ITK_PACKAGE_VERSION"] = itk_version
             print(
                 f"Strategy 3: {pyproject_path.name} declares "
-                f"dynamic=[\"dependencies\"]; set ITK_PACKAGE_VERSION="
+                f'dynamic=["dependencies"]; set ITK_PACKAGE_VERSION='
                 f"{itk_version} for metadata provider"
             )
             return False  # no file modification needed
@@ -760,9 +758,7 @@ class BuildPythonInstanceBase(ABC):
             "itk-segmentation",
         )
         _base_pkg_alt = "|".join(re.escape(p) for p in _ITK_BASE_PACKAGES)
-        pattern = re.compile(
-            rf'"({_base_pkg_alt})\s*==\s*[\d]+\.[\d]+\.\*"'
-        )
+        pattern = re.compile(rf'"({_base_pkg_alt})\s*==\s*[\d]+\.[\d]+\.\*"')
 
         # Warn about pinned remote-module cross-deps that may also need
         # attention but should not be auto-rewritten.
@@ -790,6 +786,7 @@ class BuildPythonInstanceBase(ABC):
             min_floor = itk_version
 
         changed = False
+
         def _replace(m: re.Match) -> str:
             nonlocal changed
             changed = True
@@ -822,9 +819,7 @@ class BuildPythonInstanceBase(ABC):
             itk_ver = self.package_env_config.get("ITK_PACKAGE_VERSION", "")
             if itk_ver:
                 shutil.copy2(module_pyproject, pyproject_orig)
-                deps_rewritten = self._update_module_itk_deps(
-                    module_pyproject, itk_ver
-                )
+                deps_rewritten = self._update_module_itk_deps(module_pyproject, itk_ver)
 
         # Ensure venv tools are first in PATH
         py_exe = str(self.package_env_config["PYTHON_EXECUTABLE"])  # Python3_EXECUTABLE
