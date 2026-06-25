@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: ITK Discourse (questions & support)
+    url: https://discourse.itk.org
+    about: For build questions or general ITK support, please use the ITK Discourse forum.
+  - name: ITK Documentation
+    url: https://itkpythonpackage.readthedocs.io
+    about: Check the docs before filing an issue.
