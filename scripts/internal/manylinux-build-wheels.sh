@@ -99,6 +99,7 @@ for PYBIN in "${PYBINARIES[@]}"; do
             --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
             --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
             --config-setting=cmake.define.Module_ITKTBB:BOOL=ON \
+            --config.setting=cmake.define.ITK_DEFAULT_THREADER:STRING=Pool \
             --config-setting=cmake.define.TBB_DIR:PATH=${tbb_dir} \
             .
 

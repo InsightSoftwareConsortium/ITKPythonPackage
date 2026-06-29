@@ -85,6 +85,7 @@ def build_wrapped_itk(
             "-DITK_WRAP_DOC:BOOL=ON",
             "-DDOXYGEN_EXECUTABLE:FILEPATH=C:/P/doxygen/doxygen.exe",
             "-DModule_ITKTBB:BOOL=ON",
+            "-DITK_DEFAULT_THREADER:STRING=Pool",
             "-DTBB_DIR:PATH=%s" % tbb_dir,
             "-G", "Ninja",
             source_path
