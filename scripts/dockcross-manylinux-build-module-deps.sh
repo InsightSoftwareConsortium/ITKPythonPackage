@@ -66,10 +66,13 @@ for MODULE_INFO in ${ITK_MODULE_PREQ_TOPLEVEL//:/ }; do
   if [[ -d ../ITKPythonPackage ]]; then
     ln -s ../ITKPythonPackage
     ln -s ./ITKPythonPackage/oneTBB-prefix
+    # Cache has already been downloaded, just build
+    ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh "$@"
+  else
+    # No cache available, download it and build
+    echo "Building module dependency ${MODULE_NAME}"
+    ./dockcross-manylinux-download-cache-and-build-module-wheels.sh "$@"
   fi
-
-  echo "Building module dependency ${MODULE_NAME}"
-  ./dockcross-manylinux-download-cache-and-build-module-wheels.sh "$@"
   popd
 
   echo "Cleaning up module dependency"
