@@ -128,7 +128,8 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
                     "--require-archs",
                     self.package_env_config["ARCH"],
                     str(filepath),
-                ]
+                ],
+                check=True,
             )
         else:
             print(

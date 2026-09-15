@@ -919,7 +919,7 @@ class BuildPythonInstanceBase(ABC):
         cmd += [self.module_source_dir]
 
         try:
-            self.echo_check_call(cmd)
+            self.echo_check_call(cmd, check=True)
 
             # Post-process produced wheels (e.g., delocate on macOS x86_64)
             for wheel in out_dir.glob("*.whl"):
@@ -993,7 +993,7 @@ class BuildPythonInstanceBase(ABC):
             cmd += scikitbuild_cmdline_args.getPythonBuildCommandLineArguments()
             # The location of the generated pyproject.toml file
             cmd += [wheel_configbuild_dir_root]
-            self.echo_check_call(cmd)
+            self.echo_check_call(cmd, check=True)
 
             # Remove unnecessary files for building against ITK
             if self.cleanup:
