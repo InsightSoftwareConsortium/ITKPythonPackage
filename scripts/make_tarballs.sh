@@ -9,14 +9,14 @@ script_dir=$(
 _ipp_dir=$(dirname "${script_dir}")
 
 # If args are given, use them. Otherwise use default python environments
-pyenvs=("${@:-py310 py311}")
+pyenvs=("${@:-py311}")
 
 # Otherwise process mac and linux based on uname
 
 # Need to explicitly request to  --build-itk-tarball-cache
 BUILD_WHEELS_EXTRA_FLAGS=("--build-itk-tarball-cache")
 if [ -z "${ITK_GIT_TAG}" ]; then
-  DEFAULT_ITK_GIT_TAG=v6.0b02
+  DEFAULT_ITK_GIT_TAG=main
   echo "============================================================================="
   echo "============================================================================="
   for _ in x x x x x x x x x x x x x x x x x x x x x x x x x x x x x; do

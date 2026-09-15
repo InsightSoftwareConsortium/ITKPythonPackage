@@ -88,12 +88,12 @@ Requires Docker. Produces ``manylinux_2_28`` portable wheels.
    cd ~/ITKMyModule
    # First build — downloads ITK cache, then builds module wheels
    export MODULE_SRC_DIRECTORY=/path/to/module
-   bash ITKPythonPackage/scripts/dockcross-manylinux-download-cache-and-build-module-wheels.sh cp310
+   bash ITKPythonPackage/scripts/dockcross-manylinux-download-cache-and-build-module-wheels.sh cp311
 
    # Subsequent builds — reuses the downloaded cache
-   bash ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh cp310
+   bash ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh cp311
 
-Omit the Python version argument to build all supported versions (cp310 and cp311):
+Omit the Python version argument to build all supported versions (cp311):
 
 .. code-block:: bash
 
@@ -107,7 +107,7 @@ macOS
 
    cd ~/ITKMyModule
    export MODULE_SRC_DIRECTORY=/path/to/module
-   bash ITKPythonPackage/scripts/macpython-download-cache-and-build-module-wheels.sh 3.10 3.11
+   bash ITKPythonPackage/scripts/macpython-download-cache-and-build-module-wheels.sh 3.11
 
 Windows
 -------
@@ -190,7 +190,7 @@ For more control over build option, call ``build_wheels.py`` directly with
 .. code-block:: bash
 
    pixi run python3 scripts/build_wheels.py \
-     --platform-env macosx-py310 \
+     --platform-env macosx-py311 \
      --itk-git-tag v6.0b01 \
      --module-source-dir /path/to/ITKMyModule \
      --no-skip-itk-build \
@@ -208,7 +208,7 @@ shell scripts):
 .. code-block:: bash
 
    pixi run python3 scripts/build_wheels.py \
-     --platform-env macosx-py310 \
+     --platform-env macosx-py311 \
      --itk-git-tag v6.0b01 \
      --module-source-dir /path/to/ITKMyModule \
      --itk-module-deps "InsightSoftwareConsortium/ITKMeshToPolyData@v1.0.0" \
@@ -228,7 +228,7 @@ For the download-and-build shell scripts, set ``ITK_MODULE_PREQ`` instead:
 .. code-block:: bash
 
    export ITK_MODULE_PREQ="org/ITKModA@v1.0:org/ITKModB@v2.1"
-   bash ITKPythonPackage/scripts/dockcross-manylinux-download-cache-and-build-module-wheels.sh cp310
+   bash ITKPythonPackage/scripts/dockcross-manylinux-download-cache-and-build-module-wheels.sh cp311
 
 Dependencies are cloned to ``<module-dependencies-root-dir>/`` before the
 main module build begins.
@@ -269,9 +269,9 @@ Finished wheels are placed in ``dist/`` inside your module directory
 Example output::
 
    dist/
-   itk-mymodule-1.0.0-cp310-cp310-manylinux_2_28_x86_64.whl
-   itk-mymodule-1.0.0-cp310-cp310-macosx_13_0_arm64.whl
-   itk-mymodule-1.0.0-cp310-cp310-win_amd64.whl
+   itk-mymodule-1.0.0-cp311-abi3-manylinux_2_28_x86_64.whl
+   itk-mymodule-1.0.0-cp311-abi3-macosx_11_0_arm64.whl
+   itk-mymodule-1.0.0-cp311-abi3-win_amd64.whl
 
 
 Uploading to PyPI

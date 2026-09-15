@@ -57,25 +57,17 @@ environment name to ``--platform-env``:
 
    * - ``--platform-env``
      - Notes
-   * - ``linux-py310``
-     - Native Linux (GCC, glibc of host)
    * - ``linux-py311``
      - Native Linux (GCC, glibc of host)
-   * - ``manylinux228-py310``
-     - Portable Linux ≥ glibc 2.28 (x86_64 or aarch64 via Docker)
    * - ``manylinux228-py311``
      - Portable Linux ≥ glibc 2.28 (x86_64 or aarch64 via Docker)
-   * - ``macosx-py310``
-     - macOS (x86_64 and arm64)
    * - ``macosx-py311``
-     - macOS (x86_64 and arm64)
-   * - ``windows-py310``
-     - Windows x86_64 (MSVC 2022)
+     - macOS (arm64)
    * - ``windows-py311``
      - Windows x86_64 (MSVC 2022)
 
 If ``--platform-env`` is omitted, the platform is auto-detected from the
-host OS and defaults to Python 3.10.
+host OS and defaults to Python 3.11.
 
 
 Building Wheels
@@ -84,11 +76,11 @@ Building Wheels
 manylinux
 ---------
 
-On any linux distribution with docker and bash installed, running the script dockcross-manylinux-build-wheels.sh will create 64-bit wheels for python 3.10+ in the dist directory.
+On any linux distribution with docker and bash installed, running the script dockcross-manylinux-build-wheels.sh will create 64-bit wheels for Python 3.11+ in the dist directory.
 
 .. code-block:: bash
 
-   ./scripts/dockcross-manylinux-build-wheels.sh  # py310 optionally specify python version
+   ./scripts/dockcross-manylinux-build-wheels.sh  # py311 optionally specify python version
 
 Or you can build using a specific platform environment using:
 
@@ -98,7 +90,7 @@ Linux
 .. code-block:: bash
 
    pixi run python3 scripts/build_wheels.py \
-     --platform-env linux-py310 \
+     --platform-env linux-py311 \
      --itk-git-tag v6.0b01 \
      --no-build-itk-tarball-cache
 
@@ -108,7 +100,7 @@ macOS
 .. code-block:: bash
 
    pixi run python3 scripts/build_wheels.py \
-     --platform-env macosx-py310 \
+     --platform-env macosx-py311 \
      --itk-git-tag v6.0b01 \
      --no-build-itk-tarball-cache
 
@@ -120,7 +112,7 @@ Similarly, on windows
 .. code-block:: powershell
 
    pixi run python3 scripts/build_wheels.py `
-     --platform-env windows-py310 `
+     --platform-env windows-py311 `
      --itk-git-tag v6.0b01 `
      --no-build-itk-tarball-cache
 
@@ -196,7 +188,7 @@ Any remaining positional arguments are forwarded to CMake as ``-D`` definitions,
 for example::
 
    pixi run python3 scripts/build_wheels.py \
-     --platform-env macosx-py310 \
+     --platform-env macosx-py311 \
      --itk-git-tag v6.0b01 \
      -DBUILD_SHARED_LIBS:BOOL=OFF
 
@@ -244,7 +236,7 @@ If you have a local ITK checkout with custom patches or an unreleased fix, pass
 .. code-block:: bash
 
    pixi run python3 scripts/build_wheels.py \
-     --platform-env macosx-py310 \
+     --platform-env macosx-py311 \
      --itk-source-dir /path/to/your/ITK \
      --itk-git-tag my-bugfix-branch \
      --no-build-itk-tarball-cache
@@ -254,7 +246,7 @@ For manylinux, use the shell wrapper which handles Docker volume mounting:
 .. code-block:: bash
 
    ITK_SOURCE_DIR=/path/to/your/ITK \
-   bash scripts/dockcross-manylinux-build-wheels.sh cp310
+   bash scripts/dockcross-manylinux-build-wheels.sh cp311
 
 
 Building ITK Tarball Caches
@@ -265,28 +257,28 @@ artifacts) so that external module builds can skip the costly ITK compilation st
 These are the same caches distributed via `ITKPythonBuilds
 <https://github.com/InsightSoftwareConsortium/ITKPythonBuilds>`_ releases.
 
-By default these scripts build for python version 3.10 and 3.11 but you can optionally add a specific version to build for
+By default these scripts build for Python 3.11 but you can optionally add a specific version to build for
 
 Linux / macOS:
 
 .. code-block:: bash
 
    ITK_GIT_TAG=v6.0b01
-   bash scripts/make_tarballs.sh py310
+   bash scripts/make_tarballs.sh py311
 
 Windows (PowerShell):
 
 .. code-block:: powershell
 
    $env:ITK_GIT_TAG = "v6.0b01"
-   .\scripts\make_windows_zip.ps1 py310
+   .\scripts\make_windows_zip.ps1 py311
 
 Or via ``build_wheels.py`` directly:
 
 .. code-block:: bash
 
    pixi run python3 scripts/build_wheels.py \
-     --platform-env macosx-py310 \
+     --platform-env macosx-py311 \
      --itk-git-tag v6.0b01 \
      --build-itk-tarball-cache
 
@@ -327,9 +319,9 @@ Output Artifacts
 
 Example wheel names::
 
-   itk-6.0.0-cp310-cp310-manylinux_2_28_x86_64.whl
-   itk-6.0.0-cp310-cp310-macosx_13_0_arm64.whl
-   itk-6.0.0-cp310-cp310-win_amd64.whl
+   itk-6.0.0-cp311-abi3-manylinux_2_28_x86_64.whl
+   itk-6.0.0-cp311-abi3-macosx_11_0_arm64.whl
+   itk-6.0.0-cp311-abi3-win_amd64.whl
 
 
 Testing Built Wheels
@@ -339,7 +331,7 @@ Install and smoke-test a wheel directly from the ``dist/`` directory:
 
 .. code-block:: bash
 
-   pip install dist/itk-6.0.0-cp310-cp310-macosx_13_0_arm64.whl
+   pip install dist/itk-6.0.0-cp311-abi3-macosx_11_0_arm64.whl
    python -c "import itk; print(itk.__version__)"
 
 

@@ -165,10 +165,10 @@ def build_wheels_main() -> None:
         default=get_default_platform_build("py311"),
         help=(
             """A platform environment name or path:
-               linux-py310, linux-py311,
-               manylinux228-py310, manylinux228-py311,
-               windows-py310, windows-py311,
-               macosx-py310, macosx-py311
+               linux-py311,
+               manylinux228-py311,
+               windows-py311,
+               macosx-py311
             """
         ),
     )

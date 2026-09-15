@@ -5,16 +5,16 @@
 
 [tool.black]
 line-length = 88
-target-version = ["py310", "py311"]
+target-version = ["py311"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 # E/F: pycodestyle errors + pyflakes
 # I:   isort import ordering
-# UP:  pyupgrade (modernise syntax for Python 3.10+)
+# UP:  pyupgrade (modernise syntax for Python 3.11+)
 # B:   flake8-bugbear (opinionated bug detection)
 select = ["E", "F", "I", "UP", "B"]
 # E501 (line-too-long) is handled by black; suppress here to avoid duplication

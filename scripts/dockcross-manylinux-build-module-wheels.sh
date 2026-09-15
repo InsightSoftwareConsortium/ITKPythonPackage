@@ -7,7 +7,7 @@
 # Versions can be restricted by passing them in as arguments to the script
 # For example,
 #
-#   scripts/dockcross-manylinux-build-module-wheels.sh cp310
+#   scripts/dockcross-manylinux-build-module-wheels.sh cp311
 #
 # ===========================================
 # ENVIRONMENT VARIABLES
@@ -16,7 +16,7 @@
 # For example,
 #
 #   export MANYLINUX_VERSION="_2_28"
-#   scripts/dockcross-manylinux-build-module-wheels.sh cp310
+#   scripts/dockcross-manylinux-build-module-wheels.sh cp311
 #
 # `LD_LIBRARY_PATH`: Shared libraries to be included in the resulting wheel.
 #   For instance, `export LD_LIBRARY_PATH="/path/to/OpenCL.so:/path/to/OpenCL.so.1.2"`
@@ -159,7 +159,7 @@ export LD_LIBRARY_PATH="${DOCKER_LD_LIBRARY_PATH}"
 # To build tarballs in manylinux, use 'export BUILD_WHEELS_EXTRA_FLAGS=" --build-itk-tarball-cache "'
 BUILD_WHEELS_EXTRA_FLAGS=${BUILD_WHEELS_EXTRA_FLAGS:=""} # No tarball by default
 
-PY_ENVS=("${@:-py310 py311}")
+PY_ENVS=("${@:-py311}")
 
 if [[ "${TARGET_ARCH}" == "aarch64" ]]; then
   # aarch64: run the quay.io/pypa native image directly.

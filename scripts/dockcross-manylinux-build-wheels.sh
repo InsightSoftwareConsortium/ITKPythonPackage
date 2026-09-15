@@ -4,7 +4,7 @@
 # Versions can be restricted by passing them in as arguments to the script
 # For example,
 #
-#   scripts/dockcross-manylinux-build-wheels.sh cp310
+#   scripts/dockcross-manylinux-build-wheels.sh cp311
 #
 # A specialized manylinux image and tag can be used by setting
 # MANYLINUX_VERSION and IMAGE_TAG
@@ -13,7 +13,7 @@
 #
 #   export MANYLINUX_VERSION=_2_28
 #   export IMAGE_TAG=20260203-3dfb3ff
-#   scripts/dockcross-manylinux-build-module-wheels.sh cp310
+#   scripts/dockcross-manylinux-build-module-wheels.sh cp311
 #
 script_dir=$(
   cd "$(dirname "$0")" || exit 1
@@ -30,8 +30,7 @@ done
 echo "FOUND OCI_EXE=$(which "${OCI_EXE}")"
 
 #For backwards compatibility when the ITK_GIT_TAG was required to match the ITK_PACKAGE_VERSION
-ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION:="v6.0b02"}
-ITK_GIT_TAG=${ITK_GIT_TAG:=${ITK_PACKAGE_VERSION}}
+ITK_GIT_TAG=${ITK_GIT_TAG:=${ITK_PACKAGE_VERSION:-main}}
 MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
 
 # Default image tag differs by architecture:
@@ -94,7 +93,7 @@ DOCKER_ARGS+=" -e PYTHONUNBUFFERED=1 " # Turn off buffering of outputs in python
 BUILD_WHEELS_EXTRA_FLAGS=${BUILD_WHEELS_EXTRA_FLAGS:=""} # No tarball by default
 
 # If args are given, use them. Otherwise use default python environments
-PY_ENVS=("${@:-py310 py311}")
+PY_ENVS=("${@:-py311}")
 
 if [[ "${TARGET_ARCH}" == "aarch64" ]]; then
   # aarch64: run the quay.io/pypa native image directly.

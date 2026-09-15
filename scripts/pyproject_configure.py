@@ -297,16 +297,13 @@ def get_wheel_names(IPP_BuildWheelsSupport_DIR: str):
 
 
 def get_py_api():
-    """Return the stable ABI tag for the running Python, or empty string.
+    """Return the stable ABI tag for the running Python.
 
     Returns
     -------
     str
-        A tag like ``'cp311'`` for Python >= 3.11, or ``''`` otherwise.
+        A tag like ``'cp311'``.
     """
-    # Return empty for Python < 3.11, otherwise a cp tag like 'cp311'
-    if sys.version_info < (3, 11):
-        return ""
     return f"cp{sys.version_info.major}{sys.version_info.minor}"
 
 

@@ -21,7 +21,7 @@ usage() {
   echo "Usage:
   dockcross-manylinux-download-cache.sh
     [ -h | --help ]           show usage
-    [ python_version ]        build wheel for a specific python version. (e.g. cp310)"
+    [ python_version ]        build wheel for a specific python version. (e.g. cp311)"
   exit 2
 }
 

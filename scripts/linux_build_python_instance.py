@@ -68,7 +68,7 @@ class LinuxBuildPythonInstance(BuildPythonInstanceBase):
             # cp39-cp39-linux itk_segmentation-6.0.0b2-cp39-cp39-linux_x86_64.whl
             # Extract Python version from platform_env
             if "-" in self.platform_env:
-                # in manylinux case, platform env is manylinux-cp310, for example, don't want anything before '-'
+                # in manylinux case, platform env is manylinux-cp311, for example, don't want anything before '-'
                 py_version = self.platform_env.split("-")[-1]
             else:
                 py_version = self.platform_env

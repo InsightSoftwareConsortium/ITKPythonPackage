@@ -20,7 +20,7 @@
 #   C:\BDR\IPP\scripts\make_tarballs.ps1
 #
 # Typical usage:
-#   > $env:ITK_GIT_TAG = "v6.0b02"
+#   > $env:ITK_GIT_TAG = "v6.0rc01"
 #   > .\make_tarballs.ps1
 #
 # Restrict to specific python versions by passing them as arguments:
@@ -30,7 +30,7 @@
 # Environment variables:
 #
 # `$env:ITK_GIT_TAG`
-#     ITK git tag to build from. Falls back to v6.0b02 with loud warnings
+#     ITK git tag to build from. Falls back to main with loud warnings
 #     if unset, matching the bash script behaviour.
 #
 ########################################################################
@@ -44,12 +44,12 @@ $ErrorActionPreference = "Stop"
 
 # Resolve python environments
 if (-not $pyenvs -or $pyenvs.Count -eq 0) {
-  $pyenvs = @("py310", "py311")
+  $pyenvs = @("py311")
 }
 echo "Building for python environments: $($pyenvs -join ', ')"
 
 # Resolve ITK_GIT_TAG — loud warning if unset, matching bash behaviour
-$DEFAULT_ITK_GIT_TAG = "v6.0b02"
+$DEFAULT_ITK_GIT_TAG = "main"
 if (-not $env:ITK_GIT_TAG) {
   $warningLine = "===== WARNING: ITK_GIT_TAG not set, so defaulting to $DEFAULT_ITK_GIT_TAG"
   echo "============================================================================="

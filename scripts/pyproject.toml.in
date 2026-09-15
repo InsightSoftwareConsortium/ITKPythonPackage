@@ -39,7 +39,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Medical Science Apps.",
     "Topic :: Software Development :: Libraries",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     @PYPROJECT_DEPENDENCIES@
 ]
@@ -96,7 +96,7 @@ sdist.include = ["CMakeLists.txt", "cmake/*.cmake", "README.md", "itkVersion.py"
 sdist.exclude = ["scripts"]
 
 # The Python tags. The default (empty string) will use the default Python
-# version. You can also set this to "cp310" to enable the CPython 3.10+ Stable ABI
+# version. You can also set this to "cp311" to enable the CPython 3.11+ Stable ABI
 # / Limited API (only on CPython and if the version is sufficient, otherwise
 # this has no effect). Or you can set it to "py3" or "py2.py3" to ignore Python
 # ABI compatibility. The ABI tag is inferred from this tag.

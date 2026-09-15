@@ -56,7 +56,7 @@ For more control over your builds, skip to [The Build Process](#the-build-proces
 
 ### Prerequisites
 
-- Python 3.10 or later
+- Python 3.11 or later
 - Git
 - Docker (for manylinux builds)
 - [Pixi](https://pixi.sh) package manager
@@ -101,16 +101,16 @@ Available pixi platform build environments:
 
 | Platform | Architectures | Python Versions |
 |----------|---------------|-----------------|
-| `linux` | x86_64, aarch64 | py310, py311 |
-| `manylinux228` | x86_64, aarch64 | py310, py311 |
-| `macosx` | x86_64, arm64 | py310, py311 |
-| `windows` | x86_64 | py310, py311 |
+| `linux` | x86_64, aarch64 | py311 |
+| `manylinux228` | x86_64, aarch64 | py311 |
+| `macosx` | arm64 | py311 |
+| `windows` | x86_64 | py311 |
 
 
 ```bash
 # Building ITK Python Wheels on macOS for ITK v6.0b01
 pixi run python3 scripts/build_wheels.py \
-  --platform-env macosx-py310 \
+  --platform-env macosx-py311 \
   --itk-git-tag v6.0b01 \
   --no-build-itk-tarball-cache
 ```
@@ -119,7 +119,7 @@ Key options:
 
 | Option                           | Description                                  | Example                       |
 |----------------------------------|----------------------------------------------|-------------------------------|
-| `--platform-env`                 | Target platform and Python version           | `macosx-py310`                |
+| `--platform-env`                 | Target platform and Python version           | `macosx-py311`                |
 | `--build-dir-root`               | Location for build artifacts                 | `/tmp/ITKPythonPackage-build` |
 | `--itk-git-tag`                  | ITK version/branch/commit to use             | `0ffcaed`, `main`, `v6.0b01`  |
 | `--itk-package-version`          | PEP440 version string for wheels             | `v6.0b01`                     |
@@ -159,11 +159,11 @@ Use `dockcross-manylinux-download-cache-and-build-module-wheels.sh`. This script
 
 Run from your ITK external module root:
 ```bash
-bash dockcross-manylinux-download-cache-and-build-module-wheels.sh cp310
+bash dockcross-manylinux-download-cache-and-build-module-wheels.sh cp311
 ```
 
 > [!NOTE]
-> Omit the Python version argument (e.g. `cp310`) to build for all default versions (cp310 and cp311).
+> Omit the Python version argument (e.g. `cp311`) to build for the default version (cp311).
 
 #### macOS
 
@@ -174,7 +174,7 @@ Use `macpython-download-cache-and-build-module-wheels.sh`. This script:
 
 Run from your module root:
 ```bash
-bash macpython-download-cache-and-build-module-wheels.sh 3.10
+bash macpython-download-cache-and-build-module-wheels.sh 3.11
 ```
 
 #### Windows
@@ -212,7 +212,7 @@ Use `dockcross-manylinux-build-wheels.sh` directly (skips the download step):
 
 ```bash
 ITK_SOURCE_DIR=/path/to/your/ITK \
-bash scripts/dockcross-manylinux-build-wheels.sh cp310
+bash scripts/dockcross-manylinux-build-wheels.sh cp311
 ```
 
 Key environment variables:
@@ -231,7 +231,7 @@ Use `build_wheels.py` directly with `--itk-source-dir`:
 ```bash
 # Building on macOS with a specific git tag
 pixi run python3 scripts/build_wheels.py \
-  --platform-env macosx-py310 \
+  --platform-env macosx-py311 \
   --itk-source-dir /path/to/your/ITK \
   --itk-git-tag my-bugfix-branch \
   --no-build-itk-tarball-cache \
@@ -253,12 +253,12 @@ To build the caches compatible with GitHub Actions CI and the ITKPythonBuilds re
 
 On Linux and macOS systems
 ```bash
-bash scripts/make_tarballs.sh  # py310 (optionally add specific version of Python)
+bash scripts/make_tarballs.sh  # py311 (optionally add specific version of Python)
 ```
 
 On Windows systems
 ```powershell
-.\scripts\make_windows_zip.ps1 # py310 (optionally add specific version of Python)
+.\scripts\make_windows_zip.ps1 # py311 (optionally add specific version of Python)
 ```
 
 > [!IMPORTANT]
@@ -320,14 +320,13 @@ ITKPythonPackage currently supports building wheels for the following platforms 
 
 - Windows 10/11 x86_64 platforms
 - macOS arm64 (Apple Silicon)
-- macOS x86_64 (Intel)
-- Linux glibc 2.17+ (e.g. Ubuntu 20.04+) x86_64
+- Linux glibc 2.28+ (e.g. Ubuntu 20.04+) x86_64
 - Linux glibc 2.28+ (e.g. Ubuntu 20.04+) aarch64 (ARMv8)
 
-Python 3.10+ is required.
+Python 3.11+ is required; wheels use the Stable ABI (cp311-abi3).
 
 [ITKRemoteModuleBuildTestPackageAction](https://github.com/InsightSoftwareConsortium/ITKRemoteModuleBuildTestPackageAction)
-CI workflows support Python 3.10–3.11 on GitHub-hosted runners for:
+CI workflows support Python 3.11+ on GitHub-hosted runners for:
 - Ubuntu x86_64
 - Ubuntu aarch64 (ARM)
 - macOS arm64 (Apple Silicon)

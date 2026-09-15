@@ -20,7 +20,7 @@
 #
 # These variables are set with the `export` bash command before calling the script.
 # For example,
-#   scripts/macpython-build-module-wheels.sh 3.10 3.11
+#   scripts/macpython-build-module-wheels.sh 3.11
 #
 ########################################################################
 DEFAULT_MODULE_DIRECTORY=$(

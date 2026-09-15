@@ -10,7 +10,7 @@
 # Versions can be restricted by passing them in as arguments to the script
 # For example,
 #
-#   scripts/dockcross-manylinux-build-module-wheels.sh cp310
+#   scripts/dockcross-manylinux-build-module-wheels.sh cp311
 #
 # ===========================================
 # ENVIRONMENT VARIABLES
@@ -42,7 +42,7 @@ usage() {
     [ -h | --help ]           show usage
     [ -c | --cmake_options ]  space-delimited string containing CMake options to forward to the module (e.g. \"-DBUILD_TESTING=OFF\")
     [ -x | --exclude_libs ]   semicolon-delimited library names to exclude when repairing wheel (e.g. \"libcuda.so\")
-    [ python_version ]        build wheel for a specific python version. (e.g. cp310)"
+    [ python_version ]        build wheel for a specific python version. (e.g. cp311)"
   exit 2
 }
 
@@ -74,8 +74,11 @@ while :; do
   esac
 done
 
-#For backwards compatibility when the ITK_GIT_TAG was required to match the ITK_PACKAGE_VERSION
-ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION:="v6.0b02"}
+# The ITKPythonBuilds cache layout must match these scripts, so there is no default release.
+if [ -z "${ITK_PACKAGE_VERSION}" ]; then
+  echo "ERROR: set ITK_PACKAGE_VERSION to the ITKPythonBuilds release tag to download."
+  exit 1
+fi
 ITK_GIT_TAG=${ITK_GIT_TAG:=${ITK_PACKAGE_VERSION}}
 
 # -----------------------------------------------------------------------

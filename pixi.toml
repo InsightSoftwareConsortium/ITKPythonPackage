@@ -18,7 +18,7 @@ authors = [
 name = "ITKPythonPackage"
 version = "0.1.0"
 channels = ["conda-forge"]
-platforms = ["linux-64", "linux-aarch64", "osx-64", "osx-arm64", "win-64"]
+platforms = ["linux-64", "linux-aarch64", "osx-arm64", "win-64"]
 
 ########################################
 # Common features used by all envs
@@ -91,7 +91,7 @@ PYTHONNOUSERSITE = "1" # Exclude system .local site packages
 ########################################
 
 [feature.macosx-build]
-platforms = ["osx-64", "osx-arm64"]
+platforms = ["osx-arm64"]
 system-requirements = { macos = "10.7" }
 
 # delocate is a Python tool; cxx-compiler is the macOS toolchain meta-package
@@ -115,10 +115,6 @@ c-compiler = "==1.11.0"   # MSVC 2022
 delvewheel = "*"
 # windows = "*"
 
-[feature.py310]
-[feature.py310.dependencies]
-python = ">=3.10,<3.11"
-
 [feature.py311]
 [feature.py311.dependencies]
 python = ">=3.11,<3.12"
@@ -140,7 +136,7 @@ python = ">=3.11,<3.12"
 ########################################
 [feature.publish]
 [feature.publish.dependencies]
-python = ">=3.10"
+python = ">=3.11"
 gh = "*"
 zstd = "*"
 
@@ -154,17 +150,9 @@ twine = ">=6.0"
 
 [environments]
 publish = ["publish"]
-linux-py310 = ["py310", "linux-build", "build-dev-tools", "python-dev-pkgs"]
 linux-py311 = ["py311", "linux-build", "build-dev-tools", "python-dev-pkgs"]
 
 # Manylinux wheel-build env (docker manylinux228 images, CI, etc.)
-manylinux228-py310 = [
-  "py310",
-  "manylinux-common-build",
-  "manylinux228-build",
-  "build-dev-tools",
-  "python-dev-pkgs",
-]
 manylinux228-py311 = [
   "py311",
   "manylinux-common-build",
@@ -174,12 +162,10 @@ manylinux228-py311 = [
 ]
 
 
-# macOS build env (both Intel and Apple Silicon)
-macosx-py310 = ["py310", "build-dev-tools", "python-dev-pkgs", "macosx-build"]
+# macOS build env (Apple Silicon only)
 macosx-py311 = ["py311", "build-dev-tools", "python-dev-pkgs", "macosx-build"]
 
 # Windows build env
-windows-py310 = ["py310", "build-dev-tools", "python-dev-pkgs", "windows-build"]
 windows-py311 = ["py311", "build-dev-tools", "python-dev-pkgs", "windows-build"]
 
 [dependencies]
