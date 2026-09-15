@@ -61,6 +61,22 @@ def main() -> int:
     for w in wheels:
         print(f"  {w.name}")
 
+    # PyPI rejects plain linux_* platform tags; only manylinux/musllinux wheels are uploadable.
+    non_portable = [
+        w
+        for w in wheels
+        if any(tag.startswith("linux_") for tag in w.stem.split("-")[-1].split("."))
+    ]
+    if non_portable:
+        print(
+            "Error: these wheels have a linux_* platform tag and cannot be uploaded "
+            "to PyPI. Rebuild them with a manylinux228-py* environment:",
+            file=sys.stderr,
+        )
+        for w in non_portable:
+            print(f"  {w.name}", file=sys.stderr)
+        return 1
+
     # Validate wheel metadata before uploading
     print("\nRunning twine check...")
     result = subprocess.run(
