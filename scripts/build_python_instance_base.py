@@ -186,6 +186,7 @@ class BuildPythonInstanceBase(ABC):
                 "WRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL": "ON",
                 "PY_SITE_PACKAGES_PATH:PATH": ".",
                 "ITK_LEGACY_SILENT:BOOL": "ON",
+                "ITK_DEFAULT_THREADER:STRING": "Pool",
                 "ITK_WRAP_PYTHON:BOOL": "ON",
                 "ITK_WRAP_DOC:BOOL": "ON",
                 "DOXYGEN_EXECUTABLE:FILEPATH": f"{self.package_env_config['DOXYGEN_EXECUTABLE']}",
