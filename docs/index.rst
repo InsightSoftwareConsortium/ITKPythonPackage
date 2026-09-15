@@ -12,6 +12,8 @@ analysis.
 
    pip install itk
 
+To start using ITK from Python, see the `ITK Python quick start guide
+<https://docs.itk.org/en/latest/learn/python_quick_start.html>`_.
 For more information on ITK's Python wrapping, see `an introduction in the
 Book 1, Chapter 3 of the ITK Software Guide <https://itk.org/ItkSoftwareGuide.pdf>`_.
 There are also many `downloadable examples documented in Sphinx
