@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from build_python_instance_base import BuildPythonInstanceBase
@@ -25,6 +26,8 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             self.cmake_compiler_configurations.set(
                 "CMAKE_OSX_DEPLOYMENT_TARGET:STRING", macosx_target
             )
+            # scikit-build-core derives the wheel platform tag from this variable, not from CMake.
+            os.environ["MACOSX_DEPLOYMENT_TARGET"] = macosx_target
 
         target_arch = self.package_env_config["ARCH"]
 
@@ -57,10 +60,10 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
         # self.cmake_compiler_configurations.set("CMAKE_C_FLAGS:STRING", "-O3 -DNDEBUG")
 
     def post_build_fixup(self) -> None:
-        """Run ``delocate`` on x86_64 wheels to bundle shared libraries."""
-        # delocate on macOS x86_64 only
-        if self.package_env_config["ARCH"] == "x86_64":
-            self.fixup_wheels()
+        """Run ``delocate`` on every wheel to bundle shared libraries."""
+        # Every ITK wheel links libc++, not only itk_core as the base-class fixup assumes.
+        for wheel in (self.build_dir_root / "dist").glob("*.whl"):
+            self.fixup_wheel(str(wheel))
 
     def build_tarball(self):
         """Create a zstd-compressed tarball of the ITK build tree."""
@@ -101,7 +104,7 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
     def fixup_wheel(
         self, filepath, lib_paths: str = "", remote_module_wheel: bool = False
     ) -> None:
-        """Repair a wheel using ``delocate`` on x86_64, cleaning AppleDouble files first.
+        """Repair a wheel using ``delocate``, cleaning AppleDouble files first.
 
         Parameters
         ----------
@@ -113,20 +116,26 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             Unused on macOS (kept for interface compatibility).
         """
         self.remove_apple_double_files()
-        # macOS fix-up with delocate (only needed for x86_64)
-        if self.package_env_config["ARCH"] != "arm64":
-            venv_bin_path = self.venv_info_dict.get("venv_bin_path", None)
-            if venv_bin_path:
-                delocate_listdeps = f"{venv_bin_path}/delocate-listdeps"
-                delocate_wheel = f"{venv_bin_path}/delocate-wheel"
-                self.echo_check_call([str(delocate_listdeps), str(filepath)])
-                self.echo_check_call([str(delocate_wheel), str(filepath)])
-            else:
-                print(
-                    "=" * 20
-                    + "WARNING: Could not find venv binary to delocate wheel"
-                    + "=" * 20
-                )
+        # arm64 needs this too: the pixi toolchain links @rpath/libc++ that only exists on the build host.
+        venv_bin_path = self.venv_info_dict.get("venv_bin_path", None)
+        if venv_bin_path:
+            delocate_listdeps = f"{venv_bin_path}/delocate-listdeps"
+            delocate_wheel = f"{venv_bin_path}/delocate-wheel"
+            self.echo_check_call([str(delocate_listdeps), str(filepath)])
+            self.echo_check_call(
+                [
+                    str(delocate_wheel),
+                    "--require-archs",
+                    self.package_env_config["ARCH"],
+                    str(filepath),
+                ]
+            )
+        else:
+            print(
+                "=" * 20
+                + "WARNING: Could not find venv binary to delocate wheel"
+                + "=" * 20
+            )
 
     def remove_apple_double_files(self):
         """Remove AppleDouble ``._*`` files using ``dot_clean`` if available."""
