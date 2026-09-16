@@ -108,8 +108,11 @@ if [[ "${TARGET_ARCH}" == "aarch64" ]]; then
     ${docker_prefix} "$OCI_EXE" run --privileged --rm tonistiigi/binfmt --install all
   fi
 
-  # When building ITK wheels, module-related vars are empty
+  # When building ITK wheels, module-related vars are empty.
+  # /work must be a host mount, as dockcross does for x64: the tarball step
+  # writes the cache to /work and it is lost with the container otherwise.
   cmd="${docker_prefix} \"$OCI_EXE\" run --rm \
+      -v \"$(dirname "${_ipp_dir}")\":/work \
       ${DOCKER_ARGS} \
       -e PY_ENVS=\"${PY_ENVS[*]}\" \
       -e ITK_GIT_TAG=\"${ITK_GIT_TAG}\" \
