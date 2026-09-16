@@ -93,7 +93,7 @@ Expected location: $ExpectedScriptsDir
 
   RUN: cd $BDR
   RUN: git clone git@github.com:<org>/ITKPythonPackage.git $BDR\IPP
-  FOR DEVELOPMENT: git checkout python_based_build_scripts
+  FOR DEVELOPMENT: git checkout python-build-system
   RUN: $ExpectedScriptsDir\make_windows_zip.ps1
 "@
   exit 1
