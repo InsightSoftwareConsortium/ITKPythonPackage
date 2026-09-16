@@ -43,16 +43,19 @@ pre-commit run --all-files
 
 ### Commit Messages
 
-This project uses [Conventional Commits](https://www.conventionalcommits.org), enforced by Commitizen:
+This project uses the ITK commit message convention, `PREFIX: Description`,
+enforced by Commitizen:
 
 ```
-feat: add support for Python 3.12 wheels
-fix: correct cmake args not propagating to module builds
-chore: update pre-commit hook versions
-docs: clarify aarch64 build requirements
+ENH: Add support for Python 3.12 wheels
+BUG: Correct cmake args not propagating to module builds
+COMP: Update pre-commit hook versions
+DOC: Clarify aarch64 build requirements
 ```
 
-Commitizen will reject commits that don't follow this format.
+Valid prefixes are `BUG:`, `COMP:`, `DOC:`, `ENH:`, `PERF:` and `STYLE:`,
+and the description starts with a capital letter. Commitizen will reject
+commits that don't follow this format.
 
 ### Building Docs
 

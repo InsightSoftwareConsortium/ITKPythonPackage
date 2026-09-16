@@ -1,8 +1,10 @@
 import copy
 import os
+import re
 import shutil
 import subprocess
 import sys
+import tomllib
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from collections.abc import Callable
@@ -720,13 +722,6 @@ class BuildPythonInstanceBase(ABC):
         bool
             *True* if any dependency was rewritten.
         """
-        import re
-
-        try:
-            import tomllib
-        except ModuleNotFoundError:
-            import tomli as tomllib  # Python < 3.11
-
         with open(pyproject_path, "rb") as f:
             pyproject_data = tomllib.load(f)
 
@@ -775,7 +770,7 @@ class BuildPythonInstanceBase(ABC):
         # Warn about pinned remote-module cross-deps that may also need
         # attention but should not be auto-rewritten.
         cross_dep_pattern = re.compile(
-            r'"(itk-[a-z][a-z0-9-]*)\s*==\s*[\d]+\.[\d]+\.\*"'
+            r'"(itk-[a-z][a-z0-9-]*)\s*(?:==\s*\d+\.\d+\.\*|~=\s*\d+\.\d+(?:\.\d+)?)"'
         )
         for m in cross_dep_pattern.finditer(text):
             pkg = m.group(1)

@@ -17,20 +17,6 @@ from os import chdir as os_chdir
 from os import environ
 from pathlib import Path
 
-# @contextmanager
-# def push_env(**kwargs):
-#     """This context manager allow to set/unset environment variables."""
-#     saved_env = dict(os_environ)
-#     for var, value in kwargs.items():
-#         if value is not None:
-#             os_environ[var] = value
-#         elif var in os_environ:
-#             del os_environ[var]
-#     yield
-#     os_environ.clear()
-#     for saved_var, saved_value in saved_env.items():
-#         os_environ[saved_var] = saved_value
-
 
 class ContextDecorator:
     """A base class or mixin that enables context managers to work as
@@ -391,122 +377,6 @@ def git_describe_to_pep440(desc: str) -> str:
     return semver_format
 
 
-# def debug(msg: str, do_print=False) -> None:
-#     """Print *msg* only when *do_print* is True."""
-#     if do_print:
-#         print(msg)
-#
-#
-# def parse_kv_overrides(pairs: list[str]) -> dict[str, str]:
-#     """Parse a list of ``KEY=VALUE`` strings into a dict.
-#
-#     A value of ``"UNSET"`` is stored as ``None`` so callers can remove
-#     the key from a target mapping.
-#
-#     Parameters
-#     ----------
-#     pairs : list[str]
-#         Strings of the form ``KEY=VALUE``.
-#
-#     Returns
-#     -------
-#     dict[str, str]
-#         Parsed overrides.
-#
-#     Raises
-#     ------
-#     SystemExit
-#         If an entry is not a valid ``KEY=VALUE`` pair or the key name
-#         is invalid.
-#     """
-#     result: dict[str, str] = {}
-#     for kv in pairs:
-#         if "=" not in kv:
-#             raise SystemExit(f"ERROR: Trailing argument '{kv}' is not KEY=VALUE")
-#         key, value = kv.split("=", 1)
-#         if not key or not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", key):
-#             raise SystemExit(f"ERROR: Invalid variable name '{key}' in '{kv}'")
-#         if value == "UNSET":
-#             # Explicitly remove if present later
-#             result[key] = None  # type: ignore
-#         else:
-#             result[key] = value
-#     return result
-
-
-# def get_git_id(
-#     repo_dir: Path, pixi_exec_path, env, backup_version: str = "v0.0.0"
-# ) -> str | None:
-#     """Return a human-readable Git identifier for *repo_dir*.
-#
-#     Tries, in order: exact tag, branch name, short commit hash.
-#     Falls back to *backup_version* when none of these succeed.
-#
-#     Parameters
-#     ----------
-#     repo_dir : Path
-#         Root of the Git repository.
-#     pixi_exec_path : Path or str
-#         Path to the pixi executable (unused but kept for API compat).
-#     env : dict
-#         Environment variables passed to Git subprocesses.
-#     backup_version : str, optional
-#         Fallback identifier returned when Git queries fail.
-#
-#     Returns
-#     -------
-#     str or None
-#         A tag, branch name, short hash, or *backup_version*.
-#     """
-#     # 1. exact tag
-#     try:
-#         run_result = run_commandLine_subprocess(
-#             ["git", "describe", "--tags", "--exact-match"],
-#             cwd=repo_dir,
-#             env=env,
-#             check=False,
-#         )
-#
-#         if run_result.returncode == 0:
-#             return run_result.stdout.strip()
-#     except subprocess.CalledProcessError:
-#         pass
-#     # 2. branch
-#     try:
-#         run_result = run_commandLine_subprocess(
-#             ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-#             cwd=repo_dir,
-#             env=env,
-#         )
-#         branch = run_result.stdout.strip()
-#         if run_result.returncode == 0 and branch != "HEAD":
-#             return branch
-#     except subprocess.CalledProcessError:
-#         pass
-#     # 3. short hash
-#     try:
-#         run_result = run_commandLine_subprocess(
-#             ["git", "rev-parse", "--short", "HEAD"],
-#             cwd=repo_dir,
-#             env=env,
-#         )
-#         short_version = run_result.stdout.strip()
-#         if run_result.returncode == 0 and short_version != "HEAD":
-#             return short_version
-#     except subprocess.CalledProcessError:
-#         pass
-#
-#     # 4. punt and give dummy backup_version identifier
-#     if not (repo_dir / ".git").is_dir():
-#         if (repo_dir / ".git").is_file():
-#             print(
-#                 f"WARNING: {str(repo_dir)} is a secondary git worktree, and may not resolve from within dockcross build"
-#             )
-#             return backup_version
-#         print(f"ERROR: {repo_dir} is not a primary git repository")
-#     return backup_version
-
-
 def compute_itk_package_version(
     itk_dir: Path, itk_git_tag: str, pixi_exec_path, env
 ) -> str:
@@ -658,30 +528,6 @@ def resolve_oci_exe(env: dict[str, str]) -> str:
             return cand
     # Default to docker name if nothing found
     return "docker"
-
-
-# def cmake_compiler_defaults(build_dir: Path) -> tuple[str | None, str | None]:
-#     info = build_dir / "cmake_system_information"
-#     if not info.exists():
-#         try:
-#             out = run_commandLine_subprocess(["cmake", "--system-information"]).stdout
-#             info.write_text(out, encoding="utf-8")
-#         except Exception as e:
-#             print(f"WARNING: Failed to generate cmake_system_information: {e}")
-#             return None, None
-#     text = info.read_text(encoding="utf-8", errors="ignore")
-#     cc = None
-#     cxx = None
-#     for line in text.splitlines():
-#         if "CMAKE_C_COMPILER == " in line:
-#             parts = re.split(r"\s+", line.strip())
-#             if len(parts) >= 4:
-#                 cc = parts[3]
-#         if "CMAKE_CXX_COMPILER == " in line:
-#             parts = re.split(r"\s+", line.strip())
-#             if len(parts) >= 4:
-#                 cxx = parts[3]
-#     return cc, cxx
 
 
 def give_relative_path(bin_exec: Path, build_dir_root: Path) -> str:

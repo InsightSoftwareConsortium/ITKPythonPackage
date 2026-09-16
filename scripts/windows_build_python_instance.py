@@ -1,4 +1,5 @@
 import re
+import shutil
 from pathlib import Path
 
 from build_python_instance_base import BuildPythonInstanceBase
@@ -135,9 +136,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
 
         if seven_zip is None:
             # Try PATH lookup using where/which behavior from shutil
-            import shutil as _shutil
-
-            found = _shutil.which("7z.exe") or _shutil.which("7z")
+            found = shutil.which("7z.exe") or shutil.which("7z")
             if found:
                 seven_zip = Path(found)
 
@@ -169,8 +168,6 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
 
         # 3) Fallback: create a .zip using Python's shutil
         # This will create a zip archive named ITKPythonBuilds-windows.zip
-        import shutil as _shutil
-
         if out_zip.exists():
             try:
                 out_zip.unlink()
@@ -179,7 +176,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         # make_archive requires base name without extension
         base_name = str(out_zip.with_suffix("").with_suffix(""))
         # shutil.make_archive will append .zip
-        _shutil.make_archive(
+        shutil.make_archive(
             base_name,
             "zip",
             root_dir=str(self.build_dir_root),
