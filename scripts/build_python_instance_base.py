@@ -5,10 +5,10 @@ import subprocess
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from collections.abc import Callable
-from os import environ
 from pathlib import Path
 
 import build_environment
+import wheel_packaging
 from BuildManager import BuildManager
 from cmake_argument_builder import CMakeArgumentBuilder
 from module_dependencies import build_module_dependencies, update_module_itk_deps
@@ -17,7 +17,6 @@ from target_platform import TargetPlatform
 from wheel_builder_utils import (
     _remove_tree,
     _which,
-    get_default_platform_build,
 )
 
 
@@ -540,67 +539,8 @@ class BuildPythonInstanceBase(ABC):
         pass
 
     def post_build_cleanup(self) -> None:
-        """Remove intermediate build artifacts, leaving ``dist/`` intact.
-
-        Actions:
-        - remove oneTBB-prefix (symlink or dir)
-        - remove ITKPythonPackage/, tools/, _skbuild/, build/
-        - remove top-level *.egg-info
-        - remove ITK-* build tree and tarballs
-        - if ITK_MODULE_PREQ is set, remove cloned module dirs
-        """
-        base = Path(self.package_env_config["IPP_SOURCE_DIR"])
-
-        def rm(tree_path: Path):
-            try:
-                _remove_tree(tree_path)
-            except Exception:
-                pass
-
-        # 1) unlink oneTBB-prefix if it's a symlink or file
-        tbb_prefix_dir = base / "oneTBB-prefix"
-        try:
-            if tbb_prefix_dir.is_symlink() or tbb_prefix_dir.is_file():
-                tbb_prefix_dir.unlink(missing_ok=True)  # type: ignore[arg-type]
-            elif tbb_prefix_dir.exists():
-                rm(tbb_prefix_dir)
-        except Exception:
-            pass
-
-        # 2) standard build directories
-        for rel in ("ITKPythonPackage", "tools", "_skbuild", "build"):
-            rm(base / rel)
-
-        # 3) egg-info folders at top-level
-        for p in base.glob("*.egg-info"):
-            rm(p)
-
-        # 4) ITK build tree and tarballs, both under the build root rather than
-        #    the source checkout: ITK-<platform-env>-<pixi-env>_<arch> in build/,
-        #    and the cache in dist/.
-        target_arch = self.package_env_config["ARCH"]
-        for p in (self.build_dir_root / "build").glob(f"ITK-*_{target_arch}"):
-            rm(p)
-
-        # Tarballs
-        for p in (self.build_dir_root / "dist").glob("ITKPythonBuilds-*.tar*"):
-            rm(p)
-
-        # 5) Optional module prerequisites cleanup (ITK_MODULE_PREQ)
-        # Format: "InsightSoftwareConsortium/ITKModuleA@v1.0:Kitware/ITKModuleB@sha"
-        itk_preq = self.package_env_config.get("ITK_MODULE_PREQ") or environ.get(
-            "ITK_MODULE_PREQ", ""
-        )
-        if itk_preq:
-            for entry in itk_preq.split(":"):
-                entry = entry.strip()
-                if not entry:
-                    continue
-                try:
-                    module_name = entry.split("@", 1)[0].split("/", 1)[1]
-                except Exception:
-                    continue
-                rm(base / module_name)
+        """Remove intermediate build artifacts, leaving ``dist/`` intact."""
+        wheel_packaging.post_build_cleanup(self)
 
     def prepare_build_env(self) -> None:
         """Skeleton shared by every platform.
@@ -922,127 +862,8 @@ class BuildPythonInstanceBase(ABC):
         print("# FINISHED-Build ITK C++")
 
     def create_posix_tarball(self):
-        """Create a compressed tarball of the ITK Python build tree.
-
-        Mirrors the historical scripts/*-build-tarball.sh behavior:
-        - zstd compress with options (-10 -T6 --long=31)
-
-        Warns if directory structure doesn't match expected layout for GitHub Actions.
-        """
-        arch_postfix: str = f"{self.package_env_config['ARCH']}"
-        # Fixup platform name for macOS, eventually need to standardize on macosx naming convention
-        platform_name: str = get_default_platform_build().split("-")[0]
-        tar_name: str = f"ITKPythonBuilds-{platform_name}-{arch_postfix}.tar"
-        itk_packaging_reference_dir = self.build_dir_root.parent
-
-        # Write the cache under the build tree: container builds bind-mount that
-        # directory, while the archive root above it is not always mounted. dist/
-        # is excluded from the archive below, so the cache cannot capture itself.
-        tarball_output_dir: Path = self.build_dir_root / "dist"
-        tarball_output_dir.mkdir(parents=True, exist_ok=True)
-        tar_path: Path = tarball_output_dir / tar_name
-        zst_path: Path = tarball_output_dir / f"{tar_name}.zst"
-
-        itk_resources_build_dir: Path = self.build_dir_root
-        ipp_source_dir: Path = self.package_env_config["IPP_SOURCE_DIR"]
-
-        # Validate directory structure and determine tarball strategy
-        issues = []
-
-        # Try to use relative paths first
-        try:
-            rel_build = itk_resources_build_dir.relative_to(itk_packaging_reference_dir)
-            rel_ipp = ipp_source_dir.relative_to(itk_packaging_reference_dir)
-        except ValueError:
-            # Fall back to absolute paths
-            rel_build = itk_resources_build_dir
-            rel_ipp = ipp_source_dir
-            itk_packaging_reference_dir = Path(
-                "/"
-            )  # Tar from root when using absolute paths
-
-        if itk_resources_build_dir.parent != ipp_source_dir.parent:
-            issues.append("Build and source dirs are not siblings")
-
-        if ipp_source_dir.name != "ITKPythonPackage":
-            issues.append(
-                f"Source dir is '{ipp_source_dir.name}', expected 'ITKPythonPackage'"
-            )
-
-        # Issue consolidated warning for compatibility issues
-        if issues:
-            print("\n" + "=" * 70)
-            print("WARNING: Tarball will NOT be compatible with GitHub Actions")
-            print("=" * 70)
-            for issue in issues:
-                print(f"  * {issue}")
-            print(
-                "\nExpected structure: <parent>/{ITKPythonPackage, ITKPythonPackage-build}"
-            )
-            print(f"Current: Build={itk_resources_build_dir}")
-            print(f"         Source={ipp_source_dir}")
-            print(
-                "\nTarball will be created for local reuse but may not work in CI/CD."
-            )
-            print("=" * 70 + "\n")
-
-        # Build tarball include paths
-        tarball_include_paths = [
-            str(rel_build),
-            str(rel_ipp),
-        ]
-
-        if tar_path.exists():
-            print(f"Removing existing tarball {tar_path}")
-            tar_path.unlink()
-        if zst_path.exists():
-            print(f"Removing existing zstd tarball {zst_path}")
-            zst_path.unlink()
-
-        # Create tarball
-        self.echo_check_call(
-            [
-                "tar",
-                "-C",
-                str(itk_packaging_reference_dir),
-                "-cf",
-                str(tar_path),
-                "--exclude=*.o",
-                "--exclude=*.whl",  # Do not include built wheels
-                "--exclude=*/dist/*",  # Do not include the dist whl output directory
-                "--exclude=*/wheelbuilds/*",  # Do not include the wheelbuild support directory
-                "--exclude=*/__pycache__/*",  # Do not include __pycache__
-                "--exclude=install_manifest_*.txt",  # Do not include install manifest files
-                "--exclude=._*",  # Exclude mac dot files
-                "--exclude=*/.git/*",
-                "--exclude=*/.idea/*",
-                "--exclude=*/.pixi/*",
-                "--exclude=*/castxml_inputs/*",
-                "--exclude=*/Wrapping/Modules/*",
-                *tarball_include_paths,
-            ]
-        )
-
-        # Compress with zstd
-        self.echo_check_call(
-            [
-                "zstd",
-                "-f",
-                "-10",
-                "-T6",
-                "--long=31",
-                str(tar_path),
-                "-o",
-                str(zst_path),
-            ]
-        )
-
-        # The uncompressed archive is several GB; only the compressed cache is published.
-        tar_path.unlink(missing_ok=True)
-
-        print(f"Tarball created: {zst_path}")
-        if issues:
-            print("Compatibility warnings above - review before using in CI/CD")
+        """Create a compressed tarball of the ITK Python build tree."""
+        wheel_packaging.create_posix_tarball(self)
 
     def get_pixi_environment_name(self):
         """Delegate, naming the pixi environment for this build."""

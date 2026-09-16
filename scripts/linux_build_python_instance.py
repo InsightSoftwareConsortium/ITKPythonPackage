@@ -164,17 +164,16 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
         # Use auditwheel to repair wheels and set manylinux tags
         manylinux_ver = self.package_env_config.get("MANYLINUX_VERSION", "")
         if len(manylinux_ver) > 1:
-            plat = None
-            if self.package_env_config["ARCH"] == "x64" and manylinux_ver:
-                plat = f"manylinux{manylinux_ver}_x86_64"
             cmd = [
                 self.package_env_config["PYTHON_EXECUTABLE"],
                 "-m",
                 "auditwheel",
                 "repair",
+                # One deterministic tag, matching the documented floor.
+                "--only-plat",
+                "--plat",
+                self.target.wheel_plat_tag,
             ]
-            if plat:
-                cmd += ["--plat", plat]
             cmd += [
                 str(filepath),
                 "-w",
