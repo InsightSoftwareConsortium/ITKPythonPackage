@@ -584,13 +584,15 @@ class BuildPythonInstanceBase(ABC):
         for p in base.glob("*.egg-info"):
             rm(p)
 
-        # 4) ITK build tree and tarballs
+        # 4) ITK build tree and tarballs, both under the build root rather than
+        #    the source checkout: ITK-<platform-env>-<pixi-env>_<arch> in build/,
+        #    and the cache in dist/.
         target_arch = self.package_env_config["ARCH"]
-        for p in base.glob(f"ITK-*-{self.package_env_config}_{target_arch}"):
+        for p in (self.build_dir_root / "build").glob(f"ITK-*_{target_arch}"):
             rm(p)
 
         # Tarballs
-        for p in base.glob(f"ITKPythonBuilds-{self.package_env_config}*.tar.zst"):
+        for p in (self.build_dir_root / "dist").glob("ITKPythonBuilds-*.tar*"):
             rm(p)
 
         # 5) Optional module prerequisites cleanup (ITK_MODULE_PREQ)
@@ -792,11 +794,20 @@ class BuildPythonInstanceBase(ABC):
         # Tags carry a leading "v" and a pre-release or dev suffix
         # (e.g. v6.0rc01.dev20260915), neither of which belongs in the floor:
         # the wheel works with the whole 6.0 series, not one release candidate.
+        # The pin is also bounded above: the wheel is compiled against this ITK
+        # major series and its ABI, so the next major must not satisfy it.
         version_match = re.match(r"v?(\d+)\.(\d+)", itk_version)
         if version_match:
             min_floor = f"{version_match.group(1)}.{version_match.group(2)}"
+            max_exclusive = str(int(version_match.group(1)) + 1)
         else:
-            min_floor = itk_version
+            # Not a version (e.g. a branch name): any pin built from it would
+            # not be a valid specifier, so leave the module's pins alone.
+            print(
+                f"  Leaving ITK pins in {pyproject_path.name} unchanged: "
+                f"{itk_version!r} is not a MAJOR.MINOR version"
+            )
+            return False
 
         changed = False
 
@@ -804,7 +815,9 @@ class BuildPythonInstanceBase(ABC):
             nonlocal changed
             changed = True
             pkg = m.group(1)
-            return f'"{pkg} >= {min_floor}"'
+            if max_exclusive is None:
+                return f'"{pkg} >= {min_floor}"'
+            return f'"{pkg} >= {min_floor}, < {max_exclusive}"'
 
         new_text = pattern.sub(_replace, text)
         if changed:
@@ -1079,9 +1092,10 @@ class BuildPythonInstanceBase(ABC):
           - "InsightSoftwareConsortium/ITKMeshToPolyData@v0.10.0"
 
         For each dependency, clone the repository, checkout the given tag,
-        invoke the platform download-cache-and-build script, then copy
+        build it against the ITK tree this build already uses, then copy
         headers and wrapping input files into the current module tree
         (include/ and wrapping/), similar to the bash implementations.
+        The cache is not downloaded or extracted again for a dependency.
         """
 
         if len(self.itk_module_deps) == 0:

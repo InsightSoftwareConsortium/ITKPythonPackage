@@ -8,8 +8,8 @@ from build_python_instance_base import BuildPythonInstanceBase
 class MacOSBuildPythonInstance(BuildPythonInstanceBase):
     """macOS-specific wheel builder.
 
-    Handles macOS deployment target and architecture settings, and uses
-    ``delocate`` for wheel repair on x86_64 builds.
+    Handles macOS deployment target and architecture settings, and repairs
+    every wheel with ``delocate`` on both x86_64 and arm64.
     """
 
     def prepare_build_env(self) -> None:
