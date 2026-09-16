@@ -1,4 +1,5 @@
 import os
+import zipfile
 from pathlib import Path
 
 from build_python_instance_base import BuildPythonInstanceBase
@@ -116,6 +117,15 @@ class MacOSBuildPythonInstance(BuildPythonInstanceBase):
             Unused on macOS (kept for interface compatibility).
         """
         self.remove_apple_double_files()
+        # delocate --require-archs errors on a wheel with no compiled binaries (e.g. the itk metapackage).
+        with zipfile.ZipFile(filepath) as wheel_zip:
+            has_binaries = any(
+                name.endswith((".so", ".dylib")) for name in wheel_zip.namelist()
+            )
+        if not has_binaries:
+            print(f"Skipping delocate for {Path(filepath).name}: no compiled binaries")
+            return
+
         # arm64 needs this too: the pixi toolchain links @rpath/libc++ that only exists on the build host.
         venv_bin_path = self.venv_info_dict.get("venv_bin_path", None)
         if venv_bin_path:
