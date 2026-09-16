@@ -84,7 +84,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         self.echo_check_call(cmd)
 
     def build_tarball(self):
-        """Create an archive of the ITK Python package build tree (Windows).
+        r"""Create an archive of the ITK Python package build tree (Windows).
 
         Mirrors scripts/windows-build-tarball.ps1 behavior:
         - Remove contents of IPP/dist
@@ -160,7 +160,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                 "-xr!.idea",  # Exclude IDE directory
                 "-xr!.pixi",  # Exclude pixi environment
                 "-xr!castxml_inputs",
-                "-xr!Wrapping\Modules",
+                r"-xr!Wrapping\Modules",
                 "-xr!*.pdb",  # Exclude debug symbols
             ]
             return_status: int = self.echo_check_call(cmd)

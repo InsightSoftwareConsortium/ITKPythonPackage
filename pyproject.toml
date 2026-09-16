@@ -16,7 +16,8 @@ target-version = "py311"
 # I:   isort import ordering
 # UP:  pyupgrade (modernise syntax for Python 3.11+)
 # B:   flake8-bugbear (opinionated bug detection)
-select = ["E", "F", "I", "UP", "B"]
+# W:   pycodestyle warnings, including W605 invalid escape sequences
+select = ["E", "F", "I", "UP", "B", "W"]
 # E501 (line-too-long) is handled by black; suppress here to avoid duplication
 ignore = ["E501"]
 
