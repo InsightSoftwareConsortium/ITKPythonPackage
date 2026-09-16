@@ -1311,6 +1311,9 @@ class BuildPythonInstanceBase(ABC):
             ]
         )
 
+        # The uncompressed archive is several GB; only the compressed cache is published.
+        tar_path.unlink(missing_ok=True)
+
         print(f"Tarball created: {zst_path}")
         if issues:
             print("Compatibility warnings above - review before using in CI/CD")
