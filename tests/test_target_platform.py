@@ -1,6 +1,8 @@
+import os
 import re
 import tomllib
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from hypothesis import given
@@ -97,6 +99,52 @@ def test_aarch64_uses_pypa_with_underscore():
         registry="quay.io/pypa",
     )
     assert image.reference == ("quay.io/pypa/manylinux_2_28_aarch64:2025.08.12-1")
+
+
+def _fake_uname(sysname, machine):
+    return SimpleNamespace(sysname=sysname, machine=machine)
+
+
+def test_detect_resolves_linux_sysname(monkeypatch):
+    monkeypatch.setattr(os, "uname", lambda: _fake_uname("Linux", "x86_64"))
+    monkeypatch.setattr(os, "name", "posix")
+    plat = TargetPlatform.detect({})
+    assert plat.os_name == "linux"
+
+
+def test_detect_resolves_darwin_sysname(monkeypatch):
+    monkeypatch.setattr(os, "uname", lambda: _fake_uname("Darwin", "arm64"))
+    monkeypatch.setattr(os, "name", "posix")
+    plat = TargetPlatform.detect({})
+    assert plat.os_name == "darwin"
+
+
+def test_detect_resolves_windows_via_os_name_nt(monkeypatch):
+    monkeypatch.delattr(os, "uname", raising=False)
+    monkeypatch.setattr(os, "name", "nt")
+    plat = TargetPlatform.detect({"PROCESSOR_ARCHITECTURE": "AMD64"})
+    assert plat.os_name == "windows"
+
+
+def test_detect_unsupported_sysname_raises(monkeypatch):
+    monkeypatch.setattr(os, "uname", lambda: _fake_uname("PlayStation", "x86_64"))
+    monkeypatch.setattr(os, "name", "posix")
+    with pytest.raises(ValueError, match="Unsupported operating system"):
+        TargetPlatform.detect({})
+
+
+def test_detect_target_arch_env_overrides_host_machine(monkeypatch):
+    monkeypatch.setattr(os, "uname", lambda: _fake_uname("Linux", "aarch64"))
+    monkeypatch.setattr(os, "name", "posix")
+    plat = TargetPlatform.detect({"TARGET_ARCH": "x86_64"})
+    assert plat.arch is Arch.X86_64
+
+
+def test_detect_falls_back_to_uname_machine_without_target_arch(monkeypatch):
+    monkeypatch.setattr(os, "uname", lambda: _fake_uname("Linux", "aarch64"))
+    monkeypatch.setattr(os, "name", "posix")
+    plat = TargetPlatform.detect({})
+    assert plat.arch is Arch.AARCH64
 
 
 @given(machine=st.text(max_size=20))
