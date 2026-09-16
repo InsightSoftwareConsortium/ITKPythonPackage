@@ -194,50 +194,6 @@ def _which(exe_name: str) -> Path | None:
     return None
 
 
-def detect_platform() -> tuple[str, str]:
-    """Detect the current operating system and CPU architecture.
-
-    Returns
-    -------
-    tuple[str, str]
-        A ``(os_name, arch)`` pair where *os_name* is one of
-        ``'linux'``, ``'darwin'``, ``'windows'``, or ``'unknown'``, and
-        *arch* is a normalized architecture string (e.g. ``'x64'``,
-        ``'arm64'``, ``'x86_64'``, ``'aarch64'``).
-    """
-    uname = os.uname() if hasattr(os, "uname") else None
-    sysname = (
-        uname.sysname if uname else ("Windows" if os.name == "nt" else sys.platform)
-    )
-    machine = (
-        uname.machine
-        if uname
-        else (os.environ.get("PROCESSOR_ARCHITECTURE", "").lower())
-    )
-    os_name = (
-        "linux"
-        if sysname.lower().startswith("linux")
-        else (
-            "darwin"
-            if sysname.lower().startswith("darwin") or sys.platform == "darwin"
-            else ("windows" if os.name == "nt" else "unknown")
-        )
-    )
-    # Normalize machine
-    arch = machine
-    if os_name == "darwin":
-        if machine in ("x86_64",):
-            arch = "x86_64"
-        elif machine in ("arm64", "aarch64"):
-            arch = "arm64"
-    elif os_name == "linux":
-        if machine in ("x86_64",):
-            arch = "x64"
-        elif machine in ("i686", "i386"):
-            arch = "x86"
-        elif machine in ("aarch64",):
-            arch = "aarch64"
-    return os_name, arch
 HOST_SYSTEM_ENVIRONMENT_NAME = "hostsystem"
 """Opt out of pixi tool resolution and use the host system's PATH."""
 
@@ -495,6 +451,18 @@ def compute_itk_package_version(
     str
         PEP 440-compliant version string.
     """
+    if (
+        run_commandLine_subprocess(
+            ["git", "rev-parse", "--git-dir"], cwd=itk_dir, env=env
+        ).returncode
+        != 0
+    ):
+        raise RuntimeError(
+            f"Cannot derive a version from {itk_dir}: it is not a git "
+            f"repository, which is how a source tree restored from a build "
+            f"cache arrives. Pass --itk-package-version, or set "
+            f"ITK_PACKAGE_VERSION, to name the version explicitly."
+        )
     fetch_result = run_commandLine_subprocess(
         ["git", "fetch", "--tags"],
         cwd=itk_dir,
@@ -554,67 +522,6 @@ def compute_itk_package_version(
         )
 
     return version
-
-
-def default_manylinux(
-    manylinux_version: str, os_name: str, arch: str, env: dict[str, str]
-) -> tuple[str, str, str]:
-    """Resolve default manylinux container image details.
-
-    Parameters
-    ----------
-    manylinux_version : str
-        Manylinux specification (e.g. ``'_2_28'``, ``'_2_34'``).
-    os_name : str
-        Operating system name (only ``'linux'`` triggers resolution).
-    arch : str
-        Target architecture (``'x64'``, ``'aarch64'``).
-    env : dict[str, str]
-        Environment variables that may override image defaults
-        (``IMAGE_TAG``, ``CONTAINER_SOURCE``, ``MANYLINUX_IMAGE_NAME``).
-
-    Returns
-    -------
-    tuple[str, str, str]
-        ``(image_tag, image_name, container_source)``.
-
-    Raises
-    ------
-    RuntimeError
-        If *manylinux_version* or *arch* is unrecognized.
-    """
-    image_tag = env.get("IMAGE_TAG", "")
-    container_source = env.get("CONTAINER_SOURCE", "")
-    image_name = env.get("MANYLINUX_IMAGE_NAME", "")
-
-    if os_name == "linux":
-        if arch == "x64" and manylinux_version == "_2_34":
-            image_tag = image_tag or "latest"
-        elif arch == "x64" and manylinux_version == "_2_28":
-            image_tag = image_tag or "20250913-6ea98ba"
-        elif arch == "aarch64" and manylinux_version == "_2_28":
-            image_tag = image_tag or "2025.08.12-1"
-        elif manylinux_version == "":
-            image_tag = ""
-        else:
-            raise RuntimeError(
-                f"FAILURE: Unknown manylinux version {manylinux_version}"
-            )
-
-        if arch == "x64":
-            image_name = (
-                image_name or f"manylinux{manylinux_version}-{arch}:{image_tag}"
-            )
-            container_source = container_source or f"docker.io/dockcross/{image_name}"
-        elif arch == "aarch64":
-            image_name = (
-                image_name or f"manylinux{manylinux_version}_{arch}:{image_tag}"
-            )
-            container_source = container_source or f"quay.io/pypa/{image_name}"
-        else:
-            raise RuntimeError(f"Unknown target architecture {arch}")
-
-    return image_tag, image_name, container_source
 
 
 def resolve_oci_exe(env: dict[str, str]) -> str:

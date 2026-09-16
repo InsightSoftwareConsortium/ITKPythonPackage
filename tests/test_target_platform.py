@@ -5,6 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from build_wheels import remotemodulebuildandtestaction
 from hypothesis import given
 from hypothesis import strategies as st
 from target_platform import (
@@ -105,16 +106,28 @@ def _fake_uname(sysname, machine):
     return SimpleNamespace(sysname=sysname, machine=machine)
 
 
-def test_detect_resolves_linux_sysname(monkeypatch):
-    monkeypatch.setattr(os, "uname", lambda: _fake_uname("Linux", "x86_64"))
+def _patch_posix_uname(monkeypatch, sysname, machine):
+    """Present a POSIX ``os.uname`` to the code under test.
+
+    ``raising=False`` because Windows has no ``os.uname`` to replace;
+    monkeypatch removes the attribute again on teardown. Without it these
+    tests error with ``AttributeError`` on Windows before reaching any
+    assertion.
+    """
+    monkeypatch.setattr(
+        os, "uname", lambda: _fake_uname(sysname, machine), raising=False
+    )
     monkeypatch.setattr(os, "name", "posix")
+
+
+def test_detect_resolves_linux_sysname(monkeypatch):
+    _patch_posix_uname(monkeypatch, "Linux", "x86_64")
     plat = TargetPlatform.detect({})
     assert plat.os_name == "linux"
 
 
 def test_detect_resolves_darwin_sysname(monkeypatch):
-    monkeypatch.setattr(os, "uname", lambda: _fake_uname("Darwin", "arm64"))
-    monkeypatch.setattr(os, "name", "posix")
+    _patch_posix_uname(monkeypatch, "Darwin", "arm64")
     plat = TargetPlatform.detect({})
     assert plat.os_name == "darwin"
 
@@ -127,22 +140,19 @@ def test_detect_resolves_windows_via_os_name_nt(monkeypatch):
 
 
 def test_detect_unsupported_sysname_raises(monkeypatch):
-    monkeypatch.setattr(os, "uname", lambda: _fake_uname("PlayStation", "x86_64"))
-    monkeypatch.setattr(os, "name", "posix")
+    _patch_posix_uname(monkeypatch, "PlayStation", "x86_64")
     with pytest.raises(ValueError, match="Unsupported operating system"):
         TargetPlatform.detect({})
 
 
 def test_detect_target_arch_env_overrides_host_machine(monkeypatch):
-    monkeypatch.setattr(os, "uname", lambda: _fake_uname("Linux", "aarch64"))
-    monkeypatch.setattr(os, "name", "posix")
+    _patch_posix_uname(monkeypatch, "Linux", "aarch64")
     plat = TargetPlatform.detect({"TARGET_ARCH": "x86_64"})
     assert plat.arch is Arch.X86_64
 
 
 def test_detect_falls_back_to_uname_machine_without_target_arch(monkeypatch):
-    monkeypatch.setattr(os, "uname", lambda: _fake_uname("Linux", "aarch64"))
-    monkeypatch.setattr(os, "name", "posix")
+    _patch_posix_uname(monkeypatch, "Linux", "aarch64")
     plat = TargetPlatform.detect({})
     assert plat.arch is Arch.AARCH64
 
@@ -158,6 +168,32 @@ def test_detect_never_yields_a_nickname(machine):
     assert isinstance(plat.arch, Arch)
     assert plat.arch.value not in NICKNAMES
     assert plat.arch.value == plat.arch.value.lower()
+
+
+def test_detect_manylinux_override_ignores_ambient_env(monkeypatch):
+    _patch_posix_uname(monkeypatch, "Linux", "aarch64")
+    env = {"MANYLINUX_VERSION": "_2_34"}
+    plat = TargetPlatform.detect(env, manylinux_version="")
+    assert plat.manylinux_version == ""
+
+
+def test_detect_default_reads_ambient_manylinux_env(monkeypatch):
+    _patch_posix_uname(monkeypatch, "Linux", "x86_64")
+    env = {"MANYLINUX_VERSION": "_2_28"}
+    plat = TargetPlatform.detect(env)
+    assert plat.manylinux_version == "_2_28"
+
+
+def test_detect_manylinux_override_still_validates(monkeypatch):
+    _patch_posix_uname(monkeypatch, "Linux", "x86_64")
+    with pytest.raises(ValueError, match="Unknown manylinux version"):
+        TargetPlatform.detect({}, manylinux_version="_2_99")
+
+
+def test_macosx_deployment_target_matches_wheel_tag_version(monkeypatch):
+    monkeypatch.delenv("MACOSX_DEPLOYMENT_TARGET", raising=False)
+    build_default = remotemodulebuildandtestaction()["MACOSX_DEPLOYMENT_TARGET"]
+    assert build_default.replace(".", "_") == _MACOSX_DEPLOYMENT_TARGET
 
 
 def test_macos_wheel_plat_tag_is_installable_on_arm64():

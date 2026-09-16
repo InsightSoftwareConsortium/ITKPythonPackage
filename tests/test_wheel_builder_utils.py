@@ -29,6 +29,8 @@ def test_compute_itk_package_version_refuses_an_unusable_describe(tmp_path):
     }
 
     def fake_run(cmd, cwd=None, env=None, check=False):
+        if str(cmd[1]) == "rev-parse" and "--git-dir" in [str(c) for c in cmd]:
+            return _completed(0, ".git")
         return responses[str(cmd[1])]
 
     with patch.object(wheel_builder_utils, "run_commandLine_subprocess", fake_run):
@@ -45,6 +47,8 @@ def test_compute_itk_package_version_refuses_a_zero_version(tmp_path):
     }
 
     def fake_run(cmd, cwd=None, env=None, check=False):
+        if str(cmd[1]) == "rev-parse" and "--git-dir" in [str(c) for c in cmd]:
+            return _completed(0, ".git")
         return responses[str(cmd[1])]
 
     with patch.object(wheel_builder_utils, "run_commandLine_subprocess", fake_run):
@@ -62,6 +66,8 @@ def test_compute_itk_package_version_keeps_head_on_failed_checkout(tmp_path):
     checked_out: list[str] = []
 
     def fake_run(cmd, cwd=None, env=None, check=False):
+        if str(cmd[1]) == "rev-parse" and "--git-dir" in [str(c) for c in cmd]:
+            return _completed(0, ".git")
         verb = str(cmd[1])
         if verb == "checkout":
             checked_out.append(str(cmd[2]))
@@ -81,6 +87,8 @@ def test_compute_itk_package_version_keeps_head_on_failed_checkout(tmp_path):
 
 def test_compute_itk_package_version_raises_when_fetch_fails(tmp_path):
     def fake_run(cmd, cwd=None, env=None, check=False):
+        if str(cmd[1]) == "rev-parse" and "--git-dir" in [str(c) for c in cmd]:
+            return _completed(0, ".git")
         return _completed(1, "", "network down")
 
     with patch.object(wheel_builder_utils, "run_commandLine_subprocess", fake_run):
