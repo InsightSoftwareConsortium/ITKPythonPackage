@@ -757,9 +757,18 @@ class BuildPythonInstanceBase(ABC):
             "itk-filtering",
             "itk-registration",
             "itk-segmentation",
+            # Most remote modules depend on the metapackage rather than on the
+            # sub-packages; its version tracks the ITK release just the same.
+            "itk",
         )
-        _base_pkg_alt = "|".join(re.escape(p) for p in _ITK_BASE_PACKAGES)
-        pattern = re.compile(rf'"({_base_pkg_alt})\s*==\s*[\d]+\.[\d]+\.\*"')
+        # Longest first, so "itk" cannot shadow "itk-core" in the alternation.
+        _base_pkg_alt = "|".join(
+            re.escape(p) for p in sorted(_ITK_BASE_PACKAGES, key=len, reverse=True)
+        )
+        # Modules pin either "itk == 5.4.*" or "itk~=5.4.0"; rewrite both forms.
+        pattern = re.compile(
+            rf'"({_base_pkg_alt})\s*(?:==\s*\d+\.\d+\.\*|~=\s*\d+\.\d+(?:\.\d+)?)"'
+        )
 
         # Warn about pinned remote-module cross-deps that may also need
         # attention but should not be auto-rewritten.
