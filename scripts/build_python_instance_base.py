@@ -1209,8 +1209,13 @@ class BuildPythonInstanceBase(ABC):
         tar_name: str = f"ITKPythonBuilds-{platform_name}-{arch_postfix}.tar"
         itk_packaging_reference_dir = self.build_dir_root.parent
 
-        tar_path: Path = itk_packaging_reference_dir / tar_name
-        zst_path: Path = itk_packaging_reference_dir / f"{tar_name}.zst"
+        # Write the cache under the build tree: container builds bind-mount that
+        # directory, while the archive root above it is not always mounted. dist/
+        # is excluded from the archive below, so the cache cannot capture itself.
+        tarball_output_dir: Path = self.build_dir_root / "dist"
+        tarball_output_dir.mkdir(parents=True, exist_ok=True)
+        tar_path: Path = tarball_output_dir / tar_name
+        zst_path: Path = tarball_output_dir / f"{tar_name}.zst"
 
         itk_resources_build_dir: Path = self.build_dir_root
         ipp_source_dir: Path = self.package_env_config["IPP_SOURCE_DIR"]

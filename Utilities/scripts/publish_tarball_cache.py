@@ -7,8 +7,9 @@ Usage:
 Authentication:
     Set the GH_TOKEN environment variable, or run `gh auth login` beforehand.
 
-Cache files are expected at {build-dir-root}/../ITKPythonBuilds-*.tar.zst (POSIX)
-or {build-dir-root}/ITKPythonBuilds-*.zip (Windows).
+Cache files are expected at {build-dir-root}/dist/ITKPythonBuilds-*.tar.zst
+(POSIX) or {build-dir-root}/ITKPythonBuilds-*.zip (Windows). Caches from older
+builds at {build-dir-root}/../ITKPythonBuilds-*.tar.zst are also picked up.
 """
 
 import argparse
@@ -48,24 +49,27 @@ def main() -> int:
     args = parser.parse_args()
 
     build_directory = Path(args.build_dir_root)
-    tarball_dir = build_directory.parent
-    # POSIX builds produce .tar.zst, Windows builds produce .zip in the build directory
+    dist_directory = build_directory / "dist"
+    legacy_tarball_dir = build_directory.parent
+    # POSIX builds write .tar.zst to dist/, Windows builds write .zip to the build
+    # directory; caches from older builds sit beside the build directory.
     tarballs = sorted(
-        list(tarball_dir.glob("ITKPythonBuilds-*.tar.zst"))
-        + list(
-            build_directory.glob("ITKPythonBuilds-*.zip")
-        )  # Windows builds will be in the build directory
+        list(dist_directory.glob("ITKPythonBuilds-*.tar.zst"))
+        + list(legacy_tarball_dir.glob("ITKPythonBuilds-*.tar.zst"))
+        + list(build_directory.glob("ITKPythonBuilds-*.zip"))
     )
 
     if not tarballs:
         print(
-            f"Error: No ITKPythonBuilds-*.tar.zst or .zip files found in {tarball_dir} or {build_directory}.",
+            f"Error: No ITKPythonBuilds-*.tar.zst or .zip files found in "
+            f"{dist_directory}, {legacy_tarball_dir}, or {build_directory}.",
             file=sys.stderr,
         )
         return 1
 
     print(
-        f"Found {len(tarballs)} cache file(s) in {tarball_dir} and {build_directory}:"
+        f"Found {len(tarballs)} cache file(s) under {build_directory} "
+        f"and {legacy_tarball_dir}:"
     )
     for tb in tarballs:
         size_mb = tb.stat().st_size / (1024 * 1024)
