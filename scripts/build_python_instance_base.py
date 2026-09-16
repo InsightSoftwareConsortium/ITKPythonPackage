@@ -789,10 +789,13 @@ class BuildPythonInstanceBase(ABC):
         # The build system itself supports building against any ITK from
         # v5.4 through the latest (v5.5, v6.0, v7.1, etc.) — the floor
         # simply reflects which ITK the wheel was actually linked against.
-        parts = itk_version.split(".")
-        try:
-            min_floor = f"{parts[0]}.{parts[1]}"
-        except IndexError:
+        # Tags carry a leading "v" and a pre-release or dev suffix
+        # (e.g. v6.0rc01.dev20260915), neither of which belongs in the floor:
+        # the wheel works with the whole 6.0 series, not one release candidate.
+        version_match = re.match(r"v?(\d+)\.(\d+)", itk_version)
+        if version_match:
+            min_floor = f"{version_match.group(1)}.{version_match.group(2)}"
+        else:
             min_floor = itk_version
 
         changed = False
