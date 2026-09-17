@@ -82,3 +82,8 @@ docs/_build
 # pixi environments
 .pixi/*
 !.pixi/config.toml
+
+# pixi installer that the Windows entry-point scripts fetch into the
+# working directory (make_windows_zip.ps1,
+# windows-download-cache-and-build-module-wheels.ps1)
+install-pixi.ps1
