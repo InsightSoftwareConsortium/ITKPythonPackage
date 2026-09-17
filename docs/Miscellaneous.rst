@@ -2,7 +2,7 @@
 Miscellaneous
 =============
 
-Written by Jean-Christophe Fillion-Robin and Matt McCormick from Kitware Inc.
+Written by Jean-Christophe Fillion-Robin and Matt McCormick from Kitware Inc and Cavan Riley from the University of Iowa.
 
 It is covered by the Apache License, Version 2.0:
 

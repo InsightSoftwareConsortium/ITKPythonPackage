@@ -1,4 +1,73 @@
+# Pre-commit configuration for ITKPythonPackage
+# Run `pre-commit install` to install git hooks locally
+# Run `pre-commit run --all-files` to check all files
+# Run `pre-commit autoupdate` to update hook versions
+
+# Exclude generated/vendored directories from all hooks
+exclude: ^(\.pixi|build|pixi.lock|docs)/
+
 repos:
+  # General file hygiene
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        stages: [pre-commit]
+      - id: end-of-file-fixer
+        stages: [pre-commit]
+      - id: check-yaml
+        stages: [pre-commit]
+      - id: check-toml
+        stages: [pre-commit]
+      - id: check-merge-conflict
+        stages: [pre-commit]
+      - id: check-added-large-files
+        args: [--maxkb=500]
+        stages: [pre-commit]
+      # Enforce LF line endings everywhere except Windows PowerShell scripts
+      - id: mixed-line-ending
+        args: [--fix=lf]
+        exclude: \.ps1$
+        stages: [pre-commit]
+
+  # Python: formatting
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        stages: [pre-commit]
+
+  # Python: linting + import sorting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      - id: ruff
+        args: [--fix]
+        stages: [pre-commit]
+
+  # Shell: linting
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        stages: [pre-commit]
+
+  # Shell: formatting
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.12.0-2
+    hooks:
+      - id: shfmt
+        args: [-i, "2", -w]
+        stages: [pre-commit]
+
+  # TOML: formatting
+  - repo: https://github.com/ComPWA/taplo-pre-commit
+    rev: v0.9.3
+    hooks:
+      - id: taplo-format
+        stages: [pre-commit]
+
+  # ITK commit message hooks (matching ITK/Utilities/Hooks/)
   - repo: local
     hooks:
       - id: local-prepare-commit-msg
