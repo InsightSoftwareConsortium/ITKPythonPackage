@@ -21,9 +21,7 @@ import os
 import re
 import subprocess
 import sys
-
 from pathlib import Path
-
 
 DEFAULT_LINE_LENGTH: int = 78
 
@@ -116,7 +114,7 @@ def main():
         r"^(Merge|Revert|BUG:|COMP:|DOC:|ENH:|PERF:|STYLE:|WIP:)\s", subject_line
     ):
         die(
-            f"""Start ITK commit messages with a standard prefix (and a space):
+            """Start ITK commit messages with a standard prefix (and a space):
   BUG:    - fix for runtime crash or incorrect result
   COMP:   - compiler error or warning fix
   DOC:    - documentation change
