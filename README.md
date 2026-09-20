@@ -330,12 +330,25 @@ On Windows systems
 ```
 
 > [!IMPORTANT]
-> Build caches embed absolute paths. If you extract a tarball to a different path than it was built with, CMake will fail. Standard build paths for CI/CD are:
-> - manylinux (Docker): `/work/ITKPythonPackage-build`
-> - macOS: `/Users/svc-dashboard/D/P/ITKPythonPackage-build`
-> - Windows: `C:\BDR`
+> Build caches embed absolute paths. If you extract a tarball to a different
+> path than it was built with, CMake will fail. The paths CI extracts to are:
 >
-> This script ensures you are building with the correct conventions
+> | Platform | Path the cache must be built at |
+> |---|---|
+> | manylinux (Docker) | `/work/ITKPythonPackage-build` |
+> | macOS | `/Users/svc-dashboard/D/P/ITKPythonPackage-build` |
+> | Windows | `C:\BDR` |
+>
+> The scripts above set these for you. **`build_wheels.py` does not**: its
+> default build root is `<repo>/../ITKPythonPackage-build`, which matches the
+> convention only on Windows. A cache built by calling `build_wheels.py`
+> directly therefore needs `--build-dir-root` set to the path in the table, or
+> it will not be usable by the reusable workflow. Check a finished cache with:
+>
+> ```bash
+> tar -xOf <cache>.tar ITKPythonPackage-build/build/ITK-support-bld/CMakeCache.txt \
+>   | grep CMAKE_CACHEFILE_DIR
+> ```
 
 #### Local Caches
 
