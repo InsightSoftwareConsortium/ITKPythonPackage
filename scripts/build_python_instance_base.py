@@ -789,6 +789,9 @@ class BuildPythonInstanceBase(ABC):
                 f"--config-setting=cmake.source-dir={self.package_env_config['IPP_SOURCE_DIR'] / 'BuildWheelsSupport'}",
                 f"--config-setting=build-dir={wheel_configbuild_dir_root/'build'}",
             ]
+            if self.target.os_name == "windows":
+                # Ninja, as for the remote-module build above.
+                cmd.append("--config-setting=cmake.args=-GNinja")
             # Build scikit-build defines via builder
             scikitbuild_cmdline_args = CMakeArgumentBuilder()
             scikitbuild_cmdline_args.update(self.cmake_compiler_configurations.items())
