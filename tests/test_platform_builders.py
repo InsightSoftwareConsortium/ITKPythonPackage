@@ -360,6 +360,7 @@ def _checking_echo(failing_tool: str):
 def _wire_itk_cplusplus(builder, tmp_path):
     builder.cleanup = False
     builder.build_node_cpu_count = 2
+    builder.build_load_limit = 2
     builder.cmake_cmdline_definitions = CMakeArgumentBuilder()
     builder.cmake_itk_source_build_configurations.set(
         "ITK_BINARY_DIR:PATH", str(tmp_path / "itk-bld")
