@@ -56,10 +56,12 @@ For more control over your builds, skip to [The Build Process](#the-build-proces
 
 ### Prerequisites
 
-- Python 3.11 or later
-- Git
-- Docker (for manylinux builds)
 - [Pixi](https://pixi.sh) package manager
+- Git
+- Docker (only for manylinux container builds)
+
+Pixi supplies the Python interpreter, CMake, Ninja, and Doxygen used by the
+build, so no system Python 3.11 is required. Wheels target Python 3.11+.
 
 **Install Pixi:**
 ```bash
@@ -80,9 +82,25 @@ cd ITKPythonPackage
 
 ### Building Remote Module Wheels
 
+> [!IMPORTANT]
+> **Always pass `-e <platform-env>` to `pixi run`.** A bare `pixi run` uses the
+> `default` environment, which does not carry the pinned `cmake`, `ninja`,
+> `doxygen`, or `git`; the build would pick up whatever is on your system
+> `PATH`. The build aborts immediately and names the environment you want, so
+> this is loud rather than silent.
+>
+> ```bash
+> pixi run -e macosx-py311 python3 scripts/build_wheels.py ...   # correct
+> pixi run python3 scripts/build_wheels.py ...                   # aborts
+> ```
+>
+> To build deliberately with your own host tools instead of pixi's, set
+> `PIXI_ENVIRONMENT_NAME=hostsystem`. Nothing is pinned in that mode, so
+> reproducibility becomes yours to manage.
+
 #### The Build Process
 
-The build process calls `build_wheels.py`, which runs up to 7 steps:
+The build process calls `build_wheels.py`, which runs up to 8 steps:
 
 1. Build SuperBuild support components
 2. Build ITK C++ with Python wrapping
@@ -91,6 +109,9 @@ The build process calls `build_wheels.py`, which runs up to 7 steps:
 5. Import test
 6. *(optional)* Build a remote module against the ITK build
 7. *(optional)* Build an ITK tarball cache
+8. *(optional)* Post-build cleanup of temporary files
+
+Each completed step is recorded, so a re-run skips what already finished.
 
 > [!NOTE]
 > When using the download-and-build scripts, steps 2–3 are skipped because the pre-built cache covers them.
@@ -109,7 +130,7 @@ Available pixi platform build environments:
 
 ```bash
 # Building ITK Python Wheels on macOS for ITK v6.0b01
-pixi run python3 scripts/build_wheels.py \
+pixi run -e macosx-py311 python3 scripts/build_wheels.py \
   --platform-env macosx-py311 \
   --itk-git-tag v6.0b01 \
   --no-build-itk-tarball-cache
@@ -128,23 +149,39 @@ Key options:
 | `--itk-module-deps`              | Remote module dependencies                   | `Mod1@tag:Mod2@tag`           |
 | `--module-dependencies-root-dir` | Root directory for module dependencies       | `./dependencies`              |
 | `--itk-source-dir`               | Path to ITK source (use local development)   | `/path/to/ITK`                |
-| `--cleanup`                      | Leave temporary build files after completion | (flag)                        |
+| `--cleanup`                      | Remove temporary build files when done (default: keep) | (flag)              |
+| `--macosx-deployment-target`     | macOS floor and wheel tag; default `14.0`    | `14.0`                        |
+| `--use-ccache`                   | Reuse compiler cache between builds          | (flag)                        |
+| `--lib-paths`                    | Windows only: `;`-delimited dirs for delvewheel | `C:\deps\bin`             |
 | `--no-build-itk-tarball-cache`   | Skip tarball generation (default)            | (flag)                        |
 | `--no-skip-itk-build`            | Don't skip ITK build step (default           | (flag)                        |
 | `--no-skip-itk-wheel-build`      | Don't skip the ITK wheel build step (default) | (flag)                        |
 
 
-Run `pixi run python3 scripts/build_wheels.py --help` for the full option list.
+Run `pixi run -e macosx-py311 python3 scripts/build_wheels.py --help` for the
+full option list (substitute your own platform environment).
 
 > [!NOTE]
 > Building ITK from source can take 1-2 hours on typical hardware. Once complete, use `--build-itk-tarball-cache` to save the result and avoid rebuilding.
 
-To use the scripts that take care of the build for you, see this section:
+The recommended path is `build_wheels.py`, shown above. The shell entry points
+below predate it and are retained only so existing consumers keep working:
 
 <details>
-<summary><strong>Download-and-Build Remote Module Builds</strong></summary>
+<summary><strong>Legacy shell entry points (backward compatibility)</strong></summary>
 
-This is the same process as used in the GitHub Actions CI/CD
+> [!WARNING]
+> **These scripts are kept for backward compatibility and are not the
+> recommended path.** New work should call `build_wheels.py` directly, as shown
+> above, or use
+> [ITKRemoteModuleBuildTestPackageAction](https://github.com/InsightSoftwareConsortium/ITKRemoteModuleBuildTestPackageAction)
+> in CI.
+>
+> They remain because remote modules fetch them by URL at a pinned tag, so
+> removing them would break those consumers until each one is updated. They
+> wrap the same `build_wheels.py` driver and add nothing you cannot do with it
+> directly. Retirement is tracked in
+> [issue #310](https://github.com/InsightSoftwareConsortium/ITKPythonPackage/issues/310).
 
 ```bash
 cd ITKRemoteModule
@@ -194,6 +231,33 @@ Run from your module root:
 
 Finished wheels are placed in `<your-module>/dist/`.
 
+#### Verify what you built
+
+A build that exits 0 is not proof of a usable wheel. Check the tag and, on
+macOS, that the binary agrees with it:
+
+```bash
+ls dist/*.whl          # expect one wheel per platform, cp311-abi3
+```
+
+| Platform | Expected wheel tag |
+|---|---|
+| Linux x86_64 | `cp311-abi3-manylinux_2_28_x86_64` |
+| Linux aarch64 | `cp311-abi3-manylinux_2_28_aarch64` |
+| macOS arm64 | `cp311-abi3-macosx_14_0_arm64` |
+| Windows x86_64 | `cp311-abi3-win_amd64` |
+
+On macOS the binary's minimum version must match the tag. A wheel tagged
+below its real minimum installs on older macOS and then fails in dyld at
+import, which is far harder to diagnose than a refused install:
+
+```bash
+unzip -qq -o dist/<wheel>.whl -d /tmp/whlcheck
+otool -l /tmp/whlcheck/itk/*.so | awk '/minos/{print $2; exit}'   # 14.0
+```
+
+Then import it in a clean virtual environment, not in the build tree.
+
 </details>
 
 
@@ -206,7 +270,11 @@ If you have a local ITK with custom patches, a bug fix not yet released, or you'
 
 Pass `--itk-source-dir` pointing to your local ITK clone. `build_wheels.py` will build ITK from that source instead of re-cloning.
 
-#### manylinux — building ITK from source
+#### manylinux — building ITK from source (legacy shell path)
+
+> [!NOTE]
+> Backward compatibility only; prefer `build_wheels.py` with
+> `--manylinux-version`, shown in the next subsection.
 
 Use `dockcross-manylinux-build-wheels.sh` directly (skips the download step):
 
@@ -222,7 +290,7 @@ Key environment variables:
 | `ITK_GIT_TAG` | `main`                                  | ITK branch/tag/commit to build |
 | `ITK_SOURCE_DIR` | `<build-root>/ITKPythonPackage-build/ITK` | Path to local ITK source (skips git clone) |
 | `MANYLINUX_VERSION` | `_2_28`                                 | Manylinux standard to target |
-| `IMAGE_TAG` | `20250913-6ea98ba`                      | Dockcross image tag |
+| `IMAGE_TAG` | `20260203-3dfb3ff` (dockcross) or `2025.08.12-1` (quay manylinux) | Container image tag; the default depends on `CONTAINER_SOURCE` |
 
 #### Linux/macOS/Windows — building ITK from source
 
@@ -230,7 +298,7 @@ Use `build_wheels.py` directly with `--itk-source-dir`:
 
 ```bash
 # Building on macOS with a specific git tag
-pixi run python3 scripts/build_wheels.py \
+pixi run -e macosx-py311 python3 scripts/build_wheels.py \
   --platform-env macosx-py311 \
   --itk-source-dir /path/to/your/ITK \
   --itk-git-tag my-bugfix-branch \
@@ -279,7 +347,9 @@ To publish the tarball caches to a GitHub Release, you can run:
 
 > [!NOTE]
 > This requires the `GH_TOKEN` environment variable to be set or `gh auth login` to have been run beforehand.
-> Tarballs are expected in the parent directory of `--build-dir-root` (POSIX `.tar.zst`) or inside it (Windows `.zip`).
+> Tarballs are expected in `<build-dir-root>/dist/` (POSIX `.tar.zst`) or in
+> `<build-dir-root>` itself (Windows `.zip`). The parent directory is also
+> searched, for caches left by older builds.
 
 ```bash
 pixi run -e publish publish-tarball-cache --itk-package-version v6.0b02 --build-dir-root /path/to/build/root
@@ -383,6 +453,12 @@ for discussion related to your specific issue.
 
 If you aren't able to find an answer for your specific case, please start a discussion the
 [ITK Discourse forum](https://discourse.itk.org/) for help.
+
+## For Contributors and Coding Agents
+
+[AGENTS.md](AGENTS.md) documents the full `build_wheels.py` argument list, the
+wheel platform policy, and worked examples including building against an
+unmerged ITK pull request with custom compiler flags.
 
 ## Additional Information
 
