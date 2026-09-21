@@ -76,7 +76,18 @@ class BuildPythonInstanceBase(ABC):
         Skip the ITK C++ build step.
     skip_itk_wheel_build : bool, optional
         Skip the ITK wheel build step.
+    module_itk_dir : {"build", "install"}, optional
+        Which ITK tree a remote module is configured against. ``"build"``
+        (the default) passes the ITK build tree as ``ITK_DIR``.
+        ``"install"`` first runs ``cmake --install`` on that build tree and
+        passes the resulting ``<prefix>/lib/cmake/ITK-<version>`` instead,
+        which requires an ITK that installs its module build files and
+        wrapping infrastructure (``ITK_INSTALL_WRAPPING_DEVELOPMENT_FILES``).
     """
+
+    MODULE_ITK_DIR_CHOICES = ("build", "install")
+    #: Class-level default for instances built without ``__init__`` (test fixtures).
+    module_itk_dir: str = "build"
 
     def __init__(
         self,
@@ -94,7 +105,14 @@ class BuildPythonInstanceBase(ABC):
         itk_module_deps: str | None = None,
         skip_itk_build: bool | None = None,
         skip_itk_wheel_build: bool | None = None,
+        module_itk_dir: str = "build",
     ) -> None:
+        if module_itk_dir not in self.MODULE_ITK_DIR_CHOICES:
+            raise ValueError(
+                f"module_itk_dir must be one of {self.MODULE_ITK_DIR_CHOICES}, "
+                f"not {module_itk_dir!r}"
+            )
+        self.module_itk_dir = module_itk_dir
         # Jobs are bounded by physical memory; see build_jobs.py.
         self.build_node_memory_gb: float | None = physical_memory_gb()
         self.build_node_cpu_count: int = compute_build_jobs(
@@ -225,6 +243,13 @@ class BuildPythonInstanceBase(ABC):
                 "ITK_DEFAULT_THREADER:STRING": "Pool",
                 "ITK_WRAP_PYTHON:BOOL": "ON",
                 "ITK_WRAP_DOC:BOOL": "ON",
+                # Install the module build files and wrapping infrastructure
+                # so a remote module can be configured against the install
+                # tree (module_itk_dir="install"). Only an ITK that carries
+                # that support honours it; elsewhere CMake reports the
+                # variable as unused and the build is unchanged. Set for every
+                # build so a cached build tree can be installed later.
+                "ITK_INSTALL_WRAPPING_DEVELOPMENT_FILES:BOOL": "ON",
                 "DOXYGEN_EXECUTABLE:FILEPATH": f"{self.package_env_config['DOXYGEN_EXECUTABLE']}",
                 "Module_ITKTBB:BOOL": self.package_env_config["USE_TBB"],
                 "TBB_DIR:PATH": self.package_env_config["TBB_DIR"],
@@ -286,6 +311,18 @@ class BuildPythonInstanceBase(ABC):
             )
 
         if self.module_source_dir is not None:
+            # A module built against an *installed* ITK needs the install
+            # tree to exist first. The step is registered (or recorded as
+            # skipped) only when a module is being built, since nothing else
+            # consumes the install tree.
+            if self.module_itk_dir == "install":
+                python_package_build_steps["06_install_wrapped_itk_cplusplus"] = (
+                    self.install_wrapped_itk_cplusplus
+                )
+            else:
+                python_package_build_steps[
+                    "06_install_wrapped_itk_cplusplus_skipped"
+                ] = lambda: None
             python_package_build_steps[
                 f"06_build_external_module_wheel_{self.module_source_dir.name}"
             ] = self.build_external_module_python_wheel
@@ -671,11 +708,15 @@ class BuildPythonInstanceBase(ABC):
             except Exception:
                 py_include = ""
 
-        # ITK build path for external modules: prefer configured ITK binary dir
-        itk_build_path = self.cmake_itk_source_build_configurations.get(
-            "ITK_BINARY_DIR:PATH",
-            "",
-        )
+        # ITK_DIR for the external module: the install tree when asked for,
+        # otherwise the configured ITK build tree.
+        if self.module_itk_dir == "install":
+            itk_build_path = self.installed_itk_dir().as_posix()
+        else:
+            itk_build_path = self.cmake_itk_source_build_configurations.get(
+                "ITK_BINARY_DIR:PATH",
+                "",
+            )
 
         wheel_py_api = STABLE_ABI_TAG
 
@@ -878,6 +919,65 @@ class BuildPythonInstanceBase(ABC):
             check=True,
         )
         print("# FINISHED-Build ITK C++")
+
+    def itk_install_prefix(self) -> Path:
+        """Where ``cmake --install`` places the ITK install tree.
+
+        A sibling of the build tree, so a cache of ``build/`` carries it.
+        """
+        bld = Path(self.cmake_itk_source_build_configurations["ITK_BINARY_DIR:PATH"])
+        return bld.with_name(f"{bld.name}-install")
+
+    def installed_itk_dir(self) -> Path:
+        """``ITK_DIR`` inside the install tree, verified usable for a module.
+
+        Raises
+        ------
+        RuntimeError
+            If no installed ITK exists under the prefix, or it lacks the
+            module build files and wrapping infrastructure a remote module
+            needs (an ITK without ``ITK_INSTALL_WRAPPING_DEVELOPMENT_FILES``
+            installs neither, and the module's first ``include`` fails).
+        """
+        prefix = self.itk_install_prefix()
+        configs = sorted((prefix / "lib" / "cmake").glob("ITK-*/ITKConfig.cmake"))
+        if not configs:
+            raise RuntimeError(
+                f"No installed ITK under {prefix}: expected "
+                f"lib/cmake/ITK-<version>/ITKConfig.cmake. The install step "
+                f"(cmake --install <ITK build tree>) has not produced one."
+            )
+        itk_dir = configs[-1].parent
+        required = ("ITKModuleExternal.cmake", "Wrapping/CMakeLists.txt")
+        missing = [name for name in required if not (itk_dir / name).is_file()]
+        if missing:
+            raise RuntimeError(
+                f"Installed ITK at {itk_dir} cannot build a remote module: "
+                f"missing {missing}. ITK must install its module build files "
+                f"and wrapping infrastructure (configure with "
+                f"ITK_INSTALL_WRAPPING_DEVELOPMENT_FILES=ON on an ITK that "
+                f"supports it)."
+            )
+        return itk_dir
+
+    def install_wrapped_itk_cplusplus(self) -> None:
+        """Install the ITK build tree so a module can use it as ``ITK_DIR``."""
+        prefix = self.itk_install_prefix()
+        print("#")
+        print(f"# START-Install ITK C++ -> {prefix}")
+        print("#")
+        self.echo_check_call(
+            [
+                self.package_env_config["CMAKE_EXECUTABLE"],
+                "--install",
+                self.cmake_itk_source_build_configurations["ITK_BINARY_DIR:PATH"],
+                "--prefix",
+                str(prefix),
+            ],
+            check=True,
+        )
+        itk_dir = self.installed_itk_dir()
+        print(f"# FINISHED-Install ITK C++: ITK_DIR={itk_dir}")
 
     def create_posix_tarball(self):
         """Create a compressed tarball of the ITK Python build tree."""

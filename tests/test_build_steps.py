@@ -13,10 +13,12 @@ def _configure(
     skip_itk_build=False,
     skip_itk_wheel_build=False,
     module=None,
+    module_itk_dir="build",
 ):
     builder.skip_itk_build = skip_itk_build
     builder.skip_itk_wheel_build = skip_itk_wheel_build
     builder.module_source_dir = Path(module) if module else None
+    builder.module_itk_dir = module_itk_dir
     builder.build_itk_tarball_cache = False
     builder.cleanup = False
     builder.itk_module_deps = None
@@ -55,6 +57,7 @@ def test_skipping_itk_wheels_also_skips_the_stages_that_need_them(linux_builder)
         "03_build_wheels_skipped",
         "04_post_build_fixup_skipped",
         "05_final_import_test_skipped",
+        "06_install_wrapped_itk_cplusplus_skipped",
         "06_build_external_module_wheel_BioCell",
     ]
 
@@ -81,3 +84,37 @@ def test_skipping_only_the_itk_build_keeps_the_wheel_stages(linux_builder):
 def test_module_step_is_named_after_the_module_directory(linux_builder):
     keys = list(_configure(linux_builder, module="/src/ITKFoo").build_step_table())
     assert keys[-1] == "06_build_external_module_wheel_ITKFoo"
+
+
+def test_installed_itk_adds_an_install_step_right_before_the_module(linux_builder):
+    """module_itk_dir="install": the install tree must exist before step 06
+    configures the module against it, so the install is its own recorded
+    step immediately ahead of the module step."""
+    builder = _configure(
+        linux_builder,
+        skip_itk_build=True,
+        skip_itk_wheel_build=True,
+        module="BioCell",
+        module_itk_dir="install",
+    )
+    table = builder.build_step_table()
+    keys = list(table)
+    assert keys[-2:] == [
+        "06_install_wrapped_itk_cplusplus",
+        "06_build_external_module_wheel_BioCell",
+    ]
+    assert table["06_install_wrapped_itk_cplusplus"] == (
+        builder.install_wrapped_itk_cplusplus
+    )
+
+
+def test_build_tree_module_records_the_install_step_as_skipped(linux_builder):
+    table = _configure(linux_builder, module="BioCell").build_step_table()
+    assert table["06_install_wrapped_itk_cplusplus_skipped"]() is None
+    assert "06_install_wrapped_itk_cplusplus" not in table
+
+
+def test_no_module_means_no_install_step_at_all(linux_builder):
+    """Nothing but a module consumes the install tree."""
+    keys = list(_configure(linux_builder, module_itk_dir="install").build_step_table())
+    assert not any(k.startswith("06_install") for k in keys)

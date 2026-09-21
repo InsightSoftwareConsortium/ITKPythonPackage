@@ -41,6 +41,10 @@
 #     Example: `InsightSoftwareConsortium/ITKMeshToPolyData@v0.10.0`
 #     Passed directly to build_wheels.py via --itk-module-deps.
 #
+# `$env:MODULE_ITK_DIR`
+#     `build` (default) or `install`: which ITK tree the module is
+#     configured against. Passed to build_wheels.py via --module-itk-dir.
+#
 # `$env:MODULE_SRC_DIRECTORY`
 #     Path to the ITK external module source. Defaults to the directory
 #     containing this script.
@@ -220,6 +224,12 @@ $buildArgs = @(
 
 if ($env:ITK_MODULE_PREQ) {
     $buildArgs += @("--itk-module-deps", $env:ITK_MODULE_PREQ)
+}
+
+# MODULE_ITK_DIR=install configures the module against an installed ITK
+# (cmake --install of the cached build tree) instead of the build tree.
+if ($env:MODULE_ITK_DIR) {
+    $buildArgs += @("--module-itk-dir", $env:MODULE_ITK_DIR)
 }
 
 $buildArgs += @(

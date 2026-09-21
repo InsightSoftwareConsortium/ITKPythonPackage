@@ -403,6 +403,21 @@ def build_wheels_main() -> None:
          """,
     )
 
+    parser.add_argument(
+        "--module-itk-dir",
+        dest="module_itk_dir",
+        choices=("build", "install"),
+        default="build",
+        help="""
+         -  Which ITK tree a remote module (Step 6) is configured against.
+            'build' (default) passes the ITK build tree as ITK_DIR.
+            'install' first runs 'cmake --install' on that build tree and
+            passes <prefix>/lib/cmake/ITK-<version> instead; it needs an ITK
+            that installs its module build files and wrapping infrastructure
+            (ITK_INSTALL_WRAPPING_DEVELOPMENT_FILES).
+         """,
+    )
+
     args = parser.parse_args()
 
     abort_if_wrong_pixi_environment(args.platform_env)
@@ -665,6 +680,7 @@ def build_wheels_main() -> None:
         itk_module_deps=args.itk_module_deps,
         skip_itk_build=args.skip_itk_build,
         skip_itk_wheel_build=args.skip_itk_wheel_build,
+        module_itk_dir=args.module_itk_dir,
     )
     builder.run()
 
