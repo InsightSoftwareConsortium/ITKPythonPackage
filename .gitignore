@@ -43,7 +43,6 @@ lib
 lib64
 MANIFEST
 oneTBB-prefix/
-pyproject.toml
 
 # Installer logs
 pip-log.txt
@@ -54,6 +53,9 @@ pip-log.txt
 .tox
 coverage.xml
 htmlcov
+.pytest_cache/
+.hypothesis/
+__pycache__/
 
 # Translations
 *.mo
@@ -73,3 +75,15 @@ docs/_build
 # IDE junk
 .idea/*
 *.swp
+/itkVersion.py
+# PyPI credentials
+.pypirc
+
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+
+# pixi installer that the Windows entry-point scripts fetch into the
+# working directory (make_windows_zip.ps1,
+# windows-download-cache-and-build-module-wheels.ps1)
+install-pixi.ps1
