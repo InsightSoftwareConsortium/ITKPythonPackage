@@ -104,8 +104,21 @@ echo "Platform env       : $platformEnv"
 $env:PIXI_HOME = "$DASHBOARD_BUILD_DIRECTORY\.pixi"
 if (-not (Test-Path "$env:PIXI_HOME\bin\pixi.exe")) {
   echo "Installing pixi..."
-  Invoke-WebRequest -Uri "https://pixi.sh/install.ps1" -OutFile "install-pixi.ps1"
-  powershell -ExecutionPolicy Bypass -File "install-pixi.ps1"
+  # Invoke-WebRequest has no timeout by default, so an unreachable pixi.sh
+  # hangs the build indefinitely. Bound it, and fall back to the release
+  # binary on GitHub, which is what the installer script fetches anyway.
+  try {
+    Invoke-WebRequest -Uri "https://pixi.sh/install.ps1" -OutFile "install-pixi.ps1" -TimeoutSec 60
+    powershell -ExecutionPolicy Bypass -File "install-pixi.ps1"
+  } catch {
+    echo "pixi.sh installer unavailable ($($_.Exception.Message)); fetching the release binary from GitHub"
+    New-Item -ItemType Directory -Path "$env:PIXI_HOME\bin" -Force | Out-Null
+    Invoke-WebRequest -Uri "https://github.com/prefix-dev/pixi/releases/latest/download/pixi-x86_64-pc-windows-msvc.exe" `
+      -OutFile "$env:PIXI_HOME\bin\pixi.exe" -TimeoutSec 300
+  }
+  if (-not (Test-Path "$env:PIXI_HOME\bin\pixi.exe")) {
+    throw "pixi was not installed at $env:PIXI_HOME\bin\pixi.exe"
+  }
 }
 $env:Path = "$env:PIXI_HOME\bin;$env:Path"
 
