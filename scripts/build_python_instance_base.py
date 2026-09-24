@@ -412,12 +412,14 @@ class BuildPythonInstanceBase(ABC):
         ]
 
         self.echo_check_call(cmd, check=True)
+        # check=True so a failed superbuild stops here, not later in step 02.
         self.echo_check_call(
             [
                 self.package_env_config["CMAKE_EXECUTABLE"],
                 "--build",
                 str(self.package_env_config["IPP_SUPERBUILD_BINARY_DIR"]),
             ],
+            check=True,
         )
 
     def fixup_wheels(self, lib_paths: str = ""):

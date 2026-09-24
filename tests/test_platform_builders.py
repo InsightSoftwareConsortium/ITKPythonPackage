@@ -407,6 +407,30 @@ def test_superbuild_support_components_raise_when_cmake_fails(tmp_path, linux_bu
             linux_builder.build_superbuild_support_components()
 
 
+def test_superbuild_support_components_raise_when_the_build_fails(
+    tmp_path, linux_builder
+):
+    """The configure can pass and the build still fail (a oneTBB download
+    that never completes). That was recorded as a done step and surfaced
+    later as a missing TBBConfig.cmake in step 02."""
+    linux_builder.cmake_cmdline_definitions = CMakeArgumentBuilder()
+    linux_builder.package_env_config.update(
+        {
+            "CMAKE_EXECUTABLE": "cmake",
+            "USE_TBB": "ON",
+            "ITK_SOURCE_DIR": str(tmp_path / "ITK"),
+            "ITK_GIT_TAG": "main",
+            "IPP_SOURCE_DIR": tmp_path / "ipp",
+            "IPP_SUPERBUILD_BINARY_DIR": tmp_path / "superbuild",
+        }
+    )
+    with patch.object(
+        linux_builder, "echo_check_call", side_effect=_checking_echo("--build")
+    ):
+        with pytest.raises(RuntimeError):
+            linux_builder.build_superbuild_support_components()
+
+
 def _prepare_metawheel(linux_builder, tmp_path) -> Path:
     linux_builder.package_env_config.update(
         {
