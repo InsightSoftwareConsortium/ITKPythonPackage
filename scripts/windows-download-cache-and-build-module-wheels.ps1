@@ -45,6 +45,10 @@
 #     `build` (default) or `install`: which ITK tree the module is
 #     configured against. Passed to build_wheels.py via --module-itk-dir.
 #
+# `$env:DASHBOARD_BUILD_DIRECTORY`
+#     Build root the cache is extracted under. Default: C:\BDR (what CI
+#     uses). Must match the root the cache was built under.
+#
 # `$env:MODULE_SRC_DIRECTORY`
 #     Path to the ITK external module source. Defaults to the directory
 #     containing this script.
@@ -83,7 +87,10 @@ $ITK_GIT_TAG           = if ($env:ITK_GIT_TAG) { $env:ITK_GIT_TAG } else { $ITK_
 $ITKPYTHONPACKAGE_ORG  = if ($env:ITKPYTHONPACKAGE_ORG) { $env:ITKPYTHONPACKAGE_ORG } else { "InsightSoftwareConsortium" }
 $ITKPYTHONPACKAGE_TAG  = if ($env:ITKPYTHONPACKAGE_TAG)  { $env:ITKPYTHONPACKAGE_TAG  } else { "" }
 
-$DASHBOARD_BUILD_DIRECTORY = "C:\BDR"
+# The build root. C:\BDR is what CI uses. A cache is only consumable at the
+# root it was built under (the ITK build tree records absolute paths), so
+# override this only together with a cache built at the same root.
+$DASHBOARD_BUILD_DIRECTORY = if ($env:DASHBOARD_BUILD_DIRECTORY) { $env:DASHBOARD_BUILD_DIRECTORY } else { "C:\BDR" }
 $platformEnv = "windows-py3$python_version_minor"
 
 echo "Python version     : 3.$python_version_minor"

@@ -61,18 +61,22 @@ $ITK_GIT_TAG = $env:ITK_GIT_TAG
 echo "ITK_GIT_TAG : $ITK_GIT_TAG"
 
 # Compute paths from this script's location.
-# Everything is contained under C:\BDR to keep all build artifacts in one
-# place and avoid spreading directories across the drive root.
+# Everything is contained under one build root to keep all build artifacts
+# in one place and avoid spreading directories across the drive root. The
+# root is the directory holding the IPP checkout, so the same layout works
+# on any drive: C:\BDR on CI, D:\BDR on a build box with a separate drive.
+# A cache is only consumable at the root it was built under, since the ITK
+# build tree records absolute paths; CI extracts at C:\BDR.
 #
-#   C:\BDR\               <- $BDR          (single root for all build content)
-#   C:\BDR\IPP\scripts\   <- $ScriptsDir   (this file)
-#   C:\BDR\IPP\           <- $IPPDir       (ITKPythonPackage clone)
-#   C:\BDR\ITK\           <- $ItkSourceDir (ITK git checkout)
-#   C:\BDR\               <- $BuildDirRoot (build root; cached build lands at C:\BDR\build\ITK-windows-...)
-#   C:\BDR\.pixi\         <- pixi home
-$BDR          = "C:\BDR"
+#   <root>\               <- $BDR          (single root for all build content)
+#   <root>\IPP\scripts\   <- $ScriptsDir   (this file)
+#   <root>\IPP\           <- $IPPDir       (ITKPythonPackage clone)
+#   <root>\ITK\           <- $ItkSourceDir (ITK git checkout)
+#   <root>\               <- $BuildDirRoot (build root; cached build lands at <root>\build\ITK-windows-...)
+#   <root>\.pixi\         <- pixi home
 $ScriptsDir   = Split-Path -Parent $MyInvocation.MyCommand.Path
 $IPPDir       = Split-Path -Parent $ScriptsDir
+$BDR          = Split-Path -Parent $IPPDir
 $BuildScript  = Join-Path $ScriptsDir "build_wheels.py"
 $ItkSourceDir = Join-Path $BDR "ITK"
 $BuildDirRoot = $BDR
@@ -83,7 +87,8 @@ echo "ScriptsDir   : $ScriptsDir"
 echo "ItkSourceDir : $ItkSourceDir"
 echo "BuildDirRoot : $BuildDirRoot"
 
-# Validate script is running from the expected canonical location
+# Validate the layout: the checkout must be named IPP directly under the
+# root, because the cache and CI both assume <root>\IPP.
 $ExpectedScriptsDir = Join-Path $BDR "IPP\scripts"
 if ($ScriptsDir -ne $ExpectedScriptsDir) {
   Write-Error @"
