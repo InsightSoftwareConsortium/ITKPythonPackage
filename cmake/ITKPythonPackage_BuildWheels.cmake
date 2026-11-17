@@ -51,9 +51,44 @@ set(ITK_GROUP_Core_DEPENDS)
 set(ITK_GROUP_IO_DEPENDS Core)
 set(ITK_GROUP_Numerics_DEPENDS Core)
 set(ITK_GROUP_Filtering_DEPENDS Numerics)
+set(ITK_GROUP_Filtering-extra_DEPENDS Filtering)
 set(ITK_GROUP_Segmentation_DEPENDS Filtering)
 set(ITK_GROUP_Registration_DEPENDS Filtering)
 set(ITK_GROUP_Video_DEPENDS Core)
+
+# Modules packaged in a wheel other than the one their group and dependees
+# select. No wheel may exceed the 100 MB PyPI limit on any platform; move
+# modules here to rebalance.
+set(ITK_WHEEL_Core_MODULE_OVERRIDES ITKBridgeNumPy ITKVTK)
+set(ITK_WHEEL_Filtering-extra_MODULE_OVERRIDES
+    AdaptiveDenoising
+    AnisotropicDiffusionLBR
+    BoneEnhancement
+    BoneMorphometry
+    BSplineGradient
+    Cuberille
+    FastBilateral
+    FixedPointInverseDisplacementField
+    GenericLabelInterpolator
+    HigherOrderAccurateGradient
+    IsotropicWavelets
+    LabelErodeDilate
+    MeshNoise
+    MeshToPolyData
+    MinimalPathExtraction
+    MorphologicalContourInterpolation
+    ParabolicMorphology
+    PhaseSymmetry
+    PolarTransform
+    RLEImage
+    SmoothingRecursiveYvvGaussianFilter
+    SplitComponents
+    Strain
+    SubdivisionQuadEdgeMeshFilter
+    TextureFeatures
+    Thickness3D
+    TotalVariation
+)
 
 # ITK is needed to retrieve ITK module information
 set(ITK_DIR ${ITK_BINARY_DIR})
@@ -126,7 +161,7 @@ endforeach()
 set(row_widths
     40
     20
-    20
+    36
     10
     90
     12
@@ -195,20 +230,17 @@ foreach(module IN LISTS ITK_MODULES_ENABLED)
 
     set(wheel_group_display ${wheel_group})
 
-    # XXX Hard-coded dispatch
-    if(module STREQUAL "ITKBridgeNumPy")
-        set(new_wheel_group "Core")
-        set(wheel_group_display "${new_wheel_group} (was ${wheel_group})")
-        set(wheel_group ${new_wheel_group})
-    endif()
-    if(module STREQUAL "ITKVTK")
-        set(new_wheel_group "Core")
-        set(wheel_group_display "${new_wheel_group} (was ${wheel_group})")
-        set(wheel_group ${new_wheel_group})
-    endif()
+    # Explicit dispatch
+    foreach(group IN LISTS ITK_WHEEL_GROUPS)
+        if(module IN_LIST ITK_WHEEL_${group}_MODULE_OVERRIDES)
+            set(wheel_group_display "${group} (was ${wheel_group})")
+            set(wheel_group ${group})
+        endif()
+    endforeach()
 
     # Associate module with a wheel
     list(APPEND ITK_WHEEL_${wheel_group}_MODULES ${module})
+    set(ITK_MODULE_${module}_WHEEL_GROUP "${wheel_group}")
 
     # Display module info
     ipp_is_module_python_wrapped(${module} is_wrapped)
@@ -217,6 +249,34 @@ foreach(module IN LISTS ITK_MODULES_ENABLED)
         "${module};${ITK_MODULE_${module}_GROUP};${wheel_group_display};${leaf};${dependees_groups_str};${is_wrapped}"
     )
     ipp_display_table_row("${row_values}" "${row_widths}")
+endforeach()
+
+# A wrapped module imports the wrapped modules it depends on, so each of those
+# has to be packaged in the same wheel or in a wheel this one requires.
+foreach(module IN LISTS ITK_MODULES_ENABLED)
+    set(wheel_group "${ITK_MODULE_${module}_WHEEL_GROUP}")
+    ipp_is_module_python_wrapped(${module} is_wrapped)
+    if(NOT is_wrapped OR NOT wheel_group IN_LIST ITK_WHEEL_GROUPS)
+        continue()
+    endif()
+    set(required_groups ${wheel_group})
+    recursive_group_deps(${wheel_group} required_groups)
+    foreach(dep IN LISTS ITK_MODULE_${module}_DEPENDS)
+        set(dep_wheel_group "${ITK_MODULE_${dep}_WHEEL_GROUP}")
+        ipp_is_module_python_wrapped(${dep} dep_is_wrapped)
+        if(
+            dep_is_wrapped
+            AND dep_wheel_group IN_LIST ITK_WHEEL_GROUPS
+            AND NOT dep_wheel_group IN_LIST required_groups
+        )
+            message(
+                WARNING
+                "${module} is packaged in the ${wheel_group} wheel but depends "
+                "on ${dep} from the ${dep_wheel_group} wheel, which the "
+                "${wheel_group} wheel does not require."
+            )
+        endif()
+    endforeach()
 endforeach()
 
 # Set list of components to install

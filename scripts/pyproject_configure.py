@@ -225,6 +225,12 @@ def update_wheel_pyproject_toml_parameters(
                 " Image, and modify it to create an output.  Filters can be chained together to"
                 " create a processing pipeline."
             )
+        elif wheel_name == "itk-filtering-extra":
+            params["PYPROJECT_LONG_DESCRIPTION"] += (
+                r"\n\n"
+                "This package contains additional filters, contributed as ITK"
+                " remote modules and since integrated into the toolkit."
+            )
         elif wheel_name == "itk-io":
             params["PYPROJECT_LONG_DESCRIPTION"] += (
                 r"\n\n"

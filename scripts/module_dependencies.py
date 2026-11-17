@@ -103,6 +103,7 @@ def update_module_itk_deps(pyproject_path: Path, itk_version: str) -> bool:
         "itk-numerics",
         "itk-io",
         "itk-filtering",
+        "itk-filtering-extra",
         "itk-registration",
         "itk-segmentation",
         # Most remote modules depend on the metapackage rather than on the
