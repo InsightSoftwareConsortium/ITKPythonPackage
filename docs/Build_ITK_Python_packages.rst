@@ -60,7 +60,9 @@ environment name to ``--platform-env``:
    * - ``linux-py311``
      - Native Linux (GCC, glibc of host)
    * - ``manylinux228-py311``
-     - Portable Linux ≥ glibc 2.28 (x86_64 or aarch64 via Docker)
+     - Portable Linux ≥ glibc 2.28 (x86_64 or aarch64). Only valid inside
+       the manylinux container; start the build with
+       ``scripts/dockcross-manylinux-build-wheels.sh``
    * - ``macosx-py311``
      - macOS (arm64)
    * - ``windows-py311``

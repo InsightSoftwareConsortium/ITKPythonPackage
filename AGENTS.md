@@ -28,6 +28,11 @@ The environment name must match the platform:
 | Linux via manylinux container | `manylinux228-py311` |
 | Windows x86_64 | `windows-py311` |
 
+`manylinux228-py311` is only valid inside the manylinux container. Start
+the container with `scripts/dockcross-manylinux-build-wheels.sh`, which
+runs `build_wheels.py` there; on the host `build_wheels.py` refuses that
+environment rather than produce `linux_x86_64` wheels.
+
 ### Deliberately using host-system tools
 
 To build with the tools already on your `PATH` instead of pixi's, set

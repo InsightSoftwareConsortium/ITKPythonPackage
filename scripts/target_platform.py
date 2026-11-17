@@ -12,6 +12,7 @@ import os
 from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 
 
 class Arch(Enum):
@@ -53,6 +54,21 @@ _PIXI_SUFFIX: dict[tuple[str, Arch], str] = {
 }
 
 _MACOSX_DEPLOYMENT_TARGET = "14_0"
+
+
+def manylinux_version_from_platform_env(platform_env: str) -> str:
+    """Manylinux version implied by a platform environment name.
+
+    ``'manylinux228-py311'`` and ``'manylinux_2_28-py311'`` give ``'_2_28'``;
+    any other environment gives ``''``.
+    """
+    prefix = Path(platform_env).name.split("-")[0]
+    if not prefix.startswith("manylinux"):
+        return ""
+    digits = prefix[len("manylinux") :].replace("_", "")
+    if len(digits) < 2 or not digits.isdigit():
+        return ""
+    return f"_{digits[0]}_{digits[1:]}"
 
 
 @dataclass(frozen=True)

@@ -13,6 +13,7 @@ from target_platform import (
     Arch,
     ContainerImage,
     TargetPlatform,
+    manylinux_version_from_platform_env,
 )  # noqa: F401  (import check)
 
 NICKNAMES = {"x64", "arm64", "amd64", "x86"}
@@ -217,3 +218,20 @@ def test_pixi_macos_system_requirement_matches_the_deployment_target():
         "macos"
     ]
     assert macos_requirement.replace(".", "_") == _MACOSX_DEPLOYMENT_TARGET
+
+
+@pytest.mark.parametrize(
+    ("platform_env", "expected"),
+    [
+        ("manylinux228-py311", "_2_28"),
+        ("manylinux_2_28-py311", "_2_28"),
+        ("manylinux234-py311", "_2_34"),
+        ("/repo/.pixi/envs/manylinux228-py311", "_2_28"),
+        ("linux-py311", ""),
+        ("macosx-py311", ""),
+        ("windows-py311", ""),
+        ("manylinux-py311", ""),
+    ],
+)
+def test_manylinux_version_is_implied_by_the_platform_env(platform_env, expected):
+    assert manylinux_version_from_platform_env(platform_env) == expected

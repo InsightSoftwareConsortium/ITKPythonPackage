@@ -270,18 +270,26 @@ If you have a local ITK with custom patches, a bug fix not yet released, or you'
 
 Pass `--itk-source-dir` pointing to your local ITK clone. `build_wheels.py` will build ITK from that source instead of re-cloning.
 
-#### manylinux — building ITK from source (legacy shell path)
+#### manylinux — building ITK from source
 
-> [!NOTE]
-> Backward compatibility only; prefer `build_wheels.py` with
-> `--manylinux-version`, shown in the next subsection.
-
-Use `dockcross-manylinux-build-wheels.sh` directly (skips the download step):
+manylinux wheels are built inside the manylinux container, which
+`dockcross-manylinux-build-wheels.sh` starts before it runs
+`build_wheels.py` there:
 
 ```bash
 ITK_SOURCE_DIR=/path/to/your/ITK \
-bash scripts/dockcross-manylinux-build-wheels.sh cp311
+ITK_GIT_TAG=v6.0b03 \
+ITK_PACKAGE_VERSION=v6.0b03 \
+bash scripts/dockcross-manylinux-build-wheels.sh py311
 ```
+
+The wheels land in `../ITKPythonPackage-manylinux_2_28-build/dist`.
+
+> [!IMPORTANT]
+> Do not run `build_wheels.py --platform-env manylinux228-py311` on the host.
+> Outside the container it stops with an error, because the result would be
+> `linux_x86_64` wheels built against the host glibc, which PyPI rejects. Use
+> `--platform-env linux-py311` for wheels meant only for the build machine.
 
 Key environment variables:
 

@@ -5,7 +5,11 @@ import shlex
 import sys
 from pathlib import Path
 
-from target_platform import Arch, TargetPlatform
+from target_platform import (
+    Arch,
+    TargetPlatform,
+    manylinux_version_from_platform_env,
+)
 from wheel_builder_utils import (
     abort_if_wrong_pixi_environment,
     compute_itk_package_version,
@@ -619,6 +623,11 @@ def build_wheels_main() -> None:
     elif platform == "linux":
         from linux_build_python_instance import LinuxBuildPythonInstance
 
+        # A manylinux environment always means manylinux wheels.
+        if not args.manylinux_version:
+            args.manylinux_version = manylinux_version_from_platform_env(
+                args.platform_env
+            )
         # Manylinux/docker bits for Linux. The command line wins over the
         # environment, so pin it before the target is resolved.
         if args.manylinux_version:
@@ -638,7 +647,15 @@ def build_wheels_main() -> None:
                 raise RuntimeError(
                     f"ERROR: MANYLINUX_VERSION={args.manylinux_version} "
                     f"and TARGET_ARCH={target.arch.value} but not "
-                    f"building in dockcross."
+                    f"building in dockcross.\n"
+                    f"  manylinux wheels are built inside the container; "
+                    f"start it with:\n"
+                    f"      ITK_SOURCE_DIR={args.itk_source_dir} "
+                    f"ITK_GIT_TAG={args.itk_git_tag} "
+                    f"ITK_PACKAGE_VERSION={args.itk_package_version} \\\n"
+                    f"        bash scripts/dockcross-manylinux-build-wheels.sh\n"
+                    f"  For wheels tied to this host instead, use "
+                    f"--platform-env linux-py311."
                 )
 
         builder_cls = LinuxBuildPythonInstance
