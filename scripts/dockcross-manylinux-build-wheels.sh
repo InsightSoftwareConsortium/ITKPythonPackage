@@ -84,6 +84,11 @@ mkdir -p "${HOST_PACKAGE_BUILD_DIR}"
 
 DOCKER_ARGS="  -v ${HOST_PACKAGE_BUILD_DIR}:${CONTAINER_PACKAGE_BUILD_DIR} "
 DOCKER_ARGS+=" -v ${HOST_PACKAGE_SCRIPTS_DIR}:${CONTAINER_PACKAGE_SCRIPTS_DIR} "
+# pixi environments cannot be moved, so the container keeps its own .pixi
+# rather than reusing one created at the host path of this checkout.
+HOST_CONTAINER_PIXI_DIR=${HOST_PACKAGE_BUILD_DIR}/.pixi
+mkdir -p "${HOST_CONTAINER_PIXI_DIR}" "${HOST_PACKAGE_SCRIPTS_DIR}/.pixi"
+DOCKER_ARGS+=" -v ${HOST_CONTAINER_PIXI_DIR}:${CONTAINER_PACKAGE_SCRIPTS_DIR}/.pixi "
 if [ "${ITK_SOURCE_DIR}" != "" ]; then
   DOCKER_ARGS+=" -v${ITK_SOURCE_DIR}:${CONTAINER_ITK_SOURCE_DIR} "
 fi
