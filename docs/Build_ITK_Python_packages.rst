@@ -182,9 +182,6 @@ Key Options
    * - ``--macosx-deployment-target``
      - ``10.7``
      - Minimum macOS version for compiled binaries
-   * - ``--use-sudo`` / ``--no-use-sudo``
-     - off
-     - Pass ``sudo`` to Docker commands (manylinux only)
 
 Any remaining positional arguments are forwarded to CMake as ``-D`` definitions,
 for example::
@@ -219,8 +216,6 @@ useful in CI pipelines:
      - target architecture (``x64`` or ``aarch64``)
    * - ``IMAGE_TAG``
      - Docker image tag for manylinux builds
-   * - ``NO_SUDO``
-     - ``--no-use-sudo``
    * - ``USE_CCACHE``
      - ``--use-ccache``
    * - ``CMAKE_OPTIONS``
@@ -464,9 +459,9 @@ Windows Defender exclusions:
 Docker Permissions (Linux)
 ---------------------------
 
-If Docker requires ``sudo``, pass ``--use-sudo`` to ``build_wheels.py`` or set
-``NO_SUDO=`` (empty string) before running the manylinux shell script. To add
-your user to the ``docker`` group instead::
+For aarch64 builds, ``dockcross-manylinux-build-wheels.sh`` runs Docker with
+``sudo`` unless ``NO_SUDO`` is set. To use Docker without ``sudo``, add your
+user to the ``docker`` group::
 
    sudo usermod -aG docker $USER
    # Then log out and back in

@@ -185,7 +185,7 @@ not a real flag; do not invent one.
 | `--itk-module-deps SPEC` | `gitorg/repo@tag:gitorg/repo@tag` |
 
 **Toggles** — each has a `--no-` counterpart:
-`--build-itk-tarball-cache`, `--use-sudo`, `--use-ccache`,
+`--build-itk-tarball-cache`, `--use-ccache`,
 `--skip-itk-build`, `--skip-itk-wheel-build`. Also `--cleanup`.
 
 **Positional** — everything after the flags goes to CMake unchanged,

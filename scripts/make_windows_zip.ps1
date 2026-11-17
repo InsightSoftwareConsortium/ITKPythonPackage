@@ -159,7 +159,6 @@ try {
       --build-dir-root      $BuildDirRoot `
       --itk-source-dir      $ItkSourceDir `
       --itk-git-tag         $ITK_GIT_TAG `
-      --no-use-sudo `
       --no-use-ccache
 
     if ($LASTEXITCODE -ne 0) {

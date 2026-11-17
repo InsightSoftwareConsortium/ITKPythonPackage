@@ -69,7 +69,6 @@ for py_indicator in "${PY_ENVS_ARRAY[@]}"; do
       --itk-git-tag "${ITK_GIT_TAG}" \
       --itk-package-version "${ITK_PACKAGE_VERSION:-}" \
       --manylinux-version "${MANYLINUX_VERSION}" \
-      --no-use-sudo \
       --no-use-ccache \
       --skip-itk-build \
       --skip-itk-wheel-build
@@ -84,7 +83,6 @@ for py_indicator in "${PY_ENVS_ARRAY[@]}"; do
       --itk-git-tag "${ITK_GIT_TAG}" \
       --itk-package-version "${ITK_PACKAGE_VERSION:-}" \
       --manylinux-version "${MANYLINUX_VERSION}" \
-      --no-use-sudo \
       --no-use-ccache
   fi
   build_status=$?

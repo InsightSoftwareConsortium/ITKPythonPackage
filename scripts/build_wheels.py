@@ -334,24 +334,6 @@ def build_wheels_main() -> None:
         )
 
     parser.add_argument(
-        "--use-sudo",
-        action="store_true",
-        dest="use_sudo",
-        default=False,
-        help="""
-         - Enable if running docker requires sudo privileges
-         """,
-    )
-    parser.add_argument(
-        "--no-use-sudo",
-        action="store_false",
-        dest="use_sudo",
-        help="""
-         - Enable if running docker requires sudo privileges
-         """,
-    )
-
-    parser.add_argument(
         "--use-ccache",
         action="store_true",
         dest="use_ccache",
@@ -565,8 +547,7 @@ def build_wheels_main() -> None:
         )
 
     # ITKPythonPackage origin/tag
-    # NO_SUDO, ITK_MODULE_NO_CLEANUP, USE_CCACHE
-    no_sudo = os.environ.get("NO_SUDO", "0")
+    # ITK_MODULE_NO_CLEANUP, USE_CCACHE
     module_no_cleanup = os.environ.get("ITK_MODULE_NO_CLEANUP", "1")
     use_ccache = (
         "ON"
@@ -584,7 +565,6 @@ def build_wheels_main() -> None:
     else:
         package_env_config["MACOSX_DEPLOYMENT_TARGET"] = "RELEVANT_FOR_MACOS_ONLY"
     package_env_config["ITK_MODULE_PREQ"] = args.itk_module_deps
-    package_env_config["NO_SUDO"] = no_sudo
     package_env_config["ITK_MODULE_NO_CLEANUP"] = module_no_cleanup
     package_env_config["USE_CCACHE"] = use_ccache
     pixi_executable = which_required("pixi")

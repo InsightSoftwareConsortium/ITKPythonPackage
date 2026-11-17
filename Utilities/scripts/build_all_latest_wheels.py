@@ -73,7 +73,6 @@ def build_wheels(
         "--itk-source-dir",
         str(itk_source),
         "--no-build-itk-tarball-cache",
-        "--no-use-sudo",
         "--build-dir-root",
         str(build_dir),
     ]

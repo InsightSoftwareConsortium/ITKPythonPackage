@@ -165,7 +165,6 @@ for py_indicator in "$@"; do
     --itk-git-tag "${ITK_GIT_TAG}" \
     --itk-source-dir "${DASHBOARD_BUILD_DIRECTORY}/ITKPythonPackage-build/ITK" \
     --itk-package-version "${ITK_PACKAGE_VERSION}" \
-    --no-use-sudo \
     --no-use-ccache \
     --skip-itk-build \
     --skip-itk-wheel-build \
