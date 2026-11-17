@@ -515,9 +515,26 @@ def build_wheels_main() -> None:
             env=os.environ.copy(),
         )
         if fetch_result.returncode != 0:
-            raise RuntimeError(
-                f"Failed to fetch ITK tags in {args.itk_source_dir}: "
-                f"{fetch_result.stderr}"
+            # Only fatal when the requested revision is not already present.
+            have_revision = run_commandLine_subprocess(
+                [
+                    "git",
+                    "rev-parse",
+                    "--verify",
+                    "--quiet",
+                    f"{args.itk_git_tag}^{{commit}}",
+                ],
+                cwd=args.itk_source_dir,
+                env=os.environ.copy(),
+            )
+            if have_revision.returncode != 0:
+                raise RuntimeError(
+                    f"Failed to fetch ITK tags in {args.itk_source_dir}: "
+                    f"{fetch_result.stderr}"
+                )
+            print(
+                f"WARNING: Failed to fetch ITK tags in {args.itk_source_dir}; "
+                f"using the local {args.itk_git_tag!r}: {fetch_result.stderr}"
             )
         checkout_result = run_commandLine_subprocess(
             ["git", "checkout", args.itk_git_tag],
