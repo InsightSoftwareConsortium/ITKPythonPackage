@@ -74,6 +74,21 @@ function(ipp_is_module_leaf itk-module output_var)
     set(${output_var} ${leaf} PARENT_SCOPE)
 endfunction()
 
+# ipp_get_declared_module_name(<itk-module.cmake> <output_var>)
+#
+# Set ``<output_var>`` to the name of the module declared by an
+# ``itk-module.cmake`` file. The file is loaded as ITK loads it, so a name
+# given through a variable is resolved.
+#
+macro(itk_module _name)
+    set(_ipp_declared_module_name ${_name})
+endmacro()
+
+function(ipp_get_declared_module_name module_file output_var)
+    include("${module_file}")
+    set(${output_var} ${_ipp_declared_module_name} PARENT_SCOPE)
+endfunction()
+
 # ipp_is_module_python_wrapped(<itk-module> <output_var>)
 #
 # If ``<itk-module>`` is wrapped in python, set ``<output_var> to 1
@@ -81,32 +96,16 @@ endfunction()
 #
 function(ipp_is_module_python_wrapped itk-module output_var)
     set(wrapped 0)
-    if(NOT DEFINED ITK_MODULE_${itk-module}_GROUP)
+    if(NOT DEFINED ITK_MODULE_${itk-module}_SOURCE_DIR)
         message(
             AUTHOR_WARNING
-            "Variable ITK_MODULE_${itk-module}_GROUP is not defined"
+            "Variable ITK_MODULE_${itk-module}_SOURCE_DIR is not defined"
         )
-    else()
-        set(group ${ITK_MODULE_${itk-module}_GROUP})
-        set(module_folder ${itk-module})
-        # if any, strip ITK prefix
-        if(module_folder MATCHES "^ITK.+$")
-            string(
-                REGEX REPLACE
-                "^ITK(.+)$"
-                "\\1"
-                module_folder
-                ${module_folder}
-            )
-        endif()
-        if(
-            EXISTS
-                ${ITK_SOURCE_DIR}/Modules/${group}/${itk-module}/wrapping/CMakeLists.txt
-            OR EXISTS
-                ${ITK_SOURCE_DIR}/Modules/${group}/${module_folder}/wrapping/CMakeLists.txt
-        )
-            set(wrapped 1)
-        endif()
+    elseif(
+        EXISTS
+            ${ITK_MODULE_${itk-module}_SOURCE_DIR}/wrapping/CMakeLists.txt
+    )
+        set(wrapped 1)
     endif()
     set(${output_var} ${wrapped} PARENT_SCOPE)
 endfunction()

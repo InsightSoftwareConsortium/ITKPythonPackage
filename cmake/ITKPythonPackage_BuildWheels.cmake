@@ -95,24 +95,25 @@ endforeach()
 message(STATUS "")
 message(STATUS "ITK_GROUPS:${ITK_GROUPS}")
 
-# Set ``ITK_MODULE_<modulename>_GROUP`` variables
-foreach(group IN LISTS ITK_GROUPS)
-    file(
-        GLOB_RECURSE _${group}_module_files
-        ${ITK_SOURCE_DIR}/Modules/${group}/itk-module.cmake
-    )
-    foreach(_module_file ${_${group}_module_files})
-        file(READ ${_module_file} _module_file_content)
-        string(
-            REGEX MATCH
-            "itk_module[ \n]*(\\([ \n]*)([A-Za-z0-9]*)"
-            _module_name
-            ${_module_file_content}
+# Set ``ITK_MODULE_<modulename>_GROUP`` and ``ITK_MODULE_<modulename>_SOURCE_DIR``
+# variables.
+file(GLOB _module_files "${ITK_SOURCE_DIR}/Modules/*/*/itk-module.cmake")
+foreach(_module_file IN LISTS _module_files)
+    ipp_get_declared_module_name("${_module_file}" _module_name)
+    get_filename_component(_module_dir "${_module_file}" DIRECTORY)
+    get_filename_component(_group_dir "${_module_dir}" DIRECTORY)
+    get_filename_component(_group "${_group_dir}" NAME)
+    set(ITK_MODULE_${_module_name}_GROUP ${_group})
+    set(ITK_MODULE_${_module_name}_SOURCE_DIR "${_module_dir}")
+endforeach()
+foreach(module IN LISTS ITK_MODULES_ENABLED)
+    if(NOT DEFINED ITK_MODULE_${module}_GROUP)
+        message(
+            FATAL_ERROR
+            "No itk-module.cmake under ${ITK_SOURCE_DIR}/Modules declares "
+            "the enabled module ${module}"
         )
-        set(_module_name ${CMAKE_MATCH_2})
-        list(APPEND _${group}_module_list ${_module_name})
-        set(ITK_MODULE_${_module_name}_GROUP ${group})
-    endforeach()
+    endif()
 endforeach()
 
 # Initialize ``ITK_WHEEL_<wheelgroup>_MODULES`` variables that will contain list of modules
