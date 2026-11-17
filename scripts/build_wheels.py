@@ -551,7 +551,12 @@ def build_wheels_main() -> None:
     # NO_SUDO, ITK_MODULE_NO_CLEANUP, USE_CCACHE
     no_sudo = os.environ.get("NO_SUDO", "0")
     module_no_cleanup = os.environ.get("ITK_MODULE_NO_CLEANUP", "1")
-    use_ccache = os.environ.get("USE_CCACHE", "0")
+    use_ccache = (
+        "ON"
+        if args.use_ccache
+        or os.environ.get("USE_CCACHE", "0").upper() in ("1", "ON", "TRUE", "YES")
+        else "OFF"
+    )
 
     package_env_config["BUILD_DIR_ROOT"] = str(args.build_dir_root)
     package_env_config["ITK_GIT_TAG"] = args.itk_git_tag
