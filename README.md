@@ -297,6 +297,8 @@ Key environment variables:
 |----------|-----------------------------------------|-------------|
 | `ITK_GIT_TAG` | `main`                                  | ITK branch/tag/commit to build |
 | `ITK_SOURCE_DIR` | `<build-root>/ITKPythonPackage-build/ITK` | Path to local ITK source (skips git clone) |
+| `ITK_PACKAGE_VERSION` | derived from git | PEP 440 version of the wheels |
+| `TARGET_ARCH` | host architecture | `x64` or `aarch64` |
 | `MANYLINUX_VERSION` | `_2_28`                                 | Manylinux standard to target |
 | `IMAGE_TAG` | `20260203-3dfb3ff` (dockcross) or `2025.08.12-1` (quay manylinux) | Container image tag; the default depends on `CONTAINER_SOURCE` |
 

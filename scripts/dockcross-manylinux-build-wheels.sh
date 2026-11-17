@@ -32,6 +32,12 @@ echo "FOUND OCI_EXE=$(which "${OCI_EXE}")"
 #For backwards compatibility when the ITK_GIT_TAG was required to match the ITK_PACKAGE_VERSION
 ITK_GIT_TAG=${ITK_GIT_TAG:=${ITK_PACKAGE_VERSION:-main}}
 MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
+if [ -z "${TARGET_ARCH}" ]; then
+  case "$(uname -m)" in
+  aarch64 | arm64) TARGET_ARCH=aarch64 ;;
+  *) TARGET_ARCH=x64 ;;
+  esac
+fi
 
 # Default image tag differs by architecture:
 #   x64     → dockcross/manylinux image (docker.io/dockcross)
