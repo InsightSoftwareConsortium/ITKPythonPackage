@@ -49,6 +49,16 @@ locally built tool. It is an escape hatch, not the normal path: nothing
 is pinned, so reproducibility is yours to manage.
 
 
+## Release wheels
+
+For a release, `pixi run release-wheels <itk-ref> [<package-version>]`
+(`scripts/release_wheels.py`) builds every wheel the host can build: the
+native wheels through `build_wheels.py` in the matching pixi environment,
+and the manylinux ones through `scripts/dockcross-manylinux-build-wheels.sh`.
+Use it rather than assembling those commands by hand; run it on Windows x64,
+Linux x64 and macOS arm64 to cover every platform. A Linux host cannot
+build macOS wheels.
+
 ## Worked example
 
 > "Build Python packages on my Mac only, with `-mtune=native

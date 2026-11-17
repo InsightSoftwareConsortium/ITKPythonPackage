@@ -198,6 +198,10 @@ taplo = "fmt pixi.toml"
 [tasks.build-itk-wheels]
 cmd = ["python", "scripts/build_wheels.py"]
 
+[tasks.release-wheels]
+cmd = ["python", "scripts/release_wheels.py"]
+description = "Build every ITK release wheel this machine can build: release-wheels <itk-ref> [<package-version>]"
+
 [tasks.pre-commit-install]
 cmd = "pre-commit install -f -t pre-commit -t prepare-commit-msg -t commit-msg --hook-type commit-msg --install-hooks"
 
