@@ -515,3 +515,19 @@ def test_windows_lib_paths_are_split_on_semicolons(windows_builder):
     assert "C:/tbb/bin" in entries
     assert "C:/extra/bin" in entries
     assert not any(len(e) == 1 for e in entries)
+
+
+def test_ingested_remote_modules_are_enabled_and_can_be_overridden(linux_builder):
+    from build_python_instance_base import ITK_INGESTED_REMOTE_MODULES
+
+    linux_builder.enable_ingested_remote_modules()
+    defs = CMakeArgumentBuilder()
+    defs.update(linux_builder.cmake_itk_source_build_configurations.items())
+    args = defs.getCMakeCommandLineArguments()
+    for module in ITK_INGESTED_REMOTE_MODULES:
+        assert f"-DModule_{module}:BOOL='ON'" in args
+
+    defs.update({"Module_Montage:BOOL": "OFF"})
+    args = defs.getCMakeCommandLineArguments()
+    assert "-DModule_Montage:BOOL='OFF'" in args
+    assert "-DModule_Montage:BOOL='ON'" not in args

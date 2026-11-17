@@ -191,6 +191,14 @@ not a real flag; do not invent one.
 **Positional** — everything after the flags goes to CMake unchanged,
 for example `-DBUILD_SHARED_LIBS:BOOL=OFF`. These override defaults.
 
+## Ingested remote modules
+
+Modules that moved from remote modules into the ITK tree are marked
+`EXCLUDE_FROM_DEFAULT` there. The wheels ship them:
+`ITK_INGESTED_REMOTE_MODULES` in `scripts/build_python_instance_base.py`
+turns each on. When ITK ingests another module, add it to that tuple. A
+positional `-DModule_<name>:BOOL=OFF` overrides one.
+
 ## Build steps and what skipping them means
 
 The driver runs numbered steps and records which completed. The two

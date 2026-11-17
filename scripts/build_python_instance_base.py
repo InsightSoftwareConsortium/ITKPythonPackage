@@ -40,6 +40,54 @@ def verify_stable_abi_wheels(out_dir: Path, py_api: str) -> list[Path]:
     return built_wheels
 
 
+# ITK modules ingested from remote modules. ITK excludes them from its default
+# build; the wheels ship them. Override one with -DModule_<name>:BOOL=OFF.
+ITK_INGESTED_REMOTE_MODULES: tuple[str, ...] = (
+    "AdaptiveDenoising",
+    "AnisotropicDiffusionLBR",
+    "BoneEnhancement",
+    "BoneMorphometry",
+    "BSplineGradient",
+    "Cuberille",
+    "FastBilateral",
+    "FixedPointInverseDisplacementField",
+    "Fpfh",
+    "GenericLabelInterpolator",
+    "GrowCut",
+    "HigherOrderAccurateGradient",
+    "IOFDF",
+    "IOMeshMZ3",
+    "IOMeshSTL",
+    "IOMeshSWC",
+    "IOScanco",
+    "IOTransformDCMTK",
+    "IsotropicWavelets",
+    "LabelErodeDilate",
+    "MGHIO",
+    "MeshNoise",
+    "MeshToPolyData",
+    "MinimalPathExtraction",
+    "Montage",
+    "MorphologicalContourInterpolation",
+    "MultipleImageIterator",
+    "ParabolicMorphology",
+    "PhaseSymmetry",
+    "PolarTransform",
+    "PrincipalComponentsAnalysis",
+    "RANSAC",
+    "RLEImage",
+    "SmoothingRecursiveYvvGaussianFilter",
+    "SplitComponents",
+    "Strain",
+    "SubdivisionQuadEdgeMeshFilter",
+    "TextureFeatures",
+    "Thickness3D",
+    "TotalVariation",
+    "TwoProjectionRegistration",
+    "VariationalRegistration",
+)
+
+
 class BuildPythonInstanceBase(ABC):
     """Abstract base class to build wheels for a single Python environment.
 
@@ -258,6 +306,13 @@ class BuildPythonInstanceBase(ABC):
                 # Python settings
                 "SKBUILD:BOOL": "ON",
             }
+        )
+        self.enable_ingested_remote_modules()
+
+    def enable_ingested_remote_modules(self) -> None:
+        """Turn on the ingested remote modules in the ITK build configuration."""
+        self.cmake_itk_source_build_configurations.update(
+            {f"Module_{module}:BOOL": "ON" for module in ITK_INGESTED_REMOTE_MODULES}
         )
 
     def update_venv_itk_build_configurations(self) -> None:
