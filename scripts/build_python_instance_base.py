@@ -40,6 +40,9 @@ def verify_stable_abi_wheels(out_dir: Path, py_api: str) -> list[Path]:
     return built_wheels
 
 
+# PyPI rejects larger files.
+PYPI_MAX_WHEEL_BYTES: int = 100 * 1000 * 1000
+
 # ITK modules ingested from remote modules. ITK excludes them from its default
 # build; the wheels ship them. Override one with -DModule_<name>:BOOL=OFF.
 ITK_INGESTED_REMOTE_MODULES: tuple[str, ...] = (
@@ -705,7 +708,22 @@ class BuildPythonInstanceBase(ABC):
 
     def final_import_test(self) -> None:  # pragma: no cover
         """Install and smoke-test the built wheels."""
+        self.check_wheel_sizes(self.dist_dir)
         self.final_wheel_import_test(installed_dist_dir=self.dist_dir)
+
+    def check_wheel_sizes(self, dist_dir: Path) -> None:
+        """Fail when a wheel in *dist_dir* is too large to upload to PyPI."""
+        oversized = [
+            f"{wheel.name}: {wheel.stat().st_size / 1e6:.1f} MB"
+            for wheel in sorted(Path(dist_dir).glob("itk*.whl"))
+            if wheel.stat().st_size > PYPI_MAX_WHEEL_BYTES
+        ]
+        if oversized:
+            raise RuntimeError(
+                f"Wheels over the {PYPI_MAX_WHEEL_BYTES / 1e6:.0f} MB PyPI "
+                f"limit: {'; '.join(oversized)}. Move modules to another "
+                f"wheel in cmake/ITKPythonPackage_BuildWheels.cmake."
+            )
 
     @abstractmethod
     def discover_python_venvs(

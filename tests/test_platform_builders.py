@@ -531,3 +531,17 @@ def test_ingested_remote_modules_are_enabled_and_can_be_overridden(linux_builder
     args = defs.getCMakeCommandLineArguments()
     assert "-DModule_Montage:BOOL='OFF'" in args
     assert "-DModule_Montage:BOOL='ON'" not in args
+
+
+def test_check_wheel_sizes_rejects_a_wheel_over_the_pypi_limit(tmp_path, linux_builder):
+    from build_python_instance_base import PYPI_MAX_WHEEL_BYTES
+
+    small = tmp_path / "itk_core-6.0.0-cp311-abi3-manylinux_2_28_x86_64.whl"
+    small.write_bytes(b"0")
+    linux_builder.check_wheel_sizes(tmp_path)
+
+    big = tmp_path / "itk_filtering-6.0.0-cp311-abi3-manylinux_2_28_x86_64.whl"
+    with open(big, "wb") as f:
+        f.truncate(PYPI_MAX_WHEEL_BYTES + 1)
+    with pytest.raises(RuntimeError, match="itk_filtering"):
+        linux_builder.check_wheel_sizes(tmp_path)
