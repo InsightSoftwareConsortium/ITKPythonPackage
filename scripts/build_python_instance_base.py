@@ -12,6 +12,7 @@ import wheel_packaging
 from build_jobs import compute_build_jobs, compute_load_limit, physical_memory_gb
 from BuildManager import BuildManager
 from cmake_argument_builder import CMakeArgumentBuilder
+from dead_strip import dead_strip_cmake_definitions
 from module_dependencies import build_module_dependencies, update_module_itk_deps
 from pyproject_configure import STABLE_ABI_TAG, configure_one_pyproject_file
 from target_platform import TargetPlatform
@@ -278,6 +279,11 @@ class BuildPythonInstanceBase(ABC):
             )
             self.cmake_compiler_configurations.set(
                 "CMAKE_CXX_COMPILER_LAUNCHER:FILEPATH", f"{ccache_exe}"
+            )
+
+        if self.package_env_config.get("DEAD_STRIP", "OFF") == "ON":
+            self.cmake_compiler_configurations.update(
+                dead_strip_cmake_definitions(self.target.os_name, os.environ)
             )
 
         self.cmake_itk_source_build_configurations.update(

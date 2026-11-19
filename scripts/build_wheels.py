@@ -352,6 +352,25 @@ def build_wheels_main() -> None:
     )
 
     parser.add_argument(
+        "--dead-strip",
+        action="store_true",
+        dest="dead_strip",
+        default=False,
+        help="""
+         -  Linux only: drop unreferenced code and fold identical functions
+            at link time (-ffunction-sections, gold --gc-sections --icf=safe)
+         """,
+    )
+    parser.add_argument(
+        "--no-dead-strip",
+        action="store_false",
+        dest="dead_strip",
+        help="""
+         -  Link without dead stripping
+         """,
+    )
+
+    parser.add_argument(
         "--skip-itk-build",
         action="store_true",
         dest="skip_itk_build",
@@ -567,6 +586,7 @@ def build_wheels_main() -> None:
     package_env_config["ITK_MODULE_PREQ"] = args.itk_module_deps
     package_env_config["ITK_MODULE_NO_CLEANUP"] = module_no_cleanup
     package_env_config["USE_CCACHE"] = use_ccache
+    package_env_config["DEAD_STRIP"] = "ON" if args.dead_strip else "OFF"
     pixi_executable = which_required("pixi")
     package_env_config["PIXI_EXECUTABLE"] = pixi_executable
     # Build tools come from the target environment, not the launching one, so a
