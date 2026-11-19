@@ -3,15 +3,23 @@
 Mirrors ``SimpleITK_DEAD_STRIP`` (SimpleITK/SimpleITK#2784) for GNU toolchains
 on ELF: every function and data object gets its own section, and gold drops
 the sections nothing references (``--gc-sections``) and merges functions whose
-address is never taken (``--icf=safe``).
+address is never taken (``--icf=safe``). Python extension modules also export
+only ``PyInit_*``, as SimpleITK's module does; without that, every symbol of
+the statically linked ITK libraries stays exported and cannot be discarded.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping
+from pathlib import Path
 
 SECTION_FLAGS = "-ffunction-sections -fdata-sections"
 LINKER_FLAGS = "-fuse-ld=gold -Wl,--gc-sections -Wl,--icf=safe"
+PYTHON_MODULE_EXPORTS = (
+    Path(__file__).resolve().parent.parent
+    / "BuildWheelsSupport"
+    / "python_module_exports.map"
+)
 
 
 def dead_strip_cmake_definitions(
@@ -20,9 +28,10 @@ def dead_strip_cmake_definitions(
     """Return the ``-D`` definitions that enable dead stripping on *os_name*.
 
     Only Linux gets any: ld64 -dead_strip changed the macOS wheels by under
-    0.1%, and MSVC Release links already discard and fold. Flags already in ``CFLAGS``/``CXXFLAGS``/
-    ``LDFLAGS`` are kept, because a ``-DCMAKE_<LANG>_FLAGS`` definition
-    replaces what CMake would have read from them.
+    0.1%, and MSVC Release links already discard and fold. Flags already in
+    ``CFLAGS``/``CXXFLAGS``/``LDFLAGS`` are kept, because a
+    ``-DCMAKE_<LANG>_FLAGS`` definition replaces what CMake would have read
+    from them.
     """
     if os_name != "linux":
         return {}
@@ -35,7 +44,9 @@ def dead_strip_cmake_definitions(
         "CMAKE_C_FLAGS:STRING": joined("CFLAGS", SECTION_FLAGS),
         "CMAKE_CXX_FLAGS:STRING": joined("CXXFLAGS", SECTION_FLAGS),
         "CMAKE_SHARED_LINKER_FLAGS:STRING": linker,
-        "CMAKE_MODULE_LINKER_FLAGS:STRING": linker,
+        "CMAKE_MODULE_LINKER_FLAGS:STRING": (
+            f"{linker} -Wl,--version-script={PYTHON_MODULE_EXPORTS.as_posix()}"
+        ),
         "CMAKE_EXE_LINKER_FLAGS:STRING": linker,
         # CMake detects GNU ld and passes it --dependency-file, which gold rejects.
         "CMAKE_LINK_DEPENDS_USE_LINKER:BOOL": "OFF",
