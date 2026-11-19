@@ -355,10 +355,10 @@ def build_wheels_main() -> None:
         "--dead-strip",
         action="store_true",
         dest="dead_strip",
-        default=False,
+        default=True,
         help="""
-         -  Linux only: drop unreferenced code and fold identical functions
-            at link time (-ffunction-sections, gold --gc-sections --icf=safe)
+         -  Linux only, on by default: drop unreferenced code, fold identical
+            functions, and export only PyInit_* from Python modules
          """,
     )
     parser.add_argument(

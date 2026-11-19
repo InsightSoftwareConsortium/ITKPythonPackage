@@ -179,6 +179,10 @@ Key Options
    * - ``--use-ccache``
      - off
      - Enable ccache to speed up recompilation
+   * - ``--dead-strip`` / ``--no-dead-strip``
+     - on
+     - Linux only: discard unreferenced code, fold identical functions, and
+       export only ``PyInit_*`` from the Python modules
    * - ``--macosx-deployment-target``
      - ``10.7``
      - Minimum macOS version for compiled binaries
