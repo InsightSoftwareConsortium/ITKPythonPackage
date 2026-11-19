@@ -372,8 +372,8 @@ def build_wheels_main() -> None:
         dest="dead_strip",
         default=True,
         help="""
-         -  Linux only, on by default: drop unreferenced code, fold identical
-            functions, and export only PyInit_* from Python modules
+         -  Linux and macOS, on by default: drop unreferenced code and export
+            only PyInit_* from Python modules
          """,
     )
     parser.add_argument(

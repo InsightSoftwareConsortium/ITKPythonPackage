@@ -195,7 +195,7 @@ Key options:
 | `--cleanup`                      | Remove temporary build files when done (default: keep) | (flag)              |
 | `--macosx-deployment-target`     | macOS floor and wheel tag; default `14.0`    | `14.0`                        |
 | `--use-ccache`                   | Reuse compiler cache between builds          | (flag)                        |
-| `--no-dead-strip`                | Linux: keep unreferenced code (default: strip) | (flag)                      |
+| `--no-dead-strip`                | Linux, macOS: keep unreferenced code (default: strip) | (flag)               |
 | `--lib-paths`                    | Windows only: `;`-delimited dirs for delvewheel | `C:\deps\bin`             |
 | `--no-build-itk-tarball-cache`   | Skip tarball generation (default)            | (flag)                        |
 | `--no-skip-itk-build`            | Don't skip ITK build step (default           | (flag)                        |

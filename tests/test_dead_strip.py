@@ -1,6 +1,7 @@
 import pytest
 from cmake_argument_builder import CMakeArgumentBuilder
 from dead_strip import (
+    DARWIN_MODULE_FLAGS,
     LINKER_FLAGS,
     PYTHON_MODULE_EXPORTS,
     SECTION_FLAGS,
@@ -37,9 +38,28 @@ def test_default_linker_is_used():
     assert "--icf" not in flags
 
 
-@pytest.mark.parametrize("os_name", ["darwin", "windows"])
-def test_other_platforms_are_unchanged(os_name):
-    assert dead_strip_cmake_definitions(os_name, {"LDFLAGS": "-Wl,-x"}) == {}
+def test_windows_is_unchanged():
+    assert dead_strip_cmake_definitions("windows", {"LDFLAGS": "-Wl,-x"}) == {}
+
+
+def test_darwin_strips_and_limits_exports_of_python_modules_only():
+    defs = dead_strip_cmake_definitions("darwin", {})
+    assert defs == {"CMAKE_MODULE_LINKER_FLAGS:STRING": DARWIN_MODULE_FLAGS}
+    assert "-Wl,-dead_strip " in DARWIN_MODULE_FLAGS
+    assert "-Wl,-exported_symbol,_PyInit_*" in DARWIN_MODULE_FLAGS
+
+
+def test_darwin_keeps_environment_and_user_linker_flags():
+    env = {"LDFLAGS": "-Wl,-dead_strip_dylibs"}
+    defs = dead_strip_cmake_definitions("darwin", env)
+    assert defs["CMAKE_MODULE_LINKER_FLAGS:STRING"] == (
+        f"-Wl,-dead_strip_dylibs {DARWIN_MODULE_FLAGS}"
+    )
+    user = {"CMAKE_MODULE_LINKER_FLAGS": "-Wl,-headerpad_max_install_names"}
+    defs = dead_strip_cmake_definitions("darwin", env, user)
+    assert defs["CMAKE_MODULE_LINKER_FLAGS:STRING"] == (
+        f"-Wl,-headerpad_max_install_names {DARWIN_MODULE_FLAGS}"
+    )
 
 
 def test_environment_flags_are_kept():

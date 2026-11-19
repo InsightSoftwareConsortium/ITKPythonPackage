@@ -195,8 +195,8 @@ not a real flag; do not invent one.
 | `--itk-module-deps SPEC` | `gitorg/repo@tag:gitorg/repo@tag` |
 
 **Toggles** — each has a `--no-` counterpart:
-`--build-itk-tarball-cache`, `--use-ccache`, `--dead-strip` (Linux, on by
-default), `--skip-itk-build`, `--skip-itk-wheel-build`. Also `--cleanup`.
+`--build-itk-tarball-cache`, `--use-ccache`, `--dead-strip` (Linux and
+macOS, on by default), `--skip-itk-build`, `--skip-itk-wheel-build`. Also `--cleanup`.
 
 **Positional** — everything after the flags goes to CMake unchanged,
 for example `-DBUILD_SHARED_LIBS:BOOL=OFF`. These override defaults.
