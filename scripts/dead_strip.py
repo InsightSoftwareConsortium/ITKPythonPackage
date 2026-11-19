@@ -25,31 +25,59 @@ PYTHON_MODULE_EXPORTS = (
     / "python_module_exports.map"
 )
 
+# CMake variable -> environment variable CMake would otherwise read it from.
+_FLAG_SOURCES = {
+    "CMAKE_C_FLAGS": "CFLAGS",
+    "CMAKE_CXX_FLAGS": "CXXFLAGS",
+    "CMAKE_SHARED_LINKER_FLAGS": "LDFLAGS",
+    "CMAKE_MODULE_LINKER_FLAGS": "LDFLAGS",
+    "CMAKE_EXE_LINKER_FLAGS": "LDFLAGS",
+}
+
+
+def user_flag_key(user_defs: Mapping[str, str], cmake_var: str) -> str | None:
+    """Return the key under which *user_defs* sets *cmake_var*, typed or not."""
+    for key in (f"{cmake_var}:STRING", cmake_var):
+        if key in user_defs:
+            return key
+    return None
+
 
 def dead_strip_cmake_definitions(
-    os_name: str, env: Mapping[str, str]
+    os_name: str,
+    env: Mapping[str, str],
+    user_defs: Mapping[str, str] | None = None,
 ) -> dict[str, str]:
     """Return the ``-D`` definitions that enable dead stripping on *os_name*.
 
     Only Linux gets any: ld64 -dead_strip changed the macOS wheels by under
-    0.1%, and MSVC Release links already discard and fold. Flags already in
-    ``CFLAGS``/``CXXFLAGS``/``LDFLAGS`` are kept, because a
-    ``-DCMAKE_<LANG>_FLAGS`` definition replaces what CMake would have read
-    from them.
+    0.1%, and MSVC Release links already discard and fold. Each flag
+    variable starts from the user's own ``-D`` value when one was given,
+    otherwise from ``CFLAGS``/``CXXFLAGS``/``LDFLAGS``, so neither the user's
+    flags nor these are lost.
     """
     if os_name != "linux":
         return {}
+    user_defs = user_defs or {}
 
-    def joined(var: str, extra: str) -> str:
-        return f"{env.get(var, '')} {extra}".strip()
+    def base(cmake_var: str) -> str:
+        key = user_flag_key(user_defs, cmake_var)
+        return user_defs[key] if key else env.get(_FLAG_SOURCES[cmake_var], "")
 
-    linker = joined("LDFLAGS", LINKER_FLAGS)
+    def joined(cmake_var: str, extra: str) -> str:
+        return f"{base(cmake_var)} {extra}".strip()
+
+    module_extra = (
+        f"{LINKER_FLAGS} -Wl,--version-script={PYTHON_MODULE_EXPORTS.as_posix()}"
+    )
     return {
-        "CMAKE_C_FLAGS:STRING": joined("CFLAGS", SECTION_FLAGS),
-        "CMAKE_CXX_FLAGS:STRING": joined("CXXFLAGS", SECTION_FLAGS),
-        "CMAKE_SHARED_LINKER_FLAGS:STRING": linker,
-        "CMAKE_MODULE_LINKER_FLAGS:STRING": (
-            f"{linker} -Wl,--version-script={PYTHON_MODULE_EXPORTS.as_posix()}"
+        "CMAKE_C_FLAGS:STRING": joined("CMAKE_C_FLAGS", SECTION_FLAGS),
+        "CMAKE_CXX_FLAGS:STRING": joined("CMAKE_CXX_FLAGS", SECTION_FLAGS),
+        "CMAKE_SHARED_LINKER_FLAGS:STRING": joined(
+            "CMAKE_SHARED_LINKER_FLAGS", LINKER_FLAGS
         ),
-        "CMAKE_EXE_LINKER_FLAGS:STRING": linker,
+        "CMAKE_MODULE_LINKER_FLAGS:STRING": joined(
+            "CMAKE_MODULE_LINKER_FLAGS", module_extra
+        ),
+        "CMAKE_EXE_LINKER_FLAGS:STRING": joined("CMAKE_EXE_LINKER_FLAGS", LINKER_FLAGS),
     }

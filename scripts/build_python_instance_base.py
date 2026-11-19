@@ -12,7 +12,7 @@ import wheel_packaging
 from build_jobs import compute_build_jobs, compute_load_limit, physical_memory_gb
 from BuildManager import BuildManager
 from cmake_argument_builder import CMakeArgumentBuilder
-from dead_strip import dead_strip_cmake_definitions
+from dead_strip import dead_strip_cmake_definitions, user_flag_key
 from module_dependencies import build_module_dependencies, update_module_itk_deps
 from pyproject_configure import STABLE_ABI_TAG, configure_one_pyproject_file
 from target_platform import TargetPlatform
@@ -282,9 +282,16 @@ class BuildPythonInstanceBase(ABC):
             )
 
         if self.package_env_config.get("DEAD_STRIP", "OFF") == "ON":
-            self.cmake_compiler_configurations.update(
-                dead_strip_cmake_definitions(self.target.os_name, os.environ)
+            user_defs = self.cmake_cmdline_definitions
+            dead_strip_defs = dead_strip_cmake_definitions(
+                self.target.os_name, os.environ, user_defs
             )
+            self.cmake_compiler_configurations.update(dead_strip_defs)
+            # Command-line definitions are applied last, so carry the merged value there.
+            for key, value in dead_strip_defs.items():
+                user_key = user_flag_key(user_defs, key.split(":")[0])
+                if user_key:
+                    user_defs.set(user_key, value)
 
         self.cmake_itk_source_build_configurations.update(
             # ITK wrapping options

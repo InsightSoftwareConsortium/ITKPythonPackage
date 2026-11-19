@@ -1,9 +1,11 @@
 import pytest
+from cmake_argument_builder import CMakeArgumentBuilder
 from dead_strip import (
     LINKER_FLAGS,
     PYTHON_MODULE_EXPORTS,
     SECTION_FLAGS,
     dead_strip_cmake_definitions,
+    user_flag_key,
 )
 
 VERSION_SCRIPT = f"-Wl,--version-script={PYTHON_MODULE_EXPORTS.as_posix()}"
@@ -47,3 +49,22 @@ def test_environment_flags_are_kept():
     assert defs["CMAKE_C_FLAGS:STRING"] == f"-O2 {SECTION_FLAGS}"
     assert defs["CMAKE_CXX_FLAGS:STRING"] == f"-g0 {SECTION_FLAGS}"
     assert defs["CMAKE_SHARED_LINKER_FLAGS:STRING"] == f"-Wl,-z,now {LINKER_FLAGS}"
+
+
+@pytest.mark.parametrize("key", ["CMAKE_CXX_FLAGS:STRING", "CMAKE_CXX_FLAGS"])
+def test_user_flags_replace_environment_and_are_merged(key):
+    user = {key: "-march=native"}
+    defs = dead_strip_cmake_definitions("linux", {"CXXFLAGS": "-g0"}, user)
+    assert defs["CMAKE_CXX_FLAGS:STRING"] == f"-march=native {SECTION_FLAGS}"
+    assert user_flag_key(user, "CMAKE_CXX_FLAGS") == key
+
+
+def test_user_module_linker_flags_keep_the_version_script():
+    user = CMakeArgumentBuilder({"CMAKE_MODULE_LINKER_FLAGS:STRING": "-Wl,-z,now"})
+    defs = dead_strip_cmake_definitions("linux", {}, user)
+    assert defs["CMAKE_MODULE_LINKER_FLAGS:STRING"].startswith("-Wl,-z,now ")
+    assert VERSION_SCRIPT in defs["CMAKE_MODULE_LINKER_FLAGS:STRING"]
+
+
+def test_user_flag_key_absent():
+    assert user_flag_key({}, "CMAKE_C_FLAGS") is None
