@@ -163,6 +163,21 @@ def get_effective_command_line(
     return shlex.join(effective_command)
 
 
+def parse_args_with_cmake_defines(
+    parser: argparse.ArgumentParser, argv: list[str] | None = None
+) -> argparse.Namespace:
+    """Parse *argv*, appending every ``-D`` CMake definition to ``cmake_options``.
+
+    argparse reads a ``-`` token without spaces as an unknown option, so
+    ``-D`` definitions are taken out first and appended in command-line order.
+    """
+    argv = sys.argv[1:] if argv is None else list(argv)
+    defines = [a for a in argv if a.startswith("-D")]
+    args = parser.parse_args([a for a in argv if not a.startswith("-D")])
+    args.cmake_options = [*args.cmake_options, *defines]
+    return args
+
+
 def build_wheels_main() -> None:
     """Entry point: parse arguments, configure, and run the wheel build."""
     # Pre-parse: the command line has not been read yet, so ambient
@@ -423,7 +438,7 @@ def build_wheels_main() -> None:
          """,
     )
 
-    args = parser.parse_args()
+    args = parse_args_with_cmake_defines(parser)
 
     abort_if_wrong_pixi_environment(args.platform_env)
 
