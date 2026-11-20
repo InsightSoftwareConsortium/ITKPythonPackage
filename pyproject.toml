@@ -182,3 +182,4 @@ enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 warn_unreachable = true
 warn_unused_ignores = true
 warn_return_any = true
+check_untyped_defs = true

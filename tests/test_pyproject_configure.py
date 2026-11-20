@@ -19,7 +19,7 @@ def test_a_backslash_in_a_value_is_escaped_exactly_once(tmp_path):
 def test_the_command_line_reads_the_env_file_it_is_given(tmp_path, monkeypatch):
     env_file = tmp_path / "build.env"
     env_file.write_text("ITK_PACKAGE_VERSION=6.0.0\n")
-    seen = {}
+    seen: dict[str, object] = {}
 
     def fake_configure(_script_dir, config, output_dir, wheel_name):
         seen.update(config=config, output_dir=output_dir, wheel_name=wheel_name)

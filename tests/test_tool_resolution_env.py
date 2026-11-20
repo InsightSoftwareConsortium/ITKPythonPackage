@@ -76,12 +76,12 @@ def test_no_pixi_environment_also_aborts(monkeypatch):
 
 def test_correct_environment_is_silent(monkeypatch):
     monkeypatch.setenv("PIXI_ENVIRONMENT_NAME", "linux-py311")
-    assert abort_if_wrong_pixi_environment("linux-py311") is None
+    abort_if_wrong_pixi_environment("linux-py311")
 
 
 def test_hostsystem_opts_out_of_the_environment_guard(monkeypatch):
     monkeypatch.setenv("PIXI_ENVIRONMENT_NAME", "hostsystem")
-    assert abort_if_wrong_pixi_environment("macosx-py311") is None
+    abort_if_wrong_pixi_environment("macosx-py311")
 
 
 def test_hostsystem_resolves_tools_from_host_path(monkeypatch):

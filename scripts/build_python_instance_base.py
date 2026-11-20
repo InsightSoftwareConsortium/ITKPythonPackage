@@ -455,8 +455,7 @@ class BuildPythonInstanceBase(ABC):
 
         # Build up definitions using the builder
         cmake_superbuild_argumets = CMakeArgumentBuilder()
-        if self.cmake_compiler_configurations:
-            cmake_superbuild_argumets.update(self.cmake_compiler_configurations.items())
+        cmake_superbuild_argumets.update(self.cmake_compiler_configurations.items())
         # Add superbuild-specific flags
         cmake_superbuild_argumets.update(
             {
@@ -467,8 +466,7 @@ class BuildPythonInstanceBase(ABC):
             }
         )
         # Start from any platform/user-provided defaults
-        if self.cmake_cmdline_definitions:
-            cmake_superbuild_argumets.update(self.cmake_cmdline_definitions.items())
+        cmake_superbuild_argumets.update(self.cmake_cmdline_definitions.items())
 
         cmd = [
             self.package_env_config["CMAKE_EXECUTABLE"],
@@ -496,12 +494,16 @@ class BuildPythonInstanceBase(ABC):
             check=True,
         )
 
-    def module_dist_dir(self) -> Path:
-        """Return the remote module's ``dist/`` directory."""
+    def required_module_source_dir(self) -> Path:
+        """Return the remote module's source directory, which must be set."""
         if self.module_source_dir is None:
             msg = "A remote module wheel needs module_source_dir"
             raise RuntimeError(msg)
-        return Path(self.module_source_dir) / "dist"
+        return Path(self.module_source_dir)
+
+    def module_dist_dir(self) -> Path:
+        """Return the remote module's ``dist/`` directory."""
+        return self.required_module_source_dir() / "dist"
 
     def fixup_wheels(self, lib_paths: str = ""):
         """Apply platform-specific fixups to ``itk_core`` wheels for TBB linkage."""
@@ -771,7 +773,7 @@ class BuildPythonInstanceBase(ABC):
 
     def build_external_module_python_wheel(self):
         """Build a wheel for an external ITK remote module via scikit-build-core."""
-        self.module_source_dir = Path(self.module_source_dir)
+        self.module_source_dir = self.required_module_source_dir()
         out_dir = self.module_source_dir / "dist"
         out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -814,9 +816,9 @@ class BuildPythonInstanceBase(ABC):
         if self.module_itk_dir == "install":
             itk_build_path = self.installed_itk_dir().as_posix()
         else:
-            itk_build_path = self.cmake_itk_source_build_configurations.get(
-                "ITK_BINARY_DIR:PATH",
-                "",
+            itk_build_path = (
+                self.cmake_itk_source_build_configurations.get("ITK_BINARY_DIR:PATH")
+                or ""
             )
 
         wheel_py_api = STABLE_ABI_TAG
@@ -864,8 +866,7 @@ class BuildPythonInstanceBase(ABC):
             defs.set("Python3_SABI_LIBRARY:FILEPATH", str(py_sabi_library))
 
         # Allow command-line cmake -D overrides to win last
-        if self.cmake_cmdline_definitions:
-            defs.update(self.cmake_cmdline_definitions.items())
+        defs.update(self.cmake_cmdline_definitions.items())
 
         # Append all cmake.define entries to the build cmd
         cmd += defs.getPythonBuildCommandLineArguments()
@@ -875,7 +876,7 @@ class BuildPythonInstanceBase(ABC):
             cmd += [f"--config-setting=wheel.py-api={wheel_py_api}"]
 
         # Module source directory to build
-        cmd += [self.module_source_dir]
+        cmd += [str(self.module_source_dir)]
 
         try:
             self.echo_check_call(cmd, check=True)
@@ -949,14 +950,11 @@ class BuildPythonInstanceBase(ABC):
                 }
             )
 
-            if (
-                self.cmake_cmdline_definitions
-            ):  # Do last to override with command line items
-                scikitbuild_cmdline_args.update(self.cmake_cmdline_definitions.items())
-                # Append all cmake.define entries
+            # Do last to override with command line items
+            scikitbuild_cmdline_args.update(self.cmake_cmdline_definitions.items())
             cmd += scikitbuild_cmdline_args.getPythonBuildCommandLineArguments()
             # The location of the generated pyproject.toml file
-            cmd += [wheel_configbuild_dir_root]
+            cmd += [str(wheel_configbuild_dir_root)]
             self.echo_check_call(cmd, check=True)
 
             # Remove unnecessary files for building against ITK

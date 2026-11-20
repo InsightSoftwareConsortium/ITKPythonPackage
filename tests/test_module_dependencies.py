@@ -83,7 +83,9 @@ def test_bound_is_derived_from_major_minor_only(version, tmp_path_factory):
     # Only the leading digit run of the minor component is significant;
     # a suffix glued directly onto it (e.g. "0rc01") must not contribute
     # digits of its own to the expected floor.
-    minor = re.match(r"\d*", minor).group()
+    leading_digits = re.match(r"\d*", minor)
+    assert leading_digits is not None
+    minor = leading_digits.group()
     expected = f'"itk >= {major}.{minor}.0b1, < {int(major) + 1}"'
     assert expected in path.read_text()
 

@@ -57,7 +57,7 @@ class push_dir(ContextDecorator):
         """
         self.directory = None
         self.make_directory = None
-        self.old_cwd = None
+        self.old_cwd: Path | None = None
         super().__init__(directory=directory, make_directory=make_directory)
 
     def __enter__(self):
@@ -69,7 +69,8 @@ class push_dir(ContextDecorator):
         return self
 
     def __exit__(self, typ, val, traceback):
-        os_chdir(self.old_cwd)
+        if self.old_cwd is not None:
+            os_chdir(self.old_cwd)
 
 
 def _remove_tree(path: Path) -> None:
