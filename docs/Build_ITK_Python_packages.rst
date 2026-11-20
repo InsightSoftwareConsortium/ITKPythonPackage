@@ -176,9 +176,10 @@ Key Options
    * - ``--cleanup``
      - off
      - Remove intermediate build files after completion
-   * - ``--use-ccache``
+   * - ``--use-compiler-cache`` / ``--no-use-compiler-cache``
      - off
-     - Enable ccache to speed up recompilation
+     - Compile through sccache on Windows or ccache elsewhere; ``--use-ccache``
+       is an alias
    * - ``--dead-strip`` / ``--no-dead-strip``
      - on
      - Linux and macOS: discard unreferenced code and export only
@@ -220,8 +221,8 @@ useful in CI pipelines:
      - target architecture (``x64`` or ``aarch64``)
    * - ``IMAGE_TAG``
      - Docker image tag for manylinux builds
-   * - ``USE_CCACHE``
-     - ``--use-ccache``
+   * - ``USE_COMPILER_CACHE`` (or ``USE_CCACHE``)
+     - ``--use-compiler-cache``
    * - ``CMAKE_OPTIONS``
      - extra CMake ``-D`` definitions
    * - ``MACOSX_DEPLOYMENT_TARGET``

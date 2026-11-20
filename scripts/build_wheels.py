@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from compiler_cache import use_compiler_cache
 from target_platform import (
     Arch,
     TargetPlatform,
@@ -423,20 +424,23 @@ def build_wheels_main() -> None:
         )
 
     parser.add_argument(
+        "--use-compiler-cache",
         "--use-ccache",
         action="store_true",
         dest="use_ccache",
-        default=False,
+        default=None,
         help="""
-         -  Option to indicate that ccache should be used
+         -  Compile through sccache on Windows or ccache elsewhere. Without this
+            flag or its --no- form, USE_COMPILER_CACHE or USE_CCACHE decides.
          """,
     )
     parser.add_argument(
+        "--no-use-compiler-cache",
         "--no-use-ccache",
         action="store_false",
         dest="use_ccache",
         help="""
-         -  Option to indicate that ccache should not be used
+         -  Do not use a compiler cache, whatever the environment says
          """,
     )
 
@@ -593,12 +597,7 @@ def build_wheels_main() -> None:
     # ITKPythonPackage origin/tag
     # ITK_MODULE_NO_CLEANUP, USE_CCACHE
     module_no_cleanup = os.environ.get("ITK_MODULE_NO_CLEANUP", "1")
-    use_ccache = (
-        "ON"
-        if args.use_ccache
-        or os.environ.get("USE_CCACHE", "0").upper() in ("1", "ON", "TRUE", "YES")
-        else "OFF"
-    )
+    use_ccache = "ON" if use_compiler_cache(args.use_ccache, os.environ) else "OFF"
 
     package_env_config["BUILD_DIR_ROOT"] = str(args.build_dir_root)
     package_env_config["ITK_GIT_TAG"] = args.itk_git_tag

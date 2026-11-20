@@ -19,6 +19,17 @@ DEFAULT_MAX_SIZE = "30G"
 _SIZE_VARIABLE = {"ccache": "CCACHE_MAXSIZE", "sccache": "SCCACHE_CACHE_SIZE"}
 
 
+_TRUE_VALUES = ("1", "ON", "TRUE", "YES")
+
+
+def use_compiler_cache(flag: bool | None, env: Mapping[str, str]) -> bool:
+    """Return whether to cache: an explicit flag wins over the environment."""
+    if flag is not None:
+        return flag
+    value = env.get("USE_COMPILER_CACHE") or env.get("USE_CCACHE") or "0"
+    return value.upper() in _TRUE_VALUES
+
+
 def compiler_cache_tool(os_name: str) -> str:
     """Return the cache program for *os_name*: sccache on Windows, else ccache."""
     return "sccache" if os_name == "windows" else "ccache"
