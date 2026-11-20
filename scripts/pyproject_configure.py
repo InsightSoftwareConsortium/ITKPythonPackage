@@ -303,7 +303,7 @@ def get_wheel_names(IPP_BuildWheelsSupport_DIR: str):
         Stripped wheel names, one per line.
     """
     with open(os.path.join(IPP_BuildWheelsSupport_DIR, "WHEEL_NAMES.txt")) as _file:
-        return [wheel_name.strip() for wheel_name in _file.readlines()]
+        return [wheel_name.strip() for wheel_name in _file]
 
 
 def get_py_api():
@@ -340,7 +340,7 @@ def get_wheel_dependencies(SCRIPT_DIR: str, version: str, wheel_names: list):
     with open(
         os.path.join(SCRIPT_DIR, "..", "cmake/ITKPythonPackage_BuildWheels.cmake")
     ) as file_:
-        for line in file_.readlines():
+        for line in file_:
             match = re.search(pattern, line)
             if not match:
                 continue
