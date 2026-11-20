@@ -51,6 +51,7 @@ def test_empty_git_directory_is_not_a_repository(tmp_path):
         cwd=source,
         capture_output=True,
         text=True,
+        check=False,
     )
     assert probe.returncode != 0  # what the new guard checks
 

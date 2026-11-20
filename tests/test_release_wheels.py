@@ -152,7 +152,11 @@ def test_a_branch_resolves_to_the_fetched_tip(tmp_path, itk_repository):
     (repo / "f").write_text("3")
     subprocess.run(["git", "commit", "-q", "-am", "three"], cwd=repo, check=True)
     newer = subprocess.run(
-        ["git", "rev-parse", "HEAD"], cwd=repo, capture_output=True, text=True
+        ["git", "rev-parse", "HEAD"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
     ).stdout.strip()
     assert rw.prepare_itk_source(src, str(repo), "main") == (newer, False)
 

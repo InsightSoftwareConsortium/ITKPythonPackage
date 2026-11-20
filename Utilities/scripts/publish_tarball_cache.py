@@ -82,6 +82,7 @@ def main() -> int:
         ["gh", "release", "view", tag, "--repo", args.repo],
         capture_output=True,
         text=True,
+        check=False,
     )
     if result.returncode != 0:
         if args.create_release:
@@ -99,6 +100,7 @@ def main() -> int:
                     "--notes",
                     f"ITK Python build cache for {tag}",
                 ],
+                check=False,
             )
             if create_result.returncode != 0:
                 print("Error: Failed to create release.", file=sys.stderr)
@@ -117,6 +119,7 @@ def main() -> int:
         print(f"Uploading {tb.name}...")
         upload_result = subprocess.run(
             ["gh", "release", "upload", tag, str(tb), "--repo", args.repo, "--clobber"],
+            check=False,
         )
         if upload_result.returncode != 0:
             print(f"Error: Failed to upload {tb.name}.", file=sys.stderr)

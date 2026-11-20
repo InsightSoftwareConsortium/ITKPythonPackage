@@ -336,6 +336,7 @@ def run_commandLine_subprocess(
         capture_output=True,
         text=True,
         env=env or None,
+        check=False,
     )
     if completion_info.returncode != 0 and check:
         error_msg = "!~" * 40

@@ -81,6 +81,7 @@ def main() -> int:
     print("\nRunning twine check...")
     result = subprocess.run(
         ["twine", "check", *(str(w) for w in wheels)],
+        check=False,
     )
     if result.returncode != 0:
         print(
@@ -101,7 +102,7 @@ def main() -> int:
 
     target = args.repository_url or (TESTPYPI_URL if args.test else "PyPI")
     print(f"\nUploading to {target}...")
-    result = subprocess.run(cmd)
+    result = subprocess.run(cmd, check=False)
     return result.returncode
 
 
