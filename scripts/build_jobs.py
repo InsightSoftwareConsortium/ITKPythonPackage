@@ -46,7 +46,8 @@ def _cgroup_memory_limit_gb() -> float | None:
         ("/sys/fs/cgroup/memory/memory.limit_in_bytes", None),
     ):
         try:
-            raw = open(path).read().strip()
+            with open(path) as f:
+                raw = f.read().strip()
         except OSError:
             continue
         if raw == unlimited:

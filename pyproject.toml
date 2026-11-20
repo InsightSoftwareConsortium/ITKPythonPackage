@@ -41,6 +41,7 @@ extend-select = [
   "RUF059",  # unused-unpacked-variable
   "RUF100",  # unused-noqa
   "SIM108",  # if-else-block-instead-of-if-exp
+  "SIM115",  # open-file-with-context-handler
   "SIM118",  # in-dict-keys
   "SIM910",  # dict-get-with-none-default
   "TC003",   # typing-only-standard-library-import
@@ -93,7 +94,6 @@ ignore = [
   "PTH123",  # builtin-open (14)
   "RUF043",  # pytest-raises-ambiguous-pattern (2)
   "SIM105",  # suppressible-exception (10)
-  "SIM115",  # open-file-with-context-handler (1)
   "SIM117",  # multiple-with-statements (18)
   "TRY003",  # raise-vanilla-args (62)
   "TRY300",  # try-consider-else (2)
