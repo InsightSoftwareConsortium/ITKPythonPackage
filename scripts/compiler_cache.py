@@ -55,3 +55,26 @@ def compiler_cache_environment(tool: str, env: Mapping[str, str]) -> dict[str, s
     if env.get(variable):
         return {}
     return {variable: DEFAULT_MAX_SIZE}
+
+
+def compiler_cache_session(
+    tool: str, launcher: Path | str
+) -> tuple[list[list[str]], list[list[str]]]:
+    """Return the commands to run before and after a build.
+
+    Statistics are zeroed first so the report covers this build alone. The
+    sccache server keeps the environment it started with, so it is restarted
+    after the cache size is set and stopped at the end.
+    """
+    exe = str(launcher)
+    if tool == "sccache":
+        before = [
+            [exe, "--stop-server"],
+            [exe, "--start-server"],
+            [exe, "--zero-stats"],
+        ]
+        after = [[exe, "--show-stats"], [exe, "--stop-server"]]
+    else:
+        before = [[exe, "--zero-stats"]]
+        after = [[exe, "--show-stats", "--verbose"]]
+    return before, after

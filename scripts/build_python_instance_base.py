@@ -17,6 +17,7 @@ from cmake_argument_builder import CMakeArgumentBuilder
 from compiler_cache import (
     compiler_cache_definitions,
     compiler_cache_environment,
+    compiler_cache_session,
     compiler_cache_tool,
 )
 from dead_strip import dead_strip_cmake_definitions, user_flag_key
@@ -308,6 +309,10 @@ class BuildPythonInstanceBase(ABC):
                 "CMAKE_C_COMPILER:STRING", c_compiler
             )
 
+        self.compiler_cache_commands: tuple[list[list[str]], list[list[str]]] = (
+            [],
+            [],
+        )
         if self.package_env_config.get("USE_CCACHE", "OFF") == "ON":
             cache_tool = compiler_cache_tool(self.target.os_name)
             cache_exe: Path | None = _which(cache_tool)
@@ -318,6 +323,7 @@ class BuildPythonInstanceBase(ABC):
                 compiler_cache_definitions(cache_tool, cache_exe)
             )
             os.environ.update(compiler_cache_environment(cache_tool, os.environ))
+            self.compiler_cache_commands = compiler_cache_session(cache_tool, cache_exe)
 
         if self.package_env_config.get("DEAD_STRIP", "OFF") == "ON":
             user_defs = self.cmake_cmdline_definitions
@@ -443,6 +449,25 @@ class BuildPythonInstanceBase(ABC):
             build_report_fn, list(python_package_build_steps.keys())
         )
         build_manager.save()
+        cache_before, cache_after = self.compiler_cache_commands
+        for cmd in cache_before:
+            self.echo_check_call(cmd, use_pixi_env=False)
+        try:
+            self._run_build_steps(
+                build_manager, build_report_fn, python_package_build_steps
+            )
+        finally:
+            # Statistics are informational: a failure here must not mask the build's.
+            for cmd in cache_after:
+                self.echo_check_call(cmd, use_pixi_env=False)
+
+    def _run_build_steps(
+        self,
+        build_manager: BuildManager,
+        build_report_fn: Path,
+        python_package_build_steps: OrderedDict[str, Callable[[], object]],
+    ) -> None:
+        """Run each build step in order, recording its status in the report."""
         for build_step_name, build_step_func in python_package_build_steps.items():
             print("=" * 80)
             print(

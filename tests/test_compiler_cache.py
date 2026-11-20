@@ -5,6 +5,7 @@ from compiler_cache import (
     DEFAULT_MAX_SIZE,
     compiler_cache_definitions,
     compiler_cache_environment,
+    compiler_cache_session,
     compiler_cache_tool,
     use_compiler_cache,
 )
@@ -65,3 +66,17 @@ def test_an_explicit_flag_wins_over_the_environment(flag):
 )
 def test_without_a_flag_the_environment_decides(env, expected):
     assert use_compiler_cache(None, env) is expected
+
+
+def test_ccache_reports_on_this_build_alone(tmp_path):
+    before, after = compiler_cache_session("ccache", tmp_path / "ccache")
+    assert before == [[str(tmp_path / "ccache"), "--zero-stats"]]
+    assert after == [[str(tmp_path / "ccache"), "--show-stats", "--verbose"]]
+
+
+def test_the_sccache_server_is_restarted_and_stopped(tmp_path):
+    exe = str(tmp_path / "sccache")
+    before, after = compiler_cache_session("sccache", exe)
+    assert before[:2] == [[exe, "--stop-server"], [exe, "--start-server"]]
+    assert [exe, "--zero-stats"] in before
+    assert after[-1] == [exe, "--stop-server"]
