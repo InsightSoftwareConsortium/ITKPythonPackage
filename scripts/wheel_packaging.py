@@ -51,7 +51,7 @@ def post_build_cleanup(builder) -> None:
     tbb_prefix_dir = base / "oneTBB-prefix"
     try:
         if tbb_prefix_dir.is_symlink() or tbb_prefix_dir.is_file():
-            tbb_prefix_dir.unlink(missing_ok=True)  # type: ignore[arg-type]
+            tbb_prefix_dir.unlink(missing_ok=True)
         elif tbb_prefix_dir.exists():
             rm(tbb_prefix_dir)
     except Exception:

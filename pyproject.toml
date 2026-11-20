@@ -180,3 +180,4 @@ platform = "linux"
 warn_unused_configs = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 warn_unreachable = true
+warn_unused_ignores = true
