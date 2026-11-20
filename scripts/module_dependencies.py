@@ -150,7 +150,7 @@ def update_module_itk_deps(pyproject_path: Path, itk_version: str) -> bool:
 
     changed = False
 
-    def _replace(m: re.Match) -> str:
+    def _replace(m: re.Match[str]) -> str:
         nonlocal changed
         changed = True
         pkg = m.group(1)

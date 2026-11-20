@@ -148,7 +148,7 @@ class BuildPythonInstanceBase(ABC):
         *,
         platform_env,
         build_dir_root,
-        package_env_config: dict,
+        package_env_config: dict[str, Any],
         cleanup: bool,
         build_itk_tarball_cache: bool,
         cmake_options: list[str],
@@ -341,21 +341,23 @@ class BuildPythonInstanceBase(ABC):
             "Python3_ROOT_DIR:PATH", f"{self.venv_info_dict['python_root_dir']}"
         )
 
-    def build_step_table(self) -> OrderedDict[str, Callable]:
+    def build_step_table(self) -> OrderedDict[str, Callable[[], object]]:
         """The ordered build steps for this run, keyed by recorded step name.
 
         Stages that do not apply are registered under a ``_skipped`` key
         mapped to a no-op, so the step log records that they were bypassed
         on purpose rather than silently absent.
         """
-        python_package_build_steps: OrderedDict[str, Callable] = OrderedDict(
-            {
-                "01_superbuild_support_components": self.build_superbuild_support_components,
-                "02_build_wrapped_itk_cplusplus": self.build_wrapped_itk_cplusplus,
-                "03_build_wheels": self.build_itk_python_wheels,
-                "04_post_build_fixup": self.post_build_fixup,
-                "05_final_import_test": self.final_import_test,
-            }
+        python_package_build_steps: OrderedDict[str, Callable[[], object]] = (
+            OrderedDict(
+                {
+                    "01_superbuild_support_components": self.build_superbuild_support_components,
+                    "02_build_wrapped_itk_cplusplus": self.build_wrapped_itk_cplusplus,
+                    "03_build_wheels": self.build_itk_python_wheels,
+                    "04_post_build_fixup": self.post_build_fixup,
+                    "05_final_import_test": self.final_import_test,
+                }
+            )
         )
 
         if self.skip_itk_build:

@@ -5,6 +5,7 @@ import re
 import shutil
 import sys
 from pathlib import Path
+from typing import Any
 
 from packaging.version import Version
 from wheel_builder_utils import read_env_file
@@ -166,11 +167,11 @@ def from_group_to_wheel(group):
 
 
 def update_wheel_pyproject_toml_parameters(
-    base_params: dict,
-    package_env_config: dict,
+    base_params: dict[str, Any],
+    package_env_config: dict[str, Any],
     SCRIPT_NAME: str,
-    wheel_names: list,
-    wheel_dependencies: dict,
+    wheel_names: list[str],
+    wheel_dependencies: dict[str, Any],
 ):
     """Build a mapping of wheel name to ``pyproject.toml`` template parameters.
 
@@ -318,7 +319,9 @@ def get_py_api():
     return STABLE_ABI_TAG
 
 
-def get_wheel_dependencies(SCRIPT_DIR: str | Path, version: str, wheel_names: list):
+def get_wheel_dependencies(
+    SCRIPT_DIR: str | Path, version: str, wheel_names: list[str]
+):
     """Parse ITK CMake files to build a wheel dependency graph.
 
     Parameters
@@ -363,7 +366,7 @@ def get_wheel_dependencies(SCRIPT_DIR: str | Path, version: str, wheel_names: li
 
 
 def build_base_pyproject_parameters(
-    package_env_config: dict, SCRIPT_NAME: str, itk_package_version: str
+    package_env_config: dict[str, Any], SCRIPT_NAME: str, itk_package_version: str
 ):
     """Return the base ``pyproject.toml`` template parameters for ITK.
 

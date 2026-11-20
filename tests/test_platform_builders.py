@@ -199,7 +199,7 @@ def test_fixup_wheel_removes_original_only_after_verified_repair(
     assert repaired.exists()
 
 
-def _capture_repair_env(builder, wheel, repaired) -> dict:
+def _capture_repair_env(builder, wheel, repaired) -> dict[str, str]:
     captured_env = {}
 
     def fake_repair(cmd, env=None):

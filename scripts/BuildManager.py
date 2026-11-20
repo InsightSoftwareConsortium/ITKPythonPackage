@@ -127,7 +127,7 @@ class BuildManager:
         return datetime.now().isoformat(timespec="seconds")
 
     @staticmethod
-    def _new_step_entry() -> dict:
+    def _new_step_entry() -> dict[str, Any]:
         return {
             "status": "pending",
             "started_at": None,

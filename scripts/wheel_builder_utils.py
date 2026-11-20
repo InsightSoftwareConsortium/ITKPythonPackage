@@ -95,7 +95,7 @@ def _remove_tree(path: Path) -> None:
 
 
 def read_env_file(
-    file_path: os.PathLike | str, build_dir_root: os.PathLike | str
+    file_path: os.PathLike[str] | str, build_dir_root: os.PathLike[str] | str
 ) -> dict[str, str]:
     """Read a simple .env-style file and return a dict of key/value pairs.
 
@@ -300,9 +300,9 @@ def which_required(name: str) -> Path:
 def run_commandLine_subprocess(
     cmd: Sequence[str | Path],
     cwd: Path | None = None,
-    env: dict | None = None,
+    env: dict[str, str] | None = None,
     check: bool = False,
-) -> subprocess.CompletedProcess:
+) -> subprocess.CompletedProcess[str]:
     """Run a command via ``subprocess.run`` with logging.
 
     Parameters

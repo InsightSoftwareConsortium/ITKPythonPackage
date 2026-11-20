@@ -154,7 +154,7 @@ def container_build_root() -> Path:
     return IPP_DIR.parent / f"ITKPythonPackage-manylinux{manylinux}-build"
 
 
-def _git(*args: str, cwd: Path, check: bool = True) -> subprocess.CompletedProcess:
+def _git(*args: str, cwd: Path, check: bool = True) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         ["git", *args], cwd=cwd, check=check, capture_output=True, text=True
     )

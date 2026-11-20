@@ -98,24 +98,16 @@ def echo_check_call(
     print("^" * 60)
     print(kwargs)
     print("^" * 60)
-    process_completion_info: subprocess.CompletedProcess = run_commandLine_subprocess(
-        cmd_strs, env=pixi_env, cwd=run_dir, **kwargs
+    process_completion_info: subprocess.CompletedProcess[str] = (
+        run_commandLine_subprocess(cmd_strs, env=pixi_env, cwd=run_dir, **kwargs)
     )
     cmd_return_status: int = process_completion_info.returncode
     print("^" * 60)
     print(f"<<Finished Running: cmd_return_status={cmd_return_status}")
     print(" ====== stdout =====")
-    stdout_val = process_completion_info.stdout
-    if isinstance(stdout_val, bytes):
-        print(stdout_val.decode("utf-8"))
-    else:
-        print(stdout_val)
+    print(process_completion_info.stdout)
     print(" ====== stderr =====")
-    stderr_val = process_completion_info.stderr
-    if isinstance(stderr_val, bytes):
-        print(stderr_val.decode("utf-8"))
-    else:
-        print(stderr_val)
+    print(process_completion_info.stderr)
     print(" ===================")
     return cmd_return_status
 
