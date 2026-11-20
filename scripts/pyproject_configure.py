@@ -420,7 +420,7 @@ def build_base_pyproject_parameters(
 
 def main():
     # Parse arguments
-    SCRIPT_DIR = os.path.dirname(__file__)
+    SCRIPT_DIR = Path(__file__).parent
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="""CLI allowing to configure ``pyproject.toml`` found in the `` ITKPythonPackage ``

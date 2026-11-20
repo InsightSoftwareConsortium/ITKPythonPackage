@@ -30,6 +30,7 @@ extend-select = [
   "PLR5501", # collapsible-else-if
   "PTH100",  # os-path-abspath
   "PTH119",  # os-path-basename
+  "PTH120",  # os-path-dirname
   "RET504",  # unnecessary-assign
   "RET505",  # superfluous-else-return
   "RUF005",  # collection-literal-concatenation
@@ -88,7 +89,6 @@ ignore = [
   "PLW1510", # subprocess-run-without-check (8)
   "PLW2901", # redefined-loop-name (5)
   "PTH118",  # os-path-join (7)
-  "PTH120",  # os-path-dirname (1)
   "PTH123",  # builtin-open (14)
   "RUF002",  # ambiguous-unicode-character-docstring (1)
   "RUF043",  # pytest-raises-ambiguous-pattern (2)
