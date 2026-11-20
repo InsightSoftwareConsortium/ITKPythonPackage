@@ -199,3 +199,14 @@ def test_a_caller_set_epoch_wins(tmp_path, itk_repository, monkeypatch):
     commit, _ = rw.prepare_itk_source(src, str(repo), "main")
     monkeypatch.setenv("SOURCE_DATE_EPOCH", "1234567890")
     assert rw.wheel_epoch(src, commit) == "1234567890"
+
+
+def test_the_summary_lists_this_runs_wheels_only(tmp_path):
+    dist = tmp_path / "dist"
+    earlier = dist / "earlier-wheels" / "20261119_020000"
+    earlier.mkdir(parents=True)
+    (earlier / "itk_core-6.0b2-cp311-abi3-macosx_11_0_arm64.whl").write_bytes(b"")
+    current = dist / "itk_core-6.0b3-cp311-abi3-macosx_11_0_arm64.whl"
+    current.write_bytes(b"")
+    step = rw.Step("macos-arm64", [], dist_dir=dist)
+    assert rw.built_wheels(step) == [current]

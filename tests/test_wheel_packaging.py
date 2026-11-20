@@ -3,12 +3,16 @@ import subprocess
 import tarfile
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
+import build_python_instance_base
 import pytest
+from cmake_argument_builder import CMakeArgumentBuilder
 from hypothesis import given, settings
 from hypothesis import strategies as st
 from wheel_packaging import (
     create_posix_tarball,
+    move_earlier_wheels,
     post_build_cleanup,
     remove_uncompressed_tar,
     tarball_paths,
@@ -182,3 +186,57 @@ def test_git_directory_is_excluded_entirely_not_just_its_contents(tmp_path):
         names = archive.getnames()
     assert any(n.endswith("ITK/CMakeLists.txt") for n in names)
     assert not [n for n in names if ".git" in Path(n).parts]
+
+
+def test_earlier_wheels_move_out_of_the_top_of_dist(tmp_path):
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    wheel = dist / "itk_core-6.0b2-cp311-abi3-manylinux_2_28_x86_64.whl"
+    wheel.write_bytes(b"old")
+    tarball = dist / "ITKPythonBuilds-linux-x64.tar.zst"
+    tarball.write_bytes(b"cache")
+    report = dist / "build_log_manylinux228-py311.json"
+    report.write_text("{}")
+
+    moved_to = move_earlier_wheels(dist, "20261119_020000")
+
+    assert moved_to == dist / "earlier-wheels" / "20261119_020000"
+    assert list(dist.glob("*.whl")) == []
+    assert (moved_to / wheel.name).read_bytes() == b"old"
+    assert tarball.exists()
+    assert report.exists()
+
+
+def test_no_wheels_means_nothing_moves(tmp_path):
+    assert move_earlier_wheels(tmp_path, "20261119_020000") is None
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_the_wheel_step_starts_from_an_empty_dist(macos_builder):
+    """Repair and the import test glob dist/*.whl; an earlier wheel must not be there."""
+    dist = macos_builder.build_dir_root / "dist"
+    dist.mkdir()
+    (dist / "itk_core-6.0b2-cp311-abi3-macosx_11_0_arm64.whl").write_bytes(b"")
+    new_wheel = dist / "itk_core-6.0b3-cp311-abi3-macosx_11_0_arm64.whl"
+    macos_builder.wheel_names = ["itk-core"]
+    macos_builder.cleanup = False
+    macos_builder.ipp_dir = macos_builder.build_dir_root
+    macos_builder.cmake_cmdline_definitions = CMakeArgumentBuilder()
+    macos_builder.package_env_config.update(
+        {
+            "PYTHON_EXECUTABLE": "python",
+            "BUILD_TYPE": "Release",
+            "IPP_SOURCE_DIR": macos_builder.build_dir_root,
+            "USE_TBB": "OFF",
+            "DOXYGEN_EXECUTABLE": "doxygen",
+        }
+    )
+    macos_builder.get_pixi_environment_name = lambda: "macosx-py311"
+    macos_builder.echo_check_call = lambda _cmd, **_kw: new_wheel.write_bytes(b"")
+
+    with patch.object(
+        build_python_instance_base, "configure_one_pyproject_file", lambda *_: None
+    ):
+        macos_builder.build_itk_python_wheels()
+
+    assert sorted(dist.glob("*.whl")) == [new_wheel]

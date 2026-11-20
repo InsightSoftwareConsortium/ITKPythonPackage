@@ -301,6 +301,15 @@ def plan(
     return steps
 
 
+def built_wheels(step: Step) -> list[Path]:
+    """The wheels *step* left at the top of its ``dist/``.
+
+    Wheels of earlier runs are moved to a subdirectory before the wheel
+    build, so they are not listed.
+    """
+    return sorted(step.dist_dir.glob(WHEEL_GLOB[step.target]))
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=__doc__.split("\n\n")[0],
@@ -370,7 +379,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"=== {step.target} FAILED (exit {result.returncode})", flush=True)
             continue
         print(f"=== {step.target} wheels in {step.dist_dir}:", flush=True)
-        for wheel in sorted(step.dist_dir.glob(WHEEL_GLOB[step.target])):
+        for wheel in built_wheels(step):
             print(f"    {wheel.name}  {wheel.stat().st_size / 1e6:.1f} MB")
 
     if failed:

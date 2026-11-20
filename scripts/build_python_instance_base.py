@@ -6,6 +6,7 @@ import subprocess
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from collections.abc import Callable, Mapping
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -970,7 +971,11 @@ class BuildPythonInstanceBase(ABC):
 
     def build_itk_python_wheels(self):
         """Build all ITK Python wheels listed in ``WHEEL_NAMES.txt``."""
-        # Build wheels
+        earlier = wheel_packaging.move_earlier_wheels(
+            self.build_dir_root / "dist", datetime.now().strftime("%Y%m%d_%H%M%S")
+        )
+        if earlier:
+            print(f"Moved wheels of an earlier run to {earlier}")
         for wheel_name in self.wheel_names:
             print("#")
             print(f"# Build ITK wheel {wheel_name} from {self.wheel_names}")
