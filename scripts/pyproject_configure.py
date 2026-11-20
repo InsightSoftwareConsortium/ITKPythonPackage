@@ -460,7 +460,7 @@ Accepted values for `wheel_name` are ``itk`` and all values read from
         "--output-dir",
         type=str,
         help="Output directory for configured 'pyproject.toml'",
-        default=os.path.abspath(os.path.join(SCRIPT_DIR, "..")),
+        default=str((Path(SCRIPT_DIR) / "..").resolve()),
     )
     parser.add_argument(
         "--build-dir-root",
