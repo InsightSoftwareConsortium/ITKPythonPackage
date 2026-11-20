@@ -63,7 +63,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
 
         # A repaired module wheel replaces the unrepaired one in the module's dist/.
         output_dir = (
-            self.module_source_dir / "dist"
+            self.module_dist_dir()
             if remote_module_wheel
             else self.build_dir_root / "dist"
         )
@@ -195,7 +195,11 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         # Python development files are directly under env root
         python_include_dir = env_root / "include"
 
-        python_major, python_minor = get_python_version(self.platform_env)
+        python_version = get_python_version(self.platform_env)
+        if python_version is None:
+            msg = f"No Python version (py3NN) in platform env {self.platform_env!r}"
+            raise ValueError(msg)
+        python_major, python_minor = python_version
         # Version-specific library (e.g., python311.lib) - required for
         # CMake's FindPython3 to extract version info for Development.Module
         xy_lib_ver = f"{python_major}{python_minor}"

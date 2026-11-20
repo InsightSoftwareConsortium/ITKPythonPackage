@@ -180,7 +180,7 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
                 str(filepath),
                 "-w",
                 (
-                    str(self.module_source_dir / "dist")
+                    str(self.module_dist_dir())
                     if remote_module_wheel
                     else str(self.build_dir_root / "dist")
                 ),
@@ -209,7 +209,7 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
 
             filepath_obj = Path(filepath)
             output_dir = (
-                self.module_source_dir / "dist"
+                self.module_dist_dir()
                 if remote_module_wheel
                 else self.build_dir_root / "dist"
             )

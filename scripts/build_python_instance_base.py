@@ -496,6 +496,13 @@ class BuildPythonInstanceBase(ABC):
             check=True,
         )
 
+    def module_dist_dir(self) -> Path:
+        """Return the remote module's ``dist/`` directory."""
+        if self.module_source_dir is None:
+            msg = "A remote module wheel needs module_source_dir"
+            raise RuntimeError(msg)
+        return Path(self.module_source_dir) / "dist"
+
     def fixup_wheels(self, lib_paths: str = ""):
         """Apply platform-specific fixups to ``itk_core`` wheels for TBB linkage."""
         # TBB library fix-up (applies to itk_core wheel)
