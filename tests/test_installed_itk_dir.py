@@ -85,7 +85,7 @@ def test_installed_itk_dir_is_the_versioned_cmake_package_dir(tmp_path, linux_bu
 def test_install_step_runs_cmake_install_into_the_prefix(tmp_path, linux_builder):
     _wire(linux_builder, tmp_path, module_itk_dir="install")
     prefix = linux_builder.itk_install_prefix()
-    seen = {}
+    seen: dict[str, object] = {}
 
     def fake_install(cmd, *args, check=False, **kwargs):
         seen["cmd"] = [str(c) for c in cmd]
