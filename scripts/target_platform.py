@@ -99,7 +99,7 @@ class TargetPlatform:
             msg = f"Unknown os_name {self.os_name!r}; expected one of {_OS_NAMES}"
             raise ValueError(msg)
         if not isinstance(self.arch, Arch):
-            msg = f"arch must be an Arch, got {self.arch!r}"
+            msg = f"arch must be an Arch, got {self.arch!r}"  # type: ignore[unreachable]
             raise TypeError(msg)
         if (self.os_name, self.arch) not in _PIXI_SUFFIX:
             msg = f"Unsupported combination {self.os_name}/{self.arch.value}"

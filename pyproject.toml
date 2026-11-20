@@ -175,5 +175,8 @@ files = ["scripts", "tests"]
 mypy_path = ["scripts"]
 explicit_package_bases = true
 python_version = "3.11"
+# Check every host as the Linux CI does; platform branches differ otherwise.
+platform = "linux"
 warn_unused_configs = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+warn_unreachable = true

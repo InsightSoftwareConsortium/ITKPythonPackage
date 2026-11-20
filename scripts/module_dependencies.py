@@ -154,8 +154,6 @@ def update_module_itk_deps(pyproject_path: Path, itk_version: str) -> bool:
         nonlocal changed
         changed = True
         pkg = m.group(1)
-        if max_exclusive is None:
-            return f'"{pkg} >= {min_floor}"'
         return f'"{pkg} >= {min_floor}, < {max_exclusive}"'
 
     new_text = pattern.sub(_replace, text)

@@ -607,10 +607,11 @@ def get_default_platform_build(default_python_version: str = "py311") -> str:
             platform_prefix, platform_prefix
         )
         return f"{platform_prefix}-{python_version}"
-    if sys.platform == "darwin":
-        return f"macosx-{default_python_version}"
-    if sys.platform.startswith("linux"):
-        return f"linux-{default_python_version}"
-    if sys.platform == "win32":
-        return f"windows-{default_python_version}"
+    for platform_prefix, pixi_os in (
+        ("darwin", "macosx"),
+        ("linux", "linux"),
+        ("win32", "windows"),
+    ):
+        if sys.platform.startswith(platform_prefix):
+            return f"{pixi_os}-{default_python_version}"
     return f"unknown-{default_python_version}"
