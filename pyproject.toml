@@ -157,6 +157,7 @@ message = "Commit description (start with capital letter):"
 minversion = "8.0"
 addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
 xfail_strict = true
+filterwarnings = ["error"]
 log_level = "INFO"
 pythonpath = ["scripts"]
 testpaths = ["tests"]
