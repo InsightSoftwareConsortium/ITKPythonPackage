@@ -55,6 +55,7 @@ extend-select = [
   "SIM118",  # in-dict-keys
   "SIM910",  # dict-get-with-none-default
   "TC003",   # typing-only-standard-library-import
+  "TRY003",  # raise-vanilla-args
   "TRY300",  # try-consider-else
   # Rule families recommended by the Scientific Python guide.
   "ARG",  # flake8-unused-arguments
@@ -96,7 +97,6 @@ ignore = [
   # Each is removed by the commit that fixes it.
   "ARG001", # unused-function-argument (44)
   "ARG002", # unused-method-argument (8)
-  "TRY003", # raise-vanilla-args (62)
 ]
 
 [tool.commitizen]
