@@ -5,7 +5,7 @@ import shutil
 import subprocess
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -92,6 +92,39 @@ ITK_INGESTED_REMOTE_MODULES: tuple[str, ...] = (
     "TwoProjectionRegistration",
     "VariationalRegistration",
 )
+
+
+def itk_source_build_configuration(
+    package_env_config: Mapping[str, Any],
+) -> dict[str, str]:
+    """Return the CMake definitions every ITK wrapping build is configured with."""
+    return {
+        "ITK_SOURCE_DIR:PATH": f"{package_env_config['ITK_SOURCE_DIR']}",
+        "BUILD_TESTING:BOOL": "OFF",
+        "ITK_WRAP_unsigned_short:BOOL": "ON",
+        "ITK_WRAP_double:BOOL": "ON",
+        "ITK_WRAP_complex_double:BOOL": "ON",
+        "ITK_WRAP_IMAGE_DIMS:STRING": "2;3;4",
+        "WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING": "PythonWheel",
+        "WRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL": "ON",
+        "PY_SITE_PACKAGES_PATH:PATH": ".",
+        "ITK_LEGACY_SILENT:BOOL": "ON",
+        "ITK_DEFAULT_THREADER:STRING": "Pool",
+        "ITK_WRAP_PYTHON:BOOL": "ON",
+        "ITK_WRAP_DOC:BOOL": "ON",
+        # Install the module build files and wrapping infrastructure
+        # so a remote module can be configured against the install
+        # tree (module_itk_dir="install"). Only an ITK that carries
+        # that support honours it; elsewhere CMake reports the
+        # variable as unused and the build is unchanged. Set for every
+        # build so a cached build tree can be installed later.
+        "ITK_INSTALL_WRAPPING_DEVELOPMENT_FILES:BOOL": "ON",
+        "DOXYGEN_EXECUTABLE:FILEPATH": f"{package_env_config['DOXYGEN_EXECUTABLE']}",
+        "Module_ITKTBB:BOOL": package_env_config["USE_TBB"],
+        "TBB_DIR:PATH": package_env_config["TBB_DIR"],
+        # Python settings
+        "SKBUILD:BOOL": "ON",
+    }
 
 
 class BuildPythonInstanceBase(ABC):
@@ -295,34 +328,7 @@ class BuildPythonInstanceBase(ABC):
                     user_defs.set(user_key, value)
 
         self.cmake_itk_source_build_configurations.update(
-            # ITK wrapping options
-            {
-                "ITK_SOURCE_DIR:PATH": f"{self.package_env_config['ITK_SOURCE_DIR']}",
-                "BUILD_TESTING:BOOL": "OFF",
-                "ITK_WRAP_unsigned_short:BOOL": "ON",
-                "ITK_WRAP_double:BOOL": "ON",
-                "ITK_WRAP_complex_double:BOOL": "ON",
-                "ITK_WRAP_IMAGE_DIMS:STRING": "2;3;4",
-                "WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING": "PythonWheel",
-                "WRAP_ITK_INSTALL_COMPONENT_PER_MODULE:BOOL": "ON",
-                "PY_SITE_PACKAGES_PATH:PATH": ".",
-                "ITK_LEGACY_SILENT:BOOL": "ON",
-                "ITK_DEFAULT_THREADER:STRING": "Pool",
-                "ITK_WRAP_PYTHON:BOOL": "ON",
-                "ITK_WRAP_DOC:BOOL": "ON",
-                # Install the module build files and wrapping infrastructure
-                # so a remote module can be configured against the install
-                # tree (module_itk_dir="install"). Only an ITK that carries
-                # that support honours it; elsewhere CMake reports the
-                # variable as unused and the build is unchanged. Set for every
-                # build so a cached build tree can be installed later.
-                "ITK_INSTALL_WRAPPING_DEVELOPMENT_FILES:BOOL": "ON",
-                "DOXYGEN_EXECUTABLE:FILEPATH": f"{self.package_env_config['DOXYGEN_EXECUTABLE']}",
-                "Module_ITKTBB:BOOL": self.package_env_config["USE_TBB"],
-                "TBB_DIR:PATH": self.package_env_config["TBB_DIR"],
-                # Python settings
-                "SKBUILD:BOOL": "ON",
-            }
+            itk_source_build_configuration(self.package_env_config)
         )
         self.enable_ingested_remote_modules()
 

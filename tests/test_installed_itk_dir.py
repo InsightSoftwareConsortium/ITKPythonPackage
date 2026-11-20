@@ -174,10 +174,17 @@ def test_module_against_a_missing_install_tree_fails_before_configuring(
         _module_configure_defines(linux_builder, tmp_path)
 
 
-def test_the_itk_configure_asks_for_the_wrapping_development_files():
+def test_the_itk_configure_asks_for_the_wrapping_development_files(tmp_path):
     """Every ITK build is configured so its tree can be installed for module
     use later; an ITK without the option just reports it unused."""
-    import build_python_instance_base
+    from build_python_instance_base import itk_source_build_configuration
 
-    text = Path(build_python_instance_base.__file__).read_text()
-    assert '"ITK_INSTALL_WRAPPING_DEVELOPMENT_FILES:BOOL": "ON"' in text
+    config = itk_source_build_configuration(
+        {
+            "ITK_SOURCE_DIR": tmp_path,
+            "DOXYGEN_EXECUTABLE": "doxygen",
+            "USE_TBB": "ON",
+            "TBB_DIR": str(tmp_path),
+        }
+    )
+    assert config["ITK_INSTALL_WRAPPING_DEVELOPMENT_FILES:BOOL"] == "ON"
