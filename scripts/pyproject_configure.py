@@ -120,7 +120,7 @@ def configure(template_file, parameters, output_file):
         Destination path for the configured file.
     """
     updated_lines = []
-    with open(template_file) as file_:
+    with Path(template_file).open() as file_:
         lines = file_.readlines()
         for template_line in lines:
             line = template_line
@@ -145,7 +145,7 @@ def configure(template_file, parameters, output_file):
             if append:
                 updated_lines.append(line)
 
-    with open(output_file, "w") as file_:
+    with Path(output_file).open("w") as file_:
         file_.writelines(updated_lines)
 
 
@@ -303,7 +303,7 @@ def get_wheel_names(IPP_BuildWheelsSupport_DIR: str):
     list[str]
         Stripped wheel names, one per line.
     """
-    with open(Path(IPP_BuildWheelsSupport_DIR) / "WHEEL_NAMES.txt") as _file:
+    with (Path(IPP_BuildWheelsSupport_DIR) / "WHEEL_NAMES.txt").open() as _file:
         return [wheel_name.strip() for wheel_name in _file]
 
 
@@ -340,9 +340,9 @@ def get_wheel_dependencies(SCRIPT_DIR: str, version: str, wheel_names: list):
         r"set\s*\(\s*ITK\_GROUP\_([a-zA-Z0-9\_\-]+)\_DEPENDS\s*([a-zA-Z0-9\_\-\s]*)\s*"
     )
     pattern = re.compile(regex_group_depends)
-    with open(
+    with (
         Path(SCRIPT_DIR) / ".." / "cmake" / "ITKPythonPackage_BuildWheels.cmake"
-    ) as file_:
+    ).open() as file_:
         for line in file_:
             match = re.search(pattern, line)
             if not match:
@@ -583,7 +583,7 @@ def get_versions() -> str:
     versions['package-version'] = VERSION.split('+')[0]
     return versions
 """
-    with open(filename, "w") as wfid:
+    with Path(filename).open("w") as wfid:
         wfid.write(itk_version_python_code)
 
 

@@ -74,7 +74,7 @@ def update_module_itk_deps(pyproject_path: Path, itk_version: str) -> bool:
     bool
         *True* if any dependency was rewritten.
     """
-    with open(pyproject_path, "rb") as f:
+    with Path(pyproject_path).open("rb") as f:
         pyproject_data = tomllib.load(f)
 
     # --- Strategy 3: module declares dynamic dependencies -----------------

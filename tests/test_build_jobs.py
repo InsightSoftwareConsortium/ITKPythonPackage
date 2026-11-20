@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import build_jobs
 import pytest
 from build_jobs import (
@@ -83,7 +85,7 @@ def test_the_killed_configuration_is_not_reproduced():
 
 
 def _fake_open(mapping):
-    real_open = open
+    real_open = Path.open
 
     def fake(path, *args, **kwargs):
         key = str(path)
@@ -109,7 +111,7 @@ def _linux_host_with(monkeypatch, host_gb, cgroup_files):
         lambda name: int(host_gb * 1024**3) // 4096 if "PHYS" in str(name) else 4096,
         raising=False,
     )
-    monkeypatch.setattr("builtins.open", _fake_open(cgroup_files))
+    monkeypatch.setattr(Path, "open", _fake_open(cgroup_files))
 
 
 def test_cgroup_v2_limit_caps_reported_memory(monkeypatch):

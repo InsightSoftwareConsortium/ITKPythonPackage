@@ -37,6 +37,7 @@ extend-select = [
   "PTH118",  # os-path-join
   "PTH119",  # os-path-basename
   "PTH120",  # os-path-dirname
+  "PTH123",  # builtin-open
   "RET504",  # unnecessary-assign
   "RET505",  # superfluous-else-return
   "RUF002",  # ambiguous-unicode-character-docstring
@@ -95,7 +96,6 @@ ignore = [
   # Each is removed by the commit that fixes it.
   "ARG001", # unused-function-argument (44)
   "ARG002", # unused-method-argument (8)
-  "PTH123", # builtin-open (14)
   "TRY003", # raise-vanilla-args (62)
 ]
 

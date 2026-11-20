@@ -562,7 +562,7 @@ def test_check_wheel_sizes_rejects_a_wheel_over_the_pypi_limit(tmp_path, linux_b
     linux_builder.check_wheel_sizes(tmp_path)
 
     big = tmp_path / "itk_filtering-6.0.0-cp311-abi3-manylinux_2_28_x86_64.whl"
-    with open(big, "wb") as f:
+    with Path(big).open("wb") as f:
         f.truncate(PYPI_MAX_WHEEL_BYTES + 1)
     with pytest.raises(RuntimeError, match="itk_filtering"):
         linux_builder.check_wheel_sizes(tmp_path)

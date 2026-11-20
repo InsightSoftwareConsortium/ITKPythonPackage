@@ -84,7 +84,7 @@ class BuildManager:
         """Write the current report to disk atomically."""
         self.report_path.parent.mkdir(parents=True, exist_ok=True)
         tmp = self.report_path.with_suffix(self.report_path.suffix + ".tmp")
-        with open(tmp, "w", encoding="utf-8") as f:
+        with Path(tmp).open("w", encoding="utf-8") as f:
             json.dump(self.report, f, indent=2, sort_keys=True)
         tmp.replace(self.report_path)
 
@@ -102,7 +102,7 @@ class BuildManager:
         if not self.report_path.exists():
             return
         try:
-            with open(self.report_path, encoding="utf-8") as f:
+            with Path(self.report_path).open(encoding="utf-8") as f:
                 existing = json.load(f)
             # Merge existing with current set of steps, preserving statuses
             existing_steps = existing.get("steps", {})

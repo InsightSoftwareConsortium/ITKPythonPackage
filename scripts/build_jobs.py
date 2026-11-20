@@ -25,6 +25,7 @@ from __future__ import annotations
 import os
 import platform
 import subprocess
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -46,7 +47,7 @@ def _cgroup_memory_limit_gb() -> float | None:
         ("/sys/fs/cgroup/memory/memory.limit_in_bytes", None),
     ):
         try:
-            with open(path) as f:
+            with Path(path).open() as f:
                 raw = f.read().strip()
         except OSError:
             continue

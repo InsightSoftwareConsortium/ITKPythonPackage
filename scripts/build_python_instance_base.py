@@ -211,9 +211,8 @@ class BuildPythonInstanceBase(ABC):
             # "venv_base_dir": None,
         }
 
-        with open(
-            IPP_BuildWheelsSupport_DIR / "WHEEL_NAMES.txt",
-            encoding="utf-8",
+        with (IPP_BuildWheelsSupport_DIR / "WHEEL_NAMES.txt").open(
+            encoding="utf-8"
         ) as content:
             self.wheel_names = [wheel_name.strip() for wheel_name in content]
         del package_env_config
