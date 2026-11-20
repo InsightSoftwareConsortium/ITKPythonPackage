@@ -245,17 +245,17 @@ def build_wheels_main() -> None:
         type=str,
         default=None,
         help="Path to the root directory for module dependencies.\n"
-        + "This is the path where a remote module dependencies (other remote modules)\n"
-        + "are searched for, or automatically git cloned to.",
+        "This is the path where a remote module dependencies (other remote modules)\n"
+        "are searched for, or automatically git cloned to.",
     )
     parser.add_argument(
         "--itk-module-deps",
         type=str,
         default=remote_module_build_dict["ITK_MODULE_PREQ"],
         help="Semicolon-delimited list of a remote modules dependencies.\n"
-        + "'gitorg/repo@tag:gitorg/repo@tag:gitorg/repo@tag'\n"
-        + "These are set in ITKRemoteModuleBuildTestPackageAction:itk-module-deps github actions."
-        + "and were historically set as an environment variable ITK_MODULE_PREQ.",
+        "'gitorg/repo@tag:gitorg/repo@tag:gitorg/repo@tag'\n"
+        "These are set in ITKRemoteModuleBuildTestPackageAction:itk-module-deps github actions."
+        "and were historically set as an environment variable ITK_MODULE_PREQ.",
     )
 
     parser.add_argument(
