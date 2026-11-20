@@ -24,8 +24,11 @@ links already use ``/OPT:REF`` and ``/OPT:ICF``.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 SECTION_FLAGS = "-ffunction-sections -fdata-sections"
 LINKER_FLAGS = "-Wl,--gc-sections"

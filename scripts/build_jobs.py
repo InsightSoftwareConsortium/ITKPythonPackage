@@ -25,7 +25,10 @@ from __future__ import annotations
 import os
 import platform
 import subprocess
-from collections.abc import Mapping
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 #: RAM budgeted per concurrent compile job, measured on ITK 6 wrapping with MSVC.
 DEFAULT_GB_PER_JOB = 2.5

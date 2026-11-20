@@ -37,6 +37,7 @@ extend-select = [
   "RUF100",  # unused-noqa
   "SIM108",  # if-else-block-instead-of-if-exp
   "SIM910",  # dict-get-with-none-default
+  "TC003",   # typing-only-standard-library-import
   # Rule families recommended by the Scientific Python guide.
   "ARG",  # flake8-unused-arguments
   "C4",   # flake8-comprehensions
@@ -94,7 +95,6 @@ ignore = [
   "SIM115",  # open-file-with-context-handler (1)
   "SIM117",  # multiple-with-statements (18)
   "SIM118",  # in-dict-keys (4)
-  "TC003",   # typing-only-standard-library-import (3)
   "TRY003",  # raise-vanilla-args (62)
   "TRY300",  # try-consider-else (2)
 ]
