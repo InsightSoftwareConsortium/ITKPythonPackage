@@ -23,6 +23,8 @@ from wheel_builder_utils import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from build_python_instance_base import BuildPythonInstanceBase
 
 
@@ -167,6 +169,27 @@ def module_dependencies_root(
 def derives_package_version(itk_package_version: str | None) -> bool:
     """Return True when *itk_package_version* asks for a version derived from git."""
     return itk_package_version in (None, "", "gitauto", "auto")
+
+
+def source_date_epoch(env: "Mapping[str, str]", commit_time: str | None) -> str | None:
+    """Return the wheels' zip timestamp: the caller's SOURCE_DATE_EPOCH, else the ITK commit's time."""
+    if env.get("SOURCE_DATE_EPOCH"):
+        return env["SOURCE_DATE_EPOCH"]
+    commit_time = (commit_time or "").strip()
+    return commit_time if commit_time.isdigit() else None
+
+
+def itk_commit_time(itk_source_dir: Path, itk_git_tag: str) -> str | None:
+    """Return the committer time of *itk_git_tag*, or None without a repository."""
+    env = os.environ.copy()
+    # A cache-restored tree must not borrow the time of an enclosing repository.
+    env["GIT_CEILING_DIRECTORIES"] = str(Path(itk_source_dir).resolve().parent)
+    result = run_commandLine_subprocess(
+        ["git", "log", "-1", "--format=%ct", itk_git_tag],
+        cwd=itk_source_dir,
+        env=env,
+    )
+    return result.stdout if result.returncode == 0 else None
 
 
 def in_pixi_env() -> bool:
@@ -592,6 +615,18 @@ def build_wheels_main() -> None:
     if derives_package_version(args.itk_package_version):
         args.itk_package_version = compute_itk_package_version(
             args.itk_source_dir, args.itk_git_tag, pixi_exec_path, os.environ
+        )
+
+    # Every wheel writer and repair tool stamps zip entries with this time.
+    epoch = source_date_epoch(
+        os.environ, itk_commit_time(args.itk_source_dir, args.itk_git_tag)
+    )
+    if epoch:
+        os.environ["SOURCE_DATE_EPOCH"] = epoch
+    else:
+        print(
+            "WARNING: No ITK commit time and no SOURCE_DATE_EPOCH; "
+            "wheel zip timestamps will be the build time."
         )
 
     # ITKPythonPackage origin/tag
