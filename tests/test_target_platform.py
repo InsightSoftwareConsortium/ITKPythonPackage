@@ -14,7 +14,7 @@ from target_platform import (
     ContainerImage,
     TargetPlatform,
     manylinux_version_from_platform_env,
-)  # noqa: F401  (import check)
+)
 
 NICKNAMES = {"x64", "arm64", "amd64", "x86"}
 

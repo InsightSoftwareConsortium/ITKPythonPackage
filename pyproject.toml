@@ -28,6 +28,7 @@ extend-select = [
   "PLR1711", # useless-return
   "RET505",  # superfluous-else-return
   "RUF010",  # explicit-f-string-type-conversion
+  "RUF100",  # unused-noqa
   "SIM910",  # dict-get-with-none-default
   # Rule families recommended by the Scientific Python guide.
   "ARG",  # flake8-unused-arguments
@@ -88,7 +89,6 @@ ignore = [
   "RUF036",  # none-not-at-end-of-union (1)
   "RUF043",  # pytest-raises-ambiguous-pattern (2)
   "RUF059",  # unused-unpacked-variable (2)
-  "RUF100",  # unused-noqa (3)
   "SIM105",  # suppressible-exception (10)
   "SIM108",  # if-else-block-instead-of-if-exp (1)
   "SIM115",  # open-file-with-context-handler (1)

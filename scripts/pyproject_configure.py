@@ -335,7 +335,9 @@ def get_wheel_dependencies(SCRIPT_DIR: str, version: str, wheel_names: list):
         Mapping of wheel name to its list of pinned dependencies.
     """
     all_depends = {}
-    regex_group_depends = r"set\s*\(\s*ITK\_GROUP\_([a-zA-Z0-9\_\-]+)\_DEPENDS\s*([a-zA-Z0-9\_\-\s]*)\s*"  # noqa: E501
+    regex_group_depends = (
+        r"set\s*\(\s*ITK\_GROUP\_([a-zA-Z0-9\_\-]+)\_DEPENDS\s*([a-zA-Z0-9\_\-\s]*)\s*"
+    )
     pattern = re.compile(regex_group_depends)
     with open(
         os.path.join(SCRIPT_DIR, "..", "cmake/ITKPythonPackage_BuildWheels.cmake")
@@ -404,7 +406,7 @@ def build_base_pyproject_parameters(
             ]
         ),
         "PYPROJECT_DOWNLOAD_URL": r"https://github.com/InsightSoftwareConsortium/ITK/releases",
-        "PYPROJECT_DESCRIPTION": r"ITK is an open-source toolkit for multidimensional image analysis",  # noqa: E501
+        "PYPROJECT_DESCRIPTION": r"ITK is an open-source toolkit for multidimensional image analysis",
         "PYPROJECT_LONG_DESCRIPTION": r"ITK is an open-source, cross-platform library that "
         "provides developers with an extensive suite of software "
         "tools for image analysis. Developed through extreme "
