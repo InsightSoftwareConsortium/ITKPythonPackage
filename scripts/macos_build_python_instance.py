@@ -1,3 +1,4 @@
+import contextlib
 import os
 import zipfile
 from pathlib import Path
@@ -86,11 +87,8 @@ class MacOSBuildPythonInstance(PosixBuildPythonInstance):
 
     def remove_apple_double_files(self):
         """Remove AppleDouble ``._*`` files using ``dot_clean`` if available."""
-        try:
-            # Optional: clean AppleDouble files if tool is available
+        # dot_clean may not be available; continue without it
+        with contextlib.suppress(Exception):
             self.echo_check_call(
                 ["dot_clean", str(self.package_env_config["IPP_SOURCE_DIR"])]
             )
-        except Exception:
-            # dot_clean may not be available; continue without it
-            pass

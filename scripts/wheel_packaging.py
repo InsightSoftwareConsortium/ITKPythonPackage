@@ -5,6 +5,7 @@ live outside the builder hierarchy. The two pure helpers at the top
 express the path and cleanup rules without invoking ``tar`` or ``zstd``.
 """
 
+import contextlib
 from os import environ
 from pathlib import Path
 
@@ -43,10 +44,8 @@ def post_build_cleanup(builder) -> None:
     base = Path(builder.package_env_config["IPP_SOURCE_DIR"])
 
     def rm(tree_path: Path):
-        try:
+        with contextlib.suppress(Exception):
             _remove_tree(tree_path)
-        except Exception:
-            pass
 
     # 1) unlink oneTBB-prefix if it's a symlink or file
     tbb_prefix_dir = base / "oneTBB-prefix"

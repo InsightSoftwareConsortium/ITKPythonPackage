@@ -4,6 +4,7 @@ These functions have been copied from scikit-build project.
 See https://github.com/scikit-build/scikit-build
 """
 
+import contextlib
 import filecmp
 import os
 import re
@@ -82,17 +83,13 @@ def _remove_tree(path: Path) -> None:
     if not path.exists():
         return
     if path.is_file() or path.is_symlink():
-        try:
+        with contextlib.suppress(OSError):
             path.unlink()
-        except OSError:
-            pass
         return
     for child in path.iterdir():
         _remove_tree(child)
-    try:
+    with contextlib.suppress(OSError):
         path.rmdir()
-    except OSError:
-        pass
 
 
 def read_env_file(

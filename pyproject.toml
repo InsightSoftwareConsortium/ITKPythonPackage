@@ -45,6 +45,7 @@ extend-select = [
   "RUF043",  # pytest-raises-ambiguous-pattern
   "RUF059",  # unused-unpacked-variable
   "RUF100",  # unused-noqa
+  "SIM105",  # suppressible-exception
   "SIM108",  # if-else-block-instead-of-if-exp
   "SIM115",  # open-file-with-context-handler
   "SIM118",  # in-dict-keys
@@ -94,7 +95,6 @@ ignore = [
   "EM102",   # f-string-in-exception (49)
   "PLC0415", # import-outside-top-level (9)
   "PTH123",  # builtin-open (14)
-  "SIM105",  # suppressible-exception (10)
   "SIM117",  # multiple-with-statements (18)
   "TRY003",  # raise-vanilla-args (62)
 ]

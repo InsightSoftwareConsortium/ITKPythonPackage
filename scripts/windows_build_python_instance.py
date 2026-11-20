@@ -1,3 +1,4 @@
+import contextlib
 import re
 import shutil
 from pathlib import Path
@@ -156,10 +157,8 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         # 2) Fallback: create a .zip using Python's shutil
         # This will create a zip archive named ITKPythonBuilds-windows.zip
         if out_zip.exists():
-            try:
+            with contextlib.suppress(Exception):
                 out_zip.unlink()
-            except Exception:
-                pass
         # make_archive requires base name without extension
         base_name = str(out_zip.with_suffix("").with_suffix(""))
         # shutil.make_archive will append .zip

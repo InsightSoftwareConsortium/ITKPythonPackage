@@ -1,3 +1,4 @@
+import contextlib
 import copy
 import os
 import shutil
@@ -953,10 +954,8 @@ class BuildPythonInstanceBase(ABC):
                 )
                 for p in bp.rglob("*"):
                     if p.is_file() and p.suffix in [".cpp", ".xml", ".obj", ".o"]:
-                        try:
+                        with contextlib.suppress(OSError):
                             p.unlink()
-                        except OSError:
-                            pass
                 _remove_tree(bp / "Wrapping" / "Generators" / "CastXML")
 
     def build_wrapped_itk_cplusplus(self):

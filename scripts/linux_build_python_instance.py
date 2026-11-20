@@ -1,3 +1,4 @@
+import contextlib
 import os
 import shutil
 from pathlib import Path
@@ -119,10 +120,8 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
                         str((self.build_dir_root / "dist") / new_whl.name),
                     )
                 # Remove old and temp
-                try:
+                with contextlib.suppress(OSError):
                     metawhl.unlink()
-                except OSError:
-                    pass
                 _remove_tree(metawheel_dir)
                 _remove_tree(metawheel_dist)
 

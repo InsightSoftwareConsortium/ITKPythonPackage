@@ -1,3 +1,4 @@
+import contextlib
 import os
 import re
 import shutil
@@ -280,10 +281,8 @@ def build_module_dependencies(context) -> None:
                     rel = src.relative_to(dep_include)
                     dst = include_dir / rel
                     dst.parent.mkdir(parents=True, exist_ok=True)
-                    try:
+                    with contextlib.suppress(Exception):
                         shutil.copy2(src, dst)
-                    except Exception:
-                        pass
 
         # 2) Any */build/*/include/* -> include/
         for sub in dependant_module_clone_dir.rglob("*build*/**/include"):
@@ -293,10 +292,8 @@ def build_module_dependencies(context) -> None:
                         rel = src.relative_to(sub)
                         dst = include_dir / rel
                         dst.parent.mkdir(parents=True, exist_ok=True)
-                        try:
+                        with contextlib.suppress(Exception):
                             shutil.copy2(src, dst)
-                        except Exception:
-                            pass
 
         # 3) Wrapping templates (*.in, *.init) -> wrapping/
         dep_wrapping = dependant_module_clone_dir / "wrapping"
@@ -305,7 +302,5 @@ def build_module_dependencies(context) -> None:
                 for src in dep_wrapping.rglob(pattern):
                     if src.is_file():
                         dst = wrapping_dir / src.name
-                        try:
+                        with contextlib.suppress(Exception):
                             shutil.copy2(src, dst)
-                        except Exception:
-                            pass
