@@ -44,6 +44,7 @@ Most users do not need to build ITK from source.
 Pre-built ITK binaries are available as downloadable tarballs and the provided download-and-build shell scripts will fetch them automatically.
 
 You may only need to build ITK yourself if you:
+
 - Have a local ITK with custom patches or bug fixes not yet in a release
 - Need to build against a specific unreleased commit
 - Are developing ITK core itself
@@ -64,6 +65,7 @@ Pixi supplies the Python interpreter, CMake, Ninja, and Doxygen used by the
 build, so no system Python 3.11 is required. Wheels target Python 3.11+.
 
 **Install Pixi:**
+
 ```bash
 # Linux or Mac
 curl -fsSL https://pixi.sh/install.sh | bash
@@ -73,6 +75,7 @@ powershell -ExecutionPolicy Bypass -c "irm -useb https://pixi.sh/install.ps1 | i
 ```
 
 **Clone the repo:**
+
 ```bash
 git clone https://github.com/InsightSoftwareConsortium/ITKPythonPackage.git
 cd ITKPythonPackage
@@ -94,12 +97,12 @@ For a branch or commit, also give the package version:
 pixi run release-wheels 2385a1b5d9 6.0b3
 ```
 
-| Machine | Wheels it builds |
-|---|---|
-| Windows x64 | Windows x64 |
-| macOS arm64 | macOS arm64, then Linux aarch64 (Docker) |
-| Linux x64 | Linux x86_64 (Docker) |
-| Linux aarch64 | Linux aarch64 (Docker) |
+| Machine       | Wheels it builds                         |
+| ------------- | ---------------------------------------- |
+| Windows x64   | Windows x64                              |
+| macOS arm64   | macOS arm64, then Linux aarch64 (Docker) |
+| Linux x64     | Linux x86_64 (Docker)                    |
+| Linux aarch64 | Linux aarch64 (Docker)                   |
 
 Running the same command on a Windows PC, a Linux x64 machine and an Apple
 Silicon Mac produces every supported wheel. macOS wheels need a Mac; a Linux
@@ -144,9 +147,9 @@ The build process calls `build_wheels.py`, which runs up to 8 steps:
 3. Build wheels for ITK C++
 4. Fix up wheels if needed
 5. Import test
-6. *(optional)* Build a remote module against the ITK build
-7. *(optional)* Build an ITK tarball cache
-8. *(optional)* Post-build cleanup of temporary files
+6. _(optional)_ Build a remote module against the ITK build
+7. _(optional)_ Build an ITK tarball cache
+8. _(optional)_ Post-build cleanup of temporary files
 
 Each completed step is recorded, so a re-run skips what already finished.
 
@@ -163,13 +166,12 @@ You can invoke the `build_wheels.py` script directly for more control shown belo
 
 Available pixi platform build environments:
 
-| Platform | Architectures | Python Versions |
-|----------|---------------|-----------------|
-| `linux` | x86_64, aarch64 | py311 |
-| `manylinux228` | x86_64, aarch64 | py311 |
-| `macosx` | arm64 | py311 |
-| `windows` | x86_64 | py311 |
-
+| Platform       | Architectures   | Python Versions |
+| -------------- | --------------- | --------------- |
+| `linux`        | x86_64, aarch64 | py311           |
+| `manylinux228` | x86_64, aarch64 | py311           |
+| `macosx`       | arm64           | py311           |
+| `windows`      | x86_64          | py311           |
 
 ```bash
 # Building ITK Python Wheels on macOS for ITK v6.0b01
@@ -181,26 +183,25 @@ pixi run -e macosx-py311 python3 scripts/build_wheels.py \
 
 Key options:
 
-| Option                           | Description                                  | Example                       |
-|----------------------------------|----------------------------------------------|-------------------------------|
-| `--platform-env`                 | Target platform and Python version           | `macosx-py311`                |
-| `--build-dir-root`               | Location for build artifacts                 | `/tmp/ITKPythonPackage-build` |
-| `--itk-git-tag`                  | ITK version/branch/commit to use             | `0ffcaed`, `main`, `v6.0b01`  |
-| `--itk-package-version`          | PEP440 version string for wheels             | `v6.0b01`                     |
-| `--manylinux-version`            | Manylinux standard version                   | `_2_28`                       |
-| `--module-source-dir`            | Path to remote module to build               | `/path/to/module`             |
-| `--itk-module-deps`              | Remote module dependencies                   | `Mod1@tag:Mod2@tag`           |
-| `--module-dependencies-root-dir` | Root directory for module dependencies       | `./dependencies`              |
-| `--itk-source-dir`               | Path to ITK source (use local development)   | `/path/to/ITK`                |
-| `--cleanup`                      | Remove temporary build files when done (default: keep) | (flag)              |
-| `--macosx-deployment-target`     | macOS floor and wheel tag; default `14.0`    | `14.0`                        |
-| `--use-ccache`                   | Reuse compiler cache between builds          | (flag)                        |
-| `--no-dead-strip`                | Linux, macOS: keep unreferenced code (default: strip) | (flag)               |
-| `--lib-paths`                    | Windows only: `;`-delimited dirs for delvewheel | `C:\deps\bin`             |
-| `--no-build-itk-tarball-cache`   | Skip tarball generation (default)            | (flag)                        |
-| `--no-skip-itk-build`            | Don't skip ITK build step (default           | (flag)                        |
-| `--no-skip-itk-wheel-build`      | Don't skip the ITK wheel build step (default) | (flag)                        |
-
+| Option                           | Description                                            | Example                       |
+| -------------------------------- | ------------------------------------------------------ | ----------------------------- |
+| `--platform-env`                 | Target platform and Python version                     | `macosx-py311`                |
+| `--build-dir-root`               | Location for build artifacts                           | `/tmp/ITKPythonPackage-build` |
+| `--itk-git-tag`                  | ITK version/branch/commit to use                       | `0ffcaed`, `main`, `v6.0b01`  |
+| `--itk-package-version`          | PEP440 version string for wheels                       | `v6.0b01`                     |
+| `--manylinux-version`            | Manylinux standard version                             | `_2_28`                       |
+| `--module-source-dir`            | Path to remote module to build                         | `/path/to/module`             |
+| `--itk-module-deps`              | Remote module dependencies                             | `Mod1@tag:Mod2@tag`           |
+| `--module-dependencies-root-dir` | Root directory for module dependencies                 | `./dependencies`              |
+| `--itk-source-dir`               | Path to ITK source (use local development)             | `/path/to/ITK`                |
+| `--cleanup`                      | Remove temporary build files when done (default: keep) | (flag)                        |
+| `--macosx-deployment-target`     | macOS floor and wheel tag; default `14.0`              | `14.0`                        |
+| `--use-ccache`                   | Reuse compiler cache between builds                    | (flag)                        |
+| `--no-dead-strip`                | Linux, macOS: keep unreferenced code (default: strip)  | (flag)                        |
+| `--lib-paths`                    | Windows only: `;`-delimited dirs for delvewheel        | `C:\deps\bin`                 |
+| `--no-build-itk-tarball-cache`   | Skip tarball generation (default)                      | (flag)                        |
+| `--no-skip-itk-build`            | Don't skip ITK build step (default                     | (flag)                        |
+| `--no-skip-itk-wheel-build`      | Don't skip the ITK wheel build step (default)          | (flag)                        |
 
 Run `pixi run -e macosx-py311 python3 scripts/build_wheels.py --help` for the
 full option list (substitute your own platform environment).
@@ -234,11 +235,13 @@ cd ITKRemoteModule
 #### Linux (manylinux)
 
 Use `dockcross-manylinux-download-cache-and-build-module-wheels.sh`. This script:
+
 1. Downloads the pre-built ITK binary tarball for your platform
 2. Extracts it to a local build directory
 3. Calls `dockcross-manylinux-build-module-wheels.sh` to build the module wheels inside a manylinux Docker container
 
 Run from your ITK external module root:
+
 ```bash
 bash dockcross-manylinux-download-cache-and-build-module-wheels.sh cp311
 ```
@@ -249,11 +252,13 @@ bash dockcross-manylinux-download-cache-and-build-module-wheels.sh cp311
 #### macOS
 
 Use `macpython-download-cache-and-build-module-wheels.sh`. This script:
+
 1. Installs required tools (aria2, zstd, gnu-tar) via Pixi if not present
 2. Downloads and extracts the macOS ITK binary tarball
 3. Builds your module wheels for each requested Python version
 
 Run from your module root:
+
 ```bash
 bash macpython-download-cache-and-build-module-wheels.sh 3.11
 ```
@@ -261,15 +266,16 @@ bash macpython-download-cache-and-build-module-wheels.sh 3.11
 #### Windows
 
 Use `windows-download-cache-and-build-module-wheels.ps1`. This script:
+
 1. Installs required tools (git, aria2) via Pixi if not present
 2. Downloads and extracts the Windows ITK binary zip file
 3. Builds your module wheels for each requested Python version
 
 Run from your module root:
+
 ```powershell
 .\windows-download-cache-and-build-module-wheels.ps1 3.11
 ```
-
 
 #### Output
 
@@ -284,12 +290,12 @@ macOS, that the binary agrees with it:
 ls dist/*.whl          # expect one wheel per platform, cp311-abi3
 ```
 
-| Platform | Expected wheel tag |
-|---|---|
-| Linux x86_64 | `cp311-abi3-manylinux_2_28_x86_64` |
-| Linux aarch64 | `cp311-abi3-manylinux_2_28_aarch64` |
-| macOS arm64 | `cp311-abi3-macosx_14_0_arm64` |
-| Windows x86_64 | `cp311-abi3-win_amd64` |
+| Platform       | Expected wheel tag                  |
+| -------------- | ----------------------------------- |
+| Linux x86_64   | `cp311-abi3-manylinux_2_28_x86_64`  |
+| Linux aarch64  | `cp311-abi3-manylinux_2_28_aarch64` |
+| macOS arm64    | `cp311-abi3-macosx_14_0_arm64`      |
+| Windows x86_64 | `cp311-abi3-win_amd64`              |
 
 On macOS the binary's minimum version must match the tag. A wheel tagged
 below its real minimum installs on older macOS and then fails in dyld at
@@ -303,7 +309,6 @@ otool -l /tmp/whlcheck/itk/*.so | awk '/minos/{print $2; exit}'   # 14.0
 Then import it in a clean virtual environment, not in the build tree.
 
 </details>
-
 
 To see how to build wheels for your version of ITK see this section:
 
@@ -337,14 +342,14 @@ The wheels land in `../ITKPythonPackage-manylinux_2_28-build/dist`.
 
 Key environment variables:
 
-| Variable | Default                                 | Description |
-|----------|-----------------------------------------|-------------|
-| `ITK_GIT_TAG` | `main`                                  | ITK branch/tag/commit to build |
-| `ITK_SOURCE_DIR` | `<build-root>/ITKPythonPackage-build/ITK` | Path to local ITK source (skips git clone) |
-| `ITK_PACKAGE_VERSION` | derived from git | PEP 440 version of the wheels |
-| `TARGET_ARCH` | host architecture | `x64` or `aarch64` |
-| `MANYLINUX_VERSION` | `_2_28`                                 | Manylinux standard to target |
-| `IMAGE_TAG` | `20260203-3dfb3ff` (dockcross) or `2025.08.12-1` (quay manylinux) | Container image tag; the default depends on `CONTAINER_SOURCE` |
+| Variable              | Default                                                           | Description                                                    |
+| --------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------- |
+| `ITK_GIT_TAG`         | `main`                                                            | ITK branch/tag/commit to build                                 |
+| `ITK_SOURCE_DIR`      | `<build-root>/ITKPythonPackage-build/ITK`                         | Path to local ITK source (skips git clone)                     |
+| `ITK_PACKAGE_VERSION` | derived from git                                                  | PEP 440 version of the wheels                                  |
+| `TARGET_ARCH`         | host architecture                                                 | `x64` or `aarch64`                                             |
+| `MANYLINUX_VERSION`   | `_2_28`                                                           | Manylinux standard to target                                   |
+| `IMAGE_TAG`           | `20260203-3dfb3ff` (dockcross) or `2025.08.12-1` (quay manylinux) | Container image tag; the default depends on `CONTAINER_SOURCE` |
 
 #### Linux/macOS/Windows — building ITK from source
 
@@ -374,11 +379,13 @@ To see how to build ITK Python Build Caches, see this section:
 To build the caches compatible with GitHub Actions CI and the ITKPythonBuilds repository. You can run:
 
 On Linux and macOS systems
+
 ```bash
 bash scripts/make_tarballs.sh  # py311 (optionally add specific version of Python)
 ```
 
 On Windows systems
+
 ```powershell
 .\scripts\make_windows_zip.ps1 # py311 (optionally add specific version of Python)
 ```
@@ -387,11 +394,11 @@ On Windows systems
 > Build caches embed absolute paths. If you extract a tarball to a different
 > path than it was built with, CMake will fail. The paths CI extracts to are:
 >
-> | Platform | Path the cache must be built at |
-> |---|---|
-> | manylinux (Docker) | `/work/ITKPythonPackage-build` |
-> | macOS | `/Users/svc-dashboard/D/P/ITKPythonPackage-build` |
-> | Windows | `C:\BDR` |
+> | Platform           | Path the cache must be built at                   |
+> | ------------------ | ------------------------------------------------- |
+> | manylinux (Docker) | `/work/ITKPythonPackage-build`                    |
+> | macOS              | `/Users/svc-dashboard/D/P/ITKPythonPackage-build` |
+> | Windows            | `C:\BDR`                                          |
 >
 > The scripts above set these for you. **`build_wheels.py` does not**: its
 > default build root is `<repo>/../ITKPythonPackage-build`, which matches the
@@ -449,6 +456,7 @@ You can also optionally pass in `--test` to publish to TestPyPI for validation b
 </details>
 
 ---
+
 ## Frequently Asked Questions
 
 ### What target platforms and architectures are supported?
@@ -464,6 +472,7 @@ Python 3.11+ is required; wheels use the Stable ABI (cp311-abi3).
 
 [ITKRemoteModuleBuildTestPackageAction](https://github.com/InsightSoftwareConsortium/ITKRemoteModuleBuildTestPackageAction)
 CI workflows support Python 3.11+ on GitHub-hosted runners for:
+
 - Ubuntu x86_64
 - Ubuntu aarch64 (ARM)
 - macOS arm64 (Apple Silicon)
@@ -529,6 +538,6 @@ unmerged ITK pull request with custom compiler flags.
 
 ## Additional Information
 
--   Free software: Apache Software license
--   Documentation: <http://itkpythonpackage.readthedocs.org>
--   Source code: <https://github.com/InsightSoftwareConsortium/ITKPythonPackage>
+- Free software: Apache Software license
+- Documentation: <http://itkpythonpackage.readthedocs.org>
+- Source code: <https://github.com/InsightSoftwareConsortium/ITKPythonPackage>

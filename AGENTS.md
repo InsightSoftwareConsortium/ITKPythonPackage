@@ -21,12 +21,12 @@ pixi run python scripts/build_wheels.py ...                   # aborts
 
 The environment name must match the platform:
 
-| Platform | `--platform-env` |
-|---|---|
-| macOS arm64 | `macosx-py311` |
-| Linux x86_64 / aarch64 native | `linux-py311` |
+| Platform                      | `--platform-env`     |
+| ----------------------------- | -------------------- |
+| macOS arm64                   | `macosx-py311`       |
+| Linux x86_64 / aarch64 native | `linux-py311`        |
 | Linux via manylinux container | `manylinux228-py311` |
-| Windows x86_64 | `windows-py311` |
+| Windows x86_64                | `windows-py311`      |
 
 `manylinux228-py311` is only valid inside the manylinux container. Start
 the container with `scripts/dockcross-manylinux-build-wheels.sh`, which
@@ -48,7 +48,6 @@ Use this when you intend to build against a system compiler or a
 locally built tool. It is an escape hatch, not the normal path: nothing
 is pinned, so reproducibility is yours to manage.
 
-
 ## Release wheels
 
 For a release, `pixi run release-wheels <itk-ref> [<package-version>]`
@@ -61,9 +60,9 @@ build macOS wheels.
 
 ## Worked example
 
-> "Build Python packages on my Mac only, with `-mtune=native
-> -march=native` and macOS 26, for PR 6875 which is not merged yet, so I
-> can test it in my environment."
+> "Build Python packages on my Mac only, with
+> `-mtune=native -march=native` and macOS 26, for PR 6875 which is not
+> merged yet, so I can test it in my environment."
 
 Four things are being asked for: a local macOS build, custom compiler
 flags, a non-default deployment target, and ITK source from an unmerged
@@ -144,12 +143,12 @@ of them needs to say so explicitly.
 
 Together these give one wheel per platform:
 
-| Platform | Wheel tag |
-|---|---|
-| Linux x86_64 | `cp311-abi3-manylinux_2_28_x86_64` |
-| Linux aarch64 | `cp311-abi3-manylinux_2_28_aarch64` |
-| macOS arm64 | `cp311-abi3-macosx_14_0_arm64` |
-| Windows x86_64 | `cp311-abi3-win_amd64` |
+| Platform       | Wheel tag                           |
+| -------------- | ----------------------------------- |
+| Linux x86_64   | `cp311-abi3-manylinux_2_28_x86_64`  |
+| Linux aarch64  | `cp311-abi3-manylinux_2_28_aarch64` |
+| macOS arm64    | `cp311-abi3-macosx_14_0_arm64`      |
+| Windows x86_64 | `cp311-abi3-win_amd64`              |
 
 A local test build may override the macOS target (see the worked
 example above), but such wheels are not distributable.
@@ -162,7 +161,6 @@ example above), but such wheels are not distributable.
   provides the reusable workflows remote modules call. Its macOS policy
   must agree with this repository's.
 
-
 ## Every command line argument
 
 `scripts/build_wheels.py` accepts the following. Anything not listed is
@@ -170,29 +168,29 @@ not a real flag; do not invent one.
 
 **Selecting the environment and source**
 
-| Argument | Meaning |
-|---|---|
-| `--platform-env NAME` | Build environment; see the table above |
-| `--itk-source-dir PATH` | Existing ITK checkout to reuse |
-| `--itk-git-tag TAG` | Tag, branch, or hash to check out |
-| `--itk-package-version VER` | PEP 440 version for the wheels |
-| `--build-dir-root PATH` | Build root; default `../ITKPythonPackage-build` |
+| Argument                    | Meaning                                         |
+| --------------------------- | ----------------------------------------------- |
+| `--platform-env NAME`       | Build environment; see the table above          |
+| `--itk-source-dir PATH`     | Existing ITK checkout to reuse                  |
+| `--itk-git-tag TAG`         | Tag, branch, or hash to check out               |
+| `--itk-package-version VER` | PEP 440 version for the wheels                  |
+| `--build-dir-root PATH`     | Build root; default `../ITKPythonPackage-build` |
 
 **Platform options**
 
-| Argument | Meaning |
-|---|---|
-| `--macosx-deployment-target VER` | macOS floor and wheel tag |
-| `--manylinux-version VER` | `_2_28`, `_2_34`; empty builds native Linux |
-| `--lib-paths DIRS` | Windows only; `;`-delimited dirs for delvewheel |
+| Argument                         | Meaning                                         |
+| -------------------------------- | ----------------------------------------------- |
+| `--macosx-deployment-target VER` | macOS floor and wheel tag                       |
+| `--manylinux-version VER`        | `_2_28`, `_2_34`; empty builds native Linux     |
+| `--lib-paths DIRS`               | Windows only; `;`-delimited dirs for delvewheel |
 
 **Remote modules**
 
-| Argument | Meaning |
-|---|---|
-| `--module-source-dir PATH` | Remote module to build |
-| `--module-dependencies-root-dir PATH` | Where module deps are cloned |
-| `--itk-module-deps SPEC` | `gitorg/repo@tag:gitorg/repo@tag` |
+| Argument                              | Meaning                           |
+| ------------------------------------- | --------------------------------- |
+| `--module-source-dir PATH`            | Remote module to build            |
+| `--module-dependencies-root-dir PATH` | Where module deps are cloned      |
+| `--itk-module-deps SPEC`              | `gitorg/repo@tag:gitorg/repo@tag` |
 
 **Toggles** — each has a `--no-` counterpart:
 `--build-itk-tarball-cache`, `--use-ccache`, `--dead-strip` (Linux and

@@ -7,7 +7,7 @@ Clone the repository and install the pre-commit hooks:
 ```bash
 git clone https://github.com/InsightSoftwareConsortium/ITKPythonPackage.git
 cd ITKPythonPackage
-````
+```
 
 Install [Pixi](https://pixi.sh) for managing the build environment:
 
@@ -23,7 +23,6 @@ pixi run pre-commit-install
 # optionally run pre-commit hooks
 pixi run pre-commit-run
 ```
-
 
 ## Development Workflow
 

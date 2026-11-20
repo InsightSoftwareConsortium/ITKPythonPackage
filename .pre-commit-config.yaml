@@ -65,6 +65,14 @@ repos:
       - id: rst-inline-touching-normal
         stages: [pre-commit]
 
+  # Markdown: formatting
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.10.1
+    hooks:
+      - id: prettier
+        types_or: [markdown]
+        stages: [pre-commit]
+
   # Shell: linting
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.10.0.1
