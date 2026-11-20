@@ -82,6 +82,78 @@ def remotemodulebuildandtestaction() -> dict[str, str]:
     return {key: os.environ.get(key, default) for key, default in env_defaults.items()}
 
 
+def sync_itk_source(itk_source_dir: Path, itk_git_tag: str) -> str:
+    """Bring the ITK source tree to *itk_git_tag* and return the revision in use."""
+    # A tree restored from a build cache has no usable repository: the cache
+    # excludes .git contents but keeps the directory, so ask git rather than
+    # testing the path. Its sources already match the prebuilt binaries, so
+    # there is nothing to fetch.
+    itk_source_is_repository = (
+        run_commandLine_subprocess(
+            ["git", "rev-parse", "--git-dir"],
+            cwd=itk_source_dir,
+            env=os.environ.copy(),
+        ).returncode
+        == 0
+    )
+    if not itk_source_is_repository:
+        print(
+            f"WARNING: {itk_source_dir} is not a git repository; using "
+            f"its sources as they are and not checking out "
+            f"{itk_git_tag!r}."
+        )
+    else:
+        fetch_result = run_commandLine_subprocess(
+            ["git", "fetch", "--tags", "origin"],
+            cwd=itk_source_dir,
+            env=os.environ.copy(),
+        )
+        if fetch_result.returncode != 0:
+            # Only fatal when the requested revision is not already present.
+            have_revision = run_commandLine_subprocess(
+                [
+                    "git",
+                    "rev-parse",
+                    "--verify",
+                    "--quiet",
+                    f"{itk_git_tag}^{{commit}}",
+                ],
+                cwd=itk_source_dir,
+                env=os.environ.copy(),
+            )
+            if have_revision.returncode != 0:
+                msg = (
+                    f"Failed to fetch ITK tags in {itk_source_dir}: "
+                    f"{fetch_result.stderr}"
+                )
+                raise RuntimeError(msg)
+            print(
+                f"WARNING: Failed to fetch ITK tags in {itk_source_dir}; "
+                f"using the local {itk_git_tag!r}: {fetch_result.stderr}"
+            )
+        checkout_result = run_commandLine_subprocess(
+            ["git", "checkout", itk_git_tag],
+            cwd=itk_source_dir,
+            env=os.environ.copy(),
+        )
+        if checkout_result.returncode != 0:
+            # Keep the checked-out commit: a cache-restored tree must match its binaries.
+            head_result = run_commandLine_subprocess(
+                ["git", "rev-parse", "HEAD"],
+                cwd=itk_source_dir,
+                env=os.environ.copy(),
+            )
+            resolved = head_result.stdout.strip() if head_result.returncode == 0 else ""
+            print(
+                f"WARNING: Failed to checkout {itk_git_tag}; keeping the "
+                f"commit already checked out ({resolved or 'unknown'}): "
+                f"{checkout_result.stderr}"
+            )
+            if resolved:
+                itk_git_tag = resolved
+    return itk_git_tag
+
+
 def module_dependencies_root(
     build_dir_root: str | Path, supplied: str | Path | None
 ) -> Path:
@@ -509,73 +581,7 @@ def build_wheels_main() -> None:
             msg = f"Failed to clone ITK: {run_result.stderr}"
             raise RuntimeError(msg)
 
-    # A tree restored from a build cache has no usable repository: the cache
-    # excludes .git contents but keeps the directory, so ask git rather than
-    # testing the path. Its sources already match the prebuilt binaries, so
-    # there is nothing to fetch.
-    itk_source_is_repository = (
-        run_commandLine_subprocess(
-            ["git", "rev-parse", "--git-dir"],
-            cwd=args.itk_source_dir,
-            env=os.environ.copy(),
-        ).returncode
-        == 0
-    )
-    if not itk_source_is_repository:
-        print(
-            f"WARNING: {args.itk_source_dir} is not a git repository; using "
-            f"its sources as they are and not checking out "
-            f"{args.itk_git_tag!r}."
-        )
-    else:
-        fetch_result = run_commandLine_subprocess(
-            ["git", "fetch", "--tags", "origin"],
-            cwd=args.itk_source_dir,
-            env=os.environ.copy(),
-        )
-        if fetch_result.returncode != 0:
-            # Only fatal when the requested revision is not already present.
-            have_revision = run_commandLine_subprocess(
-                [
-                    "git",
-                    "rev-parse",
-                    "--verify",
-                    "--quiet",
-                    f"{args.itk_git_tag}^{{commit}}",
-                ],
-                cwd=args.itk_source_dir,
-                env=os.environ.copy(),
-            )
-            if have_revision.returncode != 0:
-                msg = (
-                    f"Failed to fetch ITK tags in {args.itk_source_dir}: "
-                    f"{fetch_result.stderr}"
-                )
-                raise RuntimeError(msg)
-            print(
-                f"WARNING: Failed to fetch ITK tags in {args.itk_source_dir}; "
-                f"using the local {args.itk_git_tag!r}: {fetch_result.stderr}"
-            )
-        checkout_result = run_commandLine_subprocess(
-            ["git", "checkout", args.itk_git_tag],
-            cwd=args.itk_source_dir,
-            env=os.environ.copy(),
-        )
-        if checkout_result.returncode != 0:
-            # Keep the checked-out commit: a cache-restored tree must match its binaries.
-            head_result = run_commandLine_subprocess(
-                ["git", "rev-parse", "HEAD"],
-                cwd=args.itk_source_dir,
-                env=os.environ.copy(),
-            )
-            resolved = head_result.stdout.strip() if head_result.returncode == 0 else ""
-            print(
-                f"WARNING: Failed to checkout {args.itk_git_tag}; keeping the "
-                f"commit already checked out ({resolved or 'unknown'}): "
-                f"{checkout_result.stderr}"
-            )
-            if resolved:
-                args.itk_git_tag = resolved
+    args.itk_git_tag = sync_itk_source(args.itk_source_dir, args.itk_git_tag)
 
     # 'gitauto' (or its alias 'auto') derives the version from the ITK repository;
     # any other value is used as given, as a cache-restored tree has no repository.

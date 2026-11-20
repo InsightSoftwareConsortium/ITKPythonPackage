@@ -1,40 +1,66 @@
 """A cache-restored ITK tree has no .git and must not abort the build."""
 
 import subprocess
-from pathlib import Path
 
 import build_wheels
 import pytest
 import wheel_builder_utils
 
 
-def _run_repo_setup(tmp_path, monkeypatch, make_git_dir):
-    """Drive only the ITK-source handling of build_wheels_main."""
-    source = tmp_path / "ITK"
-    source.mkdir()
-    if make_git_dir:
-        (source / ".git").mkdir()
+class _FakeGit:
+    """Answer git commands for sync_itk_source and record what was asked."""
 
-    calls = []
+    def __init__(self, failing: set[str], head: str = "abc123") -> None:
+        self.failing = failing
+        self.head = head
+        self.calls: list[list[str]] = []
 
-    def fake_run(cmd, cwd=None, env=None, check=False):
-        calls.append([str(c) for c in cmd])
-        return subprocess.CompletedProcess(cmd, 1, "", "fatal: not a git repository")
+    def __call__(self, cmd, cwd=None, env=None, check=False):
+        cmd = [str(c) for c in cmd]
+        self.calls.append(cmd)
+        name = " ".join(cmd[1:3])
+        failed = any(name.startswith(f) for f in self.failing)
+        stdout = self.head if cmd[1:3] == ["rev-parse", "HEAD"] else ""
+        return subprocess.CompletedProcess(cmd, 1 if failed else 0, stdout, "")
 
-    monkeypatch.setattr(build_wheels, "run_commandLine_subprocess", fake_run)
-    return source, calls
-
-
-def test_non_git_source_is_not_fetched(tmp_path, monkeypatch):
-    source, calls = _run_repo_setup(tmp_path, monkeypatch, make_git_dir=False)
-    assert not (source / ".git").is_dir()
-    # The guard is a directory test, so no git command may be attempted.
-    assert not any("fetch" in c for c in calls)
+    def ran(self, *subcommand: str) -> bool:
+        return any(c[1 : 1 + len(subcommand)] == list(subcommand) for c in self.calls)
 
 
-def test_git_source_still_fetches(tmp_path, monkeypatch):
-    source, _ = _run_repo_setup(tmp_path, monkeypatch, make_git_dir=True)
-    assert (source / ".git").is_dir()
+def _sync(monkeypatch, tmp_path, fake_git, tag="v6.0.0"):
+    monkeypatch.setattr(build_wheels, "run_commandLine_subprocess", fake_git)
+    return build_wheels.sync_itk_source(tmp_path, tag)
+
+
+def test_a_tree_without_a_repository_is_used_as_it_is(tmp_path, monkeypatch):
+    git = _FakeGit(failing={"rev-parse --git-dir"})
+    assert _sync(monkeypatch, tmp_path, git) == "v6.0.0"
+    assert not git.ran("fetch")
+    assert not git.ran("checkout")
+
+
+def test_a_repository_is_fetched_and_checked_out(tmp_path, monkeypatch):
+    git = _FakeGit(failing=set())
+    assert _sync(monkeypatch, tmp_path, git) == "v6.0.0"
+    assert git.ran("fetch", "--tags", "origin")
+    assert git.ran("checkout", "v6.0.0")
+
+
+def test_a_failed_fetch_is_fatal_when_the_revision_is_missing(tmp_path, monkeypatch):
+    git = _FakeGit(failing={"fetch", "rev-parse --verify"})
+    with pytest.raises(RuntimeError, match="Failed to fetch ITK tags"):
+        _sync(monkeypatch, tmp_path, git)
+
+
+def test_a_failed_fetch_is_survived_when_the_revision_is_present(tmp_path, monkeypatch):
+    git = _FakeGit(failing={"fetch"})
+    assert _sync(monkeypatch, tmp_path, git) == "v6.0.0"
+    assert git.ran("checkout", "v6.0.0")
+
+
+def test_a_failed_checkout_keeps_the_commit_already_checked_out(tmp_path, monkeypatch):
+    git = _FakeGit(failing={"checkout"}, head="deadbeef")
+    assert _sync(monkeypatch, tmp_path, git) == "deadbeef"
 
 
 def test_empty_git_directory_is_not_a_repository(tmp_path):
@@ -56,17 +82,12 @@ def test_empty_git_directory_is_not_a_repository(tmp_path):
     assert probe.returncode != 0  # what the new guard checks
 
 
-def test_source_handling_guard_is_present():
-    """Pin the guard itself: the fetch must be conditional on .git existing."""
-    text = Path(build_wheels.__file__).read_text()
-    fetch_at = text.index('["git", "fetch", "--tags", "origin"]')
-    guard_at = text.index("itk_source_is_repository = (")
-    assert guard_at < fetch_at, "the fetch must sit behind the .git guard"
-
-
-def test_gitauto_is_the_default_version():
-    source = Path(build_wheels.__file__).read_text()
-    assert '"ITK_PACKAGE_VERSION": "gitauto"' in source
+def test_gitauto_is_the_default_version(monkeypatch):
+    monkeypatch.delenv("ITK_PACKAGE_VERSION", raising=False)
+    assert (
+        build_wheels.remotemodulebuildandtestaction()["ITK_PACKAGE_VERSION"]
+        == "gitauto"
+    )
 
 
 @pytest.mark.parametrize("sentinel", ["gitauto", "auto", "", None])
@@ -85,7 +106,14 @@ def test_an_explicit_version_never_consults_git(supplied):
     assert not build_wheels.derives_package_version(supplied)
 
 
-def test_version_derivation_explains_a_cache_tree():
+def test_version_derivation_explains_a_cache_tree(tmp_path, monkeypatch):
     """Without a repository the error must name the fix, not just the failure."""
-    source = Path(wheel_builder_utils.__file__).read_text()
-    assert "Pass --itk-package-version" in source
+
+    def not_a_repository(cmd, cwd=None, env=None, check=False):
+        return subprocess.CompletedProcess(cmd, 128, "", "fatal: not a git repository")
+
+    monkeypatch.setattr(
+        wheel_builder_utils, "run_commandLine_subprocess", not_a_repository
+    )
+    with pytest.raises(RuntimeError, match="Pass --itk-package-version"):
+        wheel_builder_utils.compute_itk_package_version(tmp_path, "v6.0.0", None, {})
