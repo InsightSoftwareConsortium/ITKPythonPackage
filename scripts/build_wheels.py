@@ -147,19 +147,17 @@ def get_effective_command_line(
             elif isinstance(action, argparse._StoreFalseAction):
                 if not value:
                     effective_command.append(option_string)
-            else:
-                if isinstance(value, list):
-                    if value:
-                        effective_command.append(option_string)
-                        effective_command.extend([str(v) for v in value])
-                else:
+            elif isinstance(value, list):
+                if value:
                     effective_command.append(option_string)
-                    effective_command.append(str(value))
-        else:
-            if isinstance(value, list):
-                effective_command.extend([str(v) for v in value])
+                    effective_command.extend([str(v) for v in value])
             else:
+                effective_command.append(option_string)
                 effective_command.append(str(value))
+        elif isinstance(value, list):
+            effective_command.extend([str(v) for v in value])
+        else:
+            effective_command.append(str(value))
     return shlex.join(effective_command)
 
 

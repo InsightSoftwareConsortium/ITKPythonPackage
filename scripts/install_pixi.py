@@ -44,47 +44,46 @@ def download_and_install_pixi(
     # If not found, we will install into the local build .pixi
     if pixi_exec_path.is_file():
         print(f"Previous install of pixi will be used {pixi_exec_path}.")
+    elif os_name == "windows":
+        # Use PowerShell to install pixi on Windows
+        result = run_commandLine_subprocess(
+            [
+                "powershell",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                "irm -UseBasicParsing https://pixi.sh/install.ps1 | iex",
+            ],
+            env=pixi_install_env,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"Failed to install pixi: {result.stderr}")
     else:
-        if os_name == "windows":
-            # Use PowerShell to install pixi on Windows
-            result = run_commandLine_subprocess(
-                [
-                    "powershell",
-                    "-NoProfile",
-                    "-ExecutionPolicy",
-                    "Bypass",
-                    "-Command",
-                    "irm -UseBasicParsing https://pixi.sh/install.ps1 | iex",
-                ],
-                env=pixi_install_env,
+        pixi_install_script: Path = pixi_home / "pixi_install.sh"
+        result = run_commandLine_subprocess(
+            [
+                "curl",
+                "-fsSL",
+                "https://pixi.sh/install.sh",
+                "-o",
+                str(pixi_install_script),
+            ]
+        )
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"Failed to download {pixi_install_script}: {result.stderr}"
             )
-            if result.returncode != 0:
-                raise RuntimeError(f"Failed to install pixi: {result.stderr}")
-        else:
-            pixi_install_script: Path = pixi_home / "pixi_install.sh"
-            result = run_commandLine_subprocess(
-                [
-                    "curl",
-                    "-fsSL",
-                    "https://pixi.sh/install.sh",
-                    "-o",
-                    str(pixi_install_script),
-                ]
-            )
-            if result.returncode != 0:
-                raise RuntimeError(
-                    f"Failed to download {pixi_install_script}: {result.stderr}"
-                )
-            result = run_commandLine_subprocess(
-                [
-                    "/bin/sh",
-                    str(pixi_install_script),
-                ],
-                env=pixi_install_env,
-            )
-            if result.returncode != 0:
-                raise RuntimeError(f"Failed to install pixi: {result.stderr}")
-            del pixi_install_script
+        result = run_commandLine_subprocess(
+            [
+                "/bin/sh",
+                str(pixi_install_script),
+            ],
+            env=pixi_install_env,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"Failed to install pixi: {result.stderr}")
+        del pixi_install_script
 
     if not pixi_exec_path.exists():
         raise RuntimeError(
