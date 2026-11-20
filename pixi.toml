@@ -59,7 +59,8 @@ platforms = ["linux-64", "linux-aarch64"]
 
 [feature.manylinux-common-build.dependencies]
 auditwheel = "*"
-patchelf = "*"   # Needed for auditwheel
+ccache = ">=4.10,<5"
+patchelf = "*"       # Needed for auditwheel
 wheel = "*"
 
 [feature.manylinux-common-build.pypi-dependencies]
@@ -73,6 +74,7 @@ cxx-compiler = "==1.11.0"
 c-compiler = "==1.11.0"
 libhwloc = "*"            # Needed for tbb
 auditwheel = "*"
+ccache = ">=4.10,<5"
 patchelf = "*"            # Needed for auditwheel
 wheel = "*"
 
@@ -99,6 +101,7 @@ system-requirements = { macos = "14.0" }
 delocate = "*"
 
 [feature.macosx-build.dependencies]
+ccache = ">=4.10,<5"
 cxx-compiler = "==1.10.0" # XCode 16.0 before castxml required updates
 c-compiler = "==1.10.0"   # XCode 16.0 before castxml required updates
 #libhwloc = "*" # Needed for tbb
@@ -110,6 +113,7 @@ platforms = ["win-64"]
 git = "*"                 # Git is not always available in PowerShell by default
 cxx-compiler = "==1.11.0" # MSVC 2022
 c-compiler = "==1.11.0"   # MSVC 2022
+sccache = ">=0.10,<1"
 
 [feature.windows-build.pypi-dependencies]
 delvewheel = "*"
