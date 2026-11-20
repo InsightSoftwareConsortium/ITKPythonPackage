@@ -272,7 +272,8 @@ class BuildPythonInstanceBase(ABC):
         if self.package_env_config.get("USE_CCACHE", "OFF") == "ON":
             ccache_exe: Path | None = _which("ccache")
             if ccache_exe is None:
-                raise RuntimeError("ccache was requested but is not on PATH")
+                msg = "ccache was requested but is not on PATH"
+                raise RuntimeError(msg)
             self.cmake_compiler_configurations.set(
                 "CMAKE_C_COMPILER_LAUNCHER:FILEPATH", f"{ccache_exe}"
             )

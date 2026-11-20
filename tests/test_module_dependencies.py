@@ -131,7 +131,8 @@ class _DepContext:
         return 0
 
     def clone(self):  # pragma: no cover - not reached by these tests
-        raise AssertionError("dependency build must not start after a git failure")
+        msg = "dependency build must not start after a git failure"
+        raise AssertionError(msg)
 
 
 @pytest.mark.parametrize("failing", ["clone", "fetch", "checkout"])

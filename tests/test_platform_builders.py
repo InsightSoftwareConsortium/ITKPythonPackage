@@ -479,7 +479,8 @@ def test_metawheel_repack_failure_raises_and_keeps_the_original(
             (unpacked / "WHEEL").write_text("Tag: cp311-abi3-linux_x86_64\n")
             return 0
         if check:
-            raise RuntimeError("wheel pack failed")
+            msg = "wheel pack failed"
+            raise RuntimeError(msg)
         return 1
 
     with patch.object(linux_builder, "echo_check_call", side_effect=fake):

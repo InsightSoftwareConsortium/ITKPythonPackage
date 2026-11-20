@@ -36,7 +36,8 @@ def test_uses_current_env_when_already_inside_it(monkeypatch):
     )
 
     def explode(*_args, **_kwargs):  # nesting pixi run would overflow cmd.exe
-        raise AssertionError("must not nest a second pixi run")
+        msg = "must not nest a second pixi run"
+        raise AssertionError(msg)
 
     monkeypatch.setattr("wheel_builder_utils.run_commandLine_subprocess", explode)
 
@@ -90,7 +91,8 @@ def test_hostsystem_resolves_tools_from_host_path(monkeypatch):
     )
 
     def explode(*_args, **_kwargs):
-        raise AssertionError("hostsystem must not probe a pixi environment")
+        msg = "hostsystem must not probe a pixi environment"
+        raise AssertionError(msg)
 
     monkeypatch.setattr("wheel_builder_utils.run_commandLine_subprocess", explode)
 

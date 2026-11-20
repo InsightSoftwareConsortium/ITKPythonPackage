@@ -133,10 +133,11 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
         """
         python_executable = self.package_env_config.get("PYTHON_EXECUTABLE", "")
         if not python_executable:
-            raise RuntimeError(
+            msg = (
                 "PYTHON_EXECUTABLE is unset; cannot locate the build "
                 "environment library directory for auditwheel"
             )
+            raise RuntimeError(msg)
         lib_dir = Path(python_executable).resolve().parent.parent / "lib"
         if not lib_dir.is_dir():
             raise RuntimeError(

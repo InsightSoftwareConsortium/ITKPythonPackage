@@ -210,16 +210,16 @@ def _pixi() -> str:
     ):
         if candidate and Path(candidate).is_file():
             return str(candidate)
-    raise SystemExit(
-        "pixi was not found; install it with: python3 scripts/install_pixi.py"
-    )
+    msg = "pixi was not found; install it with: python3 scripts/install_pixi.py"
+    raise SystemExit(msg)
 
 
 def _container_engine() -> str:
     for engine in ("nerdctl", "docker", "podman"):
         if shutil.which(engine):
             return engine
-    raise SystemExit("manylinux wheels need docker, podman or nerdctl on PATH.")
+    msg = "manylinux wheels need docker, podman or nerdctl on PATH."
+    raise SystemExit(msg)
 
 
 def plan(

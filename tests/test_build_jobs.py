@@ -92,7 +92,8 @@ def _fake_open(mapping):
 
             return io.StringIO(mapping[key])
         if key.startswith("/sys/fs/cgroup/"):
-            raise OSError("no such cgroup file")
+            msg = "no such cgroup file"
+            raise OSError(msg)
         return real_open(path, *args, **kwargs)
 
     return fake

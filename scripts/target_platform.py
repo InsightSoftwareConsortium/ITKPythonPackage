@@ -107,7 +107,8 @@ class TargetPlatform:
             )
         if self.manylinux_version:
             if self.os_name != "linux":
-                raise ValueError("manylinux_version is only meaningful on linux")
+                msg = "manylinux_version is only meaningful on linux"
+                raise ValueError(msg)
             if (self.arch, self.manylinux_version) not in _MANYLINUX_IMAGE_TAGS:
                 raise ValueError(
                     f"Unknown manylinux version "
@@ -127,13 +128,15 @@ class TargetPlatform:
     @property
     def linux_triple(self) -> str:
         if self.os_name != "linux":
-            raise ValueError("linux_triple is only defined on linux")
+            msg = "linux_triple is only defined on linux"
+            raise ValueError(msg)
         return f"{self.arch.value}-linux-gnu"
 
     @property
     def cmake_osx_arch(self) -> str:
         if self.os_name != "darwin":
-            raise ValueError("cmake_osx_arch is only defined on darwin")
+            msg = "cmake_osx_arch is only defined on darwin"
+            raise ValueError(msg)
         return "arm64" if self.arch is Arch.AARCH64 else self.arch.value
 
     @property
@@ -147,7 +150,8 @@ class TargetPlatform:
     @property
     def container_image(self) -> ContainerImage:
         if self.os_name != "linux" or not self.manylinux_version:
-            raise ValueError("container_image requires a manylinux linux target")
+            msg = "container_image requires a manylinux linux target"
+            raise ValueError(msg)
         tag = _MANYLINUX_IMAGE_TAGS[(self.arch, self.manylinux_version)]
         if self.arch is Arch.X86_64:
             # dockcross spells the arch with a hyphen and calls it x64.
