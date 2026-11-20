@@ -179,7 +179,7 @@ def _which(exe_name: str) -> Path | None:
     candidates: list[Path] = (
         [exe] if exe.suffix else [Path(exe_name + ext) for ext in pathext]
     )
-    candidates = [exe] + candidates
+    candidates = [exe, *candidates]
     for p in paths:
         if not p:
             continue

@@ -28,6 +28,7 @@ extend-select = [
   "PLR1711", # useless-return
   "PLR5501", # collapsible-else-if
   "RET505",  # superfluous-else-return
+  "RUF005",  # collection-literal-concatenation
   "RUF010",  # explicit-f-string-type-conversion
   "RUF100",  # unused-noqa
   "SIM910",  # dict-get-with-none-default
@@ -84,7 +85,6 @@ ignore = [
   "PTH123",  # builtin-open (14)
   "RET504",  # unnecessary-assign (2)
   "RUF002",  # ambiguous-unicode-character-docstring (1)
-  "RUF005",  # collection-literal-concatenation (1)
   "RUF013",  # implicit-optional (1)
   "RUF036",  # none-not-at-end-of-union (1)
   "RUF043",  # pytest-raises-ambiguous-pattern (2)
