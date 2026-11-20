@@ -95,6 +95,9 @@ ignore = [
   "PLC0415", # import-outside-top-level: per-platform builders and patched test modules load lazily
   # Parked so the rule list could be adopted with lint passing.
   # Each is removed by the commit that fixes it.
+  # Parked by decision: fixing them changes signatures. Six are overrides of
+  # shared method signatures, one is a public function's argument, and 45
+  # are test fakes that mirror the function they patch.
   "ARG001", # unused-function-argument (44)
   "ARG002", # unused-method-argument (8)
 ]
