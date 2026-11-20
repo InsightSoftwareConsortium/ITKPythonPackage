@@ -178,3 +178,24 @@ def test_a_directory_that_is_not_a_repository_is_not_used(tmp_path, itk_reposito
     src.mkdir(parents=True)
     with pytest.raises(SystemExit, match="not a git repository"):
         rw.prepare_itk_source(src, str(repo), "main")
+
+
+def test_every_build_is_stamped_with_the_itk_commit_time(tmp_path, itk_repository):
+    repo, tagged, _ = itk_repository
+    src = tmp_path / "ITK"
+    commit, _ = rw.prepare_itk_source(src, str(repo), "v1.0b01")
+    expected = rw._git("log", "-1", "--format=%ct", tagged, cwd=repo).stdout.strip()
+    epoch = rw.wheel_epoch(src, commit)
+    assert epoch == expected
+    steps = rw.plan(
+        ["macos-arm64", "manylinux-aarch64"], src, commit, "1.0b1", epoch=epoch
+    )
+    assert [s.env["SOURCE_DATE_EPOCH"] for s in steps] == [expected, expected]
+
+
+def test_a_caller_set_epoch_wins(tmp_path, itk_repository, monkeypatch):
+    repo, _, _ = itk_repository
+    src = tmp_path / "ITK"
+    commit, _ = rw.prepare_itk_source(src, str(repo), "main")
+    monkeypatch.setenv("SOURCE_DATE_EPOCH", "1234567890")
+    assert rw.wheel_epoch(src, commit) == "1234567890"
