@@ -32,19 +32,25 @@ def _no_itk_packages_installed():
 
 def test_final_wheel_import_test_raises_on_failed_install(tmp_path, linux_builder):
     """A failed pip install must fail the step, not just print a warning."""
-    with patch.object(linux_builder, "echo_check_call", return_value=1):
-        with pytest.raises(RuntimeError):
-            linux_builder.final_wheel_import_test(tmp_path)
+    with (
+        patch.object(linux_builder, "echo_check_call", return_value=1),
+        pytest.raises(RuntimeError),
+    ):
+        linux_builder.final_wheel_import_test(tmp_path)
 
 
 def test_final_wheel_import_test_raises_on_failed_import(tmp_path, linux_builder):
     """Install succeeds but a later import check fails: step must fail."""
     statuses = iter([0, 1])
-    with patch.object(
-        linux_builder, "echo_check_call", side_effect=lambda *_a, **_k: next(statuses)
+    with (
+        patch.object(
+            linux_builder,
+            "echo_check_call",
+            side_effect=lambda *_a, **_k: next(statuses),
+        ),
+        pytest.raises(RuntimeError),
     ):
-        with pytest.raises(RuntimeError):
-            linux_builder.final_wheel_import_test(tmp_path)
+        linux_builder.final_wheel_import_test(tmp_path)
 
 
 def test_final_wheel_import_test_passes_when_every_check_succeeds(
@@ -61,14 +67,16 @@ def test_final_wheel_import_test_uninstalls_before_installing(tmp_path, linux_bu
     Checking only that both calls happened would still pass if the
     uninstall ran last, which would fix nothing.
     """
-    with patch(
-        "build_python_instance_base.subprocess.run",
-        return_value=CompletedProcess(
-            args=[], returncode=0, stdout="itk-core==6.0rc01\n", stderr=""
+    with (
+        patch(
+            "build_python_instance_base.subprocess.run",
+            return_value=CompletedProcess(
+                args=[], returncode=0, stdout="itk-core==6.0rc01\n", stderr=""
+            ),
         ),
+        patch.object(linux_builder, "echo_check_call", return_value=0) as called,
     ):
-        with patch.object(linux_builder, "echo_check_call", return_value=0) as called:
-            linux_builder.final_wheel_import_test(tmp_path)
+        linux_builder.final_wheel_import_test(tmp_path)
 
     commands = [call.args[0] for call in called.call_args_list]
     uninstall_index = next(i for i, cmd in enumerate(commands) if "uninstall" in cmd)
@@ -78,15 +86,17 @@ def test_final_wheel_import_test_uninstalls_before_installing(tmp_path, linux_bu
 
 def test_final_wheel_import_test_raises_when_uninstall_fails(tmp_path, linux_builder):
     """A failed uninstall must fail the step, not silently proceed to install."""
-    with patch(
-        "build_python_instance_base.subprocess.run",
-        return_value=CompletedProcess(
-            args=[], returncode=0, stdout="itk-core==6.0rc01\n", stderr=""
+    with (
+        patch(
+            "build_python_instance_base.subprocess.run",
+            return_value=CompletedProcess(
+                args=[], returncode=0, stdout="itk-core==6.0rc01\n", stderr=""
+            ),
         ),
+        patch.object(linux_builder, "echo_check_call", return_value=1) as called,
+        pytest.raises(RuntimeError),
     ):
-        with patch.object(linux_builder, "echo_check_call", return_value=1) as called:
-            with pytest.raises(RuntimeError):
-                linux_builder.final_wheel_import_test(tmp_path)
+        linux_builder.final_wheel_import_test(tmp_path)
 
     commands = [call.args[0] for call in called.call_args_list]
     assert len(commands) == 1

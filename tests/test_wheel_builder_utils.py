@@ -33,9 +33,11 @@ def test_compute_itk_package_version_refuses_an_unusable_describe(tmp_path):
             return _completed(0, ".git")
         return responses[str(cmd[1])]
 
-    with patch.object(wheel_builder_utils, "run_commandLine_subprocess", fake_run):
-        with pytest.raises(RuntimeError, match="no usable version"):
-            compute_itk_package_version(tmp_path, "v6.0.0", None, {})
+    with (
+        patch.object(wheel_builder_utils, "run_commandLine_subprocess", fake_run),
+        pytest.raises(RuntimeError, match="no usable version"),
+    ):
+        compute_itk_package_version(tmp_path, "v6.0.0", None, {})
 
 
 def test_compute_itk_package_version_refuses_a_zero_version(tmp_path):
@@ -51,9 +53,11 @@ def test_compute_itk_package_version_refuses_a_zero_version(tmp_path):
             return _completed(0, ".git")
         return responses[str(cmd[1])]
 
-    with patch.object(wheel_builder_utils, "run_commandLine_subprocess", fake_run):
-        with pytest.raises(RuntimeError, match=r"0\.0\.0"):
-            compute_itk_package_version(tmp_path, "v6.0.0", None, {})
+    with (
+        patch.object(wheel_builder_utils, "run_commandLine_subprocess", fake_run),
+        pytest.raises(RuntimeError, match=r"0\.0\.0"),
+    ):
+        compute_itk_package_version(tmp_path, "v6.0.0", None, {})
 
 
 def test_compute_itk_package_version_keeps_head_on_failed_checkout(tmp_path):
@@ -91,6 +95,8 @@ def test_compute_itk_package_version_raises_when_fetch_fails(tmp_path):
             return _completed(0, ".git")
         return _completed(1, "", "network down")
 
-    with patch.object(wheel_builder_utils, "run_commandLine_subprocess", fake_run):
-        with pytest.raises(RuntimeError, match="git fetch"):
-            compute_itk_package_version(tmp_path, "v6.0.0", None, {})
+    with (
+        patch.object(wheel_builder_utils, "run_commandLine_subprocess", fake_run),
+        pytest.raises(RuntimeError, match="git fetch"),
+    ):
+        compute_itk_package_version(tmp_path, "v6.0.0", None, {})

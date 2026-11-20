@@ -49,6 +49,7 @@ extend-select = [
   "SIM105",  # suppressible-exception
   "SIM108",  # if-else-block-instead-of-if-exp
   "SIM115",  # open-file-with-context-handler
+  "SIM117",  # multiple-with-statements
   "SIM118",  # in-dict-keys
   "SIM910",  # dict-get-with-none-default
   "TC003",   # typing-only-standard-library-import
@@ -95,7 +96,6 @@ ignore = [
   "ARG002", # unused-method-argument (8)
   "EM102",  # f-string-in-exception (49)
   "PTH123", # builtin-open (14)
-  "SIM117", # multiple-with-statements (18)
   "TRY003", # raise-vanilla-args (62)
 ]
 

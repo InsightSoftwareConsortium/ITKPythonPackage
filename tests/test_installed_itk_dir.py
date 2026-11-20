@@ -115,9 +115,11 @@ def test_install_step_fails_when_the_install_tree_is_unusable(tmp_path, linux_bu
         )
         return 0
 
-    with patch.object(linux_builder, "echo_check_call", side_effect=stock_itk_install):
-        with pytest.raises(RuntimeError, match=r"ITKModuleExternal\.cmake"):
-            linux_builder.install_wrapped_itk_cplusplus()
+    with (
+        patch.object(linux_builder, "echo_check_call", side_effect=stock_itk_install),
+        pytest.raises(RuntimeError, match=r"ITKModuleExternal\.cmake"),
+    ):
+        linux_builder.install_wrapped_itk_cplusplus()
 
 
 def _module_configure_defines(builder, tmp_path) -> list[str]:

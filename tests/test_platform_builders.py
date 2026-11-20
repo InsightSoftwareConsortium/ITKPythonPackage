@@ -107,9 +107,11 @@ def test_fixup_wheel_skips_wheel_with_no_binaries(tmp_path, macos_builder):
     # fixup_wheel calls remove_apple_double_files first, which itself
     # calls echo_check_call — patch it out so the assertion below is
     # about delocate and nothing else.
-    with patch.object(macos_builder, "remove_apple_double_files"):
-        with patch.object(macos_builder, "echo_check_call") as called:
-            macos_builder.fixup_wheel(str(wheel))
+    with (
+        patch.object(macos_builder, "remove_apple_double_files"),
+        patch.object(macos_builder, "echo_check_call") as called,
+    ):
+        macos_builder.fixup_wheel(str(wheel))
     flat = " ".join(str(a) for c in called.call_args_list for a in c.args[0])
     assert "delocate-wheel" not in flat
 
@@ -160,9 +162,11 @@ def test_fixup_wheel_raises_and_keeps_original_when_repair_fails(
 ):
     """A failed auditwheel repair must not delete the input wheel."""
     wheel, repaired = _prepare_linux_fixup(linux_builder, tmp_path)
-    with patch.object(linux_builder, "echo_check_call", return_value=1):
-        with pytest.raises(RuntimeError):
-            linux_builder.fixup_wheel(str(wheel))
+    with (
+        patch.object(linux_builder, "echo_check_call", return_value=1),
+        pytest.raises(RuntimeError),
+    ):
+        linux_builder.fixup_wheel(str(wheel))
     assert wheel.exists()
     assert not repaired.exists()
 
@@ -172,9 +176,11 @@ def test_fixup_wheel_raises_when_repair_reports_success_but_output_missing(
 ):
     """echo_check_call reporting 0 is not enough without the output wheel."""
     wheel, _repaired = _prepare_linux_fixup(linux_builder, tmp_path)
-    with patch.object(linux_builder, "echo_check_call", return_value=0):
-        with pytest.raises(RuntimeError):
-            linux_builder.fixup_wheel(str(wheel))
+    with (
+        patch.object(linux_builder, "echo_check_call", return_value=0),
+        pytest.raises(RuntimeError),
+    ):
+        linux_builder.fixup_wheel(str(wheel))
     assert wheel.exists()
 
 
@@ -243,9 +249,11 @@ def test_fixup_wheel_fails_loudly_when_the_build_env_lib_dir_is_absent(
     linux_builder.package_env_config["PYTHON_EXECUTABLE"] = str(
         tmp_path / "no-such-env" / "bin" / "python"
     )
-    with patch.object(linux_builder, "echo_check_call", return_value=0):
-        with pytest.raises(RuntimeError, match="library directory"):
-            linux_builder.fixup_wheel(str(wheel))
+    with (
+        patch.object(linux_builder, "echo_check_call", return_value=0),
+        pytest.raises(RuntimeError, match="library directory"),
+    ):
+        linux_builder.fixup_wheel(str(wheel))
 
 
 def test_posix_build_tarball_delegates(macos_builder):
@@ -380,11 +388,13 @@ def test_itk_cplusplus_build_raises_when_a_step_fails(
 ):
     """A failed configure or ninja must not be recorded as a done step."""
     _wire_itk_cplusplus(linux_builder, tmp_path)
-    with patch.object(
-        linux_builder, "echo_check_call", side_effect=_checking_echo(failing_tool)
+    with (
+        patch.object(
+            linux_builder, "echo_check_call", side_effect=_checking_echo(failing_tool)
+        ),
+        pytest.raises(RuntimeError),
     ):
-        with pytest.raises(RuntimeError):
-            linux_builder.build_wrapped_itk_cplusplus()
+        linux_builder.build_wrapped_itk_cplusplus()
 
 
 def test_superbuild_support_components_raise_when_cmake_fails(tmp_path, linux_builder):
@@ -400,11 +410,13 @@ def test_superbuild_support_components_raise_when_cmake_fails(tmp_path, linux_bu
             "IPP_SUPERBUILD_BINARY_DIR": tmp_path / "superbuild",
         }
     )
-    with patch.object(
-        linux_builder, "echo_check_call", side_effect=_checking_echo("cmake")
+    with (
+        patch.object(
+            linux_builder, "echo_check_call", side_effect=_checking_echo("cmake")
+        ),
+        pytest.raises(RuntimeError),
     ):
-        with pytest.raises(RuntimeError):
-            linux_builder.build_superbuild_support_components()
+        linux_builder.build_superbuild_support_components()
 
 
 def test_superbuild_support_components_raise_when_the_build_fails(
@@ -424,11 +436,13 @@ def test_superbuild_support_components_raise_when_the_build_fails(
             "IPP_SUPERBUILD_BINARY_DIR": tmp_path / "superbuild",
         }
     )
-    with patch.object(
-        linux_builder, "echo_check_call", side_effect=_checking_echo("--build")
+    with (
+        patch.object(
+            linux_builder, "echo_check_call", side_effect=_checking_echo("--build")
+        ),
+        pytest.raises(RuntimeError),
     ):
-        with pytest.raises(RuntimeError):
-            linux_builder.build_superbuild_support_components()
+        linux_builder.build_superbuild_support_components()
 
 
 def _prepare_metawheel(linux_builder, tmp_path) -> Path:
@@ -459,9 +473,11 @@ def test_metawheel_is_kept_when_repack_produces_nothing(tmp_path, linux_builder)
         # "pack" reports success but writes nothing.
         return 0
 
-    with patch.object(linux_builder, "echo_check_call", side_effect=fake_unpack):
-        with pytest.raises(RuntimeError, match="no wheel"):
-            linux_builder.post_build_fixup()
+    with (
+        patch.object(linux_builder, "echo_check_call", side_effect=fake_unpack),
+        pytest.raises(RuntimeError, match="no wheel"),
+    ):
+        linux_builder.post_build_fixup()
     assert metawhl.exists()
 
 
@@ -483,9 +499,11 @@ def test_metawheel_repack_failure_raises_and_keeps_the_original(
             raise RuntimeError(msg)
         return 1
 
-    with patch.object(linux_builder, "echo_check_call", side_effect=fake):
-        with pytest.raises(RuntimeError):
-            linux_builder.post_build_fixup()
+    with (
+        patch.object(linux_builder, "echo_check_call", side_effect=fake),
+        pytest.raises(RuntimeError),
+    ):
+        linux_builder.post_build_fixup()
     assert metawhl.exists()
 
 
@@ -495,9 +513,11 @@ def test_windows_fixup_wheel_raises_when_delvewheel_fails(tmp_path, windows_buil
     dist_dir.mkdir(parents=True, exist_ok=True)
     wheel = dist_dir / "itk_core-6.0.0-cp311-abi3-win_amd64.whl"
     wheel.touch()
-    with patch.object(windows_builder, "echo_check_call", return_value=1):
-        with pytest.raises(RuntimeError, match="delvewheel"):
-            windows_builder.fixup_wheel(str(wheel), lib_paths="C:/tbb/bin")
+    with (
+        patch.object(windows_builder, "echo_check_call", return_value=1),
+        pytest.raises(RuntimeError, match="delvewheel"),
+    ):
+        windows_builder.fixup_wheel(str(wheel), lib_paths="C:/tbb/bin")
 
 
 def test_windows_lib_paths_are_split_on_semicolons(windows_builder):
