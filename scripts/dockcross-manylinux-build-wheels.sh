@@ -100,6 +100,15 @@ if [ "${ITK_SOURCE_DIR}" != "" ]; then
 fi
 DOCKER_ARGS+=" -e PYTHONUNBUFFERED=1 " # Turn off buffering of outputs in python
 
+# ccache keys on the compiler, so each image and architecture keeps its own cache.
+HOST_CCACHE_DIR=${ITK_CONTAINER_CCACHE_DIR:-${HOME}/.cache/itk-ccache-manylinux${MANYLINUX_VERSION}-${TARGET_ARCH}}
+mkdir -p "${HOST_CCACHE_DIR}"
+DOCKER_ARGS+=" -v ${HOST_CCACHE_DIR}:/work/ccache -e CCACHE_DIR=/work/ccache "
+DOCKER_ARGS+=" -e USE_CCACHE=${USE_CCACHE:-0} "
+if [ -n "${CCACHE_MAXSIZE:-}" ]; then
+  DOCKER_ARGS+=" -e CCACHE_MAXSIZE=${CCACHE_MAXSIZE} "
+fi
+
 # To build tarballs in manylinux, use 'export BUILD_WHEELS_EXTRA_FLAGS=" --build-itk-tarball-cache "'
 BUILD_WHEELS_EXTRA_FLAGS=${BUILD_WHEELS_EXTRA_FLAGS:=""} # No tarball by default
 
