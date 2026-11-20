@@ -221,6 +221,10 @@ useful in CI pipelines:
      - target architecture (``x64`` or ``aarch64``)
    * - ``IMAGE_TAG``
      - Docker image tag for manylinux builds
+   * - ``CONTAINER_DNS``
+     - DNS servers (space- or comma-separated) passed as ``--dns`` to the
+       manylinux build container, for hosts whose containers cannot resolve
+       names; unset leaves the runtime default
    * - ``USE_COMPILER_CACHE`` (or ``USE_CCACHE``)
      - ``--use-compiler-cache``
    * - ``CMAKE_OPTIONS``

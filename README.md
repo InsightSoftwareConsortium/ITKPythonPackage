@@ -350,6 +350,7 @@ Key environment variables:
 | `TARGET_ARCH`         | host architecture                                                 | `x64` or `aarch64`                                             |
 | `MANYLINUX_VERSION`   | `_2_28`                                                           | Manylinux standard to target                                   |
 | `IMAGE_TAG`           | `20260203-3dfb3ff` (dockcross) or `2025.08.12-1` (quay manylinux) | Container image tag; the default depends on `CONTAINER_SOURCE` |
+| `CONTAINER_DNS`       | unset (container runtime default)                                 | DNS servers for the build container, space- or comma-separated |
 
 #### Linux/macOS/Windows — building ITK from source
 
