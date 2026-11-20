@@ -240,7 +240,6 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
             print(
                 "Building outside of manylinux environment does not require wheel fixups."
             )
-        return
 
     def discover_python_venvs(
         self, platform_os_name: str, platform_architecture: str

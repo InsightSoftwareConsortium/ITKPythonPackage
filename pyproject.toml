@@ -22,6 +22,7 @@ select = ["E", "F", "I", "UP", "B", "W"]
 extend-select = [
   # Rules adopted one per commit, named so each stays enforced.
   "FURB110", # if-exp-instead-of-or-operator
+  "PLR1711", # useless-return
   # Rule families recommended by the Scientific Python guide.
   "ARG",  # flake8-unused-arguments
   "C4",   # flake8-comprehensions
@@ -69,7 +70,6 @@ ignore = [
   "ISC001",  # single-line-implicit-string-concatenation (2)
   "ISC003",  # explicit-string-concatenation (2)
   "PLC0415", # import-outside-top-level (9)
-  "PLR1711", # useless-return (1)
   "PLR5501", # collapsible-else-if (4)
   "PLW1510", # subprocess-run-without-check (8)
   "PLW2901", # redefined-loop-name (5)
