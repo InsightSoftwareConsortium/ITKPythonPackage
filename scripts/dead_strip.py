@@ -30,6 +30,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
+    from cmake_argument_builder import CMakeArgumentBuilder
+
 SECTION_FLAGS = "-ffunction-sections -fdata-sections"
 LINKER_FLAGS = "-Wl,--gc-sections"
 DARWIN_MODULE_FLAGS = "-Wl,-dead_strip -Wl,-exported_symbol,_PyInit_*"
@@ -49,7 +51,9 @@ _FLAG_SOURCES = {
 }
 
 
-def user_flag_key(user_defs: Mapping[str, str], cmake_var: str) -> str | None:
+def user_flag_key(
+    user_defs: Mapping[str, str] | CMakeArgumentBuilder, cmake_var: str
+) -> str | None:
     """Return the key under which *user_defs* sets *cmake_var*, typed or not."""
     for key in (f"{cmake_var}:STRING", cmake_var):
         if key in user_defs:
@@ -60,7 +64,7 @@ def user_flag_key(user_defs: Mapping[str, str], cmake_var: str) -> str | None:
 def dead_strip_cmake_definitions(
     os_name: str,
     env: Mapping[str, str],
-    user_defs: Mapping[str, str] | None = None,
+    user_defs: Mapping[str, str] | CMakeArgumentBuilder | None = None,
 ) -> dict[str, str]:
     """Return the ``-D`` definitions that enable dead stripping on *os_name*.
 

@@ -2,6 +2,7 @@ import json
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 
 class BuildManager:
@@ -92,7 +93,7 @@ class BuildManager:
     def _init_structure(self, step_names: list[str]) -> None:
         steps = {name: self._new_step_entry() for name in step_names}
         now = self._now()
-        self.report = {
+        self.report: dict[str, Any] = {
             "created_at": now,
             "updated_at": now,
             "steps": steps,

@@ -10,7 +10,9 @@ they can be exercised without constructing a builder.
 import os
 import subprocess
 import sys
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 from wheel_builder_utils import run_commandLine_subprocess
 
@@ -26,13 +28,13 @@ def get_pixi_environment_name(platform_env: str) -> str:
 
 
 def echo_check_call(
-    cmd: list[str | Path] | tuple[str | Path] | str | Path,
+    cmd: Sequence[str | Path],
     pixi_env_name: str = "",
     pixi_executable: str | Path | None = None,
     run_dir: Path | None = None,
     use_pixi_env: bool = True,
     env=None,
-    **kwargs: dict,
+    **kwargs: Any,
 ) -> int:
     """Print the command, then run it and return its exit status.
 
@@ -83,21 +85,21 @@ def echo_check_call(
         ]
 
     # convert all items to strings (i.e. Path() to str)
-    cmd = pixi_run_preamble + [str(c) for c in cmd]
+    cmd_strs = pixi_run_preamble + [str(c) for c in cmd]
     # Prepare a friendly command-line string for display
     try:
-        display_cmd = " ".join(cmd) if isinstance(cmd, list | tuple) else str(cmd)
+        display_cmd = " ".join(cmd_strs)
     except Exception as e:
-        display_cmd = f"{cmd!s}\nERROR: {e}"
+        display_cmd = f"{cmd_strs!s}\nERROR: {e}"
         sys.exit(1)
     print(f">>Start Running: cd {run_dir} && {display_cmd}")
     print("^" * 60)
-    print(cmd)
+    print(cmd_strs)
     print("^" * 60)
     print(kwargs)
     print("^" * 60)
     process_completion_info: subprocess.CompletedProcess = run_commandLine_subprocess(
-        cmd, env=pixi_env, cwd=run_dir, **kwargs
+        cmd_strs, env=pixi_env, cwd=run_dir, **kwargs
     )
     cmd_return_status: int = process_completion_info.returncode
     print("^" * 60)

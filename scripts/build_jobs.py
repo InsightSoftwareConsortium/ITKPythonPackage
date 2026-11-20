@@ -90,7 +90,9 @@ def physical_memory_gb() -> float | None:
 
             stat = MEMORYSTATUSEX()
             stat.dwLength = ctypes.sizeof(stat)
-            if not ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stat)):
+            if not ctypes.windll.kernel32.GlobalMemoryStatusEx(  # type: ignore[attr-defined]
+                ctypes.byref(stat)
+            ):
                 return None
             return stat.ullTotalPhys / 1024**3
         if system == "Darwin":

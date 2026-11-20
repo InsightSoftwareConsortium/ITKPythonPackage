@@ -13,6 +13,7 @@ import subprocess
 import sys
 
 # from contextlib import contextmanager
+from collections.abc import Sequence
 from functools import wraps
 from os import chdir as os_chdir
 from os import environ
@@ -296,7 +297,7 @@ def which_required(name: str) -> Path:
 
 
 def run_commandLine_subprocess(
-    cmd: list[str | Path],
+    cmd: Sequence[str | Path],
     cwd: Path | None = None,
     env: dict | None = None,
     check: bool = False,
@@ -325,10 +326,10 @@ def run_commandLine_subprocess(
     RuntimeError
         If *check* is True and the command exits with a non-zero code.
     """
-    cmd = [str(x) for x in cmd]
-    print(f"Running >>>>>: {' '.join(cmd)}  ; # in cwd={cwd} with check={check}\n")
+    cmd_strs = [str(x) for x in cmd]
+    print(f"Running >>>>>: {' '.join(cmd_strs)}  ; # in cwd={cwd} with check={check}\n")
     completion_info = subprocess.run(
-        cmd,
+        cmd_strs,
         cwd=str(cwd) if cwd else None,
         capture_output=True,
         text=True,
@@ -346,7 +347,7 @@ def run_commandLine_subprocess(
             error_msg += f"\nStdout:\n {completion_info.stdout}"
         if completion_info.stderr:
             error_msg += f"\nStderr:\n {completion_info.stderr}"
-        error_msg += f"Command failed with exit code {completion_info.returncode}: {' '.join(cmd)}"
+        error_msg += f"Command failed with exit code {completion_info.returncode}: {' '.join(cmd_strs)}"
         print(error_msg)
         raise RuntimeError(error_msg)
 
@@ -404,7 +405,7 @@ def git_describe_to_pep440(desc: str) -> str:
         prerelnum = groupdict.get("prerelnum", None)
         if prerelease_name and prerelnum and len(prerelease_name) > 0:
             semver_format += f"{prerelease_name}{prerelnum}"
-        posttagcount = groupdict.get("posttagcount", None)
+        posttagcount = groupdict.get("posttagcount") or ""
         dirty = groupdict.get("dirty", None)
         if (
             len(posttagcount) > 0

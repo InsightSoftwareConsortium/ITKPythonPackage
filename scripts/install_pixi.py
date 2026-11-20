@@ -118,8 +118,8 @@ def install_pixi_tools(platform_env: str = "default"):
     os_name = TargetPlatform.detect(os.environ, manylinux_version="").os_name
     binary_ext: str = ".exe" if os_name == "windows" else ""
 
-    pixi_home: Path = Path(
-        os.environ.get("PIXI_HOME")
+    pixi_home: Path = (
+        Path(os.environ["PIXI_HOME"])
         if "PIXI_HOME" in os.environ
         else _ipp_dir_path / ".pixi"
     )

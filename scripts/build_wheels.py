@@ -4,6 +4,7 @@ import os
 import shlex
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from target_platform import (
     Arch,
@@ -19,6 +20,9 @@ from wheel_builder_utils import (
     which_required,
     which_required_in_pixi_env,
 )
+
+if TYPE_CHECKING:
+    from build_python_instance_base import BuildPythonInstanceBase
 
 
 def remotemodulebuildandtestaction() -> dict[str, str]:
@@ -649,7 +653,8 @@ def build_wheels_main() -> None:
     del oci_exe
 
     # -------------
-    platform = package_env_config["OS_NAME"].lower()
+    platform = str(package_env_config["OS_NAME"]).lower()
+    builder_cls: type[BuildPythonInstanceBase]
     if platform == "windows":
         from windows_build_python_instance import WindowsBuildPythonInstance
 

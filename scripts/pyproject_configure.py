@@ -290,7 +290,7 @@ def update_wheel_pyproject_toml_parameters(
     return PYPROJECT_PY_PARAMETERS
 
 
-def get_wheel_names(IPP_BuildWheelsSupport_DIR: str):
+def get_wheel_names(IPP_BuildWheelsSupport_DIR: str | Path):
     """Read the ordered list of wheel names from ``WHEEL_NAMES.txt``.
 
     Parameters
@@ -318,7 +318,7 @@ def get_py_api():
     return STABLE_ABI_TAG
 
 
-def get_wheel_dependencies(SCRIPT_DIR: str, version: str, wheel_names: list):
+def get_wheel_dependencies(SCRIPT_DIR: str | Path, version: str, wheel_names: list):
     """Parse ITK CMake files to build a wheel dependency graph.
 
     Parameters
@@ -480,13 +480,13 @@ Accepted values for `wheel_name` are ``itk`` and all values read from
 
 
 def configure_one_pyproject_file(
-    SCRIPT_DIR: str | bytes, package_env_config, output_dir, wheel_name: str = "itk"
+    SCRIPT_DIR: str | Path, package_env_config, output_dir, wheel_name: str = "itk"
 ):
     """Generate a configured ``pyproject.toml`` for a single wheel.
 
     Parameters
     ----------
-    SCRIPT_DIR : str or bytes
+    SCRIPT_DIR : str or Path
         Path to the ``scripts/`` directory containing templates.
     package_env_config : dict
         Build environment configuration.

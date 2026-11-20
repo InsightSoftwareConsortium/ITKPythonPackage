@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from collections import OrderedDict
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import build_environment
 import wheel_packaging
@@ -202,7 +203,7 @@ class BuildPythonInstanceBase(ABC):
         self.target: TargetPlatform = TargetPlatform.detect(self.package_env_config)
 
         # declare this dict before self.prepare_build_env() or dict will be empty in later functions
-        self.venv_info_dict = {
+        self.venv_info_dict: dict[str, Any] = {
             # Filled in for each platform and each pyenvs
             # "python_executable": None,
             # "python_include_dir": None,
@@ -223,10 +224,10 @@ class BuildPythonInstanceBase(ABC):
         self.windows_extra_lib_paths = windows_extra_lib_paths
         self.dist_dir = dist_dir
         # Needed for processing remote modules and their dependencies
-        self.module_source_dir: Path = (
+        self.module_source_dir: Path | None = (
             Path(module_source_dir) if module_source_dir else None
         )
-        self.module_dependencies_root_dir: Path = (
+        self.module_dependencies_root_dir: Path | None = (
             Path(module_dependencies_root_dir) if module_dependencies_root_dir else None
         )
         self.itk_module_deps = itk_module_deps
