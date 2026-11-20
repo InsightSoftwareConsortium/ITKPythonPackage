@@ -31,7 +31,7 @@ repos:
         stages: [pre-commit]
 
   # Python: formatting
-  - repo: https://github.com/psf/black
+  - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 24.10.0
     hooks:
       - id: black
@@ -39,10 +39,10 @@ repos:
 
   # Python: linting + import sorting
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.6
+    rev: v0.17.6
     hooks:
-      - id: ruff
-        args: [--fix]
+      - id: ruff-check
+        args: [--fix, --show-fixes]
         stages: [pre-commit]
 
   # Shell: linting
@@ -80,3 +80,8 @@ repos:
         entry: 'python3 Utilities/Hooks/kw-commit-msg.py'
         language: system
         stages: [commit-msg]
+
+ci:
+  autoupdate_commit_msg: "COMP: Update pre-commit hooks"
+  autofix_commit_msg: "STYLE: Apply pre-commit fixes"
+  autoupdate_schedule: monthly
