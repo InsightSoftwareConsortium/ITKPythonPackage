@@ -26,6 +26,7 @@ extend-select = [
   "ISC001",  # single-line-implicit-string-concatenation
   "ISC003",  # explicit-string-concatenation
   "PLR1711", # useless-return
+  "RET505",  # superfluous-else-return
   "RUF010",  # explicit-f-string-type-conversion
   "SIM910",  # dict-get-with-none-default
   # Rule families recommended by the Scientific Python guide.
@@ -81,7 +82,6 @@ ignore = [
   "PTH120",  # os-path-dirname (1)
   "PTH123",  # builtin-open (14)
   "RET504",  # unnecessary-assign (2)
-  "RET505",  # superfluous-else-return (3)
   "RUF002",  # ambiguous-unicode-character-docstring (1)
   "RUF005",  # collection-literal-concatenation (1)
   "RUF013",  # implicit-optional (1)

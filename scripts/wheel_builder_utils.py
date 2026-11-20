@@ -415,14 +415,13 @@ def git_describe_to_pep440(desc: str) -> str:
         ):
             # If exactly on a tag, then do not add post, or sha
             return semver_format
-        else:
-            if posttagcount and int(posttagcount) > 0:
-                semver_format += f".post{posttagcount}"
-            sha = groupdict.get("sha", None)
-            if sha:
-                semver_format += f"+g{sha.lower()}"
-            if dirty:
-                semver_format += ".dirty"
+        if posttagcount and int(posttagcount) > 0:
+            semver_format += f".post{posttagcount}"
+        sha = groupdict.get("sha", None)
+        if sha:
+            semver_format += f"+g{sha.lower()}"
+        if dirty:
+            semver_format += ".dirty"
     return semver_format
 
 
@@ -607,11 +606,10 @@ def get_default_platform_build(default_python_version: str = "py311") -> str:
             platform_prefix, platform_prefix
         )
         return f"{platform_prefix}-{python_version}"
-    else:
-        if sys.platform == "darwin":
-            return f"macosx-{default_python_version}"
-        elif sys.platform.startswith("linux"):
-            return f"linux-{default_python_version}"
-        elif sys.platform == "win32":
-            return f"windows-{default_python_version}"
+    if sys.platform == "darwin":
+        return f"macosx-{default_python_version}"
+    if sys.platform.startswith("linux"):
+        return f"linux-{default_python_version}"
+    if sys.platform == "win32":
+        return f"windows-{default_python_version}"
     return f"unknown-{default_python_version}"
