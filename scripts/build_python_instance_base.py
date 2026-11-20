@@ -11,6 +11,7 @@ from typing import Any
 
 import build_environment
 import wheel_packaging
+from build_inputs import build_fingerprint, build_inputs, resolved_itk_commit
 from build_jobs import compute_build_jobs, compute_load_limit, physical_memory_gb
 from BuildManager import BuildManager
 from cmake_argument_builder import CMakeArgumentBuilder
@@ -451,8 +452,15 @@ class BuildPythonInstanceBase(ABC):
         self.dist_dir.mkdir(parents=True, exist_ok=True)
         build_report_fn: Path = self.dist_dir / f"build_log_{self.platform_env}.json"
         build_manager: BuildManager = BuildManager(
-            build_report_fn, list(python_package_build_steps.keys())
+            build_report_fn,
+            list(python_package_build_steps.keys()),
+            self.build_inputs(),
         )
+        if build_manager.changed_inputs:
+            print(
+                f"Build inputs changed ({', '.join(build_manager.changed_inputs)}) "
+                f"since {build_report_fn} was written: running every step."
+            )
         build_manager.save()
         cache_before, cache_after = self.compiler_cache_commands
         for cmd in cache_before:
@@ -465,6 +473,28 @@ class BuildPythonInstanceBase(ABC):
             # Statistics are informational: a failure here must not mask the build's.
             for cmd in cache_after:
                 self.echo_check_call(cmd, use_pixi_env=False)
+
+    def build_inputs(self) -> dict[str, str]:
+        """Return the ITK commit, package version, and fingerprint of this build."""
+        cfg = self.package_env_config
+        settings: dict[str, str] = {}
+        for group, definitions in (
+            ("compiler", self.cmake_compiler_configurations),
+            ("itk", self.cmake_itk_source_build_configurations),
+            ("cmdline", self.cmake_cmdline_definitions),
+        ):
+            settings.update({f"{group}:{k}": str(v) for k, v in definitions.items()})
+        for key in ("USE_CCACHE", "MANYLINUX_VERSION", "CONTAINER_SOURCE"):
+            settings[key] = str(cfg.get(key, ""))
+        return build_inputs(
+            itk_commit=resolved_itk_commit(
+                Path(cfg["ITK_SOURCE_DIR"]),
+                str(cfg["ITK_GIT_TAG"]),
+                str(cfg.get("GIT_EXECUTABLE") or "git"),
+            ),
+            package_version=str(cfg["ITK_PACKAGE_VERSION"]),
+            fingerprint=build_fingerprint(self.ipp_dir, settings),
+        )
 
     def _run_build_steps(
         self,
