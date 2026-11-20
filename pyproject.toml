@@ -165,3 +165,7 @@ testpaths = ["tests"]
 [tool.repo-review.ignore]
 PP002 = "Root pyproject.toml configures tooling only; wheels are generated from scripts/pyproject.toml.in"
 PP003 = "Root pyproject.toml configures tooling only; wheels are generated from scripts/pyproject.toml.in"
+
+[tool.codespell]
+# DEPENDEES is a CMake ExternalProject keyword; Nd is a Unicode category name.
+ignore-words-list = "dependees,nd"

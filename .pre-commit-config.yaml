@@ -45,6 +45,13 @@ repos:
         args: [--fix, --show-fixes]
         stages: [pre-commit]
 
+  # Spelling
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.3
+    hooks:
+      - id: codespell
+        stages: [pre-commit]
+
   # Shell: linting
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.10.0.1

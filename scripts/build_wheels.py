@@ -317,7 +317,7 @@ def build_wheels_main() -> None:
         help="""
         - 'ITK_SOURCE_DIR':  When building different 'flavor' of ITK python packages
           on a given platform, explicitly setting the ITK_SOURCE_DIR options allow to
-          speed up source-code downloads by re-using an existing repository.
+          speed up source-code downloads by reusing an existing repository.
           If the requested directory does not exist, manually clone and checkout ${ITK_GIT_TAG}""",
     )
 

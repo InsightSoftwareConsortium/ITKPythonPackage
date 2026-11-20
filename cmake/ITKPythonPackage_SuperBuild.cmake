@@ -26,7 +26,7 @@ endif()
 
 # When building different "flavor" of ITK python packages on a given platform,
 # explicitly setting the following options allow to speed up package generation by
-# re-using existing resources.
+# reusing existing resources.
 #
 #  ITK_SOURCE_DIR: Path to an existing source directory
 #
