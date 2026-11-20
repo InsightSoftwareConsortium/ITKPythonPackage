@@ -91,7 +91,7 @@ def echo_check_call(
         else:
             display_cmd = str(cmd)
     except Exception as e:
-        display_cmd = f"{str(cmd)}\nERROR: {e}"
+        display_cmd = f"{cmd!s}\nERROR: {e}"
         sys.exit(1)
     print(f">>Start Running: cd {run_dir} && {display_cmd}")
     print("^" * 60)

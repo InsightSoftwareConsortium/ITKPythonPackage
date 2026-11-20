@@ -23,6 +23,7 @@ extend-select = [
   # Rules adopted one per commit, named so each stays enforced.
   "FURB110", # if-exp-instead-of-or-operator
   "PLR1711", # useless-return
+  "RUF010",  # explicit-f-string-type-conversion
   # Rule families recommended by the Scientific Python guide.
   "ARG",  # flake8-unused-arguments
   "C4",   # flake8-comprehensions
@@ -82,7 +83,6 @@ ignore = [
   "RET505",  # superfluous-else-return (3)
   "RUF002",  # ambiguous-unicode-character-docstring (1)
   "RUF005",  # collection-literal-concatenation (1)
-  "RUF010",  # explicit-f-string-type-conversion (1)
   "RUF013",  # implicit-optional (1)
   "RUF036",  # none-not-at-end-of-union (1)
   "RUF043",  # pytest-raises-ambiguous-pattern (2)
