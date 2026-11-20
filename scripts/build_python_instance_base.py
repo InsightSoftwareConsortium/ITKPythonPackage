@@ -14,6 +14,11 @@ import wheel_packaging
 from build_jobs import compute_build_jobs, compute_load_limit, physical_memory_gb
 from BuildManager import BuildManager
 from cmake_argument_builder import CMakeArgumentBuilder
+from compiler_cache import (
+    compiler_cache_definitions,
+    compiler_cache_environment,
+    compiler_cache_tool,
+)
 from dead_strip import dead_strip_cmake_definitions, user_flag_key
 from module_dependencies import build_module_dependencies, update_module_itk_deps
 from pyproject_configure import STABLE_ABI_TAG, configure_one_pyproject_file
@@ -304,16 +309,15 @@ class BuildPythonInstanceBase(ABC):
             )
 
         if self.package_env_config.get("USE_CCACHE", "OFF") == "ON":
-            ccache_exe: Path | None = _which("ccache")
-            if ccache_exe is None:
-                msg = "ccache was requested but is not on PATH"
+            cache_tool = compiler_cache_tool(self.target.os_name)
+            cache_exe: Path | None = _which(cache_tool)
+            if cache_exe is None:
+                msg = f"{cache_tool} was requested but is not on PATH"
                 raise RuntimeError(msg)
-            self.cmake_compiler_configurations.set(
-                "CMAKE_C_COMPILER_LAUNCHER:FILEPATH", f"{ccache_exe}"
+            self.cmake_compiler_configurations.update(
+                compiler_cache_definitions(cache_tool, cache_exe)
             )
-            self.cmake_compiler_configurations.set(
-                "CMAKE_CXX_COMPILER_LAUNCHER:FILEPATH", f"{ccache_exe}"
-            )
+            os.environ.update(compiler_cache_environment(cache_tool, os.environ))
 
         if self.package_env_config.get("DEAD_STRIP", "OFF") == "ON":
             user_defs = self.cmake_cmdline_definitions
