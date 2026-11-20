@@ -41,7 +41,7 @@ def test_final_wheel_import_test_raises_on_failed_import(tmp_path, linux_builder
     """Install succeeds but a later import check fails: step must fail."""
     statuses = iter([0, 1])
     with patch.object(
-        linux_builder, "echo_check_call", side_effect=lambda *a, **k: next(statuses)
+        linux_builder, "echo_check_call", side_effect=lambda *_a, **_k: next(statuses)
     ):
         with pytest.raises(RuntimeError):
             linux_builder.final_wheel_import_test(tmp_path)

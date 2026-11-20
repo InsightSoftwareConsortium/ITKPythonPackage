@@ -21,6 +21,7 @@ extend-exclude = ["docs"] # example snippets, excluded from pre-commit too
 select = ["E", "F", "I", "UP", "B", "W"]
 extend-select = [
   # Rules adopted one per commit, named so each stays enforced.
+  "ARG005",  # unused-lambda-argument
   "EXE001",  # shebang-not-executable
   "FURB110", # if-exp-instead-of-or-operator
   "FURB129", # readlines-in-for
@@ -88,7 +89,6 @@ ignore = [
   # Each is removed by the commit that fixes it.
   "ARG001",  # unused-function-argument (44)
   "ARG002",  # unused-method-argument (8)
-  "ARG005",  # unused-lambda-argument (7)
   "EM101",   # raw-string-in-exception (13)
   "EM102",   # f-string-in-exception (49)
   "PLC0415", # import-outside-top-level (9)

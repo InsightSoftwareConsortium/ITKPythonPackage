@@ -49,7 +49,7 @@ def test_missing_tool_in_target_env_raises(monkeypatch):
     monkeypatch.setenv("PIXI_ENVIRONMENT_NAME", "default")
     monkeypatch.setattr(
         "wheel_builder_utils.run_commandLine_subprocess",
-        lambda *a, **k: subprocess.CompletedProcess(a[0] if a else [], 0, "\n", ""),
+        lambda *a, **_k: subprocess.CompletedProcess(a[0] if a else [], 0, "\n", ""),
     )
     monkeypatch.setattr("wheel_builder_utils.shutil.which", lambda _: "/stray/doxygen")
 
