@@ -179,6 +179,16 @@ def source_date_epoch(env: "Mapping[str, str]", commit_time: str | None) -> str 
     return commit_time if commit_time.isdigit() else None
 
 
+def windows_link_options(os_name: str, link_options: str | None) -> str | None:
+    """Return *link_options* (the _LINK_ value) with /Brepro added on Windows."""
+    if os_name != "windows":
+        return link_options
+    link_options = link_options or ""
+    if any(o.lower() in ("/brepro", "-brepro") for o in link_options.split()):
+        return link_options
+    return f"{link_options} /Brepro".lstrip()
+
+
 def itk_commit_time(itk_source_dir: Path, itk_git_tag: str) -> str | None:
     """Return the committer time of *itk_git_tag*, or None without a repository."""
     env = os.environ.copy()
@@ -628,6 +638,11 @@ def build_wheels_main() -> None:
             "WARNING: No ITK commit time and no SOURCE_DATE_EPOCH; "
             "wheel zip timestamps will be the build time."
         )
+
+    # link.exe appends _LINK_ to every command line; /Brepro replaces PE link timestamps.
+    link_options = windows_link_options(os_name, os.environ.get("_LINK_"))
+    if link_options:
+        os.environ["_LINK_"] = link_options
 
     # ITKPythonPackage origin/tag
     # ITK_MODULE_NO_CLEANUP, USE_CCACHE
