@@ -14,16 +14,90 @@ target-version = ["py311"]
 line-length = 88
 target-version = "py311"
 show-fixes = true
+extend-exclude = ["docs"] # example snippets, excluded from pre-commit too
 
 [tool.ruff.lint]
-# E/F: pycodestyle errors + pyflakes
-# I:   isort import ordering
-# UP:  pyupgrade (modernise syntax for Python 3.11+)
-# B:   flake8-bugbear (opinionated bug detection)
-# W:   pycodestyle warnings, including W605 invalid escape sequences
+# E/F/W: pycodestyle and pyflakes; I: isort; UP: pyupgrade; B: flake8-bugbear
 select = ["E", "F", "I", "UP", "B", "W"]
-# E501 (line-too-long) is handled by black; suppress here to avoid duplication
-ignore = ["E501"]
+extend-select = [
+  # Rules adopted one per commit, named so each stays enforced.
+  # Rule families recommended by the Scientific Python guide.
+  "ARG",  # flake8-unused-arguments
+  "C4",   # flake8-comprehensions
+  "EM",   # flake8-errmsg
+  "EXE",  # flake8-executable
+  "FURB", # refurb
+  "G",    # flake8-logging-format
+  "ICN",  # flake8-import-conventions
+  "ISC",  # flake8-implicit-str-concat
+  "LOG",  # flake8-logging
+  "NPY",  # NumPy specific rules
+  "PD",   # pandas-vet
+  "PERF", # perflint
+  "PGH",  # pygrep-hooks
+  "PL",   # pylint
+  "PT",   # flake8-pytest-style
+  "PTH",  # flake8-use-pathlib
+  "PYI",  # flake8-pyi
+  "Q",    # flake8-quotes
+  "RET",  # flake8-return
+  "RSE",  # flake8-raise
+  "RUF",  # Ruff-specific
+  "SIM",  # flake8-simplify
+  "SLOT", # flake8-slots
+  "T10",  # flake8-debugger
+  "T20",  # flake8-print
+  "TC",   # flake8-type-checking
+  "TRY",  # tryceratops
+]
+ignore = [
+  # Accepted: not required by the Scientific Python guide.
+  "E501",    # line-too-long: black owns line length
+  "PLR09",   # too-many-*: build drivers take many options by design
+  "PLR2004", # magic-value-comparison
+  "T201",    # `print` found: printing is these build scripts' output
+  # Parked so the rule list could be adopted with lint passing.
+  # Each is removed by the commit that fixes it.
+  "ARG001",  # unused-function-argument (44)
+  "ARG002",  # unused-method-argument (8)
+  "ARG005",  # unused-lambda-argument (7)
+  "EM101",   # raw-string-in-exception (13)
+  "EM102",   # f-string-in-exception (49)
+  "EXE001",  # shebang-not-executable (1)
+  "FURB110", # if-exp-instead-of-or-operator (1)
+  "FURB129", # readlines-in-for (3)
+  "ISC001",  # single-line-implicit-string-concatenation (2)
+  "ISC003",  # explicit-string-concatenation (2)
+  "PLC0415", # import-outside-top-level (9)
+  "PLR1711", # useless-return (1)
+  "PLR5501", # collapsible-else-if (4)
+  "PLW1510", # subprocess-run-without-check (8)
+  "PLW2901", # redefined-loop-name (5)
+  "PTH100",  # os-path-abspath (1)
+  "PTH118",  # os-path-join (7)
+  "PTH119",  # os-path-basename (1)
+  "PTH120",  # os-path-dirname (1)
+  "PTH123",  # builtin-open (14)
+  "RET504",  # unnecessary-assign (2)
+  "RET505",  # superfluous-else-return (3)
+  "RUF002",  # ambiguous-unicode-character-docstring (1)
+  "RUF005",  # collection-literal-concatenation (1)
+  "RUF010",  # explicit-f-string-type-conversion (1)
+  "RUF013",  # implicit-optional (1)
+  "RUF036",  # none-not-at-end-of-union (1)
+  "RUF043",  # pytest-raises-ambiguous-pattern (2)
+  "RUF059",  # unused-unpacked-variable (2)
+  "RUF100",  # unused-noqa (3)
+  "SIM105",  # suppressible-exception (10)
+  "SIM108",  # if-else-block-instead-of-if-exp (1)
+  "SIM115",  # open-file-with-context-handler (1)
+  "SIM117",  # multiple-with-statements (18)
+  "SIM118",  # in-dict-keys (4)
+  "SIM910",  # dict-get-with-none-default (1)
+  "TC003",   # typing-only-standard-library-import (3)
+  "TRY003",  # raise-vanilla-args (62)
+  "TRY300",  # try-consider-else (2)
+]
 
 [tool.commitizen]
 name = "cz_customize"
