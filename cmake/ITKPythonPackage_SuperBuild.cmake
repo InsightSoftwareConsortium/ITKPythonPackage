@@ -83,6 +83,15 @@ elseif(ENV{CC})
     list(APPEND ep_common_cmake_cache_args -DCMAKE_C_COMPILER:PATH=$ENV{CC})
 endif()
 
+foreach(lang C CXX)
+    if(CMAKE_${lang}_COMPILER_LAUNCHER)
+        list(
+            APPEND ep_common_cmake_cache_args
+            -DCMAKE_${lang}_COMPILER_LAUNCHER:FILEPATH=${CMAKE_${lang}_COMPILER_LAUNCHER}
+        )
+    endif()
+endforeach()
+
 #-----------------------------------------------------------------------------
 # compile with multiple processors
 include(ProcessorCount)
@@ -250,7 +259,7 @@ message(STATUS "SuperBuild -   DOXYGEN_EXECUTABLE: ${DOXYGEN_EXECUTABLE}")
 
 # CMake configuration variables to pass to ITK's build
 set(ep_itk_cmake_cache_args "")
-foreach(var BUILD_SHARED_LIBS ITK_BUILD_DEFAULT_MODULES)
+foreach(var BUILD_SHARED_LIBS ITK_BUILD_DEFAULT_MODULES ITK_USE_CCACHE)
     if(DEFINED ${var})
         list(APPEND ep_itk_cmake_cache_args "-D${var}=${${var}}")
     endif()
