@@ -83,8 +83,8 @@ def post_build_cleanup(builder) -> None:
         "ITK_MODULE_PREQ", ""
     )
     if itk_preq:
-        for entry in itk_preq.split(":"):
-            entry = entry.strip()
+        for raw_entry in itk_preq.split(":"):
+            entry = raw_entry.strip()
             if not entry:
                 continue
             try:

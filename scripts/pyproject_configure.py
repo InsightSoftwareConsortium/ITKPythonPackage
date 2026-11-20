@@ -122,7 +122,8 @@ def configure(template_file, parameters, output_file):
     updated_lines = []
     with open(template_file) as file_:
         lines = file_.readlines()
-        for line in lines:
+        for template_line in lines:
+            line = template_line
             append = True
             for key in parameters:
                 value = str(parameters[key]).strip()

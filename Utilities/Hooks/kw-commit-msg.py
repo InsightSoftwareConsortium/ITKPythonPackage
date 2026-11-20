@@ -74,8 +74,8 @@ def main():
         original_input_file_lines = f_in.readlines()
 
     input_file_lines: list[str] = []
-    for test_line in original_input_file_lines:
-        test_line = test_line.strip()
+    for raw_line in original_input_file_lines:
+        test_line = raw_line.strip()
         is_empty_line_before_subject: bool = (
             len(input_file_lines) == 0 and len(test_line) == 0
         )

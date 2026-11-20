@@ -590,8 +590,8 @@ class BuildPythonInstanceBase(ABC):
             return
 
         packages = []
-        for line in proc.stdout.splitlines():
-            line = line.strip()
+        for raw_line in proc.stdout.splitlines():
+            line = raw_line.strip()
             if not line or line.startswith("#"):
                 continue
             # Formats like 'name==version' or 'name @ URL'
