@@ -83,11 +83,12 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
 
         repaired_wheel = output_dir / Path(filepath).name
         if repair_status != 0 or not repaired_wheel.exists():
-            raise RuntimeError(
+            msg = (
                 f"delvewheel repair failed for {Path(filepath).name} "
                 f"(exit status {repair_status}, expected output "
                 f"{repaired_wheel})"
             )
+            raise RuntimeError(msg)
 
     def build_tarball(self):
         r"""Create an archive of the ITK Python package build tree (Windows).

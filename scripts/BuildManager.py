@@ -118,7 +118,8 @@ class BuildManager:
             )
         except Exception as e:
             # Corrupt or unreadable file; keep freshly initialized structure
-            raise RuntimeError(f"Failed to load build report: {e}") from e
+            msg = f"Failed to load build report: {e}"
+            raise RuntimeError(msg) from e
 
     @staticmethod
     def _now() -> str:

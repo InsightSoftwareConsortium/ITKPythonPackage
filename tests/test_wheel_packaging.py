@@ -119,7 +119,8 @@ class _FakeBuilder:
             Path(output).write_bytes(b"payload")
             return 0
         if check:
-            raise RuntimeError(f"{tool} failed")
+            msg = f"{tool} failed"
+            raise RuntimeError(msg)
         return 1
 
 

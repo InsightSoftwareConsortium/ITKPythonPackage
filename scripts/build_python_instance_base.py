@@ -33,12 +33,12 @@ def verify_stable_abi_wheels(out_dir: Path, py_api: str) -> list[Path]:
     """
     built_wheels = sorted(out_dir.glob("*.whl"))
     if not built_wheels:
-        raise RuntimeError(f"No wheel was produced in {out_dir}")
+        msg = f"No wheel was produced in {out_dir}"
+        raise RuntimeError(msg)
     mistagged = [w.name for w in built_wheels if f"{py_api}-abi3" not in w.name]
     if mistagged:
-        raise RuntimeError(
-            f"Expected {py_api}-abi3 wheels, got: {', '.join(mistagged)}"
-        )
+        msg = f"Expected {py_api}-abi3 wheels, got: {', '.join(mistagged)}"
+        raise RuntimeError(msg)
     return built_wheels
 
 
@@ -161,10 +161,11 @@ class BuildPythonInstanceBase(ABC):
         module_itk_dir: str = "build",
     ) -> None:
         if module_itk_dir not in self.MODULE_ITK_DIR_CHOICES:
-            raise ValueError(
+            msg = (
                 f"module_itk_dir must be one of {self.MODULE_ITK_DIR_CHOICES}, "
                 f"not {module_itk_dir!r}"
             )
+            raise ValueError(msg)
         self.module_itk_dir = module_itk_dir
         # Jobs are bounded by physical memory; see build_jobs.py.
         self.build_node_memory_gb: float | None = physical_memory_gb()
@@ -563,10 +564,11 @@ class BuildPythonInstanceBase(ABC):
         for description, cmd in checks:
             exit_status = self.echo_check_call(cmd)
             if exit_status != 0:
-                raise RuntimeError(
+                msg = (
                     f"final_wheel_import_test failed at step {description!r} "
                     f"(exit status {exit_status})"
                 )
+                raise RuntimeError(msg)
         print("Documentation tests passed.")
 
     def _pip_uninstall_itk_wildcard(self, python_executable: str | Path):
@@ -607,10 +609,11 @@ class BuildPythonInstanceBase(ABC):
                 [python_executable, "-m", "pip", "uninstall", "-y", *packages]
             )
             if exit_status != 0:
-                raise RuntimeError(
+                msg = (
                     f"Failed to uninstall existing ITK packages {packages!r} "
                     f"(exit status {exit_status})"
                 )
+                raise RuntimeError(msg)
 
     def find_unix_exectable_paths(
         self,
@@ -732,11 +735,12 @@ class BuildPythonInstanceBase(ABC):
             if wheel.stat().st_size > PYPI_MAX_WHEEL_BYTES
         ]
         if oversized:
-            raise RuntimeError(
+            msg = (
                 f"Wheels over the {PYPI_MAX_WHEEL_BYTES / 1e6:.0f} MB PyPI "
                 f"limit: {'; '.join(oversized)}. Move modules to another "
                 f"wheel in cmake/ITKPythonPackage_BuildWheels.cmake."
             )
+            raise RuntimeError(msg)
 
     @abstractmethod
     def discover_python_venvs(
@@ -1030,22 +1034,24 @@ class BuildPythonInstanceBase(ABC):
         prefix = self.itk_install_prefix()
         configs = sorted((prefix / "lib" / "cmake").glob("ITK-*/ITKConfig.cmake"))
         if not configs:
-            raise RuntimeError(
+            msg = (
                 f"No installed ITK under {prefix}: expected "
                 f"lib/cmake/ITK-<version>/ITKConfig.cmake. The install step "
                 f"(cmake --install <ITK build tree>) has not produced one."
             )
+            raise RuntimeError(msg)
         itk_dir = configs[-1].parent
         required = ("ITKModuleExternal.cmake", "Wrapping/CMakeLists.txt")
         missing = [name for name in required if not (itk_dir / name).is_file()]
         if missing:
-            raise RuntimeError(
+            msg = (
                 f"Installed ITK at {itk_dir} cannot build a remote module: "
                 f"missing {missing}. ITK must install its module build files "
                 f"and wrapping infrastructure (configure with "
                 f"ITK_INSTALL_WRAPPING_DEVELOPMENT_FILES=ON on an ITK that "
                 f"supports it)."
             )
+            raise RuntimeError(msg)
         return itk_dir
 
     def install_wrapped_itk_cplusplus(self) -> None:

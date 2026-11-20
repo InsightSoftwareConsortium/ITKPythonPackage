@@ -58,7 +58,8 @@ def download_and_install_pixi(
             env=pixi_install_env,
         )
         if result.returncode != 0:
-            raise RuntimeError(f"Failed to install pixi: {result.stderr}")
+            msg = f"Failed to install pixi: {result.stderr}"
+            raise RuntimeError(msg)
     else:
         pixi_install_script: Path = pixi_home / "pixi_install.sh"
         result = run_commandLine_subprocess(
@@ -71,9 +72,8 @@ def download_and_install_pixi(
             ]
         )
         if result.returncode != 0:
-            raise RuntimeError(
-                f"Failed to download {pixi_install_script}: {result.stderr}"
-            )
+            msg = f"Failed to download {pixi_install_script}: {result.stderr}"
+            raise RuntimeError(msg)
         result = run_commandLine_subprocess(
             [
                 "/bin/sh",
@@ -82,13 +82,13 @@ def download_and_install_pixi(
             env=pixi_install_env,
         )
         if result.returncode != 0:
-            raise RuntimeError(f"Failed to install pixi: {result.stderr}")
+            msg = f"Failed to install pixi: {result.stderr}"
+            raise RuntimeError(msg)
         del pixi_install_script
 
     if not pixi_exec_path.exists():
-        raise RuntimeError(
-            f"Failed to install {pixi_exec_path} pixi into {pixi_exec_path}"
-        )
+        msg = f"Failed to install {pixi_exec_path} pixi into {pixi_exec_path}"
+        raise RuntimeError(msg)
     # Now install the desired platform
     if (pixi_home.parent / "pixi.toml").exists():
         result = run_commandLine_subprocess(
@@ -97,9 +97,8 @@ def download_and_install_pixi(
             env=pixi_install_env,
         )
         if result.returncode != 0:
-            raise RuntimeError(
-                f"Failed to install environment {platform_env}: {result.stderr}"
-            )
+            msg = f"Failed to install environment {platform_env}: {result.stderr}"
+            raise RuntimeError(msg)
     else:
         print(
             f"pixi.toml not found {pixi_home.parent / 'pixi.toml'}, skipping environment install."

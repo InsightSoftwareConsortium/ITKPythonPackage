@@ -502,7 +502,8 @@ def build_wheels_main() -> None:
             env=os.environ.copy(),
         )
         if run_result.returncode != 0:
-            raise RuntimeError(f"Failed to clone ITK: {run_result.stderr}")
+            msg = f"Failed to clone ITK: {run_result.stderr}"
+            raise RuntimeError(msg)
 
     # A tree restored from a build cache has no usable repository: the cache
     # excludes .git contents but keeps the directory, so ask git rather than
@@ -542,10 +543,11 @@ def build_wheels_main() -> None:
                 env=os.environ.copy(),
             )
             if have_revision.returncode != 0:
-                raise RuntimeError(
+                msg = (
                     f"Failed to fetch ITK tags in {args.itk_source_dir}: "
                     f"{fetch_result.stderr}"
                 )
+                raise RuntimeError(msg)
             print(
                 f"WARNING: Failed to fetch ITK tags in {args.itk_source_dir}; "
                 f"using the local {args.itk_git_tag!r}: {fetch_result.stderr}"
@@ -635,10 +637,11 @@ def build_wheels_main() -> None:
         ]
         python_probe = run_commandLine_subprocess(cmd, env=os.environ.copy())
         if python_probe.returncode != 0 or not python_probe.stdout.strip():
-            raise RuntimeError(
+            msg = (
                 f"Could not resolve the python interpreter for pixi environment "
                 f"{args.platform_env!r}: {python_probe.stderr}"
             )
+            raise RuntimeError(msg)
         package_env_config["PYTHON_EXECUTABLE"] = python_probe.stdout.strip()
 
     oci_exe = resolve_oci_exe(os.environ.copy())
@@ -679,7 +682,7 @@ def build_wheels_main() -> None:
                 os.environ.get("CROSS_TRIPLE") is None
                 and target.arch is not Arch.AARCH64
             ):
-                raise RuntimeError(
+                msg = (
                     f"ERROR: MANYLINUX_VERSION={args.manylinux_version} "
                     f"and TARGET_ARCH={target.arch.value} but not "
                     f"building in dockcross.\n"
@@ -692,10 +695,12 @@ def build_wheels_main() -> None:
                     f"  For wheels tied to this host instead, use "
                     f"--platform-env linux-py311."
                 )
+                raise RuntimeError(msg)
 
         builder_cls = LinuxBuildPythonInstance
     else:
-        raise ValueError(f"Unknown platform {platform}")
+        msg = f"Unknown platform {platform}"
+        raise ValueError(msg)
 
     print("=" * 80)
     print("=" * 80)

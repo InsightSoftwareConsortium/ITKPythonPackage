@@ -110,10 +110,11 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
                 # Move and clean
                 repacked = list(metawheel_dist.glob("*.whl"))
                 if not repacked:
-                    raise RuntimeError(
+                    msg = (
                         f"Repacking {metawhl.name} produced no wheel in "
                         f"{metawheel_dist}; refusing to delete the original"
                     )
+                    raise RuntimeError(msg)
                 for new_whl in repacked:
                     shutil.move(
                         str(new_whl),
@@ -140,10 +141,11 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
             raise RuntimeError(msg)
         lib_dir = Path(python_executable).resolve().parent.parent / "lib"
         if not lib_dir.is_dir():
-            raise RuntimeError(
+            msg_0 = (
                 f"Build environment library directory {lib_dir} does not exist "
                 f"(derived from PYTHON_EXECUTABLE={python_executable})"
             )
+            raise RuntimeError(msg_0)
         return lib_dir
 
     def fixup_wheel(
@@ -217,11 +219,12 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
             )
 
             if repair_status != 0 or not repaired_wheel.exists():
-                raise RuntimeError(
+                msg = (
                     f"auditwheel repair failed for {filepath_obj.name} "
                     f"(exit status {repair_status}, expected output "
                     f"{repaired_wheel.name})"
                 )
+                raise RuntimeError(msg)
 
             # Remove the original linux_*.whl now that the repair is verified.
             if (

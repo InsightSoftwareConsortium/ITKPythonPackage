@@ -267,10 +267,11 @@ def which_required_in_pixi_env(
     )
     resolved = probe.stdout.strip() if probe.returncode == 0 else ""
     if not resolved:
-        raise RuntimeError(
+        msg = (
             f"MISSING: {name} not found in pixi environment {platform_env!r}; "
             f"aborting until required executables can be found"
         )
+        raise RuntimeError(msg)
     return Path(resolved)
 
 
@@ -289,9 +290,8 @@ def which_required(name: str) -> Path:
     """
     path = _which(name)
     if not path:
-        raise RuntimeError(
-            f"MISSING: {name} not found in PATH; aborting until required executables can be found"
-        )
+        msg = f"MISSING: {name} not found in PATH; aborting until required executables can be found"
+        raise RuntimeError(msg)
     return path
 
 
@@ -454,21 +454,21 @@ def compute_itk_package_version(
         ).returncode
         != 0
     ):
-        raise RuntimeError(
+        msg = (
             f"Cannot derive a version from {itk_dir}: it is not a git "
             f"repository, which is how a source tree restored from a build "
             f"cache arrives. Pass --itk-package-version, or set "
             f"ITK_PACKAGE_VERSION, to name the version explicitly."
         )
+        raise RuntimeError(msg)
     fetch_result = run_commandLine_subprocess(
         ["git", "fetch", "--tags"],
         cwd=itk_dir,
         env=env,
     )
     if fetch_result.returncode != 0:
-        raise RuntimeError(
-            f"git fetch --tags failed in {itk_dir}: {fetch_result.stderr}"
-        )
+        msg = f"git fetch --tags failed in {itk_dir}: {fetch_result.stderr}"
+        raise RuntimeError(msg)
     checkout_result = run_commandLine_subprocess(
         ["git", "checkout", itk_git_tag],
         cwd=itk_dir,
@@ -506,17 +506,19 @@ def compute_itk_package_version(
     )
     desc = describe_result.stdout.strip()
     if describe_result.returncode != 0 or not desc:
-        raise RuntimeError(
+        msg = (
             f"git describe produced no usable version in {itk_dir} "
             f"(exit status {describe_result.returncode}): "
             f"{describe_result.stderr}"
         )
+        raise RuntimeError(msg)
     version = git_describe_to_pep440(desc)
     if version == "0.0.0":
-        raise RuntimeError(
+        msg = (
             f"git describe output {desc!r} does not yield an ITK version; "
             f"refusing to build wheels named 0.0.0"
         )
+        raise RuntimeError(msg)
 
     return version
 

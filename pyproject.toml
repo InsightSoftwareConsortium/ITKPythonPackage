@@ -23,6 +23,7 @@ extend-select = [
   # Rules adopted one per commit, named so each stays enforced.
   "ARG005",  # unused-lambda-argument
   "EM101",   # raw-string-in-exception
+  "EM102",   # f-string-in-exception
   "EXE001",  # shebang-not-executable
   "FURB110", # if-exp-instead-of-or-operator
   "FURB129", # readlines-in-for
@@ -94,7 +95,6 @@ ignore = [
   # Each is removed by the commit that fixes it.
   "ARG001", # unused-function-argument (44)
   "ARG002", # unused-method-argument (8)
-  "EM102",  # f-string-in-exception (49)
   "PTH123", # builtin-open (14)
   "TRY003", # raise-vanilla-args (62)
 ]

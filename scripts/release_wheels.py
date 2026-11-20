@@ -92,9 +92,8 @@ def default_targets(host: Host) -> list[str]:
     try:
         return defaults[(host.system, host.arch)]
     except KeyError:
-        raise SystemExit(
-            f"No ITK wheel target is built on {host.system} {host.arch}."
-        ) from None
+        msg = f"No ITK wheel target is built on {host.system} {host.arch}."
+        raise SystemExit(msg) from None
 
 
 def unbuildable_reason(target: str, host: Host) -> str | None:
@@ -117,12 +116,12 @@ def select_targets(requested: list[str] | None, host: Host) -> list[str]:
     targets = requested or default_targets(host)
     for target in targets:
         if target not in TARGETS:
-            raise SystemExit(
-                f"Unknown target {target!r}; choose from {', '.join(TARGETS)}."
-            )
+            msg = f"Unknown target {target!r}; choose from {', '.join(TARGETS)}."
+            raise SystemExit(msg)
         reason = unbuildable_reason(target, host)
         if reason:
-            raise SystemExit(f"Cannot build {target} here: {reason}.")
+            msg = f"Cannot build {target} here: {reason}."
+            raise SystemExit(msg)
     return targets
 
 
@@ -134,10 +133,11 @@ def package_version(itk_ref: str, ref_is_tag: bool, version: str | None) -> str:
         version = itk_ref
     bare = version.removeprefix("v")
     if not _PEP440_RELEASE.match(bare):
-        raise SystemExit(
+        msg = (
             f"{version!r} is not a version PyPI accepts, such as v6.0b03 or "
             f"6.0b3; pass one after the ITK ref."
         )
+        raise SystemExit(msg)
     return bare
 
 
@@ -175,9 +175,11 @@ def prepare_itk_source(src: Path, repository: str, itk_ref: str) -> tuple[str, b
         print(f"Cloning {repository} into {src}", flush=True)
         subprocess.run(["git", "clone", "--quiet", repository, str(src)], check=True)
     elif _git("rev-parse", "--git-dir", cwd=src, check=False).returncode != 0:
-        raise SystemExit(f"{src} exists but is not a git repository; remove it.")
+        msg = f"{src} exists but is not a git repository; remove it."
+        raise SystemExit(msg)
     elif _git("status", "--porcelain", "--untracked-files=no", cwd=src).stdout:
-        raise SystemExit(f"{src} has uncommitted changes; commit or discard them.")
+        msg = f"{src} has uncommitted changes; commit or discard them."
+        raise SystemExit(msg)
 
     print(f"Fetching {repository} into {src}", flush=True)
     _git(
@@ -199,7 +201,8 @@ def prepare_itk_source(src: Path, repository: str, itk_ref: str) -> tuple[str, b
         _git("fetch", "--quiet", repository, itk_ref, cwd=src, check=False)
     if commit := _commit_of(src, itk_ref):
         return commit, False
-    raise SystemExit(f"{itk_ref!r} is not a tag, branch or commit of {repository}.")
+    msg = f"{itk_ref!r} is not a tag, branch or commit of {repository}."
+    raise SystemExit(msg)
 
 
 def _pixi() -> str:

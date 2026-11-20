@@ -96,24 +96,24 @@ class TargetPlatform:
 
     def __post_init__(self) -> None:
         if self.os_name not in _OS_NAMES:
-            raise ValueError(
-                f"Unknown os_name {self.os_name!r}; expected one of {_OS_NAMES}"
-            )
+            msg = f"Unknown os_name {self.os_name!r}; expected one of {_OS_NAMES}"
+            raise ValueError(msg)
         if not isinstance(self.arch, Arch):
-            raise TypeError(f"arch must be an Arch, got {self.arch!r}")
+            msg = f"arch must be an Arch, got {self.arch!r}"
+            raise TypeError(msg)
         if (self.os_name, self.arch) not in _PIXI_SUFFIX:
-            raise ValueError(
-                f"Unsupported combination {self.os_name}/{self.arch.value}"
-            )
+            msg = f"Unsupported combination {self.os_name}/{self.arch.value}"
+            raise ValueError(msg)
         if self.manylinux_version:
             if self.os_name != "linux":
                 msg = "manylinux_version is only meaningful on linux"
                 raise ValueError(msg)
             if (self.arch, self.manylinux_version) not in _MANYLINUX_IMAGE_TAGS:
-                raise ValueError(
+                msg_0 = (
                     f"Unknown manylinux version "
                     f"{self.manylinux_version!r} for {self.arch.value}"
                 )
+                raise ValueError(msg_0)
 
     @property
     def pixi_suffix(self) -> str:
@@ -189,7 +189,8 @@ class TargetPlatform:
         elif os.name == "nt":
             os_name = "windows"
         else:
-            raise ValueError(f"Unsupported operating system {sysname!r}")
+            msg = f"Unsupported operating system {sysname!r}"
+            raise ValueError(msg)
 
         # PROCESSOR_ARCHITECTURE describes the process environment, not the
         # package config mapping callers pass in as ``env``; fall back to the
@@ -202,7 +203,8 @@ class TargetPlatform:
         )
         arch = _MACHINE_ALIASES.get(machine.lower())
         if arch is None:
-            raise ValueError(f"Unknown machine {machine!r}")
+            msg = f"Unknown machine {machine!r}"
+            raise ValueError(msg)
 
         return cls(
             os_name=os_name,
@@ -229,5 +231,6 @@ def host_arch(env: Mapping[str, str] | None = None) -> Arch:
     machine = uname.machine if uname else ambient_machine
     arch = _MACHINE_ALIASES.get(machine.lower())
     if arch is None:
-        raise ValueError(f"Unknown host machine {machine!r}")
+        msg = f"Unknown host machine {machine!r}"
+        raise ValueError(msg)
     return arch

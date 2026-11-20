@@ -141,7 +141,8 @@ def find_unix_exectable_paths(
     """
     python_executable = venv_dir / "bin" / "python"
     if not python_executable.exists():
-        raise FileNotFoundError(f"Python executable not found: {python_executable}")
+        msg = f"Python executable not found: {python_executable}"
+        raise FileNotFoundError(msg)
 
     # Compute Python include dir using sysconfig for the given interpreter
     try:

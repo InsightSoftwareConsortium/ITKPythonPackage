@@ -192,7 +192,8 @@ def create_posix_tarball(builder) -> None:
         check=True,
     )
     if not tar_path.exists() or tar_path.stat().st_size == 0:
-        raise RuntimeError(f"tar produced no usable archive at {tar_path}")
+        msg = f"tar produced no usable archive at {tar_path}"
+        raise RuntimeError(msg)
 
     # Compress with zstd
     builder.echo_check_call(
@@ -209,7 +210,8 @@ def create_posix_tarball(builder) -> None:
         check=True,
     )
     if not zst_path.exists() or zst_path.stat().st_size == 0:
-        raise RuntimeError(f"zstd produced no usable archive at {zst_path}")
+        msg = f"zstd produced no usable archive at {zst_path}"
+        raise RuntimeError(msg)
 
     remove_uncompressed_tar(tar_path)
 

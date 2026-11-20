@@ -358,7 +358,8 @@ def _checking_echo(failing_tool: str):
         rendered = " ".join(str(c) for c in cmd)
         if failing_tool in rendered:
             if check:
-                raise RuntimeError(f"command failed: {rendered}")
+                msg = f"command failed: {rendered}"
+                raise RuntimeError(msg)
             return 1
         return 0
 

@@ -124,7 +124,8 @@ class _DepContext:
         self.calls.append(cmd)
         if self._failing in cmd:
             if check:
-                raise RuntimeError(f"git {self._failing} failed")
+                msg = f"git {self._failing} failed"
+                raise RuntimeError(msg)
             return 1
         if cmd[1] == "clone":
             Path(cmd[3]).mkdir(parents=True, exist_ok=True)
