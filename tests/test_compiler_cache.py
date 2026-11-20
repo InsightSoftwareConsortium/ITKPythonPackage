@@ -39,7 +39,7 @@ def test_only_ccache_also_runs_the_wrapping_generators(tmp_path, tool, wraps):
     [("ccache", "CCACHE_MAXSIZE"), ("sccache", "SCCACHE_CACHE_SIZE")],
 )
 def test_the_cache_is_sized_for_an_itk_build(tool, variable):
-    assert compiler_cache_environment(tool, {}) == {variable: DEFAULT_MAX_SIZE}
+    assert compiler_cache_environment(tool, {})[variable] == DEFAULT_MAX_SIZE
 
 
 @pytest.mark.parametrize(
@@ -47,7 +47,23 @@ def test_the_cache_is_sized_for_an_itk_build(tool, variable):
     [("ccache", "CCACHE_MAXSIZE"), ("sccache", "SCCACHE_CACHE_SIZE")],
 )
 def test_a_size_the_caller_chose_is_kept(tool, variable):
-    assert compiler_cache_environment(tool, {variable: "8G"}) == {}
+    assert variable not in compiler_cache_environment(tool, {variable: "8G"})
+
+
+def test_the_sccache_server_never_idles_out_during_a_build():
+    """A server restarted after an idle stretch reports only its own compiles."""
+    assert compiler_cache_environment("sccache", {})["SCCACHE_IDLE_TIMEOUT"] == "0"
+
+
+def test_an_idle_timeout_the_caller_chose_is_kept():
+    env = {"SCCACHE_IDLE_TIMEOUT": "3600"}
+    assert "SCCACHE_IDLE_TIMEOUT" not in compiler_cache_environment("sccache", env)
+
+
+def test_ccache_gets_no_sccache_settings():
+    assert compiler_cache_environment("ccache", {}) == {
+        "CCACHE_MAXSIZE": DEFAULT_MAX_SIZE
+    }
 
 
 @pytest.mark.parametrize("flag", [True, False])

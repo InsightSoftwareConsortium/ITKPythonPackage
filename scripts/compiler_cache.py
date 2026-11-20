@@ -18,6 +18,9 @@ DEFAULT_MAX_SIZE = "30G"
 
 _SIZE_VARIABLE = {"ccache": "CCACHE_MAXSIZE", "sccache": "SCCACHE_CACHE_SIZE"}
 
+# 0 keeps one sccache server for the whole build; an idle restart zeroes its statistics.
+_SCCACHE_IDLE_TIMEOUT = "SCCACHE_IDLE_TIMEOUT"
+
 
 _TRUE_VALUES = ("1", "ON", "TRUE", "YES")
 
@@ -50,11 +53,11 @@ def compiler_cache_definitions(tool: str, launcher: Path | str) -> dict[str, str
 
 
 def compiler_cache_environment(tool: str, env: Mapping[str, str]) -> dict[str, str]:
-    """Return environment settings to add for *tool*; a size in *env* wins."""
-    variable = _SIZE_VARIABLE[tool]
-    if env.get(variable):
-        return {}
-    return {variable: DEFAULT_MAX_SIZE}
+    """Return environment settings to add for *tool*; a value in *env* wins."""
+    added = {_SIZE_VARIABLE[tool]: DEFAULT_MAX_SIZE}
+    if tool == "sccache":
+        added[_SCCACHE_IDLE_TIMEOUT] = "0"
+    return {name: value for name, value in added.items() if not env.get(name)}
 
 
 def compiler_cache_max_size(tool: str, env: Mapping[str, str]) -> str:
