@@ -54,6 +54,17 @@ repos:
       - id: codespell
         stages: [pre-commit]
 
+  # reStructuredText and Python pattern checks
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+      - id: rst-backticks
+        stages: [pre-commit]
+      - id: rst-directive-colons
+        stages: [pre-commit]
+      - id: rst-inline-touching-normal
+        stages: [pre-commit]
+
   # Shell: linting
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.10.0.1
