@@ -94,7 +94,7 @@ class TargetPlatform:
     def __post_init__(self) -> None:
         if self.os_name not in _OS_NAMES:
             raise ValueError(
-                f"Unknown os_name {self.os_name!r}; " f"expected one of {_OS_NAMES}"
+                f"Unknown os_name {self.os_name!r}; expected one of {_OS_NAMES}"
             )
         if not isinstance(self.arch, Arch):
             raise TypeError(f"arch must be an Arch, got {self.arch!r}")
@@ -138,7 +138,7 @@ class TargetPlatform:
         if self.os_name == "linux":
             return f"manylinux{self.manylinux_version}_{self.arch.value}"
         if self.os_name == "darwin":
-            return f"macosx_{_MACOSX_DEPLOYMENT_TARGET}_" f"{self.cmake_osx_arch}"
+            return f"macosx_{_MACOSX_DEPLOYMENT_TARGET}_{self.cmake_osx_arch}"
         return "win_amd64"
 
     @property
