@@ -17,6 +17,7 @@ from cmake_argument_builder import CMakeArgumentBuilder
 from compiler_cache import (
     compiler_cache_definitions,
     compiler_cache_environment,
+    compiler_cache_max_size,
     compiler_cache_session,
     compiler_cache_tool,
 )
@@ -323,7 +324,11 @@ class BuildPythonInstanceBase(ABC):
                 compiler_cache_definitions(cache_tool, cache_exe)
             )
             os.environ.update(compiler_cache_environment(cache_tool, os.environ))
-            self.compiler_cache_commands = compiler_cache_session(cache_tool, cache_exe)
+            self.compiler_cache_commands = compiler_cache_session(
+                cache_tool,
+                cache_exe,
+                compiler_cache_max_size(cache_tool, os.environ),
+            )
 
         if self.package_env_config.get("DEAD_STRIP", "OFF") == "ON":
             user_defs = self.cmake_cmdline_definitions

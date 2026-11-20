@@ -57,14 +57,23 @@ def compiler_cache_environment(tool: str, env: Mapping[str, str]) -> dict[str, s
     return {variable: DEFAULT_MAX_SIZE}
 
 
+def compiler_cache_max_size(tool: str, env: Mapping[str, str]) -> str:
+    """Return the cache size limit in effect for *tool* under *env*."""
+    return env.get(_SIZE_VARIABLE[tool]) or DEFAULT_MAX_SIZE
+
+
 def compiler_cache_session(
-    tool: str, launcher: Path | str
+    tool: str, launcher: Path | str, max_size: str
 ) -> tuple[list[list[str]], list[list[str]]]:
     """Return the commands to run before and after a build.
 
-    Statistics are zeroed first so the report covers this build alone. The
-    sccache server keeps the environment it started with, so it is restarted
-    after the cache size is set and stopped at the end.
+    ccache saves *max_size* in the cache directory's ccache.conf, so a later
+    ccache call outside the build keeps the limit rather than trimming the
+    cache to its 5 GB default. sccache has no per-directory setting; its size
+    comes from the environment only. Statistics are zeroed first so the
+    report covers this build alone. The sccache server keeps the environment
+    it started with, so it is restarted after the cache size is set and
+    stopped at the end.
     """
     exe = str(launcher)
     if tool == "sccache":
@@ -75,6 +84,6 @@ def compiler_cache_session(
         ]
         after = [[exe, "--show-stats"], [exe, "--stop-server"]]
     else:
-        before = [[exe, "--zero-stats"]]
+        before = [[exe, "--max-size", max_size], [exe, "--zero-stats"]]
         after = [[exe, "--show-stats", "--verbose"]]
     return before, after

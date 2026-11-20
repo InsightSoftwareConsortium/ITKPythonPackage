@@ -5,6 +5,7 @@ from compiler_cache import (
     DEFAULT_MAX_SIZE,
     compiler_cache_definitions,
     compiler_cache_environment,
+    compiler_cache_max_size,
     compiler_cache_session,
     compiler_cache_tool,
     use_compiler_cache,
@@ -69,14 +70,31 @@ def test_without_a_flag_the_environment_decides(env, expected):
 
 
 def test_ccache_reports_on_this_build_alone(tmp_path):
-    before, after = compiler_cache_session("ccache", tmp_path / "ccache")
-    assert before == [[str(tmp_path / "ccache"), "--zero-stats"]]
+    before, after = compiler_cache_session("ccache", tmp_path / "ccache", "30G")
+    assert before[-1] == [str(tmp_path / "ccache"), "--zero-stats"]
     assert after == [[str(tmp_path / "ccache"), "--show-stats", "--verbose"]]
 
 
 def test_the_sccache_server_is_restarted_and_stopped(tmp_path):
     exe = str(tmp_path / "sccache")
-    before, after = compiler_cache_session("sccache", exe)
+    before, after = compiler_cache_session("sccache", exe, "30G")
     assert before[:2] == [[exe, "--stop-server"], [exe, "--start-server"]]
     assert [exe, "--zero-stats"] in before
     assert after[-1] == [exe, "--stop-server"]
+
+
+def test_ccache_saves_its_size_limit_before_the_build(tmp_path):
+    exe = str(tmp_path / "ccache")
+    before, _ = compiler_cache_session("ccache", exe, "42G")
+    assert before.index([exe, "--max-size", "42G"]) < before.index(
+        [exe, "--zero-stats"]
+    )
+
+
+@pytest.mark.parametrize(
+    ("tool", "variable"),
+    [("ccache", "CCACHE_MAXSIZE"), ("sccache", "SCCACHE_CACHE_SIZE")],
+)
+def test_the_effective_size_prefers_the_callers(tool, variable):
+    assert compiler_cache_max_size(tool, {variable: "8G"}) == "8G"
+    assert compiler_cache_max_size(tool, {}) == DEFAULT_MAX_SIZE
