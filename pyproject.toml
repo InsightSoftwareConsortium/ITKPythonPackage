@@ -38,6 +38,7 @@ extend-select = [
   "RUF010",  # explicit-f-string-type-conversion
   "RUF013",  # implicit-optional
   "RUF036",  # none-not-at-end-of-union
+  "RUF043",  # pytest-raises-ambiguous-pattern
   "RUF059",  # unused-unpacked-variable
   "RUF100",  # unused-noqa
   "SIM108",  # if-else-block-instead-of-if-exp
@@ -92,7 +93,6 @@ ignore = [
   "PLW2901", # redefined-loop-name (5)
   "PTH118",  # os-path-join (7)
   "PTH123",  # builtin-open (14)
-  "RUF043",  # pytest-raises-ambiguous-pattern (2)
   "SIM105",  # suppressible-exception (10)
   "SIM117",  # multiple-with-statements (18)
   "TRY003",  # raise-vanilla-args (62)
