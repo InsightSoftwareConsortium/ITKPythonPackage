@@ -84,6 +84,7 @@ def test_native_build_passes_the_commit_and_version(tmp_path):
     assert cmd[cmd.index("--itk-git-tag") + 1] == "abc123"
     assert cmd[cmd.index("--itk-package-version") + 1] == "6.0b3"
     assert "--build-itk-tarball-cache" in cmd
+    assert "--use-compiler-cache" in cmd
     assert step.env == {}
 
 
@@ -97,6 +98,7 @@ def test_container_build_runs_without_sudo_unless_asked(tmp_path, monkeypatch):
         "ITK_PACKAGE_VERSION": "gitauto",
         "TARGET_ARCH": "aarch64",
         "NO_SUDO": "1",
+        "USE_CCACHE": "1",
     }
     monkeypatch.setenv("NO_SUDO", "")
     (step,) = rw.plan(["manylinux-x64"], tmp_path / "ITK", "abc123", "6.0b3")
