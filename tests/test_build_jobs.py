@@ -1,3 +1,5 @@
+import os
+import platform
 from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import IO, Any
@@ -108,11 +110,11 @@ def _fake_open(mapping: Mapping[str, str]) -> Callable[..., IO[str]]:
 def _linux_host_with(
     monkeypatch: pytest.MonkeyPatch, host_gb: float, cgroup_files: Mapping[str, str]
 ) -> None:
-    monkeypatch.setattr(build_jobs.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(platform, "system", lambda: "Linux")
     # os.sysconf does not exist on Windows; the Linux branch under test never
     # runs there, but the stub must still be installable so the test can run.
     monkeypatch.setattr(
-        build_jobs.os,
+        os,
         "sysconf",
         lambda name: int(host_gb * 1024**3) // 4096 if "PHYS" in str(name) else 4096,
         raising=False,

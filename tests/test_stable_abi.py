@@ -1,9 +1,9 @@
 """The stable-ABI tag is a project decision, not a property of the driver."""
 
+import sys
 from types import SimpleNamespace
 from unittest.mock import patch
 
-import pyproject_configure
 import pytest
 from build_python_instance_base import verify_stable_abi_wheels
 from pyproject_configure import STABLE_ABI_TAG, get_py_api
@@ -16,7 +16,7 @@ def test_stable_abi_tag_is_cp311():
 def test_get_py_api_ignores_the_running_interpreter():
     """One cp311-abi3 wheel per platform, whatever python drives the build."""
     fake = SimpleNamespace(major=3, minor=14)
-    with patch.object(pyproject_configure.sys, "version_info", fake):
+    with patch.object(sys, "version_info", fake):
         assert get_py_api() == "cp311"
 
 
