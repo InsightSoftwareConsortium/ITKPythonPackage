@@ -173,7 +173,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
     def venv_paths(self) -> None:
         """Populate ``venv_info_dict`` from the pixi-managed Python environment on Windows."""
 
-        def get_python_version(platform_env: str) -> None | tuple[int, int]:
+        def get_python_version(platform_env: str) -> tuple[int, int] | None:
             pattern = re.compile(r"py3(?P<minor>\d+)")
             m = pattern.search(platform_env)
             if not m:

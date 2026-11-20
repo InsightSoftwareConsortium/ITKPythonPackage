@@ -31,6 +31,7 @@ extend-select = [
   "RUF005",  # collection-literal-concatenation
   "RUF010",  # explicit-f-string-type-conversion
   "RUF013",  # implicit-optional
+  "RUF036",  # none-not-at-end-of-union
   "RUF100",  # unused-noqa
   "SIM910",  # dict-get-with-none-default
   # Rule families recommended by the Scientific Python guide.
@@ -86,7 +87,6 @@ ignore = [
   "PTH123",  # builtin-open (14)
   "RET504",  # unnecessary-assign (2)
   "RUF002",  # ambiguous-unicode-character-docstring (1)
-  "RUF036",  # none-not-at-end-of-union (1)
   "RUF043",  # pytest-raises-ambiguous-pattern (2)
   "RUF059",  # unused-unpacked-variable (2)
   "SIM105",  # suppressible-exception (10)
