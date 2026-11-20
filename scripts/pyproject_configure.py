@@ -506,7 +506,7 @@ def configure_one_pyproject_file(
     # Resolve script information locally
 
     IPP_BuildWheelsSupport_DIR = os.path.join(SCRIPT_DIR, "..", "BuildWheelsSupport")
-    SCRIPT_NAME = os.path.basename(__file__)
+    SCRIPT_NAME = Path(__file__).name
     # Write itkVersion.py file to report ITK version in python.
     write_itkVersion_py(Path(output_dir) / "itkVersion.py", PEP440_VERSION)
     # Copy LICENSE file needed for each wheel
