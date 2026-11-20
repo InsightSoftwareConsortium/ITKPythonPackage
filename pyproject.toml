@@ -27,6 +27,7 @@ extend-select = [
   "ISC003",  # explicit-string-concatenation
   "PLR1711", # useless-return
   "PLR5501", # collapsible-else-if
+  "RET504",  # unnecessary-assign
   "RET505",  # superfluous-else-return
   "RUF005",  # collection-literal-concatenation
   "RUF010",  # explicit-f-string-type-conversion
@@ -86,7 +87,6 @@ ignore = [
   "PTH119",  # os-path-basename (1)
   "PTH120",  # os-path-dirname (1)
   "PTH123",  # builtin-open (14)
-  "RET504",  # unnecessary-assign (2)
   "RUF002",  # ambiguous-unicode-character-docstring (1)
   "RUF043",  # pytest-raises-ambiguous-pattern (2)
   "RUF059",  # unused-unpacked-variable (2)

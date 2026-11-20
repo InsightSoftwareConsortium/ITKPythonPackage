@@ -233,7 +233,6 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         list[str]
             Environment names like ``['311-x64']``.
         """
-        default_platform_envs = [
+        return [
             f"311-{platform_architecture}",
         ]
-        return default_platform_envs

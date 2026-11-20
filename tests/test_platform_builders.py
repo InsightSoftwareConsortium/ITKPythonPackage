@@ -440,11 +440,10 @@ def _prepare_metawheel(linux_builder, tmp_path) -> Path:
     )
     dist_dir = tmp_path / "dist"
     dist_dir.mkdir(exist_ok=True)
-    metawhl = _make_wheel(
+    return _make_wheel(
         dist_dir / "itk-6.0.0-cp311-abi3-linux_x86_64.whl",
         {"itk-6.0.0.dist-info/WHEEL": "Tag: cp311-abi3-linux_x86_64"},
     )
-    return metawhl
 
 
 def test_metawheel_is_kept_when_repack_produces_nothing(tmp_path, linux_builder):
