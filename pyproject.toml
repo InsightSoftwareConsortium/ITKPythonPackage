@@ -33,6 +33,7 @@ extend-select = [
   "PTH120",  # os-path-dirname
   "RET504",  # unnecessary-assign
   "RET505",  # superfluous-else-return
+  "RUF002",  # ambiguous-unicode-character-docstring
   "RUF005",  # collection-literal-concatenation
   "RUF010",  # explicit-f-string-type-conversion
   "RUF013",  # implicit-optional
@@ -90,7 +91,6 @@ ignore = [
   "PLW2901", # redefined-loop-name (5)
   "PTH118",  # os-path-join (7)
   "PTH123",  # builtin-open (14)
-  "RUF002",  # ambiguous-unicode-character-docstring (1)
   "RUF043",  # pytest-raises-ambiguous-pattern (2)
   "SIM105",  # suppressible-exception (10)
   "SIM115",  # open-file-with-context-handler (1)

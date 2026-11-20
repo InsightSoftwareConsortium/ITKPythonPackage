@@ -364,7 +364,7 @@ def git_describe_to_pep440(desc: str) -> str:
     # │   |   └────── commits since tag
     # |   └────────── pre-release type and number
     # └────────────── nearest tag
-    to a PEP 440–compatible version string.
+    to a PEP 440-compatible version string.
 
     [N!]N(.N)*[{a|b|rc}N][.postN][.devN]+<localinfo>
     111122222233333333333444444445555555666666666666
