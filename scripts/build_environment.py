@@ -86,10 +86,7 @@ def echo_check_call(
     cmd = pixi_run_preamble + [str(c) for c in cmd]
     # Prepare a friendly command-line string for display
     try:
-        if isinstance(cmd, list | tuple):
-            display_cmd = " ".join(cmd)
-        else:
-            display_cmd = str(cmd)
+        display_cmd = " ".join(cmd) if isinstance(cmd, list | tuple) else str(cmd)
     except Exception as e:
         display_cmd = f"{cmd!s}\nERROR: {e}"
         sys.exit(1)
