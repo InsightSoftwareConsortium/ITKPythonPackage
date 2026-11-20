@@ -402,7 +402,7 @@ def git_describe_to_pep440(desc: str) -> str:
             "rc": "rc",
             "": "",
         }
-        prerelease_name = prereleasemapping.get(groupdict.get("pretype", ""), None)
+        prerelease_name = prereleasemapping.get(groupdict.get("pretype", ""))
         prerelnum = groupdict.get("prerelnum", None)
         if prerelease_name and prerelnum and len(prerelease_name) > 0:
             semver_format += f"{prerelease_name}{prerelnum}"

@@ -24,6 +24,7 @@ extend-select = [
   "FURB110", # if-exp-instead-of-or-operator
   "PLR1711", # useless-return
   "RUF010",  # explicit-f-string-type-conversion
+  "SIM910",  # dict-get-with-none-default
   # Rule families recommended by the Scientific Python guide.
   "ARG",  # flake8-unused-arguments
   "C4",   # flake8-comprehensions
@@ -93,7 +94,6 @@ ignore = [
   "SIM115",  # open-file-with-context-handler (1)
   "SIM117",  # multiple-with-statements (18)
   "SIM118",  # in-dict-keys (4)
-  "SIM910",  # dict-get-with-none-default (1)
   "TC003",   # typing-only-standard-library-import (3)
   "TRY003",  # raise-vanilla-args (62)
   "TRY300",  # try-consider-else (2)
