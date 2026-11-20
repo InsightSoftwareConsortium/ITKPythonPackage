@@ -171,7 +171,7 @@ def test_fixup_wheel_raises_when_repair_reports_success_but_output_missing(
     tmp_path, linux_builder
 ):
     """echo_check_call reporting 0 is not enough without the output wheel."""
-    wheel, repaired = _prepare_linux_fixup(linux_builder, tmp_path)
+    wheel, _repaired = _prepare_linux_fixup(linux_builder, tmp_path)
     with patch.object(linux_builder, "echo_check_call", return_value=0):
         with pytest.raises(RuntimeError):
             linux_builder.fixup_wheel(str(wheel))
@@ -239,7 +239,7 @@ def test_fixup_wheel_fails_loudly_when_the_build_env_lib_dir_is_absent(
     tmp_path, linux_builder
 ):
     """Silently omitting the env lib dir is what reintroduced defect C."""
-    wheel, repaired = _prepare_linux_fixup(linux_builder, tmp_path)
+    wheel, _repaired = _prepare_linux_fixup(linux_builder, tmp_path)
     linux_builder.package_env_config["PYTHON_EXECUTABLE"] = str(
         tmp_path / "no-such-env" / "bin" / "python"
     )
