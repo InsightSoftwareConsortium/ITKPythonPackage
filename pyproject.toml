@@ -87,16 +87,16 @@ ignore = [
   "PLR09",   # too-many-*: build drivers take many options by design
   "PLR2004", # magic-value-comparison
   "T201",    # `print` found: printing is these build scripts' output
+  "PLC0415", # import-outside-top-level: per-platform builders and patched test modules load lazily
   # Parked so the rule list could be adopted with lint passing.
   # Each is removed by the commit that fixes it.
-  "ARG001",  # unused-function-argument (44)
-  "ARG002",  # unused-method-argument (8)
-  "EM101",   # raw-string-in-exception (13)
-  "EM102",   # f-string-in-exception (49)
-  "PLC0415", # import-outside-top-level (9)
-  "PTH123",  # builtin-open (14)
-  "SIM117",  # multiple-with-statements (18)
-  "TRY003",  # raise-vanilla-args (62)
+  "ARG001", # unused-function-argument (44)
+  "ARG002", # unused-method-argument (8)
+  "EM101",  # raw-string-in-exception (13)
+  "EM102",  # f-string-in-exception (49)
+  "PTH123", # builtin-open (14)
+  "SIM117", # multiple-with-statements (18)
+  "TRY003", # raise-vanilla-args (62)
 ]
 
 [tool.commitizen]
