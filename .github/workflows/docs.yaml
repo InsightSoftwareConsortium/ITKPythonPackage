@@ -1,6 +1,7 @@
 name: docs
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - "docs/**"
@@ -10,6 +11,10 @@ on:
     paths:
       - "docs/**"
       - ".readthedocs.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
