@@ -36,6 +36,7 @@ extend-select = [
   "RUF059",  # unused-unpacked-variable
   "RUF100",  # unused-noqa
   "SIM108",  # if-else-block-instead-of-if-exp
+  "SIM118",  # in-dict-keys
   "SIM910",  # dict-get-with-none-default
   "TC003",   # typing-only-standard-library-import
   # Rule families recommended by the Scientific Python guide.
@@ -94,7 +95,6 @@ ignore = [
   "SIM105",  # suppressible-exception (10)
   "SIM115",  # open-file-with-context-handler (1)
   "SIM117",  # multiple-with-statements (18)
-  "SIM118",  # in-dict-keys (4)
   "TRY003",  # raise-vanilla-args (62)
   "TRY300",  # try-consider-else (2)
 ]

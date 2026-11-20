@@ -106,7 +106,7 @@ class BuildManager:
                 existing = json.load(f)
             # Merge existing with current set of steps, preserving statuses
             existing_steps = existing.get("steps", {})
-            for name in self.report["steps"].keys():
+            for name in self.report["steps"]:
                 if name in existing_steps:
                     self.report["steps"][name] = existing_steps[name]
             # Bring over timestamps

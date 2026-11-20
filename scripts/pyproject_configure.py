@@ -48,7 +48,7 @@ def parameter_option(key, option):
     }
 
     default = PARAMETER_OPTION_DEFAULTS.get(option)
-    if key not in PARAMETER_OPTIONS.keys():
+    if key not in PARAMETER_OPTIONS:
         return default
     return PARAMETER_OPTIONS[key].get(option, default)
 
@@ -124,7 +124,7 @@ def configure(template_file, parameters, output_file):
         lines = file_.readlines()
         for line in lines:
             append = True
-            for key in parameters.keys():
+            for key in parameters:
                 value = str(parameters[key]).strip()
                 if (
                     key in line
@@ -532,7 +532,7 @@ def configure_one_pyproject_file(
         )
     )
 
-    if wheel_name not in PYPROJECT_PY_PARAMETERS.keys():
+    if wheel_name not in PYPROJECT_PY_PARAMETERS:
         print(f"Unknown wheel name '{wheel_name}'")
         sys.exit(1)
 
