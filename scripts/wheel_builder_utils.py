@@ -301,7 +301,7 @@ def which_required(name: str) -> Path:
 def run_commandLine_subprocess(
     cmd: list[str | Path],
     cwd: Path | None = None,
-    env: dict = None,
+    env: dict | None = None,
     check: bool = False,
 ) -> subprocess.CompletedProcess:
     """Run a command via ``subprocess.run`` with logging.
