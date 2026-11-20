@@ -1,5 +1,6 @@
 import json
 import time
+from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -10,7 +11,8 @@ class BuildManager:
 
     Persists status and timing for each named step to a JSON file.
     Steps already marked ``"done"`` are skipped on subsequent runs,
-    enabling resumable builds.
+    enabling resumable builds. When *inputs* are given and differ from
+    the ones recorded in the report, every step starts again as pending.
 
     Parameters
     ----------
@@ -18,16 +20,29 @@ class BuildManager:
         Path to the JSON report file (created if absent).
     step_names : list[str]
         Ordered names of build steps to track.
+    inputs : Mapping[str, str], optional
+        What the build's outputs depend on, such as the ITK commit and the
+        package version. Recorded in the report under ``inputs``.
 
     Attributes
     ----------
     report : dict
         In-memory report structure with ``created_at``, ``updated_at``,
-        and ``steps`` keys.
+        ``steps``, and (when *inputs* are given) ``inputs`` keys.
+    changed_inputs : list[str]
+        Names of the inputs that differ from the recorded report, or are
+        missing from it; empty when the recorded steps were kept.
     """
 
-    def __init__(self, report_path: Path, step_names: list[str]):
+    def __init__(
+        self,
+        report_path: Path,
+        step_names: list[str],
+        inputs: Mapping[str, str] | None = None,
+    ):
         self.report_path = Path(report_path)
+        self.inputs = dict(inputs) if inputs is not None else None
+        self.changed_inputs: list[str] = []
         self._init_structure(step_names)
         self._load_if_exists()
 
@@ -98,6 +113,8 @@ class BuildManager:
             "updated_at": now,
             "steps": steps,
         }
+        if self.inputs is not None:
+            self.report["inputs"] = dict(self.inputs)
 
     def _load_if_exists(self) -> None:
         if not self.report_path.exists():
@@ -105,6 +122,15 @@ class BuildManager:
         try:
             with Path(self.report_path).open(encoding="utf-8") as f:
                 existing = json.load(f)
+            if self.inputs is not None:
+                recorded = existing.get("inputs") or {}
+                self.changed_inputs = sorted(
+                    name
+                    for name in self.inputs.keys() | recorded.keys()
+                    if self.inputs.get(name) != recorded.get(name)
+                )
+                if self.changed_inputs:
+                    return
             # Merge existing with current set of steps, preserving statuses
             existing_steps = existing.get("steps", {})
             for name in self.report["steps"]:
