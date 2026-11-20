@@ -1,3 +1,6 @@
+import shutil
+import subprocess
+import tarfile
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -143,15 +146,39 @@ def test_failed_zstd_does_not_delete_the_uncompressed_tar(tmp_path):
     assert not list(dist.glob("ITKPythonBuilds-*.tar.zst"))
 
 
-def test_git_directory_is_excluded_entirely_not_just_its_contents():
+class _RealTarBuilder(_FakeBuilder):
+    """Runs the real tar command so its exclusions are exercised; fakes zstd."""
+
+    def echo_check_call(self, cmd, check: bool = False, **kwargs) -> int:
+        cmd = [str(c) for c in cmd]
+        if cmd[0] != "tar":
+            return super().echo_check_call(cmd, check=check, **kwargs)
+        self.commands.append("tar")
+        status = subprocess.run(cmd, check=check).returncode
+        # Keep a copy: create_posix_tarball deletes the .tar once compressed.
+        self.archive = self.build_dir_root / "archive-copy.tar"
+        shutil.copy(cmd[cmd.index("-cf") + 1], self.archive)
+        return status
+
+
+@pytest.mark.skipif(shutil.which("tar") is None, reason="needs tar")
+def test_git_directory_is_excluded_entirely_not_just_its_contents(tmp_path):
     """A surviving empty .git makes git report "not a repository".
 
     Excluding only the contents leaves the directory, so a consumer cannot
     tell "no repository here" from a broken one by looking at the path. That
     is how the cache path failed in CI.
     """
-    import wheel_packaging
+    build_root = tmp_path / "build-root"
+    builder = _RealTarBuilder(build_root, tar_ok=True, zstd_ok=True)
+    git_dir = build_root / "ITK-source" / "ITK" / ".git"
+    git_dir.mkdir(parents=True)
+    (git_dir / "HEAD").write_text("ref: refs/heads/main\n")
+    (git_dir.parent / "CMakeLists.txt").write_text("project(ITK)\n")
 
-    source = Path(wheel_packaging.__file__).read_text()
-    assert '"--exclude=*/.git",' in source
-    assert '"--exclude=*/.git/*"' not in source
+    create_posix_tarball(builder)
+
+    with tarfile.open(builder.archive) as archive:
+        names = archive.getnames()
+    assert any(n.endswith("ITK/CMakeLists.txt") for n in names)
+    assert not [n for n in names if ".git" in Path(n).parts]
