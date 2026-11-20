@@ -303,7 +303,7 @@ def get_wheel_names(IPP_BuildWheelsSupport_DIR: str):
     list[str]
         Stripped wheel names, one per line.
     """
-    with open(os.path.join(IPP_BuildWheelsSupport_DIR, "WHEEL_NAMES.txt")) as _file:
+    with open(Path(IPP_BuildWheelsSupport_DIR) / "WHEEL_NAMES.txt") as _file:
         return [wheel_name.strip() for wheel_name in _file]
 
 
@@ -341,7 +341,7 @@ def get_wheel_dependencies(SCRIPT_DIR: str, version: str, wheel_names: list):
     )
     pattern = re.compile(regex_group_depends)
     with open(
-        os.path.join(SCRIPT_DIR, "..", "cmake/ITKPythonPackage_BuildWheels.cmake")
+        Path(SCRIPT_DIR) / ".." / "cmake" / "ITKPythonPackage_BuildWheels.cmake"
     ) as file_:
         for line in file_:
             match = re.search(pattern, line)
@@ -381,7 +381,8 @@ def build_base_pyproject_parameters(
     dict[str, str]
         Base parameter mapping shared across all wheel configurations.
     """
-    ITK_SOURCE_README: str = os.path.join(
+    # The string is written into pyproject.toml; keep its separators unchanged.
+    ITK_SOURCE_README: str = os.path.join(  # noqa: PTH118
         package_env_config["ITK_SOURCE_DIR"], "README.md"
     )
     return {
@@ -506,7 +507,7 @@ def configure_one_pyproject_file(
 
     # Resolve script information locally
 
-    IPP_BuildWheelsSupport_DIR = os.path.join(SCRIPT_DIR, "..", "BuildWheelsSupport")
+    IPP_BuildWheelsSupport_DIR = Path(SCRIPT_DIR) / ".." / "BuildWheelsSupport"
     SCRIPT_NAME = Path(__file__).name
     # Write itkVersion.py file to report ITK version in python.
     write_itkVersion_py(Path(output_dir) / "itkVersion.py", PEP440_VERSION)
@@ -538,9 +539,9 @@ def configure_one_pyproject_file(
         sys.exit(1)
 
     # Configure 'pyproject.toml'
-    output_file = os.path.join(output_dir, "pyproject.toml")
+    output_file = Path(output_dir) / "pyproject.toml"
     print(f"Generating: {output_file}")
-    template = os.path.join(SCRIPT_DIR, "pyproject.toml.in")
+    template = Path(SCRIPT_DIR) / "pyproject.toml.in"
     configure(template, PYPROJECT_PY_PARAMETERS[wheel_name], output_file)
 
 

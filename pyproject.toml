@@ -32,6 +32,7 @@ extend-select = [
   "PLW1510", # subprocess-run-without-check
   "PLW2901", # redefined-loop-name
   "PTH100",  # os-path-abspath
+  "PTH118",  # os-path-join
   "PTH119",  # os-path-basename
   "PTH120",  # os-path-dirname
   "RET504",  # unnecessary-assign
@@ -92,7 +93,6 @@ ignore = [
   "EM101",   # raw-string-in-exception (13)
   "EM102",   # f-string-in-exception (49)
   "PLC0415", # import-outside-top-level (9)
-  "PTH118",  # os-path-join (7)
   "PTH123",  # builtin-open (14)
   "SIM105",  # suppressible-exception (10)
   "SIM117",  # multiple-with-statements (18)
