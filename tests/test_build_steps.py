@@ -6,15 +6,17 @@ made visible in ``build_log_<env>.json``.
 
 from pathlib import Path
 
+from build_python_instance_base import BuildPythonInstanceBase
+
 
 def _configure(
-    builder,
+    builder: BuildPythonInstanceBase,
     *,
-    skip_itk_build=False,
-    skip_itk_wheel_build=False,
-    module=None,
-    module_itk_dir="build",
-):
+    skip_itk_build: bool = False,
+    skip_itk_wheel_build: bool = False,
+    module: str | None = None,
+    module_itk_dir: str = "build",
+) -> BuildPythonInstanceBase:
     builder.skip_itk_build = skip_itk_build
     builder.skip_itk_wheel_build = skip_itk_wheel_build
     builder.module_source_dir = Path(module) if module else None

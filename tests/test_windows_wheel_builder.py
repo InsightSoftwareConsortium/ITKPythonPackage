@@ -5,8 +5,11 @@ wheel written to the wrong ``dist/``, and a 7-Zip invocation whose ``-r``
 turned every archive argument into a recursive pattern.
 """
 
+from collections.abc import Sequence
 from pathlib import Path
 from unittest.mock import patch
+
+from windows_build_python_instance import WindowsBuildPythonInstance
 
 
 def test_remote_module_repaired_wheel_lands_in_the_module_dist(
@@ -69,13 +72,15 @@ def test_non_remote_repaired_wheel_lands_in_the_build_dist(tmp_path, windows_bui
     assert not (windows_builder.module_source_dir / "dist").exists()
 
 
-def _run_build_tarball(windows_builder, tmp_path):
+def _run_build_tarball(
+    windows_builder: WindowsBuildPythonInstance, tmp_path: Path
+) -> list[str]:
     """Drive ``build_tarball`` down the 7-Zip branch and return the command."""
     windows_builder.ipp_dir = tmp_path / "IPP"
     windows_builder.ipp_dir.mkdir(parents=True, exist_ok=True)
-    captured = {}
+    captured: dict[str, list[str]] = {}
 
-    def fake_call(cmd, *args, **kwargs) -> int:
+    def fake_call(cmd: Sequence[object], *args: object, **kwargs: object) -> int:
         captured["cmd"] = [str(c) for c in cmd]
         return 0
 

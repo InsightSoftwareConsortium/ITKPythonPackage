@@ -693,7 +693,7 @@ class BuildPythonInstanceBase(ABC):
         pass
 
     @abstractmethod
-    def build_tarball(self):
+    def build_tarball(self) -> None:
         """Create a compressed archive of the ITK build tree for caching."""
         pass
 

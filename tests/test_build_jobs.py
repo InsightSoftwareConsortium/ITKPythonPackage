@@ -1,4 +1,6 @@
+from collections.abc import Callable, Mapping
 from pathlib import Path
+from typing import IO, Any
 
 import build_jobs
 import pytest
@@ -84,10 +86,10 @@ def test_the_killed_configuration_is_not_reproduced():
     assert compute_build_jobs(16, 31.8, env={}) < 15
 
 
-def _fake_open(mapping):
+def _fake_open(mapping: Mapping[str, str]) -> Callable[..., IO[str]]:
     real_open = Path.open
 
-    def fake(path, *args, **kwargs):
+    def fake(path: Path, *args: Any, **kwargs: Any) -> IO[str]:
         key = str(path)
         if key in mapping:
             import io
@@ -96,12 +98,16 @@ def _fake_open(mapping):
         if key.startswith("/sys/fs/cgroup/"):
             msg = "no such cgroup file"
             raise OSError(msg)
-        return real_open(path, *args, **kwargs)
+        # Path.open is overloaded on mode, so with untyped args it returns Any.
+        opened: IO[str] = real_open(path, *args, **kwargs)
+        return opened
 
     return fake
 
 
-def _linux_host_with(monkeypatch, host_gb, cgroup_files):
+def _linux_host_with(
+    monkeypatch: pytest.MonkeyPatch, host_gb: float, cgroup_files: Mapping[str, str]
+) -> None:
     monkeypatch.setattr(build_jobs.platform, "system", lambda: "Linux")
     # os.sysconf does not exist on Windows; the Linux branch under test never
     # runs there, but the stub must still be installable so the test can run.

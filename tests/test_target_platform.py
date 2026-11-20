@@ -103,11 +103,13 @@ def test_aarch64_uses_pypa_with_underscore():
     assert image.reference == ("quay.io/pypa/manylinux_2_28_aarch64:2025.08.12-1")
 
 
-def _fake_uname(sysname, machine):
+def _fake_uname(sysname: str, machine: str) -> SimpleNamespace:
     return SimpleNamespace(sysname=sysname, machine=machine)
 
 
-def _patch_posix_uname(monkeypatch, sysname, machine):
+def _patch_posix_uname(
+    monkeypatch: pytest.MonkeyPatch, sysname: str, machine: str
+) -> None:
     """Present a POSIX ``os.uname`` to the code under test.
 
     ``raising=False`` because Windows has no ``os.uname`` to replace;

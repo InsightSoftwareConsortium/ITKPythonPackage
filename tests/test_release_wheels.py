@@ -117,7 +117,7 @@ def itk_repository(tmp_path, monkeypatch):
         monkeypatch.setenv(key, value)
     repo = tmp_path / "upstream"
 
-    def git(*args):
+    def git(*args: str) -> str:
         return subprocess.run(
             ["git", *args], cwd=repo, check=True, capture_output=True, text=True
         ).stdout.strip()

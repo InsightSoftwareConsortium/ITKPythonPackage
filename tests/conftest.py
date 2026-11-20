@@ -1,12 +1,25 @@
+from collections.abc import Mapping
+from pathlib import Path
+from typing import TypeVar
+
 import pytest
+from build_python_instance_base import BuildPythonInstanceBase
 from cmake_argument_builder import CMakeArgumentBuilder
 from linux_build_python_instance import LinuxBuildPythonInstance
 from macos_build_python_instance import MacOSBuildPythonInstance
 from target_platform import Arch, TargetPlatform
 from windows_build_python_instance import WindowsBuildPythonInstance
 
+BuilderT = TypeVar("BuilderT", bound=BuildPythonInstanceBase)
 
-def _make_builder(cls, tmp_path, platform_env, target, package_env_config):
+
+def _make_builder(
+    cls: type[BuilderT],
+    tmp_path: Path,
+    platform_env: str,
+    target: TargetPlatform,
+    package_env_config: Mapping[str, str],
+) -> BuilderT:
     """Build an instance wired up enough to exercise its hooks.
 
     ``__new__`` bypasses ``__init__`` deliberately: the constructor

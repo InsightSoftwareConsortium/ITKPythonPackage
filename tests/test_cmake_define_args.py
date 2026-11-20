@@ -1,10 +1,11 @@
 import argparse
+from collections.abc import Sequence
 
 import pytest
 from build_wheels import parse_args_with_cmake_defines
 
 
-def _parser(default=()):
+def _parser(default: Sequence[str] = ()) -> argparse.ArgumentParser:
     p = argparse.ArgumentParser()
     p.add_argument("--platform-env")
     p.add_argument("--use-ccache", action="store_true")

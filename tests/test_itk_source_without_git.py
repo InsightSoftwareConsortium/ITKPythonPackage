@@ -1,6 +1,7 @@
 """A cache-restored ITK tree has no .git and must not abort the build."""
 
 import subprocess
+from pathlib import Path
 
 import build_wheels
 import pytest
@@ -27,7 +28,12 @@ class _FakeGit:
         return any(c[1 : 1 + len(subcommand)] == list(subcommand) for c in self.calls)
 
 
-def _sync(monkeypatch, tmp_path, fake_git, tag="v6.0.0"):
+def _sync(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    fake_git: _FakeGit,
+    tag: str = "v6.0.0",
+) -> str:
     monkeypatch.setattr(build_wheels, "run_commandLine_subprocess", fake_git)
     return build_wheels.sync_itk_source(tmp_path, tag)
 

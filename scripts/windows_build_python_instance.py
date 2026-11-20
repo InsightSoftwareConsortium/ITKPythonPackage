@@ -90,7 +90,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             )
             raise RuntimeError(msg)
 
-    def build_tarball(self):
+    def build_tarball(self) -> None:
         r"""Create an archive of the ITK Python package build tree (Windows).
 
         Mirrors scripts/windows-build-tarball.ps1 behavior:

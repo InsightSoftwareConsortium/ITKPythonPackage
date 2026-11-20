@@ -13,7 +13,9 @@ from build_python_instance_base import BuildPythonInstanceBase
 from cmake_argument_builder import CMakeArgumentBuilder
 
 
-def _wire(builder, tmp_path, *, module_itk_dir):
+def _wire(
+    builder: BuildPythonInstanceBase, tmp_path: Path, *, module_itk_dir: str
+) -> BuildPythonInstanceBase:
     builder.module_itk_dir = module_itk_dir
     builder.cmake_cmdline_definitions = CMakeArgumentBuilder()
     builder.cmake_itk_source_build_configurations.set(

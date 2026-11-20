@@ -5,7 +5,9 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
+from build_python_instance_base import BuildPythonInstanceBase
 from cmake_argument_builder import CMakeArgumentBuilder
+from linux_build_python_instance import LinuxBuildPythonInstance
 from target_platform import Arch, TargetPlatform, host_arch
 
 
@@ -138,7 +140,11 @@ def _make_build_env(tmp_path: Path) -> Path:
     return env_root
 
 
-def _prepare_linux_fixup(linux_builder, tmp_path, module_source_dir=None):
+def _prepare_linux_fixup(
+    linux_builder: LinuxBuildPythonInstance,
+    tmp_path: Path,
+    module_source_dir: Path | None = None,
+) -> tuple[Path, Path]:
     linux_builder.package_env_config.update(
         {
             "MANYLINUX_VERSION": "_2_28",
@@ -366,7 +372,7 @@ def _checking_echo(failing_tool: str):
     return _echo
 
 
-def _wire_itk_cplusplus(builder, tmp_path):
+def _wire_itk_cplusplus(builder: BuildPythonInstanceBase, tmp_path: Path) -> None:
     builder.cleanup = False
     builder.build_node_cpu_count = 2
     builder.build_load_limit = 2
