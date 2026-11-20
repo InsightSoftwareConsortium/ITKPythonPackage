@@ -94,7 +94,7 @@ def physical_memory_gb() -> float | None:
                 ctypes.byref(stat)
             ):
                 return None
-            return stat.ullTotalPhys / 1024**3
+            return int(stat.ullTotalPhys) / 1024**3
         if system == "Darwin":
             out = subprocess.check_output(["sysctl", "-n", "hw.memsize"], text=True)
             return int(out.strip()) / 1024**3
