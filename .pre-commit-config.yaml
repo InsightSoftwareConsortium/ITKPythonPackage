@@ -4,7 +4,7 @@
 # Run `pre-commit autoupdate` to update hook versions
 
 # Exclude generated/vendored directories from all hooks
-exclude: ^(\.pixi/|build/|docs/|pixi\.lock$)
+exclude: ^(\.pixi/|build/|docs/data/|pixi\.lock$)
 
 repos:
   # General file hygiene
@@ -35,6 +35,7 @@ repos:
     rev: 24.10.0
     hooks:
       - id: black
+        exclude: ^docs/
         stages: [pre-commit]
 
   # Python: linting + import sorting
@@ -42,6 +43,7 @@ repos:
     rev: v0.17.6
     hooks:
       - id: ruff-check
+        exclude: ^docs/
         args: [--fix, --show-fixes]
         stages: [pre-commit]
 

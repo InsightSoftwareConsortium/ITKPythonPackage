@@ -156,10 +156,10 @@ Key environment variables:
      - script directory
      - Path to your module source
    * - ``MODULE_DEPS_DIR``
-     - platform dependant
+     - platform dependent
      - Root directory for module dependency checkouts
    * - ``DASHBOARD_BUILD_DIRECTORY``
-     - platform dependant
+     - platform dependent
      - Root directory for build artifacts
    * - ``MANYLINUX_VERSION``
      - ``_2_28``
