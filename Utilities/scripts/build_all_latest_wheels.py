@@ -32,9 +32,10 @@ def clone(
     cmd += [repo, str(dest)]
     try:
         run(cmd, capture_output=True)
-        return True
     except subprocess.CalledProcessError:
         return False
+    else:
+        return True
 
 
 def parse_remote_modules(itk_dir: Path) -> list[tuple[str, str]]:
@@ -83,9 +84,10 @@ def build_wheels(
 
     try:
         run(cmd, cwd=ipp_dir)
-        return True
     except subprocess.CalledProcessError:
         return False
+    else:
+        return True
 
 
 def main():

@@ -46,6 +46,7 @@ extend-select = [
   "SIM118",  # in-dict-keys
   "SIM910",  # dict-get-with-none-default
   "TC003",   # typing-only-standard-library-import
+  "TRY300",  # try-consider-else
   # Rule families recommended by the Scientific Python guide.
   "ARG",  # flake8-unused-arguments
   "C4",   # flake8-comprehensions
@@ -96,7 +97,6 @@ ignore = [
   "SIM105",  # suppressible-exception (10)
   "SIM117",  # multiple-with-statements (18)
   "TRY003",  # raise-vanilla-args (62)
-  "TRY300",  # try-consider-else (2)
 ]
 
 [tool.commitizen]
