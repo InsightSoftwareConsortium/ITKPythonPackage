@@ -85,7 +85,7 @@ class MacOSBuildPythonInstance(PosixBuildPythonInstance):
                 + "=" * 20
             )
 
-    def remove_apple_double_files(self):
+    def remove_apple_double_files(self) -> None:
         """Remove AppleDouble ``._*`` files using ``dot_clean`` if available."""
         # dot_clean may not be available; continue without it
         with contextlib.suppress(Exception):

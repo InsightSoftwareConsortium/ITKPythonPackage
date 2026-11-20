@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import sys
+from collections.abc import Callable, Iterable, Iterator, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +16,7 @@ from wheel_builder_utils import read_env_file
 STABLE_ABI_TAG = "cp311"
 
 
-def parameter_option(key, option):
+def parameter_option(key: str, option: str) -> int:
     """Return a formatting option for a template parameter.
 
     Parameters
@@ -48,14 +49,16 @@ def parameter_option(key, option):
         "PYPROJECT_DEPENDENCIES": {"indent": 8, "remove_line_if_empty": True},
     }
 
-    default = PARAMETER_OPTION_DEFAULTS.get(option)
+    default = PARAMETER_OPTION_DEFAULTS[option]
     if key not in PARAMETER_OPTIONS:
         return default
     return PARAMETER_OPTIONS[key].get(option, default)
 
 
 # Copied from scikit-ci/ci/utils.py
-def indent(text, prefix, predicate=None):
+def indent(
+    text: str, prefix: str, predicate: Callable[[str], bool] | None = None
+) -> str:
     """Add *prefix* to the beginning of selected lines in *text*.
 
     Copied from ``textwrap.py`` (cpython/cpython@a2d2bef).
@@ -80,14 +83,14 @@ def indent(text, prefix, predicate=None):
         def predicate(line):
             return line.strip()
 
-    def prefixed_lines():
+    def prefixed_lines() -> Iterator[str]:
         for line in text.splitlines(True):
             yield prefix + line if predicate(line) else line
 
     return "".join(prefixed_lines())
 
 
-def list_to_str(list_, newline=True):
+def list_to_str(list_: Iterable[str], newline: bool = True) -> str:
     """Join a list of strings as quoted, comma-separated items.
 
     Parameters
@@ -108,7 +111,9 @@ def list_to_str(list_, newline=True):
     return sep.join([f'"{item}"' for item in list_])
 
 
-def configure(template_file, parameters, output_file):
+def configure(
+    template_file: str | Path, parameters: Mapping[str, Any], output_file: str | Path
+) -> None:
     """Substitute ``@KEY@`` placeholders in *template_file* and write *output_file*.
 
     Parameters
@@ -150,7 +155,7 @@ def configure(template_file, parameters, output_file):
         file_.writelines(updated_lines)
 
 
-def from_group_to_wheel(group):
+def from_group_to_wheel(group: str) -> str:
     """Convert an ITK group name to its wheel package name.
 
     Parameters
@@ -308,7 +313,7 @@ def get_wheel_names(IPP_BuildWheelsSupport_DIR: str | Path):
         return [wheel_name.strip() for wheel_name in _file]
 
 
-def get_py_api():
+def get_py_api() -> str:
     """Return the pinned stable-ABI tag.
 
     Returns
@@ -423,7 +428,7 @@ def build_base_pyproject_parameters(
     }
 
 
-def main():
+def main() -> None:
     # Parse arguments
     SCRIPT_DIR = Path(__file__).parent
     parser = argparse.ArgumentParser(

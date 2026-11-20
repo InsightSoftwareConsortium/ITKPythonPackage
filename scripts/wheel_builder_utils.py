@@ -18,13 +18,14 @@ from functools import wraps
 from os import chdir as os_chdir
 from os import environ
 from pathlib import Path
+from typing import Any
 
 
 class ContextDecorator:
     """A base class or mixin that enables context managers to work as
     decorators."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         self.__dict__.update(kwargs)
 
     def __enter__(self):
@@ -46,7 +47,9 @@ class ContextDecorator:
 class push_dir(ContextDecorator):
     """Context manager to change current directory."""
 
-    def __init__(self, directory=None, make_directory=False):
+    def __init__(
+        self, directory: str | Path | None = None, make_directory: bool = False
+    ) -> None:
         """
         :param directory:
           Path to set as current working directory. If ``None``
@@ -55,8 +58,8 @@ class push_dir(ContextDecorator):
         :param make_directory:
           If True, ``directory`` is created.
         """
-        self.directory = None
-        self.make_directory = None
+        self.directory: str | Path | None = None
+        self.make_directory = False
         self.old_cwd: Path | None = None
         super().__init__(directory=directory, make_directory=make_directory)
 
