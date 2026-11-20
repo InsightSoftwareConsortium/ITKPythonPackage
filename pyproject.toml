@@ -169,3 +169,10 @@ PP003 = "Root pyproject.toml configures tooling only; wheels are generated from 
 [tool.codespell]
 # DEPENDEES is a CMake ExternalProject keyword; Nd is a Unicode category name.
 ignore-words-list = "dependees,nd"
+
+[tool.mypy]
+files = ["scripts", "tests"]
+mypy_path = ["scripts"]
+explicit_package_bases = true
+python_version = "3.11"
+warn_unused_configs = true
