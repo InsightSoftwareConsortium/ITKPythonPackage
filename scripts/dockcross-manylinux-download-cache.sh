@@ -48,11 +48,8 @@ if [ "${_missing_required}" -ne 0 ]; then
 fi
 unset _missing_required
 
-PARSED_ARGS=$(getopt -a -n dockcross-manylinux-download-cache-and-build-module-wheels \
-  -o hc:x: --long help,cmake_options:,exclude_libs: -- "$@")
-eval set -- "$PARSED_ARGS"
-
-while :; do
+# Parsed by hand: BSD getopt on macOS has no long options.
+while [ $# -gt 0 ]; do
   case "$1" in
   -h | --help)
     usage
@@ -61,9 +58,12 @@ while :; do
     shift
     break
     ;;
-  *)
+  -*)
     echo "Unexpected option: $1."
     usage
+    ;;
+  *)
+    break
     ;;
   esac
 done
@@ -102,7 +102,11 @@ fi
 
 current_dir=$(pwd)
 echo "Extracting all cache files from ${TARBALL_NAME} in ${current_dir}"
-tar xf "${TARBALL_NAME}" --warning=no-unknown-keyword
+tar_flags=()
+if tar --version 2>/dev/null | grep -q "GNU tar"; then
+  tar_flags=(--warning=no-unknown-keyword)
+fi
+tar xf "${TARBALL_NAME}" "${tar_flags[@]}"
 rm "${TARBALL_NAME}"
 
 # -----------------------------------------------------------------------
