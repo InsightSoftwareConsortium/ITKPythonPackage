@@ -219,24 +219,3 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             "venv_base_dir": venv_base_dir,  # .../windows-py311
             "python_root_dir": env_root,  # .../windows-py311
         }
-
-    def discover_python_venvs(
-        self, platform_os_name: str, platform_architecture: str
-    ) -> list[str]:
-        """Return default Windows Python environment names.
-
-        Parameters
-        ----------
-        platform_os_name : str
-            Operating system identifier (unused, kept for interface).
-        platform_architecture : str
-            Architecture suffix appended to each environment name.
-
-        Returns
-        -------
-        list[str]
-            Environment names like ``['311-x64']``.
-        """
-        return [
-            f"311-{platform_architecture}",
-        ]

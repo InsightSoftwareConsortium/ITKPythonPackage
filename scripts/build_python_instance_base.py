@@ -824,26 +824,6 @@ class BuildPythonInstanceBase(ABC):
             )
             raise RuntimeError(msg)
 
-    @abstractmethod
-    def discover_python_venvs(
-        self, platform_os_name: str, platform_architechure: str
-    ) -> list[str]:
-        """Return available Python environment names for the given platform.
-
-        Parameters
-        ----------
-        platform_os_name : str
-            Operating system identifier.
-        platform_architechure : str
-            CPU architecture identifier.
-
-        Returns
-        -------
-        list[str]
-            Sorted list of discovered environment names.
-        """
-        pass
-
     def build_external_module_python_wheel(self):
         """Build a wheel for an external ITK remote module via scikit-build-core."""
         self.module_source_dir = self.required_module_source_dir()

@@ -243,13 +243,3 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
             print(
                 "Building outside of manylinux environment does not require wheel fixups."
             )
-
-    def discover_python_venvs(
-        self, platform_os_name: str, platform_architecture: str
-    ) -> list[str]:
-        """Extend the POSIX discovery with manylinux ``/opt/python`` installs."""
-        names = super().discover_python_venvs(platform_os_name, platform_architecture)
-        opt_python = Path("/opt/python")
-        if opt_python.exists():
-            names.extend(p.name for p in opt_python.iterdir() if p.is_dir())
-        return sorted(names)
