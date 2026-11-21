@@ -4,7 +4,8 @@ import os
 import re
 import shutil
 import sys
-from collections.abc import Callable, Iterable, Iterator, Mapping
+import textwrap
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -53,41 +54,6 @@ def parameter_option(key: str, option: str) -> int:
     if key not in PARAMETER_OPTIONS:
         return default
     return PARAMETER_OPTIONS[key].get(option, default)
-
-
-# Copied from scikit-ci/ci/utils.py
-def indent(
-    text: str, prefix: str, predicate: Callable[[str], bool] | None = None
-) -> str:
-    """Add *prefix* to the beginning of selected lines in *text*.
-
-    Copied from ``textwrap.py`` (cpython/cpython@a2d2bef).
-
-    Parameters
-    ----------
-    text : str
-        The multiline string to indent.
-    prefix : str
-        String prepended to each selected line.
-    predicate : callable, optional
-        Called with each line; *prefix* is added only when it returns
-        True.  Defaults to adding *prefix* to all non-blank lines.
-
-    Returns
-    -------
-    str
-        The indented text.
-    """
-    if predicate is None:
-
-        def predicate(line):
-            return line.strip()
-
-    def prefixed_lines() -> Iterator[str]:
-        for line in text.splitlines(True):
-            yield prefix + line if predicate(line) else line
-
-    return "".join(prefixed_lines())
 
 
 def list_to_str(list_: Iterable[str], newline: bool = True) -> str:
@@ -141,7 +107,7 @@ def configure(
                     append = False
                     break
                 block_indent = " " * parameter_option(key, "indent")
-                value = indent(value, block_indent)
+                value = textwrap.indent(value, block_indent)
                 newline_indent = " " * parameter_option(key, "newline_indent")
                 if value.strip() and parameter_option(key, "newline_if_set"):
                     value = f"\n{value}\n{newline_indent}"
