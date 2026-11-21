@@ -42,7 +42,7 @@ usage() {
   dockcross-manylinux-download-cache-and-build-module-wheels
     [ -h | --help ]           show usage
     [ -c | --cmake_options ]  space-delimited string containing CMake options to forward to the module (e.g. \"-DBUILD_TESTING=OFF\")
-    [ -x | --exclude_libs ]   semicolon-delimited library names to exclude when repairing wheel (e.g. \"libcuda.so\")
+    [ -x | --exclude_libs ]   accepted for compatibility and ignored; nothing excludes libraries from the repair
     [ python_version ]        build wheel for a specific python version. (e.g. cp311)"
   exit 2
 }
@@ -61,7 +61,7 @@ while :; do
     shift 2
     ;;
   -x | --exclude_libs)
-    export EXCLUDE_LIBS="$2"
+    echo "WARNING: --exclude_libs '$2' is ignored; no library is excluded from the wheel repair."
     shift 2
     ;;
   --)
