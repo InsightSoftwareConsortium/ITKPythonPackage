@@ -210,6 +210,7 @@ module = [
   "tests.test_itk_source_without_git",
   "tests.test_module_dependencies_root",
   "tests.test_module_dependencies",
+  "tests.test_platform_builders",
 ]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true

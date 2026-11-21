@@ -1,5 +1,6 @@
 import os
 import zipfile
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -9,10 +10,12 @@ import wheel_packaging
 from build_python_instance_base import BuildPythonInstanceBase
 from cmake_argument_builder import CMakeArgumentBuilder
 from linux_build_python_instance import LinuxBuildPythonInstance
+from macos_build_python_instance import MacOSBuildPythonInstance
 from target_platform import OS, Arch, TargetPlatform, host_arch
+from windows_build_python_instance import WindowsBuildPythonInstance
 
 
-def test_pixi_suffix_is_the_documented_build_dir_token_per_platform():
+def test_pixi_suffix_is_the_documented_build_dir_token_per_platform() -> None:
     """Spell out the ``_{arch}`` token of ``ITK-<env>-<pixi>_<arch>``.
 
     Literal expectations, so a change to the mapping fails here.
@@ -37,8 +40,8 @@ def test_pixi_suffix_is_the_documented_build_dir_token_per_platform():
     ],
 )
 def test_prepare_build_env_sets_itk_binary_dir_on_every_platform(
-    request, builder_fixture, expected_suffix
-):
+    request: pytest.FixtureRequest, builder_fixture: str, expected_suffix: str
+) -> None:
     """The ITK binary directory has exactly one construction site.
 
     This drives the real template method, including each subclass's real
@@ -64,8 +67,9 @@ def test_prepare_build_env_sets_itk_binary_dir_on_every_platform(
 
 
 def test_linux_configure_toolchain_takes_the_triple_from_the_target(
-    linux_builder, linux_aarch64_builder
-):
+    linux_builder: LinuxBuildPythonInstance,
+    linux_aarch64_builder: LinuxBuildPythonInstance,
+) -> None:
     """The four-branch ARCH cascade is gone; the type supplies the triple."""
     for builder, triple in (
         (linux_builder, "x86_64-linux-gnu"),
@@ -84,7 +88,9 @@ def test_linux_configure_toolchain_takes_the_triple_from_the_target(
         assert isinstance(builder.package_env_config["TBB_DIR"], str)
 
 
-def test_windows_configure_tbb_sets_tbb_dir_as_str(windows_builder):
+def test_windows_configure_tbb_sets_tbb_dir_as_str(
+    windows_builder: WindowsBuildPythonInstance,
+) -> None:
     windows_builder._configure_tbb()
     assert windows_builder.package_env_config["USE_TBB"] == "ON"
     tbb_dir = windows_builder.package_env_config["TBB_DIR"]
@@ -99,7 +105,9 @@ def _make_wheel(path: Path, members: dict[str, str]) -> Path:
     return path
 
 
-def test_fixup_wheel_skips_wheel_with_no_binaries(tmp_path, macos_builder):
+def test_fixup_wheel_skips_wheel_with_no_binaries(
+    tmp_path: Path, macos_builder: MacOSBuildPythonInstance
+) -> None:
     """The itk metapackage has no .so/.dylib, so delocate must not run."""
     wheel = _make_wheel(
         tmp_path / "itk-6.0.0-py3-none-any.whl", {"itk/__init__.py": ""}
@@ -116,7 +124,9 @@ def test_fixup_wheel_skips_wheel_with_no_binaries(tmp_path, macos_builder):
     assert "delocate-wheel" not in flat
 
 
-def test_fixup_wheel_runs_delocate_when_binaries_present(tmp_path, macos_builder):
+def test_fixup_wheel_runs_delocate_when_binaries_present(
+    tmp_path: Path, macos_builder: MacOSBuildPythonInstance
+) -> None:
     wheel = _make_wheel(
         tmp_path / "itk_core-6.0.0-cp311-abi3-macosx_11_0_arm64.whl",
         {"itk/_ITKCommonPython.so": "\x7fELF"},
@@ -164,8 +174,8 @@ def _prepare_linux_fixup(
 
 
 def test_fixup_wheel_raises_and_keeps_original_when_repair_fails(
-    tmp_path, linux_builder
-):
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     """A failed auditwheel repair must not delete the input wheel."""
     wheel, repaired = _prepare_linux_fixup(linux_builder, tmp_path)
     with (
@@ -178,8 +188,8 @@ def test_fixup_wheel_raises_and_keeps_original_when_repair_fails(
 
 
 def test_fixup_wheel_raises_when_repair_reports_success_but_output_missing(
-    tmp_path, linux_builder
-):
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     """echo_check_call reporting 0 is not enough without the output wheel."""
     wheel, _repaired = _prepare_linux_fixup(linux_builder, tmp_path)
     with (
@@ -191,18 +201,20 @@ def test_fixup_wheel_raises_when_repair_reports_success_but_output_missing(
 
 
 def test_fixup_wheel_removes_original_only_after_verified_repair(
-    tmp_path, linux_builder
-):
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     wheel, repaired = _prepare_linux_fixup(linux_builder, tmp_path)
     _capture_repair_env(linux_builder, wheel, repaired)
     assert not wheel.exists()
     assert repaired.exists()
 
 
-def _capture_repair_env(builder, wheel, repaired) -> dict[str, str]:
-    captured_env = {}
+def _capture_repair_env(
+    builder: LinuxBuildPythonInstance, wheel: Path, repaired: Path
+) -> dict[str, str]:
+    captured_env: dict[str, str] = {}
 
-    def fake_repair(cmd, env=None):
+    def fake_repair(cmd: Sequence[str | Path], env: Mapping[str, str]) -> int:
         captured_env.update(env)
         repaired.touch()
         return 0
@@ -213,8 +225,10 @@ def _capture_repair_env(builder, wheel, repaired) -> dict[str, str]:
 
 
 def test_fixup_wheel_ld_library_path_starts_with_the_build_env_lib_dir(
-    tmp_path, linux_builder, monkeypatch
-):
+    tmp_path: Path,
+    linux_builder: LinuxBuildPythonInstance,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """The environment's own lib dir must precede the system dirs.
 
     It is derived from PYTHON_EXECUTABLE, so it is present whether or not
@@ -232,7 +246,9 @@ def test_fixup_wheel_ld_library_path_starts_with_the_build_env_lib_dir(
     assert ld_library_path.index(env_lib) < ld_library_path.index("/usr/lib64")
 
 
-def test_fixup_wheel_ld_library_path_has_no_empty_entries(tmp_path, linux_builder):
+def test_fixup_wheel_ld_library_path_has_no_empty_entries(
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     """An empty entry means the working directory to the dynamic loader."""
     wheel, repaired = _prepare_linux_fixup(linux_builder, tmp_path)
     entries = _capture_repair_env(linux_builder, wheel, repaired)[
@@ -242,8 +258,8 @@ def test_fixup_wheel_ld_library_path_has_no_empty_entries(tmp_path, linux_builde
 
 
 def test_fixup_wheel_fails_loudly_when_the_build_env_lib_dir_is_absent(
-    tmp_path, linux_builder
-):
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     """Silently omitting the env lib dir is what reintroduced defect C."""
     wheel, _repaired = _prepare_linux_fixup(linux_builder, tmp_path)
     linux_builder.package_env_config["PYTHON_EXECUTABLE"] = str(
@@ -256,7 +272,7 @@ def test_fixup_wheel_fails_loudly_when_the_build_env_lib_dir_is_absent(
         linux_builder.fixup_wheel(str(wheel))
 
 
-def test_posix_build_tarball_delegates(macos_builder):
+def test_posix_build_tarball_delegates(macos_builder: MacOSBuildPythonInstance) -> None:
     """The POSIX build_tarball delegates to wheel_packaging.create_posix_tarball."""
     macos_builder.package_env_config["IPP_SOURCE_DIR"] = Path("/ipp")
     with patch.object(wheel_packaging, "create_posix_tarball") as created:
@@ -268,7 +284,9 @@ def test_posix_build_tarball_delegates(macos_builder):
     assert kwargs["ipp_source_dir"] == Path("/ipp")
 
 
-def test_prepare_build_env_names_the_build_by_platform_env(macos_builder):
+def test_prepare_build_env_names_the_build_by_platform_env(
+    macos_builder: MacOSBuildPythonInstance,
+) -> None:
     """The build directory repeats platform_env, which names the pixi environment."""
     macos_builder.platform_env = "pixi-env"
     with (
@@ -283,7 +301,9 @@ def test_prepare_build_env_names_the_build_by_platform_env(macos_builder):
     ) == (expected.as_posix())
 
 
-def test_configure_toolchain_routes_arch_through_the_target(macos_builder):
+def test_configure_toolchain_routes_arch_through_the_target(
+    macos_builder: MacOSBuildPythonInstance,
+) -> None:
     """macOS reads CMAKE_OSX_ARCHITECTURES from the type, not from ARCH."""
     macos_builder.package_env_config = {"ARCH": "ignored-by-design"}
     macos_builder._configure_toolchain()
@@ -296,8 +316,8 @@ def test_configure_toolchain_routes_arch_through_the_target(macos_builder):
 
 
 def test_configure_toolchain_sets_python_host_platform_from_the_same_values(
-    macos_builder, monkeypatch
-):
+    macos_builder: MacOSBuildPythonInstance, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """_PYTHON_HOST_PLATFORM must be derived, not a second hardcoded fact.
 
     The version is a sentinel no production default could equal, so a
@@ -316,8 +336,8 @@ def test_configure_toolchain_sets_python_host_platform_from_the_same_values(
 
 
 def test_configure_toolchain_leaves_python_host_platform_unset_without_a_target(
-    macos_builder, monkeypatch
-):
+    macos_builder: MacOSBuildPythonInstance, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """No macosx_target means no malformed 'macosx--<arch>' value."""
     monkeypatch.delenv("_PYTHON_HOST_PLATFORM", raising=False)
     macos_builder.package_env_config.pop("MACOSX_DEPLOYMENT_TARGET", None)
@@ -325,7 +345,7 @@ def test_configure_toolchain_leaves_python_host_platform_unset_without_a_target(
     assert "_PYTHON_HOST_PLATFORM" not in os.environ
 
 
-def test_host_arch_is_independent_of_target(monkeypatch):
+def test_host_arch_is_independent_of_target(monkeypatch: pytest.MonkeyPatch) -> None:
     """QEMU reads the host; a cross-build sets only the target.
 
     The host is pinned to Linux/x86_64 so the assertion does not depend on
@@ -345,7 +365,7 @@ def test_host_arch_is_independent_of_target(monkeypatch):
     assert host_arch({}) in set(Arch)
 
 
-def _checking_echo(failing_tool: str):
+def _checking_echo(failing_tool: str) -> Callable[..., int]:
     """A stand-in with build_environment.echo_check_call's semantics.
 
     It returns a non-zero status for *failing_tool* and raises only when
@@ -353,7 +373,9 @@ def _checking_echo(failing_tool: str):
     flag sees the failure silently, exactly as production would.
     """
 
-    def _echo(cmd, *args, check: bool = False, **kwargs) -> int:
+    def _echo(
+        cmd: Sequence[str | Path], *args: object, check: bool = False, **kwargs: object
+    ) -> int:
         rendered = " ".join(str(c) for c in cmd)
         if failing_tool in rendered:
             if check:
@@ -384,8 +406,8 @@ def _wire_itk_cplusplus(builder: BuildPythonInstanceBase, tmp_path: Path) -> Non
 
 @pytest.mark.parametrize("failing_tool", ["cmake", "ninja"])
 def test_itk_cplusplus_build_raises_when_a_step_fails(
-    tmp_path, linux_builder, failing_tool
-):
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance, failing_tool: str
+) -> None:
     """A failed configure or ninja must not be recorded as a done step."""
     _wire_itk_cplusplus(linux_builder, tmp_path)
     with (
@@ -397,7 +419,9 @@ def test_itk_cplusplus_build_raises_when_a_step_fails(
         linux_builder.build_wrapped_itk_cplusplus()
 
 
-def test_superbuild_support_components_raise_when_cmake_fails(tmp_path, linux_builder):
+def test_superbuild_support_components_raise_when_cmake_fails(
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     """The superbuild configure/build pair must stop the run on failure."""
     linux_builder.cmake_cmdline_definitions = CMakeArgumentBuilder()
     linux_builder.package_env_config.update(
@@ -420,8 +444,8 @@ def test_superbuild_support_components_raise_when_cmake_fails(tmp_path, linux_bu
 
 
 def test_superbuild_support_components_raise_when_the_build_fails(
-    tmp_path, linux_builder
-):
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     """The configure can pass and the build still fail (a oneTBB download
     that never completes). That was recorded as a done step and surfaced
     later as a missing TBBConfig.cmake in step 02."""
@@ -445,7 +469,7 @@ def test_superbuild_support_components_raise_when_the_build_fails(
         linux_builder.build_superbuild_support_components()
 
 
-def _prepare_metawheel(linux_builder, tmp_path) -> Path:
+def _prepare_metawheel(linux_builder: LinuxBuildPythonInstance, tmp_path: Path) -> Path:
     linux_builder.package_env_config.update(
         {
             "MANYLINUX_VERSION": "_2_28",
@@ -460,11 +484,15 @@ def _prepare_metawheel(linux_builder, tmp_path) -> Path:
     )
 
 
-def test_metawheel_is_kept_when_repack_produces_nothing(tmp_path, linux_builder):
+def test_metawheel_is_kept_when_repack_produces_nothing(
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     """The original meta-wheel must survive a repack that yields no wheel."""
     metawhl = _prepare_metawheel(linux_builder, tmp_path)
 
-    def fake_unpack(cmd, *args, check: bool = False, **kwargs) -> int:
+    def fake_unpack(
+        cmd: Sequence[str | Path], *args: object, check: bool = False, **kwargs: object
+    ) -> int:
         rendered = [str(c) for c in cmd]
         if "unpack" in rendered:
             unpacked = tmp_path / "metawheel" / "itk-6.0.0" / "itk.dist-info"
@@ -482,12 +510,14 @@ def test_metawheel_is_kept_when_repack_produces_nothing(tmp_path, linux_builder)
 
 
 def test_metawheel_repack_failure_raises_and_keeps_the_original(
-    tmp_path, linux_builder
-):
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     """`wheel pack` returning non-zero must stop the fixup, not be ignored."""
     metawhl = _prepare_metawheel(linux_builder, tmp_path)
 
-    def fake(cmd, *args, check: bool = False, **kwargs) -> int:
+    def fake(
+        cmd: Sequence[str | Path], *args: object, check: bool = False, **kwargs: object
+    ) -> int:
         rendered = [str(c) for c in cmd]
         if "unpack" in rendered:
             unpacked = tmp_path / "metawheel" / "itk-6.0.0" / "itk.dist-info"
@@ -507,7 +537,9 @@ def test_metawheel_repack_failure_raises_and_keeps_the_original(
     assert metawhl.exists()
 
 
-def test_windows_fixup_wheel_raises_when_delvewheel_fails(tmp_path, windows_builder):
+def test_windows_fixup_wheel_raises_when_delvewheel_fails(
+    tmp_path: Path, windows_builder: WindowsBuildPythonInstance
+) -> None:
     """A failed delvewheel repair must not be reported as a success."""
     dist_dir = windows_builder.build_dir_root / "dist"
     dist_dir.mkdir(parents=True, exist_ok=True)
@@ -520,12 +552,14 @@ def test_windows_fixup_wheel_raises_when_delvewheel_fails(tmp_path, windows_buil
         windows_builder.fixup_wheel(str(wheel), lib_paths="C:/tbb/bin")
 
 
-def test_windows_lib_paths_are_split_on_semicolons(windows_builder):
+def test_windows_lib_paths_are_split_on_semicolons(
+    windows_builder: WindowsBuildPythonInstance,
+) -> None:
     """--lib-paths arrives as one semicolon-delimited string, not characters."""
     windows_builder.windows_extra_lib_paths = ["C:/tbb/bin;C:/extra/bin;"]
-    captured = {}
+    captured: dict[str, str] = {}
 
-    def fake_fixup_wheels(lib_paths):
+    def fake_fixup_wheels(lib_paths: str) -> None:
         captured["lib_paths"] = lib_paths
 
     with patch.object(windows_builder, "fixup_wheels", side_effect=fake_fixup_wheels):
@@ -537,7 +571,9 @@ def test_windows_lib_paths_are_split_on_semicolons(windows_builder):
     assert not any(len(e) == 1 for e in entries)
 
 
-def test_ingested_remote_modules_are_enabled_and_can_be_overridden(linux_builder):
+def test_ingested_remote_modules_are_enabled_and_can_be_overridden(
+    linux_builder: LinuxBuildPythonInstance,
+) -> None:
     from build_python_instance_base import ITK_INGESTED_REMOTE_MODULES
 
     linux_builder.enable_ingested_remote_modules()
@@ -553,7 +589,9 @@ def test_ingested_remote_modules_are_enabled_and_can_be_overridden(linux_builder
     assert "-DModule_Montage:BOOL='ON'" not in args
 
 
-def test_check_wheel_sizes_rejects_a_wheel_over_the_pypi_limit(tmp_path, linux_builder):
+def test_check_wheel_sizes_rejects_a_wheel_over_the_pypi_limit(
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     from build_python_instance_base import PYPI_MAX_WHEEL_BYTES
 
     small = tmp_path / "itk_core-6.0.0-cp311-abi3-manylinux_2_28_x86_64.whl"
@@ -567,13 +605,17 @@ def test_check_wheel_sizes_rejects_a_wheel_over_the_pypi_limit(tmp_path, linux_b
         linux_builder.check_wheel_sizes(tmp_path)
 
 
-def test_repair_output_dir_picks_the_module_or_main_dist(tmp_path, linux_builder):
+def test_repair_output_dir_picks_the_module_or_main_dist(
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     linux_builder.module_source_dir = tmp_path / "module"
     assert linux_builder._repair_output_dir(False) == tmp_path / "dist"
     assert linux_builder._repair_output_dir(True) == tmp_path / "module" / "dist"
 
 
-def test_require_repaired_raises_on_status_or_missing_output(tmp_path, windows_builder):
+def test_require_repaired_raises_on_status_or_missing_output(
+    tmp_path: Path, windows_builder: WindowsBuildPythonInstance
+) -> None:
     source = tmp_path / "itk_core-6.0.0-cp311-abi3-win_amd64.whl"
     expected = tmp_path / "dist" / source.name
     with pytest.raises(
@@ -599,7 +641,12 @@ def test_require_repaired_raises_on_status_or_missing_output(tmp_path, windows_b
         ("macos_builder", "OFF", None),
     ],
 )
-def test_configure_tbb_per_platform(request, builder_fixture, use_tbb, tbb_dir_parts):
+def test_configure_tbb_per_platform(
+    request: pytest.FixtureRequest,
+    builder_fixture: str,
+    use_tbb: str,
+    tbb_dir_parts: tuple[str, ...] | None,
+) -> None:
     builder = request.getfixturevalue(builder_fixture)
     builder._configure_tbb()
     assert builder._tbb_prefix == builder.build_dir_root / "build" / "oneTBB-prefix"
@@ -620,13 +667,18 @@ def test_configure_tbb_per_platform(request, builder_fixture, use_tbb, tbb_dir_p
     ],
 )
 def test_metawheel_tag_comes_from_the_target(
-    request, tmp_path, builder_fixture, expected_tag
-):
+    request: pytest.FixtureRequest,
+    tmp_path: Path,
+    builder_fixture: str,
+    expected_tag: str,
+) -> None:
     builder = request.getfixturevalue(builder_fixture)
     _prepare_metawheel(builder, tmp_path)
     wheel_file = tmp_path / "metawheel" / "itk-6.0.0" / "itk.dist-info" / "WHEEL"
 
-    def fake(cmd, *args, check: bool = False, **kwargs) -> int:
+    def fake(
+        cmd: Sequence[str | Path], *args: object, check: bool = False, **kwargs: object
+    ) -> int:
         rendered = [str(c) for c in cmd]
         if "unpack" in rendered:
             wheel_file.parent.mkdir(parents=True, exist_ok=True)
@@ -642,7 +694,9 @@ def test_metawheel_tag_comes_from_the_target(
     assert (tmp_path / "dist" / f"itk-6.0.0-{expected_tag}.whl").exists()
 
 
-def test_only_a_manylinux_target_is_repaired(linux_builder):
+def test_only_a_manylinux_target_is_repaired(
+    linux_builder: LinuxBuildPythonInstance,
+) -> None:
     assert linux_builder.builds_manylinux()
     linux_builder.target = TargetPlatform(OS.LINUX, Arch.X86_64)
     assert not linux_builder.builds_manylinux()
@@ -659,14 +713,16 @@ def test_only_a_manylinux_target_is_repaired(linux_builder):
         ("macos_builder", []),
     ],
 )
-def test_only_windows_chooses_the_generator(request, builder_fixture, expected):
+def test_only_windows_chooses_the_generator(
+    request: pytest.FixtureRequest, builder_fixture: str, expected: list[str]
+) -> None:
     builder = request.getfixturevalue(builder_fixture)
     assert builder.python_build_generator_args() == expected
 
 
 def test_python_build_wheel_command_orders_settings_before_the_generator(
-    windows_builder,
-):
+    windows_builder: WindowsBuildPythonInstance,
+) -> None:
     windows_builder.package_env_config.update(
         {"PYTHON_EXECUTABLE": "python", "BUILD_TYPE": "Release"}
     )
@@ -681,21 +737,23 @@ def test_python_build_wheel_command_orders_settings_before_the_generator(
 
 
 def test_module_wheels_are_repaired_into_the_module_dist(
-    linux_builder, windows_builder
-):
+    linux_builder: LinuxBuildPythonInstance, windows_builder: WindowsBuildPythonInstance
+) -> None:
     for builder in (linux_builder, windows_builder):
         with patch.object(builder, "fixup_wheel") as fixed:
             builder.fixup_module_wheel("mod.whl")
         fixed.assert_called_once_with("mod.whl", remote_module_wheel=True)
 
 
-def test_macos_repairs_module_wheels_in_place(macos_builder):
+def test_macos_repairs_module_wheels_in_place(
+    macos_builder: MacOSBuildPythonInstance,
+) -> None:
     with patch.object(macos_builder, "fixup_wheel") as fixed:
         macos_builder.fixup_module_wheel("mod.whl")
     fixed.assert_called_once_with("mod.whl")
 
 
-def test_only_the_windows_builder_takes_extra_lib_paths():
+def test_only_the_windows_builder_takes_extra_lib_paths() -> None:
     import inspect
 
     from windows_build_python_instance import WindowsBuildPythonInstance
@@ -706,7 +764,9 @@ def test_only_the_windows_builder_takes_extra_lib_paths():
     assert "windows_extra_lib_paths" in windows
 
 
-def test_fixup_wheel_fails_when_delocate_is_missing(tmp_path, macos_builder):
+def test_fixup_wheel_fails_when_delocate_is_missing(
+    tmp_path: Path, macos_builder: MacOSBuildPythonInstance
+) -> None:
     """A wheel with binaries must not ship unrepaired because delocate is absent."""
     wheel = _make_wheel(
         tmp_path / "itk_core-6.0.0-cp311-abi3-macosx_14_0_arm64.whl",
