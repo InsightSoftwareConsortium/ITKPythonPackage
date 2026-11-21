@@ -35,7 +35,7 @@ class MacOSBuildPythonInstance(PosixBuildPythonInstance):
 
     def post_build_fixup(self) -> None:
         """Run ``delocate`` on every wheel to bundle shared libraries."""
-        # Every ITK wheel links libc++, not only itk_core as the base-class fixup assumes.
+        # Every ITK wheel links libc++, not only itk_core.
         for wheel in (self.build_dir_root / "dist").glob("*.whl"):
             self.fixup_wheel(str(wheel))
 

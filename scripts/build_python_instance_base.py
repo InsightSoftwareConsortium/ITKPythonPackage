@@ -598,13 +598,6 @@ class BuildPythonInstanceBase(ABC):
             )
             raise RuntimeError(msg)
 
-    def fixup_wheels(self, lib_paths: str = ""):
-        """Apply platform-specific fixups to ``itk_core`` wheels for TBB linkage."""
-        # TBB library fix-up (applies to itk_core wheel)
-        tbb_wheel = "itk_core"
-        for wheel in (self.build_dir_root / "dist").glob(f"{tbb_wheel}*.whl"):
-            self.fixup_wheel(str(wheel), lib_paths)
-
     def final_wheel_import_test(self, installed_dist_dir: Path):
         """Install and smoke-test all ITK wheels from *installed_dist_dir*.
 
@@ -809,7 +802,7 @@ class BuildPythonInstanceBase(ABC):
         """Run platform-specific post-build wheel fixups.
 
         Called after all wheels are built but before the final import
-        test. Typically invokes ``fixup_wheel`` or ``fixup_wheels``.
+        test. Typically invokes ``fixup_wheel``.
         """
         pass
 

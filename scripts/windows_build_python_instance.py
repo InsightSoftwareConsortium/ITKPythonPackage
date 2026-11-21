@@ -32,6 +32,13 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         search_lib_paths_str: str = ";".join(map(str, search_lib_paths))
         self.fixup_wheels(search_lib_paths_str)
 
+    def fixup_wheels(self, lib_paths: str = ""):
+        """Repair the ``itk_core`` wheels, which link oneTBB."""
+        # TBB library fix-up (applies to itk_core wheel)
+        tbb_wheel = "itk_core"
+        for wheel in (self.build_dir_root / "dist").glob(f"{tbb_wheel}*.whl"):
+            self.fixup_wheel(str(wheel), lib_paths)
+
     def fixup_wheel(
         self, filepath, lib_paths: str = "", remote_module_wheel: bool = False
     ) -> None:
