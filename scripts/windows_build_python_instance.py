@@ -6,6 +6,7 @@ import shutil
 import zipfile
 from pathlib import Path, PurePath
 
+from build_environment import PythonEnvironment
 from build_python_instance_base import BuildPythonInstanceBase
 
 ARCHIVE_EXCLUDES = (
@@ -185,8 +186,8 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                                 Path(dirpath) / name, (rel_dir / name).as_posix()
                             )
 
-    def venv_paths(self) -> None:
-        """Populate ``venv_info_dict`` from the pixi-managed Python environment on Windows."""
+    def venv_paths(self) -> PythonEnvironment:
+        """Return the pixi-managed Python environment on Windows."""
 
         def get_python_version(platform_env: str) -> tuple[int, int] | None:
             pattern = re.compile(r"py3(?P<minor>\d+)")
@@ -198,9 +199,6 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         python_exe = Path(self.package_env_config["PYTHON_EXECUTABLE"])
 
         env_root = python_exe.parent
-        venv_bin_path = env_root
-        venv_base_dir = env_root
-        python_include_dir = env_root / "include"
 
         python_version = get_python_version(self.platform_env)
         if python_version is None:
@@ -210,16 +208,13 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         # Version-specific library (e.g., python311.lib) - required for
         # CMake's FindPython3 to extract version info for Development.Module
         xy_lib_ver = f"{python_major}{python_minor}"
-        python_library = env_root / "libs" / f"python{xy_lib_ver}.lib"
 
-        # Stable ABI library (python3.lib) - for Development.SABIModule
-        python_sabi_library = env_root / "libs" / f"python{python_major}.lib"
-
-        self.venv_info_dict = {
-            "python_include_dir": python_include_dir,
-            "python_library": python_library,
-            "python_sabi_library": python_sabi_library,
-            "venv_bin_path": venv_bin_path,
-            "venv_base_dir": venv_base_dir,
-            "python_root_dir": env_root,
-        }
+        return PythonEnvironment(
+            root_dir=env_root,
+            include_dir=env_root / "include",
+            library=env_root / "libs" / f"python{xy_lib_ver}.lib",
+            bin_path=env_root,
+            base_dir=env_root,
+            # Stable ABI library (python3.lib) - for Development.SABIModule
+            sabi_library=env_root / "libs" / f"python{python_major}.lib",
+        )

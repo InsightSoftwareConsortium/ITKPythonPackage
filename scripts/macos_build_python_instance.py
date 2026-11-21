@@ -62,26 +62,19 @@ class MacOSBuildPythonInstance(PosixBuildPythonInstance):
             return
 
         # The pixi toolchain links @rpath/libc++, which exists only on the build host.
-        venv_bin_path = self.venv_info_dict.get("venv_bin_path", None)
-        if venv_bin_path:
-            delocate_listdeps = f"{venv_bin_path}/delocate-listdeps"
-            delocate_wheel = f"{venv_bin_path}/delocate-wheel"
-            self.echo_check_call([str(delocate_listdeps), str(filepath)])
-            self.echo_check_call(
-                [
-                    str(delocate_wheel),
-                    "--require-archs",
-                    self.package_env_config["ARCH"],
-                    str(filepath),
-                ],
-                check=True,
-            )
-        else:
-            print(
-                "=" * 20
-                + "WARNING: Could not find venv binary to delocate wheel"
-                + "=" * 20
-            )
+        venv_bin_path = self.python_env.bin_path
+        delocate_listdeps = f"{venv_bin_path}/delocate-listdeps"
+        delocate_wheel = f"{venv_bin_path}/delocate-wheel"
+        self.echo_check_call([str(delocate_listdeps), str(filepath)])
+        self.echo_check_call(
+            [
+                str(delocate_wheel),
+                "--require-archs",
+                self.package_env_config["ARCH"],
+                str(filepath),
+            ],
+            check=True,
+        )
 
     def remove_apple_double_files(self) -> None:
         """Remove AppleDouble ``._*`` files using ``dot_clean`` if available."""

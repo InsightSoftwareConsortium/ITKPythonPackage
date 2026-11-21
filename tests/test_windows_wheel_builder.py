@@ -196,3 +196,37 @@ def test_zip_fallback_archives_the_seven_zip_roots(tmp_path, windows_builder):
         if kept
     }
     assert names == expected
+
+
+def test_venv_paths_names_the_version_and_stable_abi_libraries(
+    tmp_path, windows_builder
+):
+    env_root = tmp_path / "env"
+    (env_root / "include").mkdir(parents=True)
+    (env_root / "libs").mkdir()
+    (env_root / "libs" / "python311.lib").touch()
+    (env_root / "libs" / "python3.lib").touch()
+    windows_builder.package_env_config["PYTHON_EXECUTABLE"] = str(
+        env_root / "python.exe"
+    )
+
+    env = windows_builder.venv_paths()
+
+    assert env.root_dir == env_root
+    assert env.include_dir == env_root / "include"
+    assert env.library == env_root / "libs" / "python311.lib"
+    assert env.sabi_library == env_root / "libs" / "python3.lib"
+    assert env.bin_path == env_root
+    assert env.executable is None
+
+
+def test_venv_paths_refuses_a_missing_stable_abi_library(tmp_path, windows_builder):
+    env_root = tmp_path / "env"
+    (env_root / "include").mkdir(parents=True)
+    (env_root / "libs").mkdir()
+    (env_root / "libs" / "python311.lib").touch()
+    windows_builder.package_env_config["PYTHON_EXECUTABLE"] = str(
+        env_root / "python.exe"
+    )
+    with pytest.raises(FileNotFoundError, match=r"python3\.lib"):
+        windows_builder.venv_paths()

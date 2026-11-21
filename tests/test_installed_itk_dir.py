@@ -5,6 +5,7 @@ The install tree is a sibling of the build tree, is produced by
 module build files and wrapping infrastructure a remote module includes.
 """
 
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -28,7 +29,8 @@ def _wire(
             "BUILD_TYPE": "Release",
         }
     )
-    builder.venv_info_dict["python_include_dir"] = str(tmp_path / "inc")
+    (tmp_path / "inc").mkdir(exist_ok=True)
+    builder.python_env = replace(builder.python_env, include_dir=tmp_path / "inc")
     return builder
 
 

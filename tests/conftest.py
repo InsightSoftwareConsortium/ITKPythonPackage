@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import TypeVar
 
 import pytest
+from build_environment import PythonEnvironment
 from build_python_instance_base import BuildPythonInstanceBase
 from cmake_argument_builder import CMakeArgumentBuilder
 from linux_build_python_instance import LinuxBuildPythonInstance
@@ -31,7 +32,14 @@ def _make_builder(
     builder.platform_env = platform_env
     builder.target = target
     builder.package_env_config = dict(package_env_config)
-    builder.venv_info_dict = {"venv_bin_path": str(tmp_path / "bin")}
+    (tmp_path / "include").mkdir(exist_ok=True)
+    builder.python_env = PythonEnvironment(
+        root_dir=tmp_path,
+        include_dir=tmp_path / "include",
+        library=None,
+        bin_path=tmp_path / "bin",
+        base_dir=tmp_path,
+    )
     builder.cmake_compiler_configurations = CMakeArgumentBuilder()
     builder.cmake_itk_source_build_configurations = CMakeArgumentBuilder()
     return builder

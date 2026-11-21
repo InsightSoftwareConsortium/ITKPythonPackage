@@ -1,6 +1,7 @@
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 import build_environment
 import pytest
@@ -77,13 +78,55 @@ def test_find_unix_exectable_paths_resolves_a_venv_layout(tmp_path):
     except (OSError, NotImplementedError):
         shutil.copy2(sys.executable, bin_dir / "python")
 
-    exe, include_dir, library, venv_bin, venv_base = (
-        build_environment.find_unix_exectable_paths(tmp_path)
-    )
+    env = build_environment.find_unix_exectable_paths(tmp_path)
 
-    assert exe == str(bin_dir / "python")
-    assert venv_bin == str(bin_dir)
-    assert venv_base == str(tmp_path)
-    # CMake infers the library from the interpreter, so it stays empty.
-    assert library == ""
-    assert include_dir
+    assert env.executable == bin_dir / "python"
+    assert env.bin_path == bin_dir
+    assert env.base_dir == tmp_path
+    assert env.root_dir == tmp_path
+    # CMake infers the library from the interpreter, so none is named.
+    assert env.library is None
+    assert env.sabi_library is None
+    assert env.include_dir.is_dir()
+
+
+def _environment(
+    tmp_path: Path, **overrides: Path | None
+) -> build_environment.PythonEnvironment:
+    (tmp_path / "include").mkdir(exist_ok=True)
+    fields: dict[str, Path | None] = {
+        "root_dir": tmp_path,
+        "include_dir": tmp_path / "include",
+        "library": None,
+        "bin_path": tmp_path / "bin",
+        "base_dir": tmp_path,
+    }
+    fields.update(overrides)
+    return build_environment.PythonEnvironment(**fields)  # type: ignore[arg-type]
+
+
+def test_python_environment_accepts_existing_paths(tmp_path):
+    library = tmp_path / "python311.lib"
+    sabi = tmp_path / "python3.lib"
+    library.touch()
+    sabi.touch()
+    env = _environment(tmp_path, library=library, sabi_library=sabi)
+    assert env.library == library
+    assert env.sabi_library == sabi
+
+
+def test_python_environment_requires_the_include_dir(tmp_path):
+    with pytest.raises(FileNotFoundError, match="include directory"):
+        _environment(tmp_path, include_dir=tmp_path / "missing")
+
+
+@pytest.mark.parametrize("field", ["library", "sabi_library"])
+def test_python_environment_requires_named_libraries(tmp_path, field):
+    with pytest.raises(FileNotFoundError, match="library not found"):
+        _environment(tmp_path, **{field: tmp_path / "python3.lib"})
+
+
+def test_python_environment_is_frozen(tmp_path):
+    env = _environment(tmp_path)
+    with pytest.raises(AttributeError):
+        env.root_dir = tmp_path / "other"  # type: ignore[misc]

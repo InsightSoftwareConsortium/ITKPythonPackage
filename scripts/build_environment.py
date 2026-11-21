@@ -9,10 +9,39 @@ they can be exercised without constructing a builder.
 import os
 import subprocess
 from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from wheel_builder_utils import HOST_SYSTEM_ENVIRONMENT_NAME, run_commandLine_subprocess
+
+
+@dataclass(frozen=True)
+class PythonEnvironment:
+    """The Python installation the wheels are built against.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the include directory or a named library does not exist.
+    """
+
+    root_dir: Path
+    include_dir: Path
+    library: Path | None
+    bin_path: Path
+    base_dir: Path
+    executable: Path | None = None
+    sabi_library: Path | None = None
+
+    def __post_init__(self) -> None:
+        if not self.include_dir.is_dir():
+            msg = f"Python include directory not found: {self.include_dir}"
+            raise FileNotFoundError(msg)
+        for library in (self.library, self.sabi_library):
+            if library is not None and not library.is_file():
+                msg = f"Python library not found: {library}"
+                raise FileNotFoundError(msg)
 
 
 def echo_check_call(
@@ -92,9 +121,7 @@ def echo_check_call(
     return cmd_return_status
 
 
-def find_unix_exectable_paths(
-    venv_dir: Path,
-) -> tuple[str, str, str, str, str]:
+def find_unix_exectable_paths(venv_dir: Path) -> PythonEnvironment:
     """Resolve Python interpreter and virtualenv paths on Unix.
 
     Parameters
@@ -102,47 +129,40 @@ def find_unix_exectable_paths(
     venv_dir : Path
         Root of the Python virtual environment.
 
-    Returns
-    -------
-    tuple[str, str, str, str, str]
-        ``(python_executable, python_include_dir, python_library,
-        venv_bin_path, venv_base_dir)``.
-
     Raises
     ------
     FileNotFoundError
         If the Python executable does not exist under *venv_dir*.
+    RuntimeError
+        If the interpreter cannot report its include directory.
     """
     python_executable = venv_dir / "bin" / "python"
     if not python_executable.exists():
         msg = f"Python executable not found: {python_executable}"
         raise FileNotFoundError(msg)
 
-    # Compute Python include dir using sysconfig for the given interpreter
     try:
-        python_include_dir = (
-            subprocess.check_output(
-                [
-                    str(python_executable),
-                    "-c",
-                    "import sysconfig; print(sysconfig.get_paths()['include'])",
-                ],
-                text=True,
-            ).strip()
-            or ""
-        )
+        python_include_dir = subprocess.check_output(
+            [
+                str(python_executable),
+                "-c",
+                "import sysconfig; print(sysconfig.get_paths()['include'])",
+            ],
+            text=True,
+        ).strip()
     except Exception as e:
-        print(f"Failed to compute Python include dir: {e}\n defaulting to empty")
-        python_include_dir = ""
+        msg = f"Failed to compute Python include dir from {python_executable}: {e}"
+        raise RuntimeError(msg) from e
+    if not python_include_dir:
+        msg = f"{python_executable} reported no Python include dir"
+        raise RuntimeError(msg)
 
-    # modern CMake with Python3 can infer the library from executable; leave empty
-    python_library = ""
-
-    venv_bin_path = venv_dir / "bin"
-    return (
-        str(python_executable),
-        str(python_include_dir),
-        str(python_library),
-        str(venv_bin_path),
-        str(venv_dir),
+    # CMake infers the library from the interpreter, so none is named.
+    return PythonEnvironment(
+        root_dir=venv_dir,
+        include_dir=Path(python_include_dir),
+        library=None,
+        bin_path=venv_dir / "bin",
+        base_dir=venv_dir,
+        executable=python_executable,
     )

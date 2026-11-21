@@ -12,6 +12,7 @@ from typing import Any
 
 import build_environment
 import wheel_packaging
+from build_environment import PythonEnvironment
 from build_inputs import (
     build_fingerprint,
     build_inputs,
@@ -185,6 +186,7 @@ class BuildPythonInstanceBase(ABC):
     #: Class-level default for instances built without ``__init__`` (test fixtures).
     module_itk_dir: str = "build"
     uses_tbb: bool = True
+    python_env: PythonEnvironment
 
     def __init__(
         self,
@@ -244,9 +246,6 @@ class BuildPythonInstanceBase(ABC):
 
         self.package_env_config = package_env_config
         self.target: TargetPlatform = TargetPlatform.detect(self.package_env_config)
-
-        # declare this dict before self.prepare_build_env() or dict will be empty in later functions
-        self.venv_info_dict: dict[str, Any] = {}
 
         with (IPP_BuildWheelsSupport_DIR / "WHEEL_NAMES.txt").open(
             encoding="utf-8"
@@ -338,10 +337,10 @@ class BuildPythonInstanceBase(ABC):
         )
 
     def update_venv_itk_build_configurations(self) -> None:
-        """Set ``Python3_ROOT_DIR`` in ITK build configurations from venv info."""
+        """Set ``Python3_ROOT_DIR`` in ITK build configurations from the Python environment."""
         # Guides ITK's find_package(Python3) to the build environment's interpreter.
         self.cmake_itk_source_build_configurations.set(
-            "Python3_ROOT_DIR:PATH", f"{self.venv_info_dict['python_root_dir']}"
+            "Python3_ROOT_DIR:PATH", f"{self.python_env.root_dir}"
         )
 
     def build_step_table(self) -> OrderedDict[str, Callable[[], object]]:
@@ -696,8 +695,8 @@ class BuildPythonInstanceBase(ABC):
         return new
 
     @abstractmethod
-    def venv_paths(self) -> None:
-        """Populate ``venv_info_dict`` from the pixi-managed Python interpreter."""
+    def venv_paths(self) -> PythonEnvironment:
+        """Return the pixi-managed Python environment the wheels build against."""
 
     @abstractmethod
     def fixup_wheel(
@@ -736,7 +735,7 @@ class BuildPythonInstanceBase(ABC):
 
         Subclasses vary only in ``uses_tbb`` and ``_configure_toolchain``.
         """
-        self.venv_paths()
+        self.python_env = self.venv_paths()
         self.update_venv_itk_build_configurations()
         self._configure_tbb()
         self._configure_toolchain()
@@ -826,7 +825,7 @@ class BuildPythonInstanceBase(ABC):
         py_exe = str(self.package_env_config["PYTHON_EXECUTABLE"])  # Python3_EXECUTABLE
 
         # Compute Python include directory (Python3_INCLUDE_DIR)
-        py_include = self.venv_info_dict.get("python_include_dir", "")
+        py_include = str(self.python_env.include_dir)
         if not py_include:
             try:
                 py_include = (
@@ -890,12 +889,10 @@ class BuildPythonInstanceBase(ABC):
             defs.set("Python3_INCLUDE_DIR:PATH", py_include)
 
         # Pass Python library paths when explicitly known (Windows)
-        py_library = self.venv_info_dict.get("python_library", "")
-        if py_library:
-            defs.set("Python3_LIBRARY:FILEPATH", str(py_library))
-        py_sabi_library = self.venv_info_dict.get("python_sabi_library", "")
-        if py_sabi_library:
-            defs.set("Python3_SABI_LIBRARY:FILEPATH", str(py_sabi_library))
+        if self.python_env.library is not None:
+            defs.set("Python3_LIBRARY:FILEPATH", str(self.python_env.library))
+        if self.python_env.sabi_library is not None:
+            defs.set("Python3_SABI_LIBRARY:FILEPATH", str(self.python_env.sabi_library))
 
         # Allow command-line cmake -D overrides to win last
         defs.update(self.cmake_cmdline_definitions.items())
