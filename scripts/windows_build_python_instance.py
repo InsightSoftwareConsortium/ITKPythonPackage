@@ -95,6 +95,10 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
 
         # A repaired module wheel replaces the unrepaired one in the module's dist/.
         output_dir = self._repair_output_dir(remote_module_wheel)
+        # delvewheel keeps the file name, so a repair written beside the input
+        # would be indistinguishable from the unrepaired wheel.
+        staging_dir = output_dir / "delvewheel-repaired"
+        shutil.rmtree(staging_dir, ignore_errors=True)
         delve_wheel = "delvewheel.exe"
         cmd = [
             str(delve_wheel),
@@ -104,12 +108,12 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             lib_paths.strip(";"),
             "--ignore-in-wheel",
             "-w",
-            str(output_dir),
+            str(staging_dir),
             str(filepath),
         ]
         repair_status = self.echo_check_call(cmd)
 
-        repaired_wheel = output_dir / Path(filepath).name
+        repaired_wheel = staging_dir / Path(filepath).name
         self._require_repaired(
             "delvewheel",
             Path(filepath),
@@ -117,6 +121,8 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             repaired_wheel,
             str(repaired_wheel),
         )
+        repaired_wheel.replace(output_dir / repaired_wheel.name)
+        shutil.rmtree(staging_dir, ignore_errors=True)
 
     def build_tarball(self) -> None:
         r"""Create an archive of the ITK Python package build tree (Windows).

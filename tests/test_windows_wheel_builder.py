@@ -10,6 +10,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 from windows_build_python_instance import WindowsBuildPythonInstance
 
 
@@ -44,7 +45,7 @@ def test_remote_module_repaired_wheel_lands_in_the_module_dist(
             str(wheel), lib_paths="C:/tbb/bin", remote_module_wheel=True
         )
 
-    assert captured["out_dir"] == expected_dir
+    assert captured["out_dir"].parent == expected_dir
     assert (expected_dir / wheel.name).exists()
 
 
@@ -69,8 +70,47 @@ def test_non_remote_repaired_wheel_lands_in_the_build_dist(tmp_path, windows_bui
     with patch.object(windows_builder, "echo_check_call", side_effect=fake_repair):
         windows_builder.fixup_wheel(str(wheel), lib_paths="C:/tbb/bin")
 
-    assert captured["out_dir"] == main_dist
+    assert captured["out_dir"].parent == main_dist
     assert not (windows_builder.module_source_dir / "dist").exists()
+
+
+def test_repair_that_writes_nothing_fails_even_beside_the_input(windows_builder):
+    """ITK wheels are repaired in the ``dist/`` they were built in.
+
+    The unrepaired input already sits at the output name there, so the
+    check must look somewhere delvewheel alone writes.
+    """
+    main_dist = windows_builder.build_dir_root / "dist"
+    main_dist.mkdir(parents=True, exist_ok=True)
+    wheel = main_dist / "itk_core-6.0.0-cp311-abi3-win_amd64.whl"
+    wheel.write_bytes(b"unrepaired")
+
+    with (
+        patch.object(windows_builder, "echo_check_call", return_value=0),
+        pytest.raises(RuntimeError, match="delvewheel repair failed"),
+    ):
+        windows_builder.fixup_wheel(str(wheel))
+
+
+def test_repaired_wheel_replaces_the_input_in_place(windows_builder):
+    """A successful repair leaves only the repaired wheel in ``dist/``."""
+    main_dist = windows_builder.build_dir_root / "dist"
+    main_dist.mkdir(parents=True, exist_ok=True)
+    wheel = main_dist / "itk_core-6.0.0-cp311-abi3-win_amd64.whl"
+    wheel.write_bytes(b"unrepaired")
+
+    def fake_repair(cmd, *args, **kwargs) -> int:
+        rendered = [str(c) for c in cmd]
+        out_dir = Path(rendered[rendered.index("-w") + 1])
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / wheel.name).write_bytes(b"repaired")
+        return 0
+
+    with patch.object(windows_builder, "echo_check_call", side_effect=fake_repair):
+        windows_builder.fixup_wheel(str(wheel))
+
+    assert wheel.read_bytes() == b"repaired"
+    assert sorted(p.name for p in main_dist.iterdir()) == [wheel.name]
 
 
 def _run_build_tarball(
