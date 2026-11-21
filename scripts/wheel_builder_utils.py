@@ -5,73 +5,13 @@ See https://github.com/scikit-build/scikit-build
 """
 
 import contextlib
-import filecmp
 import os
 import re
-import shutil
 import subprocess
 import sys
 from collections.abc import Sequence
-from functools import wraps
-from os import chdir as os_chdir
 from os import environ
 from pathlib import Path
-from typing import Any
-
-
-class ContextDecorator:
-    """A base class or mixin that enables context managers to work as
-    decorators."""
-
-    def __init__(self, **kwargs: Any) -> None:
-        self.__dict__.update(kwargs)
-
-    def __enter__(self):
-        # Note: Returning self means that in "with ... as x", x will be self
-        return self
-
-    def __exit__(self, typ, val, traceback):
-        pass
-
-    def __call__(self, func):
-        @wraps(func)
-        def inner(*args, **kwds):  # pylint:disable=missing-docstring
-            with self:
-                return func(*args, **kwds)
-
-        return inner
-
-
-class push_dir(ContextDecorator):
-    """Context manager to change current directory."""
-
-    def __init__(
-        self, directory: str | Path | None = None, make_directory: bool = False
-    ) -> None:
-        """
-        :param directory:
-          Path to set as current working directory. If ``None``
-          is passed, current working directory is used instead.
-
-        :param make_directory:
-          If True, ``directory`` is created.
-        """
-        self.directory: str | Path | None = None
-        self.make_directory = False
-        self.old_cwd: Path | None = None
-        super().__init__(directory=directory, make_directory=make_directory)
-
-    def __enter__(self):
-        self.old_cwd = Path.cwd()
-        if self.directory:
-            if self.make_directory:
-                Path(self.directory).mkdir(parents=True, exist_ok=True)
-            os_chdir(self.directory)
-        return self
-
-    def __exit__(self, typ, val, traceback):
-        if self.old_cwd is not None:
-            os_chdir(self.old_cwd)
 
 
 def _remove_tree(path: Path) -> None:
@@ -545,35 +485,6 @@ def resolve_oci_exe(env: dict[str, str]) -> str:
             return cand
     # Default to docker name if nothing found
     return "docker"
-
-
-def give_relative_path(bin_exec: Path, build_dir_root: Path) -> str:
-    bin_exec = Path(bin_exec).resolve()
-    build_dir_root = Path(build_dir_root).resolve()
-    if bin_exec.is_relative_to(build_dir_root):
-        return "${BUILD_DIR_ROOT}" + os.sep + str(bin_exec.relative_to(build_dir_root))
-    return str(bin_exec)
-
-
-def safe_copy_if_different(src: Path, dst: Path) -> None:
-    """Copy file only if destination is missing or contents differ.
-
-    This avoids unnecessary overwrites and timestamp churn when files are identical.
-    """
-    src = Path(src)
-    dst = Path(dst)
-    if not dst.exists():
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(src, dst)
-        return
-    try:
-        same = filecmp.cmp(src, dst, shallow=False)
-    except Exception as e:
-        # On any comparison failure, fall back to copying to be safe
-        same = False
-        print(f"WARNING: Failed to compare {src} to {dst}: {e}")
-    if not same:
-        shutil.copyfile(src, dst)
 
 
 def get_default_platform_build(default_python_version: str = "py311") -> str:

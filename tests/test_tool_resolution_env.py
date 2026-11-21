@@ -21,7 +21,7 @@ def test_resolves_inside_target_env_not_launching_path(monkeypatch):
         )
 
     monkeypatch.setattr("wheel_builder_utils.run_commandLine_subprocess", fake_run)
-    monkeypatch.setattr("wheel_builder_utils.shutil.which", lambda _: "/stray/doxygen")
+    monkeypatch.setattr("shutil.which", lambda _: "/stray/doxygen")
 
     resolved = which_required_in_pixi_env("doxygen", Path("/bin/pixi"), "windows-py311")
 
@@ -52,7 +52,7 @@ def test_missing_tool_in_target_env_raises(monkeypatch):
         "wheel_builder_utils.run_commandLine_subprocess",
         lambda *a, **_k: subprocess.CompletedProcess(a[0] if a else [], 0, "\n", ""),
     )
-    monkeypatch.setattr("wheel_builder_utils.shutil.which", lambda _: "/stray/doxygen")
+    monkeypatch.setattr("shutil.which", lambda _: "/stray/doxygen")
 
     with pytest.raises(RuntimeError, match="doxygen"):
         which_required_in_pixi_env("doxygen", Path("/bin/pixi"), "windows-py311")
