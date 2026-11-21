@@ -77,6 +77,13 @@ repos:
         types_or: [markdown]
         stages: [pre-commit]
 
+  # GitHub Actions: security audit
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.32.0
+    hooks:
+      - id: zizmor
+        stages: [pre-commit]
+
   # Shell: linting
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.10.0.1
