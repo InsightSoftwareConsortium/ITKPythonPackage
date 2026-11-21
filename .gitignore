@@ -53,6 +53,9 @@ pip-log.txt
 .tox
 coverage.xml
 htmlcov
+.pytest_cache/
+.hypothesis/
+__pycache__/
 
 # Translations
 *.mo

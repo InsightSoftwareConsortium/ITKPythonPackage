@@ -3,6 +3,9 @@
 # It does NOT define a Python package; wheel-specific pyproject.toml files are
 # generated dynamically by scripts/pyproject_configure.py into build subdirectories.
 
+[dependency-groups]
+dev = ["pytest>=8", "hypothesis>=6"]
+
 [tool.ruff]
 line-length = 88
 target-version = "py311"
@@ -83,3 +86,16 @@ choices = [
 type = "input"
 name = "message"
 message = "Commit description (start with capital letter):"
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
+xfail_strict = true
+filterwarnings = ["error"]
+log_level = "INFO"
+pythonpath = ["scripts"]
+testpaths = ["tests"]
+
+[tool.repo-review.ignore]
+PP002 = "Root pyproject.toml configures tooling only; wheels are generated from scripts/pyproject.toml.in"
+PP003 = "Root pyproject.toml configures tooling only; wheels are generated from scripts/pyproject.toml.in"
