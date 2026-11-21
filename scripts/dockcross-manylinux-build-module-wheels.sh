@@ -134,6 +134,9 @@ fi
 # Environment variables for the container
 DOCKER_ARGS+=" -e PYTHONUNBUFFERED=1 "
 DOCKER_ARGS+=" -e CMAKE_OPTIONS='${CMAKE_OPTIONS}' "
+if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
+  DOCKER_ARGS+=" -e SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH} "
+fi
 
 # Mount shared libraries if LD_LIBRARY_PATH is set
 if [[ -n ${LD_LIBRARY_PATH} ]]; then

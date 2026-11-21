@@ -239,6 +239,11 @@ useful in CI pipelines:
      - total ninja jobs; default bounded by CPU count and physical memory
    * - ``ITK_BUILD_LOAD_LIMIT``
      - ninja ``-l`` load limit; default the hardware thread count
+   * - ``SOURCE_DATE_EPOCH``
+     - timestamp written into the wheels' zip entries; default the ITK
+       commit's committer time, so rebuilds of a commit are byte-comparable.
+       On Windows ``/Brepro`` is also added to ``_LINK_`` so the linker
+       writes no timestamps
    * - ``CMAKE_OPTIONS``
      - extra CMake ``-D`` definitions
    * - ``MACOSX_DEPLOYMENT_TARGET``

@@ -357,6 +357,7 @@ Key environment variables:
 | `USE_COMPILER_CACHE`       | `0` (`USE_CCACHE` also accepted)                                  | Compile through ccache in the container                                          |
 | `CCACHE_MAXSIZE`           | `30G`                                                             | ccache size limit                                                                |
 | `ITK_CONTAINER_CCACHE_DIR` | `~/.cache/itk-ccache-manylinux<version>-<arch>`                   | Host directory mounted as the container's ccache                                 |
+| `SOURCE_DATE_EPOCH`        | ITK commit time                                                   | Timestamp of the wheels' zip entries                                             |
 
 #### Linux/macOS/Windows: building ITK from source
 

@@ -38,7 +38,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from build_wheels import WINDOWS_BUILD_DIR_ROOT
+from build_wheels import WINDOWS_BUILD_DIR_ROOT, source_date_epoch
 from target_platform import OS, Arch, arch_from_machine, os_from_system
 
 IPP_DIR = Path(__file__).resolve().parent.parent
@@ -262,6 +262,12 @@ def prepare_itk_source(src: Path, repository: str, itk_ref: str) -> tuple[str, b
     raise SystemExit(msg)
 
 
+def wheel_epoch(src: Path, commit: str) -> str | None:
+    """SOURCE_DATE_EPOCH for every build: the caller's value, else *commit*'s time."""
+    commit_time = _git("log", "-1", "--format=%ct", commit, cwd=src, check=False)
+    return source_date_epoch(os.environ, commit_time.stdout)
+
+
 def _pixi() -> str:
     for candidate in (
         shutil.which("pixi"),
@@ -283,7 +289,12 @@ def _container_engine() -> str:
 
 
 def plan(
-    targets: list[str], itk_source: Path, commit: str, version: str, pixi: str = "pixi"
+    targets: list[str],
+    itk_source: Path,
+    commit: str,
+    version: str,
+    pixi: str = "pixi",
+    epoch: str | None = None,
 ) -> list[Step]:
     """The build of each target, in order."""
     steps = []
@@ -343,6 +354,9 @@ def plan(
                     dist_dir=container_build_root(arch) / "dist",
                 )
             )
+    if epoch:
+        for step in steps:
+            step.env["SOURCE_DATE_EPOCH"] = epoch
     return steps
 
 
@@ -383,6 +397,7 @@ def main(argv: list[str] | None = None) -> int:
         commit = args.itk_ref
         ref_is_tag = bool(_PEP440_RELEASE.match(args.itk_ref.removeprefix("v")))
         pixi = "pixi"
+        epoch = source_date_epoch(os.environ, None)
     else:
         if any(RELEASE_TARGETS[t].in_container for t in targets):
             _container_engine()
@@ -391,6 +406,7 @@ def main(argv: list[str] | None = None) -> int:
         commit, ref_is_tag = prepare_itk_source(
             itk_source, args.itk_repository, args.itk_ref
         )
+        epoch = wheel_epoch(itk_source, commit)
     version = package_version(args.itk_ref, ref_is_tag, args.package_version)
     if version == "gitauto":
         print(
@@ -401,7 +417,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"ITK {args.itk_ref} = {commit}; package version {version}", flush=True)
 
     failed = []
-    for step in plan(targets, itk_source, commit, version, pixi):
+    for step in plan(targets, itk_source, commit, version, pixi, epoch):
         env_text = " ".join(f"{k}={v}" for k, v in step.env.items())
         print(f"\n=== {step.target}: {env_text} {' '.join(step.command)}", flush=True)
         if args.dry_run:

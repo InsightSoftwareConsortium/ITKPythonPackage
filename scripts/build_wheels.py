@@ -179,6 +179,34 @@ def derives_package_version(itk_package_version: str | None) -> bool:
     return itk_package_version in (None, "", "gitauto", "auto")
 
 
+def source_date_epoch(env: "Mapping[str, str]", commit_time: str | None) -> str | None:
+    """Return the wheels' zip timestamp: the caller's SOURCE_DATE_EPOCH, else the ITK commit's time."""
+    if env.get("SOURCE_DATE_EPOCH"):
+        return env["SOURCE_DATE_EPOCH"]
+    commit_time = (commit_time or "").strip()
+    return commit_time if commit_time.isdigit() else None
+
+
+def windows_link_options(os_name: OS, link_options: str | None) -> str | None:
+    """Return *link_options* (the _LINK_ value) with /Brepro added on Windows."""
+    if os_name is not OS.WINDOWS:
+        return link_options
+    link_options = link_options or ""
+    if any(o.lower() in ("/brepro", "-brepro") for o in link_options.split()):
+        return link_options
+    return f"{link_options} /Brepro".lstrip()
+
+
+def itk_commit_time(itk_source_dir: Path, itk_git_tag: str) -> str | None:
+    """Return the committer time of *itk_git_tag*, or None without a repository."""
+    result = run_command(
+        ["git", "log", "-1", "--format=%ct", itk_git_tag],
+        cwd=itk_source_dir,
+        env=itk_git_env(itk_source_dir),
+    )
+    return result.stdout if result.returncode == 0 else None
+
+
 def in_manylinux_container(env: "Mapping[str, str]") -> bool:
     """True inside a dockcross image (CROSS_TRIPLE) or a pypa one (AUDITWHEEL_PLAT)."""
     return bool(env.get("CROSS_TRIPLE") or env.get("AUDITWHEEL_PLAT"))
@@ -598,6 +626,26 @@ def sync_itk_source_tree(args: argparse.Namespace, ipp_dir: Path) -> None:
         )
 
 
+def pin_build_timestamps(args: argparse.Namespace, os_name: OS) -> None:
+    """Make the wheels' zip entries and Windows PE headers reproducible."""
+    # Every wheel writer and repair tool stamps zip entries with this time.
+    epoch = source_date_epoch(
+        os.environ, itk_commit_time(args.itk_source_dir, args.itk_git_tag)
+    )
+    if epoch:
+        os.environ["SOURCE_DATE_EPOCH"] = epoch
+    else:
+        print(
+            "WARNING: No ITK commit time and no SOURCE_DATE_EPOCH; "
+            "wheel zip timestamps will be the build time."
+        )
+
+    # link.exe appends _LINK_ to every command line; /Brepro replaces PE link timestamps.
+    link_options = windows_link_options(os_name, os.environ.get("_LINK_"))
+    if link_options:
+        os.environ["_LINK_"] = link_options
+
+
 def assemble_build_config(
     args: argparse.Namespace,
     os_name: OS,
@@ -763,6 +811,7 @@ def build_wheels_main() -> None:
     args = parse_arguments(parser, ipp_dir, os_name)
     pixi_executable = resolve_environment(args, ipp_dir, os_name)
     sync_itk_source_tree(args, ipp_dir)
+    pin_build_timestamps(args, os_name)
     config = assemble_build_config(args, os_name, target, pixi_executable)
     write_effective_command_line(parser, args)
     builder = make_builder(args, os_name, config)

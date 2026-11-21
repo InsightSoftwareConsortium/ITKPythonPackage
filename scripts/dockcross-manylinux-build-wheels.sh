@@ -106,6 +106,9 @@ fi
 if [ -n "${CCACHE_MAXSIZE:-}" ]; then
   DOCKER_ARGS+=" -e CCACHE_MAXSIZE=${CCACHE_MAXSIZE} "
 fi
+if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
+  DOCKER_ARGS+=" -e SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH} "
+fi
 
 # To build tarballs in manylinux, use 'export BUILD_WHEELS_EXTRA_FLAGS=" --build-itk-tarball-cache "'
 BUILD_WHEELS_EXTRA_FLAGS=${BUILD_WHEELS_EXTRA_FLAGS:=""} # No tarball by default
