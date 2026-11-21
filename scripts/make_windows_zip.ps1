@@ -31,7 +31,7 @@
 #
 # `$env:ITK_GIT_TAG`
 #     ITK git tag to build from. Falls back to main with loud warnings
-#     if unset, matching the bash script behaviour.
+#     if unset, matching the bash script behavior.
 #
 ########################################################################
 param (
@@ -48,7 +48,7 @@ if (-not $pyenvs -or $pyenvs.Count -eq 0) {
 }
 echo "Building for python environments: $($pyenvs -join ', ')"
 
-# Resolve ITK_GIT_TAG — loud warning if unset, matching bash behaviour
+# Resolve ITK_GIT_TAG — loud warning if unset, matching bash behavior
 $DEFAULT_ITK_GIT_TAG = "main"
 if (-not $env:ITK_GIT_TAG) {
   $warningLine = "===== WARNING: ITK_GIT_TAG not set, so defaulting to $DEFAULT_ITK_GIT_TAG"
@@ -143,7 +143,7 @@ $env:Path = "$env:PIXI_HOME\bin;$env:Path"
 Push-Location $IPPDir
 try {
   foreach ($pyenv in $pyenvs) {
-    # Normalise any of: py311 / py3.11 / cp311 / 3.11  ->  py311
+    # Normalize any of: py311 / py3.11 / cp311 / 3.11  ->  py311
     $pySquashed  = $pyenv -replace 'py|cp|\.', ''
     $pyenv       = "py$pySquashed"
     $platformEnv = "windows-$pyenv"

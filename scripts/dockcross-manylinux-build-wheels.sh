@@ -158,7 +158,7 @@ else
   "$OCI_EXE" run --rm "${CONTAINER_SOURCE}" >"${_local_dockercross_script}"
   chmod u+x "${_local_dockercross_script}"
 
-  # When building ITK wheels, --module-source-dir, --module-dependancies-root-dir, and --itk-module-deps to be empty
+  # When building ITK wheels, --module-source-dir, --module-dependencies-root-dir, and --itk-module-deps to be empty
   cmd="bash -x ${_local_dockercross_script} \
       -a \"$DOCKER_ARGS\" \
       /usr/bin/env \

@@ -129,7 +129,7 @@ def itk_source_build_configuration(
         # Install the module build files and wrapping infrastructure
         # so a remote module can be configured against the install
         # tree (module_itk_dir="install"). Only an ITK that carries
-        # that support honours it; elsewhere CMake reports the
+        # that support honors it; elsewhere CMake reports the
         # variable as unused and the build is unchanged. Set for every
         # build so a cached build tree can be installed later.
         "ITK_INSTALL_WRAPPING_DEVELOPMENT_FILES:BOOL": "ON",

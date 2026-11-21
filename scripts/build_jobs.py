@@ -115,7 +115,7 @@ def compute_build_jobs(
     """Number of ninja jobs: the smaller of the CPU count and what RAM affords.
 
     ``ITK_BUILD_JOBS`` in *env* overrides the computation. An unknown memory
-    size falls back to the CPU count, i.e. the historical behaviour.
+    size falls back to the CPU count, i.e. the historical behavior.
     """
     env = os.environ if env is None else env
     override = env.get("ITK_BUILD_JOBS", "").strip()
@@ -135,8 +135,8 @@ def compute_load_limit(
     """Value for ninja ``-l``: the hardware thread count, or an override.
 
     ``-l`` is a *CPU* budget and must not be tied to the memory-derived job
-    count. ninja >= 1.12 honours it on Windows too (verified on 1.13.2: eight
-    3-second jobs under ``-l 0.5`` serialise to 25 s), so ``-l <jobs>`` on a
+    count. ninja >= 1.12 honors it on Windows too (verified on 1.13.2: eight
+    3-second jobs under ``-l 0.5`` serialize to 25 s), so ``-l <jobs>`` on a
     box with more threads than jobs throttles ninja whenever load exceeds the
     job count -- which under a saturating compile is always. Keying it to the
     thread count makes it a no-op under normal load and a safety valve only

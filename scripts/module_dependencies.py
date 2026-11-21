@@ -227,14 +227,14 @@ def build_module_dependencies(context) -> None:
         tag = repo_tag.split("@", 1)[1] if "@" in repo_tag else ""
 
         upstream = f"https://github.com/{org}/{repo}.git"
-        dependant_module_clone_dir = (
+        dependent_module_clone_dir = (
             context.module_dependencies_root_dir / repo
             if context.module_dependencies_root_dir
             else module_root / repo
         )
-        if not dependant_module_clone_dir.exists():
+        if not dependent_module_clone_dir.exists():
             context.echo_check_call(
-                ["git", "clone", upstream, dependant_module_clone_dir],
+                ["git", "clone", upstream, dependent_module_clone_dir],
                 check=True,
             )
 
@@ -243,7 +243,7 @@ def build_module_dependencies(context) -> None:
             [
                 "git",
                 "-C",
-                dependant_module_clone_dir,
+                dependent_module_clone_dir,
                 "fetch",
                 "--all",
                 "--tags",
@@ -252,25 +252,25 @@ def build_module_dependencies(context) -> None:
         )
         if tag:
             context.echo_check_call(
-                ["git", "-C", dependant_module_clone_dir, "checkout", tag],
+                ["git", "-C", dependent_module_clone_dir, "checkout", tag],
                 check=True,
             )
 
-        if (dependant_module_clone_dir / "setup.py").exists():
-            msg: str = f"Old sci-kit-build with setup.py is no longer supported for {dependant_module_clone_dir} at {tag}"
+        if (dependent_module_clone_dir / "setup.py").exists():
+            msg: str = f"Old sci-kit-build with setup.py is no longer supported for {dependent_module_clone_dir} at {tag}"
             raise RuntimeError(msg)
 
         # Clone the current build environment and modify for the current module
         dependent_module_build_setup = context.clone()
         dependent_module_build_setup.module_source_dir = Path(
-            dependant_module_clone_dir
+            dependent_module_clone_dir
         )
         dependent_module_build_setup.itk_module_deps = None  # Prevent recursion
         dependent_module_build_setup.run()
 
         # After building dependency, copy includes and wrapping files
         # 1) Top-level include/* -> include/
-        dep_include = dependant_module_clone_dir / "include"
+        dep_include = dependent_module_clone_dir / "include"
         if dep_include.exists():
             for src in dep_include.rglob("*"):
                 if src.is_file():
@@ -281,7 +281,7 @@ def build_module_dependencies(context) -> None:
                         shutil.copy2(src, dst)
 
         # 2) Any */build/*/include/* -> include/
-        for sub in dependant_module_clone_dir.rglob("*build*/**/include"):
+        for sub in dependent_module_clone_dir.rglob("*build*/**/include"):
             if sub.is_dir():
                 for src in sub.rglob("*"):
                     if src.is_file():
@@ -292,7 +292,7 @@ def build_module_dependencies(context) -> None:
                             shutil.copy2(src, dst)
 
         # 3) Wrapping templates (*.in, *.init) -> wrapping/
-        dep_wrapping = dependant_module_clone_dir / "wrapping"
+        dep_wrapping = dependent_module_clone_dir / "wrapping"
         if dep_wrapping.exists():
             for pattern in ("*.in", "*.init"):
                 for src in dep_wrapping.rglob(pattern):

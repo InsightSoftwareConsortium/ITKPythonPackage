@@ -24,7 +24,7 @@ def test_jobs_are_bounded_by_cpus_when_memory_is_plentiful():
 
 
 def test_unknown_memory_falls_back_to_cpu_count():
-    """Historical behaviour when RAM cannot be determined."""
+    """Historical behavior when RAM cannot be determined."""
     assert compute_build_jobs(12, None, env={}) == 12
     assert compute_build_jobs(12, 0, env={}) == 12
 
@@ -56,7 +56,7 @@ def test_physical_memory_is_plausible_on_the_host():
 
 def test_load_limit_is_the_thread_count_not_the_job_count():
     """-l is a CPU budget. Tying it to the memory-derived -j throttled a
-    16-thread box to one compiler at a time (ninja honours -l on Windows)."""
+    16-thread box to one compiler at a time (ninja honors -l on Windows)."""
     assert compute_load_limit(16, env={}) == 16
     assert compute_load_limit(16, env={}) != compute_build_jobs(16, 32.0, env={})
 
