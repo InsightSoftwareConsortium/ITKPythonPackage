@@ -533,7 +533,6 @@ class BuildPythonInstanceBase(ABC):
         # Add superbuild-specific flags
         cmake_superbuild_argumets.update(
             {
-                "ITKPythonPackage_BUILD_PYTHON:BOOL": "OFF",
                 "ITKPythonPackage_USE_TBB:BOOL": self.package_env_config["USE_TBB"],
                 "ITK_SOURCE_DIR:PATH": f"{self.package_env_config['ITK_SOURCE_DIR']}",
                 "ITK_GIT_TAG:STRING": f"{self.package_env_config['ITK_GIT_TAG']}",
