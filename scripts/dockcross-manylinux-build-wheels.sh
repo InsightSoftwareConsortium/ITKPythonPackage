@@ -90,6 +90,10 @@ if [ "${ITK_SOURCE_DIR}" != "" ]; then
   DOCKER_ARGS+=" -v${ITK_SOURCE_DIR}:${CONTAINER_ITK_SOURCE_DIR} "
 fi
 DOCKER_ARGS+=" -e PYTHONUNBUFFERED=1 " # Turn off buffering of outputs in python
+# For hosts whose containers cannot reach the default resolver; space- or comma-separated.
+for _dns in ${CONTAINER_DNS:+${CONTAINER_DNS//,/ }}; do
+  DOCKER_ARGS+=" --dns ${_dns} "
+done
 
 # ccache keys on the compiler, so each image and architecture keeps its own cache.
 HOST_CCACHE_DIR=${ITK_CONTAINER_CCACHE_DIR:-${HOME}/.cache/itk-ccache-manylinux${MANYLINUX_VERSION}-${TARGET_ARCH}}

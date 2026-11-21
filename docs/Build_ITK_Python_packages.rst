@@ -223,6 +223,11 @@ useful in CI pipelines:
      - target architecture (``x64`` or ``aarch64``)
    * - ``IMAGE_TAG``
      - Docker image tag for manylinux builds
+   * - ``CONTAINER_DNS``
+     - DNS servers (space- or comma-separated) passed as ``--dns`` to the
+       manylinux build container, for hosts whose containers cannot resolve
+       names; unset leaves the runtime default. Read only by
+       ``dockcross-manylinux-build-wheels.sh``, not the module scripts
    * - ``USE_COMPILER_CACHE`` (or ``USE_CCACHE``)
      - ``--use-compiler-cache``; ``USE_COMPILER_CACHE`` wins when both are set
    * - ``CCACHE_MAXSIZE`` (``SCCACHE_CACHE_SIZE`` on Windows)

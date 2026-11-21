@@ -345,17 +345,18 @@ where `<arch>` is `TARGET_ARCH` (`x64` or `aarch64`).
 
 Key environment variables:
 
-| Variable                   | Default                                                           | Description                                                    |
-| -------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------- |
-| `ITK_GIT_TAG`              | `main`                                                            | ITK branch/tag/commit to build                                 |
-| `ITK_SOURCE_DIR`           | `<build-root>/ITKPythonPackage-build/ITK`                         | Path to local ITK source (skips git clone)                     |
-| `ITK_PACKAGE_VERSION`      | derived from git                                                  | PEP 440 version of the wheels                                  |
-| `TARGET_ARCH`              | host architecture                                                 | `x64` or `aarch64`                                             |
-| `MANYLINUX_VERSION`        | `_2_28`                                                           | Manylinux standard to target                                   |
-| `IMAGE_TAG`                | `20260203-3dfb3ff` (dockcross) or `2025.08.12-1` (quay manylinux) | Container image tag; the default depends on `CONTAINER_SOURCE` |
-| `USE_COMPILER_CACHE`       | `0` (`USE_CCACHE` also accepted)                                  | Compile through ccache in the container                        |
-| `CCACHE_MAXSIZE`           | `30G`                                                             | ccache size limit                                              |
-| `ITK_CONTAINER_CCACHE_DIR` | `~/.cache/itk-ccache-manylinux<version>-<arch>`                   | Host directory mounted as the container's ccache               |
+| Variable                   | Default                                                           | Description                                                                      |
+| -------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `ITK_GIT_TAG`              | `main`                                                            | ITK branch/tag/commit to build                                                   |
+| `ITK_SOURCE_DIR`           | `<build-root>/ITKPythonPackage-build/ITK`                         | Path to local ITK source (skips git clone)                                       |
+| `ITK_PACKAGE_VERSION`      | derived from git                                                  | PEP 440 version of the wheels                                                    |
+| `TARGET_ARCH`              | host architecture                                                 | `x64` or `aarch64`                                                               |
+| `MANYLINUX_VERSION`        | `_2_28`                                                           | Manylinux standard to target                                                     |
+| `IMAGE_TAG`                | `20260203-3dfb3ff` (dockcross) or `2025.08.12-1` (quay manylinux) | Container image tag; the default depends on `CONTAINER_SOURCE`                   |
+| `CONTAINER_DNS`            | unset (container runtime default)                                 | DNS servers for the build container, space- or comma-separated; this script only |
+| `USE_COMPILER_CACHE`       | `0` (`USE_CCACHE` also accepted)                                  | Compile through ccache in the container                                          |
+| `CCACHE_MAXSIZE`           | `30G`                                                             | ccache size limit                                                                |
+| `ITK_CONTAINER_CCACHE_DIR` | `~/.cache/itk-ccache-manylinux<version>-<arch>`                   | Host directory mounted as the container's ccache                                 |
 
 #### Linux/macOS/Windows: building ITK from source
 
