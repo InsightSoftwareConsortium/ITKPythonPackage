@@ -196,8 +196,9 @@ not a real flag; do not invent one.
 `--build-itk-tarball-cache`, `--use-ccache`, `--dead-strip` (Linux and
 macOS, on by default), `--skip-itk-build`, `--skip-itk-wheel-build`. Also `--cleanup`.
 
-**Positional** — everything after the flags goes to CMake unchanged,
+**Positional** — CMake definitions after the flags go to CMake unchanged,
 for example `-DBUILD_SHARED_LIBS:BOOL=OFF`. These override defaults.
+Anything that is not a `-D<KEY>=<VALUE>` definition is refused.
 
 ## Ingested remote modules
 

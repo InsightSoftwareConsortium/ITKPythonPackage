@@ -104,4 +104,25 @@ class CMakeArgumentBuilder:
         return [f"""{prefix}{k}='{drop_quotes(v)}'""" for k, v in self._defs.items()]
 
 
-__all__ = ["CMakeArgumentBuilder"]
+def definitions_from_cmake_options(options: Iterable[str]) -> CMakeArgumentBuilder:
+    """Return the ``-D<KEY>=<VALUE>`` options as definitions, refusing anything else.
+
+    Raises
+    ------
+    ValueError
+        If an option is not a ``-D`` definition with a ``=``.
+    """
+    definitions = CMakeArgumentBuilder()
+    for opt in options:
+        key, sep, value = opt[2:].partition("=")
+        if not opt.startswith("-D") or not sep or not key:
+            msg = (
+                f"CMake option {opt!r} is not a -D<KEY>=<VALUE> definition; "
+                f"only definitions are passed to CMake"
+            )
+            raise ValueError(msg)
+        definitions.set(key, value)
+    return definitions
+
+
+__all__ = ["CMakeArgumentBuilder", "definitions_from_cmake_options"]

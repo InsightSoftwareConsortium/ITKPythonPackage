@@ -15,7 +15,7 @@ import wheel_packaging
 from build_inputs import build_fingerprint, build_inputs, resolved_itk_commit
 from build_jobs import compute_build_jobs, compute_load_limit, physical_memory_gb
 from BuildManager import BuildManager
-from cmake_argument_builder import CMakeArgumentBuilder
+from cmake_argument_builder import CMakeArgumentBuilder, definitions_from_cmake_options
 from compiler_cache import (
     compiler_cache_definitions,
     compiler_cache_environment,
@@ -279,21 +279,9 @@ class BuildPythonInstanceBase(ABC):
         self.prepare_build_env()
 
         self.package_env_config["BUILD_TYPE"] = "Release"
-        # Unified place to collect cmake -D definitions for this instance
-        self.cmake_cmdline_definitions: CMakeArgumentBuilder = CMakeArgumentBuilder()
-        # Seed from cmake_options given as ['-D<KEY>=<VALUE>', ...]
-        if cmake_options:
-            for opt in cmake_options:
-                if not opt.startswith("-D"):
-                    continue
-                # Strip leading -D, split on first '=' into key and value
-                try:
-                    key, value = opt[2:].split("=", 1)
-                except ValueError:
-                    # Malformed option; skip to avoid breaking build
-                    continue
-                # Preserve value verbatim (may contain quotes)
-                self.cmake_cmdline_definitions.set(key, value)
+        self.cmake_cmdline_definitions: CMakeArgumentBuilder = (
+            definitions_from_cmake_options(cmake_options or [])
+        )
 
         self.cmake_compiler_configurations.update(
             {
