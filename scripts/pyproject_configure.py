@@ -139,11 +139,11 @@ def from_group_to_wheel(group: str) -> str:
 
 def update_wheel_pyproject_toml_parameters(
     base_params: dict[str, Any],
-    package_env_config: dict[str, Any],
+    package_env_config: Mapping[str, Any],
     script_name: str,
     wheel_names: list[str],
     wheel_dependencies: dict[str, Any],
-):
+) -> dict[str, dict[str, Any]]:
     """Build a mapping of wheel name to ``pyproject.toml`` template parameters.
 
     This is a pure transformation and does not mutate global state.
@@ -212,7 +212,7 @@ def update_wheel_pyproject_toml_parameters(
     return pyproject_py_parameters
 
 
-def get_wheel_names(build_wheels_support_dir: str | Path):
+def get_wheel_names(build_wheels_support_dir: str | Path) -> list[str]:
     """Read the ordered list of wheel names from ``WHEEL_NAMES.txt``.
 
     Parameters
@@ -231,7 +231,7 @@ def get_wheel_names(build_wheels_support_dir: str | Path):
 
 def get_wheel_dependencies(
     script_dir: str | Path, version: str, wheel_names: list[str]
-):
+) -> dict[str, list[str]]:
     """Parse ITK CMake files to build a wheel dependency graph.
 
     Parameters
@@ -248,7 +248,7 @@ def get_wheel_dependencies(
     dict[str, list[str]]
         Mapping of wheel name to its list of pinned dependencies.
     """
-    all_depends = {}
+    all_depends: dict[str, list[str]] = {}
     regex_group_depends = (
         r"set\s*\(\s*ITK\_GROUP\_([a-zA-Z0-9\_\-]+)\_DEPENDS\s*([a-zA-Z0-9\_\-\s]*)\s*"
     )
@@ -276,8 +276,10 @@ def get_wheel_dependencies(
 
 
 def build_base_pyproject_parameters(
-    package_env_config: dict[str, Any], script_name: str, itk_package_version: str
-):
+    package_env_config: Mapping[str, Any],
+    script_name: str,
+    itk_package_version: str,
+) -> dict[str, str]:
     """Return the base ``pyproject.toml`` template parameters for ITK.
 
     Parameters
@@ -387,8 +389,11 @@ Accepted values for `wheel_name` are ``itk`` and all values read from
 
 
 def configure_one_pyproject_file(
-    script_dir: str | Path, package_env_config, output_dir, wheel_name: str = "itk"
-):
+    script_dir: str | Path,
+    package_env_config: Mapping[str, Any],
+    output_dir: str | Path,
+    wheel_name: str = "itk",
+) -> None:
     """Generate a configured ``pyproject.toml`` for a single wheel.
 
     Parameters
@@ -452,7 +457,7 @@ def configure_one_pyproject_file(
     configure(template, pyproject_py_parameters[wheel_name], output_file)
 
 
-def write_itkVersion_py(filename: str | Path, itk_package_version: str):
+def write_itkVersion_py(filename: str | Path, itk_package_version: str) -> None:
     """Write an ``itkVersion.py`` file reporting the ITK package version.
 
     Parameters
