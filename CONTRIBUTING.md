@@ -54,6 +54,22 @@ pip install -r docs/requirements-docs.txt
 sphinx-build -W -b html docs docs/_build/html
 ```
 
+### Running Checks with Nox
+
+[Nox](https://nox.thea.codes) runs the same checks in isolated
+environments. With [uv](https://docs.astral.sh/uv/) installed:
+
+```bash
+uvx nox -l               # list sessions
+uvx nox                  # lint and tests (Python 3.11 to 3.14)
+uvx nox -s tests-3.11    # one Python version
+uvx nox -s docs          # build the docs as CI does
+uvx nox -s docs -- --serve
+```
+
+Arguments after `--` go to the underlying tool, for example
+`uvx nox -s tests-3.12 -- -k configure`.
+
 ## Submitting a Pull Request
 
 1. Create a branch from `main`
