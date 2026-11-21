@@ -36,7 +36,7 @@ can be found in the `ITK Software Guide
 GitHub automated CI package builds
 ==================================
 
-Freely available GitHub Actions continous integration (CI) build and test
+Freely available GitHub Actions continuous integration (CI) build and test
 services for open source repositories are provided by
 `GitHub <https://github.com/>`_. These services will build and test the C++
 code for your module and also generate Linux, macOS, and Windows Python
@@ -62,7 +62,7 @@ Upload the packages to PyPI
 
 First, `register for an account on PyPI <https://pypi.org>`_.
 
-Next, create a `~/.pypirc` file with your login credentials::
+Next, create a ``~/.pypirc`` file with your login credentials::
 
   [distutils]
   index-servers =
@@ -78,11 +78,11 @@ Next, create a `~/.pypirc` file with your login credentials::
   username=<your-username>
   password=<your-password>
 
-where `<your-username>` and `<your-password>` correspond to your PyPI account.
+where ``<your-username>`` and ``<your-password>`` correspond to your PyPI account.
 
 Then, upload wheels to the testing server. The wheels of dist/* are those that
 you have built locally or have downloaded from a recent build listed at
-`https://github.com/InsightSoftwareConsortium/<your-long-module-name>/actions`.
+``https://github.com/InsightSoftwareConsortium/<your-long-module-name>/actions``.
 ::
 
   python -m pip install twine
@@ -99,8 +99,8 @@ Congratulations! Your packages can be installed with the commands::
   python -m pip install --upgrade pip
   python -m pip install itk-<your-short-module-name>
 
-where `itk-<your-short-module-name>` is the short name for your module that is
-specified in the configured `pyproject.toml`  file.
+where ``itk-<your-short-module-name>`` is the short name for your module that is
+specified in the configured ``pyproject.toml``  file.
 
 Automate PyPI Package Uploads
 -----------------------------
@@ -117,8 +117,8 @@ and for the scope use::
 
   itk-<your-short-module-name>
 
-where `<your-short-module-name>` is the short name for your module that is
-specified in your configured `pyproject.toml` file. That scope will be available if you have
+where ``<your-short-module-name>`` is the short name for your module that is
+specified in your configured ``pyproject.toml`` file. That scope will be available if you have
 already uploaded a first set of wheels via twine as described above; and that
 is the recommended approach. Otherwise, if you are creating the project at
 this time, choose an unlimited scope, but be careful with the created token.
@@ -127,18 +127,18 @@ this time, choose an unlimited scope, but be careful with the created token.
   :alt: PyPI Token
 
 Then, add the API token to the GitHub repository
-`https://github.com/InsightSoftwareConsortium/<your-long-module-name>`. Choose
+``https://github.com/InsightSoftwareConsortium/<your-long-module-name>``. Choose
 the *Settings -> Secrets* page and add a key called *pypi_password*, setting
-the password to be the token string that begins with `pypi-`. Note that this
+the password to be the token string that begins with ``pypi-``. Note that this
 will be a *token* instead of a password. Limit the scope of the token to the
 individual package as a best practice.
 
 .. figure:: images/GitHubPyPISecret.png
   :alt: GitHub PyPI token secret
 
-To push packages to PyPI, first, make sure to update the `version` for your
-package in the *pyproject.toml* file. The initial version might be `0.1.0` or
-`1.0.0`. Subsequent versions should follow
+To push packages to PyPI, first, make sure to update the ``version`` for your
+package in the *pyproject.toml* file. The initial version might be ``0.1.0`` or
+``1.0.0``. Subsequent versions should follow
 `semantic versioning <https://semver.org/>`_.
 
 Then, create a Git tag corresponding to the version. A Git tag can be created
@@ -157,7 +157,7 @@ Python.org, Anaconda, and package managers like apt or Homebrew.
 The following sections outline how to use the associated scripts for Linux,
 macOS, and Windows.
 
-Once the builds are complete, Python packages will be available in the `dist`
+Once the builds are complete, Python packages will be available in the ``dist``
 directory.
 
 Linux
@@ -166,7 +166,7 @@ Linux
 To build portable Python packages on Linux, first `install Docker
 <https://docs.docker.com/engine/installation/>`_.
 
-For the first local build, clone the `ITKPythonPackage` repository inside your
+For the first local build, clone the ``ITKPythonPackage`` repository inside your
 and download the required ITK binary builds::
 
   cd ~/ITKMyModule
@@ -201,7 +201,7 @@ Open a PowerShell terminal as Administrator, and install Python::
 	PS C:\> $pythonArch = "64"
 	PS C:\> iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/scikit-build/scikit-ci-addons/master/windows/install-python.ps1'))
 
-In a PowerShell prompt, run the `windows-build-wheels.ps1` script::
+In a PowerShell prompt, run the ``windows-build-wheels.ps1`` script::
 
 	PS C:\Windows> cd C:\ITKMyModule
 	PS C:\ITKMyModule> git clone https://github.com/InsightSoftwareConsortium/ITKPythonPackage.git IPP
@@ -211,14 +211,14 @@ Other Notes
 -----------
 
 ITK modules sometimes depend on third-party libraries. To include third-party libraries
-in development wheels for distribution, first add the library path to `LD_LIBRARY_PATH`
-on Linux, `DYLD_LIBRARY_PATH` on MacOS, or `PATH` on Windows. Then, run the platform
+in development wheels for distribution, first add the library path to ``LD_LIBRARY_PATH``
+on Linux, ``DYLD_LIBRARY_PATH`` on MacOS, or ``PATH`` on Windows. Then, run the platform
 build script.
 
 ITK modules sometimes depend on other ITK modules. For instance, to build
 [ITKBSplineGradient](https://github.com/InsightSoftwareConsortium/ITKBSplineGradient)
 the user must first build ITK and then [ITKMeshToPolyData](https://github.com/InsightSoftwareConsortium/ITKmeshtopolydata).
-ITKPythonPackage scripts support iterative prerequisite ITK module dependencies with the `ITK_MODULE_PREQ`
+ITKPythonPackage scripts support iterative prerequisite ITK module dependencies with the ``ITK_MODULE_PREQ``
 environment variable.
 
 For Python build scripts, the ordered list of ITK module dependencies must be formatted as follows:
@@ -228,9 +228,9 @@ ITK_MODULE_PREQ=<module_org>/<module_name>@<module_tag>:<module_org>/<module_nam
 ```
 
 Where
-- `module_org` is the name of a Github organization to use to fetch the module, i.e. "InsightSoftwareConsortium";
-- `module_name` is the name of the module, i.e. "ITKMeshToPolyData";
-- `module_tag` is the git tag or commit hash to use to fetch the module, i.e. "v1.0.0"
+- ``module_org`` is the name of a Github organization to use to fetch the module, i.e. "InsightSoftwareConsortium";
+- ``module_name`` is the name of the module, i.e. "ITKMeshToPolyData";
+- ``module_tag`` is the git tag or commit hash to use to fetch the module, i.e. "v1.0.0"
 
 Module names must be provided in order of dependencies for the build to succeed.
 

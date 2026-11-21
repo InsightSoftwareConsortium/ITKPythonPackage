@@ -1,7 +1,7 @@
 Welcome to ITKPythonPackage's documentation!
 ============================================
 
-This project provides a script to generate `pyproject.toml` files used to build
+This project provides a script to generate ``pyproject.toml`` files used to build
 ITK Python wheels and infrastructure to build ITK external module Python
 wheels.
 

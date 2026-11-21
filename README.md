@@ -41,17 +41,17 @@ To install ITK external module packages:
 ### Using ITK in Python scripts
 
 ```python
-    import itk
-    import sys
+import itk
+import sys
 
-    input_filename = sys.argv[1]
-    output_filename = sys.argv[2]
+input_filename = sys.argv[1]
+output_filename = sys.argv[2]
 
-    image = itk.imread(input_filename)
+image = itk.imread(input_filename)
 
-    median = itk.median_image_filter(image, radius=2)
+median = itk.median_image_filter(image, radius=2)
 
-    itk.imwrite(median, output_filename)
+itk.imwrite(median, output_filename)
 ```
 
 ### Other Resources for Using ITK in Python
@@ -84,11 +84,12 @@ documentation for more information on building wheels by hand.
 ### What target platforms and architectures are supported?
 
 ITKPythonPackage currently supports building wheels for the following platforms and architectures:
- - Windows 10 x86_64 platforms
- - Windows 11 x86_64 platforms
- - MacOS 15.0+ arm64 platforms
- - Linux glibc 2.17+ (E.g. Ubuntu 18.04+) x86_64 platforms
- - Linux glibc 2.28+ (E.g. Ubuntu 20.04+) aarch64 (ARMv8) platforms
+
+- Windows 10 x86_64 platforms
+- Windows 11 x86_64 platforms
+- MacOS 15.0+ arm64 platforms
+- Linux glibc 2.17+ (E.g. Ubuntu 18.04+) x86_64 platforms
+- Linux glibc 2.28+ (E.g. Ubuntu 20.04+) aarch64 (ARMv8) platforms
 
 Python 3.10+ is required.
 
@@ -146,6 +147,6 @@ If you aren't able to find an answer for your specific case, please start a disc
 
 ## Additional Information
 
--   Free software: Apache Software license
--   Documentation: <http://itkpythonpackage.readthedocs.org>
--   Source code: <https://github.com/InsightSoftwareConsortium/ITKPythonPackage>
+- Free software: Apache Software license
+- Documentation: <http://itkpythonpackage.readthedocs.org>
+- Source code: <https://github.com/InsightSoftwareConsortium/ITKPythonPackage>

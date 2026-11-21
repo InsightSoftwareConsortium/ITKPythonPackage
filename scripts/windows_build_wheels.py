@@ -338,7 +338,7 @@ def build_wheels(
 
         check_call([ninja_executable])
 
-    # Compile wheels re-using standalone project and archive cache
+    # Compile wheels reusing standalone project and archive cache
     for py_env in py_envs:
         tools_venv = os.path.join(ROOT_DIR, "venv-" + py_env)
         ninja_executable = shutil.which("ninja.exe")

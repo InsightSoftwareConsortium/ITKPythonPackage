@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.26.6 FATAL_ERROR)
-# NOTE: 3.26.6 is the first cmake vesion to support Development.SABIModule
+# NOTE: 3.26.6 is the first cmake version to support Development.SABIModule
 
 project(ITKPythonPackage CXX)
 
@@ -47,7 +47,7 @@ if(ITKPythonPackage_SUPERBUILD)
 
   # When building different "flavor" of ITK python packages on a given platform,
   # explicitly setting the following options allow to speed up package generation by
-  # re-using existing resources.
+  # reusing existing resources.
   #
   #  ITK_SOURCE_DIR: Path to an existing source directory
   #

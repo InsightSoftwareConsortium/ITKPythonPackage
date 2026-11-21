@@ -42,6 +42,41 @@ repos:
         exclude: ^docs/
         stages: [pre-commit]
 
+  # Spelling
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.3
+    hooks:
+      - id: codespell
+        stages: [pre-commit]
+
+  # reStructuredText and Python pattern checks
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+      - id: rst-backticks
+        stages: [pre-commit]
+      - id: rst-directive-colons
+        stages: [pre-commit]
+      - id: rst-inline-touching-normal
+        stages: [pre-commit]
+
+  # Python code blocks in the reStructuredText docs; ruff formats the rest
+  - repo: https://github.com/adamchainz/blacken-docs
+    rev: 1.20.0
+    hooks:
+      - id: blacken-docs
+        files: ^docs/.*\.rst$
+        additional_dependencies: [black==24.10.0]
+        stages: [pre-commit]
+
+  # Markdown: formatting
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.10.1
+    hooks:
+      - id: prettier
+        types_or: [markdown]
+        stages: [pre-commit]
+
   # Shell: linting
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.10.0.1

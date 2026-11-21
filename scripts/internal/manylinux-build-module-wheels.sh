@@ -89,7 +89,7 @@ source "${script_dir}/manylinux-build-common.sh"
 sudo ldconfig
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/oneTBB-prefix/lib:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
 
-# Compile wheels re-using standalone project and archive cache
+# Compile wheels reusing standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
   Python3_EXECUTABLE=${PYBIN}/python
   Python3_INCLUDE_DIR=$(find -L ${PYBIN}/../include/ -name Python.h -exec dirname {} \;)

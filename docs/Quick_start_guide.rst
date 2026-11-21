@@ -27,22 +27,22 @@ ITK and NumPy
 
 A common use case for using ITK in Python is to mingle NumPy and ITK operations on raster data. ITK provides a large number of I/O image formats and several sophisticated image processing algorithms not available in any other packages. The ability to intersperse that with the SciPy ecosystem provides a great tool for rapid prototyping.
 
-The following script shows how to integrate NumPy and `itk.Image`:
+The following script shows how to integrate NumPy and ``itk.Image``:
 
 .. literalinclude:: code/MixingITKAndNumPy.py
    :lines: 16-59
 
-NumPy and `itk.Mesh`:
+NumPy and ``itk.Mesh``:
 
 .. literalinclude:: code/MixingITKAndNumPy.py
    :lines: 62-76
 
-NumPy and `itk.Transform`:
+NumPy and ``itk.Transform``:
 
 .. literalinclude:: code/MixingITKAndNumPy.py
    :lines: 96-115
 
-NumPy and `itk.Matrix`, VNL vectors, and VNL matrices:
+NumPy and ``itk.Matrix``, VNL vectors, and VNL matrices:
 
 .. literalinclude:: code/MixingITKAndNumPy.py
    :lines: 118-
@@ -50,7 +50,7 @@ NumPy and `itk.Matrix`, VNL vectors, and VNL matrices:
 ITK and Xarray
 ..............
 
-An `itk.Image` can be converted to and from an `xarray.DataArray
+An ``itk.Image`` can be converted to and from an `xarray.DataArray
 <https://xarray.pydata.org/en/stable/generated/xarray.DataArray.html>`_ while
 preserving metadata::
 
@@ -61,7 +61,7 @@ preserving metadata::
 ITK and VTK
 ............
 
-An `itk.Image` can be converted to and from a `vtk.vtkImageData
+An ``itk.Image`` can be converted to and from a `vtk.vtkImageData
 <https://vtk.org/doc/nightly/html/classvtkImageData.html>`_ while
 preserving metadata::
 
@@ -72,7 +72,7 @@ preserving metadata::
 ITK and napari
 ..............
 
-An `itk.Image` can be converted to and from a `napari.layers.Image
+An ``itk.Image`` can be converted to and from a `napari.layers.Image
 <https://napari.org/stable/api/napari.layers.Image.html#napari.layers.Image>`_ while
 preserving metadata with the `itk-napari-conversion package
 <https://github.com/InsightSoftwareConsortium/itk-napari-conversion>`_.
@@ -99,7 +99,7 @@ Types can also be obtained from their name in the C programming language:
 .. literalinclude:: code/CompareITKTypes.py
    :lines: 5
 
-To cast the pixel type of an image, use `.astype`:
+To cast the pixel type of an image, use ``.astype``:
 
 .. literalinclude:: code/Cast.py
    :lines: 10-18
@@ -107,7 +107,7 @@ To cast the pixel type of an image, use `.astype`:
 Metadata dictionary
 ...................
 
-An `itk.Image` has a metadata dict of `key: value` pairs.
+An ``itk.Image`` has a metadata dict of ``key: value`` pairs.
 
 
 The metadata dictionary can be retrieved with::
@@ -132,7 +132,7 @@ Individual dictionary items can be accessed or assigned::
 
 In the Python dictionary interface to image metadata, keys for the spatial
 metadata, the *'origin'*, *'spacing'*, and *'direction'*, are reversed in
-order from `image.GetOrigin()`, `image.GetSpacing()`, `image.GetDirection()`
+order from ``image.GetOrigin()``, ``image.GetSpacing()``, ``image.GetDirection()``
 to be consistent with the `NumPy array index order
 <https://scikit-image.org/docs/dev/user_guide/numpy_images.html#notes-on-the-order-of-array-dimensions>`_
 resulting from pixel buffer array views on the image.
@@ -140,7 +140,7 @@ resulting from pixel buffer array views on the image.
 Access pixel data with NumPy indexing
 .....................................
 
-Array views of an `itk.Image` provide a way to set and get pixel values with NumPy indexing syntax, e.g.::
+Array views of an ``itk.Image`` provide a way to set and get pixel values with NumPy indexing syntax, e.g.::
 
   In [6]: image[0,:2,4] = [5,5]
 
@@ -191,7 +191,7 @@ file formats::
 Image filters and Image-like inputs and outputs
 ...............................................
 
-All `itk` functional image filters operate on an `itk.Image` but also:
+All ``itk`` functional image filters operate on an ``itk.Image`` but also:
 
 - `xarray.DataArray <https://xarray.pydata.org/en/stable/generated/xarray.DataArray.html>`_ *
 - `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_
@@ -210,8 +210,8 @@ ITK filter parameters can be specified in the following ways:
 Filter types
 ............
 
-In `itk`, filters are optimized at compile time for each image pixel type and
-image dimension. There are two ways to instantiate these filters with the `itk`
+In ``itk``, filters are optimized at compile time for each image pixel type and
+image dimension. There are two ways to instantiate these filters with the ``itk``
 Python wrapping:
 
 - *Implicit (recommended)*: Type information is automatically detected from the data. Typed filter objects and images are implicitly created.
@@ -221,7 +221,7 @@ Python wrapping:
 
 - *Explicit*: This can be useful if an appropriate type cannot be determined implicitly or when a different filter type than the default is desired.
 
-To specify the type of the filter, use the `ttype` keyword argument. Explicit instantiation of a median image filter:
+To specify the type of the filter, use the ``ttype`` keyword argument. Explicit instantiation of a median image filter:
 
 .. literalinclude:: code/ExplicitInstantiation.py
    :lines: 8-
@@ -234,7 +234,7 @@ There are two types of ITK objects. Most ITK objects, such as images, filters, o
 .. literalinclude:: code/InstantiateITKObjects.py
    :lines: 6-8
 
-Some objects, like a Matrix, Vector, or RGBPixel, do not require the attribute `.New()` to be added to instantiate them:
+Some objects, like a Matrix, Vector, or RGBPixel, do not require the attribute ``.New()`` to be added to instantiate them:
 
 .. literalinclude:: code/InstantiateITKObjects.py
    :lines: 11

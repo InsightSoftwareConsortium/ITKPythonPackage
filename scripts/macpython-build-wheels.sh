@@ -97,7 +97,7 @@ popd >/dev/null 2>&1
 
 SINGLE_WHEEL=0
 
-# Compile wheels re-using standalone project and archive cache
+# Compile wheels reusing standalone project and archive cache
 for VENV in "${VENVS[@]}"; do
   py_mm=$(basename ${VENV})
   export Python3_EXECUTABLE=${VENV}/bin/python

@@ -124,9 +124,9 @@ is enabled by default.
 .. -----------------------------------------
 ..
 .. To build a wheel for a custom version of ITK, point to your ITK git repository
-.. with the `ITK_SOURCE_DIR` CMake variable::
+.. with the ``ITK_SOURCE_DIR`` CMake variable::
 ..
 .. 	./build-itk/bin/python setup.py bdist_wheel -- \
 .. 	  -DITK_SOURCE_DIR:PATH=/path/to/ITKPythonPackage-core-build/ITK
 ..
-.. Other CMake variables can also be passed with `-D` after the double dash.
+.. Other CMake variables can also be passed with ``-D`` after the double dash.

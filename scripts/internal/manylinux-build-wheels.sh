@@ -55,7 +55,7 @@ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/oneTBB-prefix/lib:/usr/lib:/usr/
 # TODO: More work is required to re-enable this feature.
 SINGLE_WHEEL=0
 
-# Compile wheels re-using standalone project and archive cache
+# Compile wheels reusing standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
   export Python3_EXECUTABLE=${PYBIN}/python3
   Python3_INCLUDE_DIR=$(find -L ${PYBIN}/../include/ -name Python.h -exec dirname {} \;)

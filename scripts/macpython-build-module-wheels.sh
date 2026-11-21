@@ -74,7 +74,7 @@ DELOCATE_PATCH=${VENV}/bin/delocate-patch
 # So delocate can find the libs
 export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${script_dir}/../oneTBB-prefix/lib
 
-# Compile wheels re-using standalone project and archive cache
+# Compile wheels reusing standalone project and archive cache
 for VENV in "${VENVS[@]}"; do
   py_mm=$(basename ${VENV})
   Python3_EXECUTABLE=${VENV}/bin/python

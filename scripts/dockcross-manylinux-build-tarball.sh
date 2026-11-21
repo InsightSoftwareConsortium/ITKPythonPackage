@@ -14,7 +14,7 @@ zstd_exe=$( (which zstd))
 # https://github.com/facebook/zstd/releases/tag/v1.3.2
 #
 # Sample --version output:
-# *** zstd command line interface 64-bits v1.4.4, by Yann Collet *** #
+# *** zstd command line interface 64-bits v1.4.4, by Yann Collect *** #
 ZSTD_MIN_VERSION="1.3.2"
 
 if [[ -n $( (which dpkg)) && $( (${zstd_exe} --version)) =~ v([0-9]+.[0-9]+.[0-9]+) ]]; then
