@@ -8,7 +8,7 @@ they can be exercised without constructing a builder.
 
 import os
 import subprocess
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -50,7 +50,7 @@ def echo_check_call(
     pixi_executable: str | Path | None = None,
     run_dir: Path | None = None,
     use_pixi_env: bool = True,
-    env=None,
+    env: Mapping[str, str] | None = None,
     **kwargs: Any,
 ) -> int:
     """Print the command, then run it and return its exit status.
