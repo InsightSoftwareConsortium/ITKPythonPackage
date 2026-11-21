@@ -6,6 +6,7 @@ import subprocess
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from collections.abc import Callable, Mapping, Sequence
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,12 @@ import build_environment
 import wheel_packaging
 from build_config import BuildConfig
 from build_environment import PythonEnvironment
+from build_inputs import (
+    build_fingerprint,
+    build_inputs,
+    module_source_state,
+    resolved_itk_commit,
+)
 from build_jobs import compute_build_jobs, compute_load_limit, physical_memory_gb
 from build_manager import BuildManager
 from cmake_argument_builder import CMakeArgumentBuilder, definitions_from_cmake_options
@@ -424,8 +431,15 @@ class BuildPythonInstanceBase(ABC):
         self.dist_dir.mkdir(parents=True, exist_ok=True)
         build_report_fn: Path = self.dist_dir / f"build_log_{self.platform_env}.json"
         build_manager: BuildManager = BuildManager(
-            build_report_fn, list(python_package_build_steps.keys())
+            build_report_fn,
+            list(python_package_build_steps.keys()),
+            self.build_inputs(),
         )
+        if build_manager.changed_inputs:
+            print(
+                f"Build inputs changed ({', '.join(build_manager.changed_inputs)}) "
+                f"since {build_report_fn} was written: running every step."
+            )
         build_manager.save()
         cache_before, cache_after = self.compiler_cache_commands
         for cmd in cache_before:
@@ -445,6 +459,32 @@ class BuildPythonInstanceBase(ABC):
         dependency_build.module_source_dir = module_source_dir
         dependency_build.itk_module_deps = None  # Prevent recursion
         dependency_build.run()
+
+    def build_inputs(self) -> dict[str, str]:
+        """Return the ITK commit, package version, and fingerprint of this build."""
+        cfg = self.config.to_environment()
+        settings: dict[str, str] = {}
+        for group, definitions in (
+            ("compiler", self.cmake_compiler_configurations),
+            ("itk", self.cmake_itk_source_build_configurations),
+            ("cmdline", self.cmake_cmdline_definitions),
+        ):
+            settings.update({f"{group}:{k}": str(v) for k, v in definitions.items()})
+        for key in ("USE_CCACHE", "MANYLINUX_VERSION", "CONTAINER_SOURCE"):
+            settings[key] = cfg.get(key, "")
+        git = str(self.config.git_executable)
+        module_state = None
+        if self.module_source_dir is not None:
+            settings["itk_module_deps"] = str(self.itk_module_deps or "")
+            module_state = module_source_state(Path(self.module_source_dir), git)
+        return build_inputs(
+            itk_commit=resolved_itk_commit(
+                self.config.itk_source_dir, self.config.itk_git_tag, git
+            ),
+            package_version=self.config.itk_package_version,
+            fingerprint=build_fingerprint(self.ipp_dir, settings),
+            module_state=module_state,
+        )
 
     def _run_build_steps(
         self,
@@ -881,6 +921,11 @@ class BuildPythonInstanceBase(ABC):
 
     def build_itk_python_wheels(self) -> None:
         """Build all ITK Python wheels listed in ``WHEEL_NAMES.txt``."""
+        earlier = wheel_packaging.move_earlier_wheels(
+            self.build_dir_root / "dist", datetime.now().strftime("%Y%m%d_%H%M%S")
+        )
+        if earlier:
+            print(f"Moved wheels of an earlier run to {earlier}")
         for wheel_name in self.wheel_names:
             print("#")
             print(f"# Build ITK wheel {wheel_name} from {self.wheel_names}")

@@ -31,6 +31,27 @@ def remove_uncompressed_tar(tar_path: Path) -> None:
     tar_path.unlink(missing_ok=True)
 
 
+#: Subdirectory of ``dist/`` that holds wheels of earlier runs.
+EARLIER_WHEELS_DIR = "earlier-wheels"
+
+
+def move_earlier_wheels(dist_dir: Path, stamp: str) -> Path | None:
+    """Move the wheels in *dist_dir* to ``earlier-wheels/<stamp>/`` under it.
+
+    The repair step, the import test, and the release summary read only the
+    top level of ``dist/``, so the moved wheels are no longer this run's.
+    Returns the directory the wheels moved to, or None when there were none.
+    """
+    wheels = sorted(Path(dist_dir).glob("*.whl"))
+    if not wheels:
+        return None
+    destination = Path(dist_dir) / EARLIER_WHEELS_DIR / stamp
+    destination.mkdir(parents=True, exist_ok=True)
+    for wheel in wheels:
+        wheel.replace(destination / wheel.name)
+    return destination
+
+
 def post_build_cleanup(
     build_dir_root: Path, arch: str, ipp_source_dir: Path, module_preq: str
 ) -> None:

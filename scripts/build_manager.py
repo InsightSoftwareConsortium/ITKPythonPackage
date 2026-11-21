@@ -98,20 +98,24 @@ class StepRecord:
 
 @dataclass
 class BuildReport:
-    """The JSON build report: step states and timestamps."""
+    """The JSON build report: step states, timestamps, and the build's inputs."""
 
     created_at: str
     updated_at: str
     steps: dict[str, StepRecord] = field(default_factory=dict)
+    inputs: dict[str, str] | None = None
     version: int = REPORT_VERSION
 
     def to_json(self) -> dict[str, object]:
-        return {
+        data: dict[str, object] = {
             "version": self.version,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "steps": {name: step.to_json() for name, step in self.steps.items()},
         }
+        if self.inputs is not None:
+            data["inputs"] = dict(self.inputs)
+        return data
 
     @classmethod
     def from_json(cls, value: object) -> BuildReport:
@@ -140,10 +144,20 @@ class BuildReport:
             name: StepRecord.from_json(name, step)
             for name, step in _object("report.steps", data["steps"]).items()
         }
+        inputs: dict[str, str] | None = None
+        if data.get("inputs") is not None:
+            recorded = _object("report.inputs", data["inputs"])
+            inputs = {}
+            for key, item in recorded.items():
+                if not isinstance(item, str):
+                    msg = f"report.inputs.{key}: expected a string, got {item!r}"
+                    raise BuildReportError(msg)
+                inputs[key] = item
         return cls(
             created_at=_required_text("report", data, "created_at"),
             updated_at=_required_text("report", data, "updated_at"),
             steps=steps,
+            inputs=inputs,
             version=version,
         )
 
@@ -153,7 +167,8 @@ class BuildManager:
 
     Persists status and timing for each named step to a JSON file.
     Steps already marked ``"done"`` are skipped on subsequent runs,
-    enabling resumable builds.
+    enabling resumable builds. When *inputs* are given and differ from
+    the ones recorded in the report, every step starts again as pending.
 
     Parameters
     ----------
@@ -161,15 +176,28 @@ class BuildManager:
         Path to the JSON report file (created if absent).
     step_names : list[str]
         Ordered names of build steps to track.
+    inputs : Mapping[str, str], optional
+        What the build's outputs depend on, such as the ITK commit and the
+        package version. Recorded in the report under ``inputs``.
 
     Attributes
     ----------
     report : BuildReport
         In-memory report, written to *report_path* by ``save``.
+    changed_inputs : list[str]
+        Names of the inputs that differ from the recorded report, or are
+        missing from it; empty when the recorded steps were kept.
     """
 
-    def __init__(self, report_path: Path, step_names: list[str]):
+    def __init__(
+        self,
+        report_path: Path,
+        step_names: list[str],
+        inputs: Mapping[str, str] | None = None,
+    ):
         self.report_path = Path(report_path)
+        self.inputs = dict(inputs) if inputs is not None else None
+        self.changed_inputs: list[str] = []
         self._init_structure(step_names)
         self._load_if_exists()
 
@@ -233,6 +261,7 @@ class BuildManager:
             created_at=now,
             updated_at=now,
             steps={name: StepRecord() for name in step_names},
+            inputs=dict(self.inputs) if self.inputs is not None else None,
         )
 
     def _load_if_exists(self) -> None:
@@ -248,6 +277,15 @@ class BuildManager:
                 f"Fix or delete it to continue."
             )
             raise RuntimeError(msg) from e
+        if self.inputs is not None:
+            recorded = existing.inputs or {}
+            self.changed_inputs = sorted(
+                name
+                for name in self.inputs.keys() | recorded.keys()
+                if self.inputs.get(name) != recorded.get(name)
+            )
+            if self.changed_inputs:
+                return
         # Merge existing with current set of steps, preserving statuses
         for name in self.report.steps:
             if name in existing.steps:

@@ -34,6 +34,14 @@ seven sequential steps:
 
 Step state is persisted to ``<build-dir-root>/dist/build_log_<platform-env>.json`` so that a
 build interrupted part-way through can be resumed by re-running the same command.
+The log also records the build's inputs: the ITK commit, the package version,
+a fingerprint of the build scripts, CMake settings, and ``pixi.lock``, and for a
+remote module its git commit and uncommitted changes. When any of them differs
+from the recorded run, every step runs again.
+
+Wheels already in ``dist/`` when the wheel step starts are moved to
+``dist/earlier-wheels/<YYYYmmdd_HHMMSS>/``, so ``dist/`` holds only this run's
+wheels.
 
 
 Setup

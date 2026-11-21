@@ -1,5 +1,10 @@
 {
   "created_at": "2026-11-21T15:31:46",
+  "inputs": {
+    "fingerprint": "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",
+    "itk_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "package_version": "6.0.0b2"
+  },
   "steps": {
     "01_superbuild_support_components": {
       "duration_sec": 0.0,
