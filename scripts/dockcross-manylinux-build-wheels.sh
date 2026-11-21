@@ -109,6 +109,9 @@ HOST_CCACHE_DIR=${ITK_CONTAINER_CCACHE_DIR:-${HOME}/.cache/itk-ccache-manylinux$
 mkdir -p "${HOST_CCACHE_DIR}"
 DOCKER_ARGS+=" -v ${HOST_CCACHE_DIR}:/work/ccache -e CCACHE_DIR=/work/ccache "
 DOCKER_ARGS+=" -e USE_CCACHE=${USE_CCACHE:-0} "
+if [ -n "${USE_COMPILER_CACHE:-}" ]; then
+  DOCKER_ARGS+=" -e USE_COMPILER_CACHE=${USE_COMPILER_CACHE} "
+fi
 if [ -n "${CCACHE_MAXSIZE:-}" ]; then
   DOCKER_ARGS+=" -e CCACHE_MAXSIZE=${CCACHE_MAXSIZE} "
 fi
