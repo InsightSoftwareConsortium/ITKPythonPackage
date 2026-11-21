@@ -5,6 +5,7 @@ wheel written to the wrong ``dist/``, and a 7-Zip invocation whose ``-r``
 turned every archive argument into a recursive pattern.
 """
 
+import zipfile
 from collections.abc import Sequence
 from pathlib import Path
 from unittest.mock import patch
@@ -120,3 +121,43 @@ def test_seven_zip_archives_absolute_roots_not_bare_names(tmp_path, windows_buil
         assert expected in cmd
         assert root not in cmd
     assert str(windows_builder.ipp_dir) in cmd
+
+
+def test_zip_fallback_archives_the_seven_zip_roots(tmp_path, windows_builder):
+    """Without 7-Zip the zip holds the same roots and exclusions."""
+    root = windows_builder.build_dir_root
+    windows_builder.ipp_dir = tmp_path / "IPP"
+    files = {
+        root / "ITK" / "CMakeLists.txt": True,
+        root / "ITK" / ".git" / "HEAD": False,
+        root / "build" / "lib" / "itk.lib": True,
+        root / "build" / "obj" / "a.obj": False,
+        root / "build" / "Wrapping" / "Modules" / "x.i": False,
+        root / "build" / "Wrapping" / "Generators" / "y.i": True,
+        root / "dist" / "itk-6.0.0-cp311-abi3-win_amd64.whl": False,
+        windows_builder.ipp_dir / "scripts" / "build_wheels.py": True,
+        windows_builder.ipp_dir / "scripts" / "__pycache__" / "z.pyc": False,
+    }
+    for path in files:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("x")
+
+    with (
+        patch("windows_build_python_instance.shutil.which", return_value=None),
+        patch.object(windows_builder, "echo_check_call") as call,
+    ):
+        windows_builder.build_tarball()
+    call.assert_not_called()
+
+    with zipfile.ZipFile(root / "ITKPythonBuilds-windows.zip") as archive:
+        names = set(archive.namelist())
+    expected = {
+        path.relative_to(
+            windows_builder.ipp_dir.parent
+            if path.is_relative_to(windows_builder.ipp_dir)
+            else root
+        ).as_posix()
+        for path, kept in files.items()
+        if kept
+    }
+    assert names == expected

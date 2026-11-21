@@ -1,9 +1,42 @@
 import contextlib
+import fnmatch
+import os
 import re
 import shutil
-from pathlib import Path
+import zipfile
+from pathlib import Path, PurePath
 
 from build_python_instance_base import BuildPythonInstanceBase
+
+ARCHIVE_EXCLUDES = (
+    "*.o",
+    "*.obj",
+    "wheelbuilds",
+    "__pycache__",
+    "install_manifest_*.txt",
+    ".git",
+    ".idea",
+    ".pixi",
+    "castxml_inputs",
+    "Wrapping/Modules",
+    "*.pdb",
+)
+
+
+def _archive_excluded(relative: PurePath) -> bool:
+    """Return True when *relative* matches an ``ARCHIVE_EXCLUDES`` pattern."""
+    parts = relative.parts
+    for pattern in ARCHIVE_EXCLUDES:
+        pattern_parts = tuple(pattern.split("/"))
+        width = len(pattern_parts)
+        for start in range(len(parts) - width + 1):
+            window = parts[start : start + width]
+            if all(
+                fnmatch.fnmatchcase(part, pat)
+                for part, pat in zip(window, pattern_parts, strict=True)
+            ):
+                return True
+    return False
 
 
 class WindowsBuildPythonInstance(BuildPythonInstanceBase):
@@ -103,6 +136,11 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
 
         # out_zip = self.build_dir_root / "build" / "ITKPythonBuilds-windows.zip"
         out_zip = self.build_dir_root / "ITKPythonBuilds-windows.zip"
+        archive_roots = [
+            self.build_dir_root / "ITK",
+            self.build_dir_root / "build",
+            self.ipp_dir,
+        ]
 
         # 1) Try to use 7-Zip if available
         seven_zip_candidates = [
@@ -131,39 +169,31 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                 "a",
                 "-t7z",
                 str(out_zip),
-                str(self.build_dir_root / "ITK"),
-                str(self.build_dir_root / "build"),
-                str(self.ipp_dir),
-                "-xr!*.o",
-                "-xr!*.obj",  # Windows equivalent of .o
-                "-xr!wheelbuilds",  # Do not include the wheelbuild support directory
-                "-xr!__pycache__",  # Do not include __pycache__
-                "-xr!install_manifest_*.txt",  # Do not include install manifest files
-                "-xr!.git",  # Exclude git directory
-                "-xr!.idea",  # Exclude IDE directory
-                "-xr!.pixi",  # Exclude pixi environment
-                "-xr!castxml_inputs",
-                r"-xr!Wrapping\Modules",
-                "-xr!*.pdb",  # Exclude debug symbols
+                *map(str, archive_roots),
             ]
+            cmd += ["-xr!" + pattern.replace("/", "\\") for pattern in ARCHIVE_EXCLUDES]
             return_status: int = self.echo_check_call(cmd)
             if return_status == 0:
                 return
 
-        # 2) Fallback: create a .zip using Python's shutil
-        # This will create a zip archive named ITKPythonBuilds-windows.zip
+        # 2) Fallback: a zip of the same roots and exclusions
         if out_zip.exists():
             with contextlib.suppress(Exception):
                 out_zip.unlink()
-        # make_archive requires base name without extension
-        base_name = str(out_zip.with_suffix("").with_suffix(""))
-        # shutil.make_archive will append .zip
-        shutil.make_archive(
-            base_name,
-            "zip",
-            root_dir=str(self.build_dir_root),
-            base_dir=str(self.build_dir_root.name),
-        )
+        with zipfile.ZipFile(out_zip, "w", zipfile.ZIP_DEFLATED) as archive:
+            for root in archive_roots:
+                if not root.exists():
+                    continue
+                for dirpath, dirnames, filenames in os.walk(root):
+                    rel_dir = Path(dirpath).relative_to(root.parent)
+                    dirnames[:] = sorted(
+                        d for d in dirnames if not _archive_excluded(rel_dir / d)
+                    )
+                    for name in sorted(filenames):
+                        if not _archive_excluded(rel_dir / name):
+                            archive.write(
+                                Path(dirpath) / name, (rel_dir / name).as_posix()
+                            )
 
     def venv_paths(self) -> None:
         """Populate ``venv_info_dict`` from the pixi-managed Python environment on Windows."""
