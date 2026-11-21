@@ -74,12 +74,74 @@ def resolved_itk_commit(itk_source_dir: Path, fallback: str, git: str = "git") -
     return result.stdout.strip() if result.returncode == 0 else fallback
 
 
+#: Names a module build writes into, or that hold caches, inside a module tree.
+MODULE_STATE_SKIP: frozenset[str] = frozenset(
+    {
+        "build",
+        "dist",
+        "ITKPythonPackage",
+        "ITKPythonPackage-build",
+        "MODULE_DEPENDENCIES",
+        "__pycache__",
+        "pyproject.toml.orig",
+        "pyproject.toml.whl",
+    }
+)
+
+
+def module_source_state(module_dir: Path, git: str = "git") -> str:
+    """Return a remote module's git HEAD plus a hash of its uncommitted changes.
+
+    Without a repository, return a hash of the module's files instead.
+    """
+    env = os.environ.copy()
+    env["GIT_CEILING_DIRECTORIES"] = str(Path(module_dir).resolve().parent)
+    try:
+        head = subprocess.run(
+            [git, "rev-parse", "--verify", "HEAD^{commit}"],
+            cwd=module_dir,
+            env=env,
+            capture_output=True,
+            check=False,
+        )
+        if head.returncode == 0:
+            diff = subprocess.run(
+                [git, "diff", "HEAD", "--binary"],
+                cwd=module_dir,
+                env=env,
+                capture_output=True,
+                check=True,
+            )
+            changes = hashlib.sha256(diff.stdout).hexdigest()
+            return f"{head.stdout.decode().strip()}+{changes}"
+    except (OSError, subprocess.CalledProcessError):
+        pass
+    digest = hashlib.sha256()
+    for dirpath, dirnames, filenames in os.walk(module_dir):
+        dirnames[:] = sorted(
+            d for d in dirnames if d not in MODULE_STATE_SKIP and not d.startswith(".")
+        )
+        for name in sorted(filenames):
+            if name in MODULE_STATE_SKIP:
+                continue
+            path = Path(dirpath) / name
+            digest.update(path.relative_to(module_dir).as_posix().encode() + b"\0")
+            digest.update(path.read_bytes() + b"\0")
+    return f"content:{digest.hexdigest()}"
+
+
 def build_inputs(
-    itk_commit: str, package_version: str, fingerprint: str
+    itk_commit: str,
+    package_version: str,
+    fingerprint: str,
+    module_state: str | None = None,
 ) -> dict[str, str]:
     """Return the inputs recorded in the step report."""
-    return {
+    inputs = {
         "itk_commit": itk_commit,
         "package_version": package_version,
         "fingerprint": fingerprint,
     }
+    if module_state is not None:
+        inputs["module_state"] = module_state
+    return inputs

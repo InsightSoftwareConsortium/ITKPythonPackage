@@ -12,7 +12,12 @@ from typing import Any
 
 import build_environment
 import wheel_packaging
-from build_inputs import build_fingerprint, build_inputs, resolved_itk_commit
+from build_inputs import (
+    build_fingerprint,
+    build_inputs,
+    module_source_state,
+    resolved_itk_commit,
+)
 from build_jobs import compute_build_jobs, compute_load_limit, physical_memory_gb
 from BuildManager import BuildManager
 from cmake_argument_builder import CMakeArgumentBuilder, definitions_from_cmake_options
@@ -476,14 +481,18 @@ class BuildPythonInstanceBase(ABC):
             settings.update({f"{group}:{k}": str(v) for k, v in definitions.items()})
         for key in ("USE_CCACHE", "MANYLINUX_VERSION", "CONTAINER_SOURCE"):
             settings[key] = str(cfg.get(key, ""))
+        git = str(cfg.get("GIT_EXECUTABLE") or "git")
+        module_state = None
+        if self.module_source_dir is not None:
+            settings["itk_module_deps"] = str(self.itk_module_deps or "")
+            module_state = module_source_state(Path(self.module_source_dir), git)
         return build_inputs(
             itk_commit=resolved_itk_commit(
-                Path(cfg["ITK_SOURCE_DIR"]),
-                str(cfg["ITK_GIT_TAG"]),
-                str(cfg.get("GIT_EXECUTABLE") or "git"),
+                Path(cfg["ITK_SOURCE_DIR"]), str(cfg["ITK_GIT_TAG"]), git
             ),
             package_version=str(cfg["ITK_PACKAGE_VERSION"]),
             fingerprint=build_fingerprint(self.ipp_dir, settings),
+            module_state=module_state,
         )
 
     def _run_build_steps(

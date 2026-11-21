@@ -5,7 +5,7 @@ from collections import OrderedDict
 from pathlib import Path
 
 import pytest
-from build_inputs import build_fingerprint, resolved_itk_commit
+from build_inputs import build_fingerprint, module_source_state, resolved_itk_commit
 from cmake_argument_builder import CMakeArgumentBuilder
 
 
@@ -93,9 +93,11 @@ def _wire_run(
     ipp_dir: Path,
     itk_source: Path,
     version: str = "6.0b3",
+    module: Path | None = None,
 ) -> list[str]:
     """Make builder.run() execute recorded no-op steps and nothing else."""
     builder.ipp_dir = ipp_dir
+    builder.module_source_dir = module
     builder.dist_dir = tmp_path / "dist"
     builder.itk_module_deps = None
     builder.compiler_cache_commands = ([], [])
@@ -142,5 +144,62 @@ def test_a_new_package_version_runs_every_step_again(
     _wire_run(linux_builder, tmp_path, ipp_dir, itk_source)
     linux_builder.run()
     ran = _wire_run(linux_builder, tmp_path, ipp_dir, itk_source, version="6.0b4")
+    linux_builder.run()
+    assert ran == ["01_superbuild", "02_build_itk", "03_build_wheels"]
+
+
+@pytest.fixture
+def module_source(tmp_path):
+    module = tmp_path / "ITKFoo"
+    module.mkdir()
+    _git(module, "init", "--quiet", "--initial-branch=main")
+    _git(module, "config", "user.email", "test@example.com")
+    _git(module, "config", "user.name", "Test")
+    (module / "CMakeLists.txt").write_text("project(Foo)\n")
+    _git(module, "add", "CMakeLists.txt")
+    _git(module, "commit", "--quiet", "-m", "first")
+    return module
+
+
+def test_module_state_follows_commits_and_uncommitted_edits(module_source):
+    first = module_source_state(module_source)
+    (module_source / "CMakeLists.txt").write_text("project(Foo2)\n")
+    edited = module_source_state(module_source)
+    assert edited != first
+    _git(module_source, "commit", "--quiet", "-am", "second")
+    committed = module_source_state(module_source)
+    assert committed not in (first, edited)
+
+
+def test_module_state_ignores_what_the_module_build_writes(module_source):
+    before = module_source_state(module_source)
+    (module_source / "dist").mkdir()
+    (module_source / "dist" / "itk_foo-1.0-cp311-abi3-linux_x86_64.whl").write_text("")
+    (module_source / "pyproject.toml.whl").write_text("")
+    assert module_source_state(module_source) == before
+
+
+def test_module_state_without_a_repository_hashes_the_sources(tmp_path):
+    module = tmp_path / "ITKFoo"
+    (module / "include").mkdir(parents=True)
+    (module / "include" / "itkFoo.h").write_text("int a;\n")
+    before = module_source_state(module)
+    (module / "dist").mkdir()
+    (module / "dist" / "foo.whl").write_text("")
+    assert module_source_state(module) == before
+    (module / "include" / "itkFoo.h").write_text("int b;\n")
+    assert module_source_state(module) != before
+
+
+def test_a_changed_module_runs_every_step_again(
+    linux_builder, tmp_path, ipp_dir, itk_source, module_source
+):
+    _wire_run(linux_builder, tmp_path, ipp_dir, itk_source, module=module_source)
+    linux_builder.run()
+    ran = _wire_run(linux_builder, tmp_path, ipp_dir, itk_source, module=module_source)
+    linux_builder.run()
+    assert ran == []
+    (module_source / "CMakeLists.txt").write_text("project(Foo2)\n")
+    ran = _wire_run(linux_builder, tmp_path, ipp_dir, itk_source, module=module_source)
     linux_builder.run()
     assert ran == ["01_superbuild", "02_build_itk", "03_build_wheels"]
