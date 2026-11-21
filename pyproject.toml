@@ -216,6 +216,7 @@ module = [
   "tests.test_require_env_vars",
   "tests.test_source_date_epoch",
   "tests.test_stable_abi",
+  "tests.test_target_platform",
 ]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
