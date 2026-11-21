@@ -137,6 +137,16 @@ def itk_source_build_configuration(
     }
 
 
+def skip_steps(
+    steps: OrderedDict[str, Callable[[], object]], names: frozenset[str] | set[str]
+) -> OrderedDict[str, Callable[[], object]]:
+    """Return *steps* with each step in *names* renamed ``<name>_skipped`` and a no-op."""
+    return OrderedDict(
+        ((f"{k}_skipped", lambda: None) if k in names else (k, v))
+        for k, v in steps.items()
+    )
+
+
 class BuildPythonInstanceBase(ABC):
     """Abstract base class to build wheels for a single Python environment.
 
@@ -364,28 +374,14 @@ class BuildPythonInstanceBase(ABC):
 
         if self.skip_itk_build:
             # ITK is already built (restored from a cache or installed).
-            python_package_build_steps = OrderedDict(
-                (
-                    ("02_build_wrapped_itk_cplusplus_skipped", (lambda: None))
-                    if k == "02_build_wrapped_itk_cplusplus"
-                    else (k, v)
-                )
-                for k, v in python_package_build_steps.items()
+            python_package_build_steps = skip_steps(
+                python_package_build_steps, {"02_build_wrapped_itk_cplusplus"}
             )
         if self.skip_itk_wheel_build:
             # Steps 04 and 05 repair and install the ITK wheels from step 03.
-            skipped_when_no_itk_wheels = {
-                "03_build_wheels": "03_build_wheels_skipped",
-                "04_post_build_fixup": "04_post_build_fixup_skipped",
-                "05_final_import_test": "05_final_import_test_skipped",
-            }
-            python_package_build_steps = OrderedDict(
-                (
-                    (skipped_when_no_itk_wheels[k], (lambda: None))
-                    if k in skipped_when_no_itk_wheels
-                    else (k, v)
-                )
-                for k, v in python_package_build_steps.items()
+            python_package_build_steps = skip_steps(
+                python_package_build_steps,
+                {"03_build_wheels", "04_post_build_fixup", "05_final_import_test"},
             )
 
         if self.module_source_dir is not None:

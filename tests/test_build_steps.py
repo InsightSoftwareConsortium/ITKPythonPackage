@@ -4,9 +4,10 @@ A ``_skipped`` key mapped to a no-op is how a consciously bypassed stage is
 made visible in ``build_log_<env>.json``.
 """
 
+from collections import OrderedDict
 from pathlib import Path
 
-from build_python_instance_base import BuildPythonInstanceBase
+from build_python_instance_base import BuildPythonInstanceBase, skip_steps
 
 
 def _configure(
@@ -120,3 +121,17 @@ def test_no_module_means_no_install_step_at_all(linux_builder):
     """Nothing but a module consumes the install tree."""
     keys = list(_configure(linux_builder, module_itk_dir="install").build_step_table())
     assert not any(k.startswith("06_install") for k in keys)
+
+
+def test_skip_steps_renames_only_the_named_steps_in_place():
+    def first() -> object:
+        return "first"
+
+    def second() -> object:
+        return "second"
+
+    steps = OrderedDict([("01_a", first), ("02_b", second)])
+    skipped = skip_steps(steps, {"02_b"})
+    assert list(skipped) == ["01_a", "02_b_skipped"]
+    assert skipped["01_a"] is first
+    assert skipped["02_b_skipped"]() is None
