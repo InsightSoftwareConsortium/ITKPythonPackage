@@ -192,6 +192,7 @@ module = [
   "install_pixi",
   "wheel_packaging",
   "pyproject_configure",
+  "build_python_instance_base",
 ]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true

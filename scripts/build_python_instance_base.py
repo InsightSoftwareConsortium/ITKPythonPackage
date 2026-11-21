@@ -5,7 +5,7 @@ import shutil
 import subprocess
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -199,8 +199,8 @@ class BuildPythonInstanceBase(ABC):
     def __init__(
         self,
         *,
-        platform_env,
-        build_dir_root,
+        platform_env: str,
+        build_dir_root: Path,
         package_env_config: dict[str, Any],
         cleanup: bool,
         build_itk_tarball_cache: bool,
@@ -505,7 +505,7 @@ class BuildPythonInstanceBase(ABC):
             )
             print("=" * 80)
 
-    def build_superbuild_support_components(self):
+    def build_superbuild_support_components(self) -> None:
         """Configure and build the superbuild support components (ITK source, TBB)."""
         cmake_superbuild_arguments = CMakeArgumentBuilder()
         cmake_superbuild_arguments.update(self.cmake_compiler_configurations.items())
@@ -575,7 +575,7 @@ class BuildPythonInstanceBase(ABC):
             )
             raise RuntimeError(msg)
 
-    def final_wheel_import_test(self, installed_dist_dir: Path):
+    def final_wheel_import_test(self, installed_dist_dir: Path) -> None:
         """Install and smoke-test all ITK wheels from *installed_dist_dir*.
 
         Parameters
@@ -643,7 +643,7 @@ class BuildPythonInstanceBase(ABC):
                 raise RuntimeError(msg)
         print("Documentation tests passed.")
 
-    def _pip_uninstall_itk_wildcard(self, python_executable: str | Path):
+    def _pip_uninstall_itk_wildcard(self, python_executable: str | Path) -> None:
         """Uninstall all installed packages whose name starts with 'itk'.
 
         pip does not support shell-style wildcards directly for uninstall, so we:
@@ -703,7 +703,7 @@ class BuildPythonInstanceBase(ABC):
         """Return the pixi-managed Python environment the wheels build against."""
 
     @abstractmethod
-    def fixup_wheel(self, filepath) -> None:  # pragma: no cover - abstract
+    def fixup_wheel(self, filepath: str) -> None:  # pragma: no cover - abstract
         """Apply platform-specific wheel repairs (auditwheel, delocate, delvewheel).
 
         Parameters
@@ -712,7 +712,7 @@ class BuildPythonInstanceBase(ABC):
             Path to the ``.whl`` file to fix.
         """
 
-    def fixup_module_wheel(self, filepath) -> None:
+    def fixup_module_wheel(self, filepath: str) -> None:
         """Repair a remote module's wheel; by default as an ITK wheel is."""
         self.fixup_wheel(filepath)
 
@@ -824,7 +824,7 @@ class BuildPythonInstanceBase(ABC):
             )
             raise RuntimeError(msg)
 
-    def build_external_module_python_wheel(self):
+    def build_external_module_python_wheel(self) -> None:
         """Build a wheel for an external ITK remote module via scikit-build-core."""
         self.module_source_dir = self.required_module_source_dir()
         out_dir = self.module_source_dir / "dist"
@@ -914,7 +914,7 @@ class BuildPythonInstanceBase(ABC):
                     f"(modified version saved as {pyproject_whl.name})"
                 )
 
-    def build_itk_python_wheels(self):
+    def build_itk_python_wheels(self) -> None:
         """Build all ITK Python wheels listed in ``WHEEL_NAMES.txt``."""
         earlier = wheel_packaging.move_earlier_wheels(
             self.build_dir_root / "dist", datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -977,7 +977,7 @@ class BuildPythonInstanceBase(ABC):
                             p.unlink()
                 remove_tree(bp / "Wrapping" / "Generators" / "CastXML")
 
-    def build_wrapped_itk_cplusplus(self):
+    def build_wrapped_itk_cplusplus(self) -> None:
         """Configure and build the ITK C++ libraries with Python wrapping."""
         # Clean up previous invocations
         if (
@@ -1088,7 +1088,11 @@ class BuildPythonInstanceBase(ABC):
         print(f"# FINISHED-Install ITK C++: ITK_DIR={itk_dir}")
 
     def echo_check_call(
-        self, cmd, use_pixi_env: bool = True, env=None, **kwargs
+        self,
+        cmd: Sequence[str | Path],
+        use_pixi_env: bool = True,
+        env: Mapping[str, str] | None = None,
+        **kwargs: Any,
     ) -> int:
         """Run *cmd* in this build's pixi environment, which is named after ``platform_env``."""
         return build_environment.echo_check_call(
