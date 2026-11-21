@@ -1,11 +1,15 @@
 """A named module dependency must not crash for want of a clone directory."""
 
+from pathlib import Path
+
 import build_wheels
 import pytest
 
 
 @pytest.mark.parametrize("supplied", [None, ""])
-def test_absent_dependency_root_is_derived(supplied, tmp_path):
+def test_absent_dependency_root_is_derived(
+    supplied: str | None, tmp_path: Path
+) -> None:
     """None or empty must become a real path, not reach the clone step.
 
     A module declaring itk-module-deps without this option crashed with
@@ -15,12 +19,12 @@ def test_absent_dependency_root_is_derived(supplied, tmp_path):
     assert resolved == tmp_path / "MODULE_DEPENDENCIES"
 
 
-def test_supplied_dependency_root_is_respected(tmp_path):
+def test_supplied_dependency_root_is_respected(tmp_path: Path) -> None:
     chosen = tmp_path / "elsewhere"
     assert build_wheels.module_dependencies_root(tmp_path, chosen) == chosen
 
 
-def test_a_supplied_string_root_becomes_a_path(tmp_path):
+def test_a_supplied_string_root_becomes_a_path(tmp_path: Path) -> None:
     chosen = str(tmp_path / "elsewhere")
     assert (
         build_wheels.module_dependencies_root(tmp_path, chosen)

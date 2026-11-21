@@ -208,6 +208,7 @@ module = [
   "tests.test_final_wheel_import_test",
   "tests.test_installed_itk_dir",
   "tests.test_itk_source_without_git",
+  "tests.test_module_dependencies_root",
 ]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
