@@ -201,6 +201,7 @@ module = [
   "tests.test_build_inputs",
   "tests.test_build_jobs",
   "tests.test_build_manager",
+  "tests.test_build_steps",
 ]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
