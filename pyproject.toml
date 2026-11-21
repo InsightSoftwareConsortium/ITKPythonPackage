@@ -179,49 +179,4 @@ platform = "linux"
 warn_unused_configs = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 strict = true
-# Unannotated functions are still checked (check_untyped_defs, part of strict).
-disallow_untyped_defs = false
-disallow_incomplete_defs = false
 warn_unreachable = true
-
-[[tool.mypy.overrides]]
-module = [
-  "wheel_builder_utils",
-  "build_environment",
-  "build_manager",
-  "install_pixi",
-  "wheel_packaging",
-  "pyproject_configure",
-  "build_python_instance_base",
-  "linux_build_python_instance",
-  "macos_build_python_instance",
-  "windows_build_python_instance",
-  "tests.conftest",
-  "tests.test_build_environment",
-  "tests.test_build_inputs",
-  "tests.test_build_jobs",
-  "tests.test_build_manager",
-  "tests.test_build_steps",
-  "tests.test_cmake_define_args",
-  "tests.test_compiler_cache",
-  "tests.test_dead_strip",
-  "tests.test_final_wheel_import_test",
-  "tests.test_installed_itk_dir",
-  "tests.test_itk_source_without_git",
-  "tests.test_module_dependencies_root",
-  "tests.test_module_dependencies",
-  "tests.test_platform_builders",
-  "tests.test_pyproject_configure",
-  "tests.test_release_wheels",
-  "tests.test_require_env_vars",
-  "tests.test_source_date_epoch",
-  "tests.test_stable_abi",
-  "tests.test_target_platform",
-  "tests.test_tool_resolution_env",
-  "tests.test_wheel_builder_utils",
-  "tests.test_wheel_packaging",
-  "tests.test_windows_link_options",
-  "tests.test_windows_wheel_builder",
-]
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
