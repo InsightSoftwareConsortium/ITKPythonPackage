@@ -20,7 +20,7 @@ def test_resolves_inside_target_env_not_launching_path(monkeypatch):
             cmd, 0, "/envs/windows-py311/bin/doxygen\n", ""
         )
 
-    monkeypatch.setattr("wheel_builder_utils.run_commandLine_subprocess", fake_run)
+    monkeypatch.setattr("wheel_builder_utils.run_command", fake_run)
     monkeypatch.setattr("shutil.which", lambda _: "/stray/doxygen")
 
     resolved = which_required_in_pixi_env("doxygen", Path("/bin/pixi"), "windows-py311")
@@ -39,7 +39,7 @@ def test_uses_current_env_when_already_inside_it(monkeypatch):
         msg = "must not nest a second pixi run"
         raise AssertionError(msg)
 
-    monkeypatch.setattr("wheel_builder_utils.run_commandLine_subprocess", explode)
+    monkeypatch.setattr("wheel_builder_utils.run_command", explode)
 
     assert which_required_in_pixi_env(
         "cmake", Path("/bin/pixi"), "windows-py311"
@@ -49,7 +49,7 @@ def test_uses_current_env_when_already_inside_it(monkeypatch):
 def test_missing_tool_in_target_env_raises(monkeypatch):
     monkeypatch.setenv("PIXI_ENVIRONMENT_NAME", "default")
     monkeypatch.setattr(
-        "wheel_builder_utils.run_commandLine_subprocess",
+        "wheel_builder_utils.run_command",
         lambda *a, **_k: subprocess.CompletedProcess(a[0] if a else [], 0, "\n", ""),
     )
     monkeypatch.setattr("shutil.which", lambda _: "/stray/doxygen")
@@ -94,7 +94,7 @@ def test_hostsystem_resolves_tools_from_host_path(monkeypatch):
         msg = "hostsystem must not probe a pixi environment"
         raise AssertionError(msg)
 
-    monkeypatch.setattr("wheel_builder_utils.run_commandLine_subprocess", explode)
+    monkeypatch.setattr("wheel_builder_utils.run_command", explode)
 
     assert which_required_in_pixi_env(
         "doxygen", Path("/bin/pixi"), "macosx-py311"

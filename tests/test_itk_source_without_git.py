@@ -36,7 +36,7 @@ def _sync(
     fake_git: _FakeGit,
     tag: str = "v6.0.0",
 ) -> str:
-    monkeypatch.setattr(build_wheels, "run_commandLine_subprocess", fake_git)
+    monkeypatch.setattr(build_wheels, "run_command", fake_git)
     return build_wheels.sync_itk_source(tmp_path, tag)
 
 
@@ -146,8 +146,6 @@ def test_version_derivation_explains_a_cache_tree(tmp_path, monkeypatch):
     def not_a_repository(cmd, cwd=None, env=None, check=False):
         return subprocess.CompletedProcess(cmd, 128, "", "fatal: not a git repository")
 
-    monkeypatch.setattr(
-        wheel_builder_utils, "run_commandLine_subprocess", not_a_repository
-    )
+    monkeypatch.setattr(wheel_builder_utils, "run_command", not_a_repository)
     with pytest.raises(RuntimeError, match="Pass --itk-package-version"):
         wheel_builder_utils.compute_itk_package_version(tmp_path, "v6.0.0", {})

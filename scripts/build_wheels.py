@@ -18,7 +18,7 @@ from wheel_builder_utils import (
     compute_itk_package_version,
     get_default_platform_build,
     resolve_oci_exe,
-    run_commandLine_subprocess,
+    run_command,
     which_required,
     which_required_in_pixi_env,
 )
@@ -100,7 +100,7 @@ def sync_itk_source(itk_source_dir: Path, itk_git_tag: str) -> str:
     git_env = itk_git_env(itk_source_dir)
     # A cache-restored tree keeps an empty .git, so ask git; its sources already match the binaries.
     itk_source_is_repository = (
-        run_commandLine_subprocess(
+        run_command(
             ["git", "rev-parse", "--git-dir"],
             cwd=itk_source_dir,
             env=git_env,
@@ -114,14 +114,14 @@ def sync_itk_source(itk_source_dir: Path, itk_git_tag: str) -> str:
             f"{itk_git_tag!r}."
         )
     else:
-        fetch_result = run_commandLine_subprocess(
+        fetch_result = run_command(
             ["git", "fetch", "--tags", "origin"],
             cwd=itk_source_dir,
             env=git_env,
         )
         if fetch_result.returncode != 0:
             # Only fatal when the requested revision is not already present.
-            have_revision = run_commandLine_subprocess(
+            have_revision = run_command(
                 [
                     "git",
                     "rev-parse",
@@ -142,14 +142,14 @@ def sync_itk_source(itk_source_dir: Path, itk_git_tag: str) -> str:
                 f"WARNING: Failed to fetch ITK tags in {itk_source_dir}; "
                 f"using the local {itk_git_tag!r}: {fetch_result.stderr}"
             )
-        checkout_result = run_commandLine_subprocess(
+        checkout_result = run_command(
             ["git", "checkout", itk_git_tag],
             cwd=itk_source_dir,
             env=git_env,
         )
         if checkout_result.returncode != 0:
             # Keep the checked-out commit: a cache-restored tree must match its binaries.
-            head_result = run_commandLine_subprocess(
+            head_result = run_command(
                 ["git", "rev-parse", "HEAD"],
                 cwd=itk_source_dir,
                 env=git_env,
@@ -199,7 +199,7 @@ def windows_link_options(os_name: OS, link_options: str | None) -> str | None:
 
 def itk_commit_time(itk_source_dir: Path, itk_git_tag: str) -> str | None:
     """Return the committer time of *itk_git_tag*, or None without a repository."""
-    result = run_commandLine_subprocess(
+    result = run_command(
         ["git", "log", "-1", "--format=%ct", itk_git_tag],
         cwd=itk_source_dir,
         env=itk_git_env(itk_source_dir),
@@ -603,7 +603,7 @@ def build_wheels_main() -> None:
     if not Path(args.itk_source_dir).exists():
         args.itk_source_dir.parent.mkdir(parents=True, exist_ok=True)
         print(f"Cloning ITK into {args.itk_source_dir}...")
-        run_result = run_commandLine_subprocess(
+        run_result = run_command(
             [
                 "git",
                 "clone",
@@ -683,7 +683,7 @@ def build_wheels_main() -> None:
             "-c",
             "import sys; print(sys.executable)",
         ]
-        python_probe = run_commandLine_subprocess(cmd, env=os.environ.copy())
+        python_probe = run_command(cmd, env=os.environ.copy())
         if python_probe.returncode != 0 or not python_probe.stdout.strip():
             msg = (
                 f"Could not resolve the python interpreter for pixi environment "

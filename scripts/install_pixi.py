@@ -5,7 +5,7 @@ import platform
 from pathlib import Path
 
 from target_platform import OS, os_from_system
-from wheel_builder_utils import run_commandLine_subprocess
+from wheel_builder_utils import run_command
 
 
 def download_and_install_pixi(
@@ -47,7 +47,7 @@ def download_and_install_pixi(
         print(f"Previous install of pixi will be used {pixi_exec_path}.")
     elif os_name is OS.WINDOWS:
         # Use PowerShell to install pixi on Windows
-        result = run_commandLine_subprocess(
+        result = run_command(
             [
                 "powershell",
                 "-NoProfile",
@@ -63,7 +63,7 @@ def download_and_install_pixi(
             raise RuntimeError(msg)
     else:
         pixi_install_script: Path = pixi_home / "pixi_install.sh"
-        result = run_commandLine_subprocess(
+        result = run_command(
             [
                 "curl",
                 "-fsSL",
@@ -75,7 +75,7 @@ def download_and_install_pixi(
         if result.returncode != 0:
             msg = f"Failed to download {pixi_install_script}: {result.stderr}"
             raise RuntimeError(msg)
-        result = run_commandLine_subprocess(
+        result = run_command(
             [
                 "/bin/sh",
                 str(pixi_install_script),
@@ -92,7 +92,7 @@ def download_and_install_pixi(
         raise RuntimeError(msg)
     # Now install the desired platform
     if (pixi_home.parent / "pixi.toml").exists():
-        result = run_commandLine_subprocess(
+        result = run_command(
             [pixi_exec_path, "install", "--environment", platform_env],
             cwd=pixi_home.parent,
             env=pixi_install_env,

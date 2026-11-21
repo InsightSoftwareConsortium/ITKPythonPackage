@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from wheel_builder_utils import HOST_SYSTEM_ENVIRONMENT_NAME, run_commandLine_subprocess
+from wheel_builder_utils import HOST_SYSTEM_ENVIRONMENT_NAME, run_command
 
 
 @dataclass(frozen=True)
@@ -107,8 +107,8 @@ def echo_check_call(
     print("^" * 60)
     print(kwargs)
     print("^" * 60)
-    process_completion_info: subprocess.CompletedProcess[str] = (
-        run_commandLine_subprocess(cmd_strs, env=pixi_env, cwd=run_dir, **kwargs)
+    process_completion_info: subprocess.CompletedProcess[str] = run_command(
+        cmd_strs, env=pixi_env, cwd=run_dir, **kwargs
     )
     cmd_return_status: int = process_completion_info.returncode
     print("^" * 60)

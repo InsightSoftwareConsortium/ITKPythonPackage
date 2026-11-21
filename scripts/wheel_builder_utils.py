@@ -196,7 +196,7 @@ def which_required_in_pixi_env(
         HOST_SYSTEM_ENVIRONMENT_NAME,
     ):
         return which_required(name)
-    probe = run_commandLine_subprocess(
+    probe = run_command(
         [
             pixi_executable,
             "run",
@@ -238,7 +238,7 @@ def which_required(name: str) -> Path:
     return path
 
 
-def run_commandLine_subprocess(
+def run_command(
     cmd: Sequence[str | Path],
     cwd: Path | None = None,
     env: dict[str, str] | None = None,
@@ -388,9 +388,7 @@ def compute_itk_package_version(itk_dir: Path, itk_git_tag: str, env) -> str:
         PEP 440-compliant version string.
     """
     if (
-        run_commandLine_subprocess(
-            ["git", "rev-parse", "--git-dir"], cwd=itk_dir, env=env
-        ).returncode
+        run_command(["git", "rev-parse", "--git-dir"], cwd=itk_dir, env=env).returncode
         != 0
     ):
         msg = (
@@ -400,7 +398,7 @@ def compute_itk_package_version(itk_dir: Path, itk_git_tag: str, env) -> str:
             f"ITK_PACKAGE_VERSION, to name the version explicitly."
         )
         raise RuntimeError(msg)
-    fetch_result = run_commandLine_subprocess(
+    fetch_result = run_command(
         ["git", "fetch", "--tags"],
         cwd=itk_dir,
         env=env,
@@ -408,7 +406,7 @@ def compute_itk_package_version(itk_dir: Path, itk_git_tag: str, env) -> str:
     if fetch_result.returncode != 0:
         msg = f"git fetch --tags failed in {itk_dir}: {fetch_result.stderr}"
         raise RuntimeError(msg)
-    checkout_result = run_commandLine_subprocess(
+    checkout_result = run_command(
         ["git", "checkout", itk_git_tag],
         cwd=itk_dir,
         env=env,
@@ -418,7 +416,7 @@ def compute_itk_package_version(itk_dir: Path, itk_git_tag: str, env) -> str:
         # build_wheels.py. Forcing 'main' would move a cache-restored ITK
         # source tree away from the commit its prebuilt binaries were
         # compiled from.
-        head_result = run_commandLine_subprocess(
+        head_result = run_command(
             ["git", "rev-parse", "HEAD"],
             cwd=itk_dir,
             env=env,
@@ -431,7 +429,7 @@ def compute_itk_package_version(itk_dir: Path, itk_git_tag: str, env) -> str:
         )
         if resolved:
             itk_git_tag = resolved
-    describe_result = run_commandLine_subprocess(
+    describe_result = run_command(
         [
             "git",
             "describe",

@@ -27,7 +27,7 @@ def test_echo_check_call_returns_nonzero_rather_than_raising():
 
 
 def test_echo_check_call_raises_when_check_is_forwarded():
-    """``check=True`` reaches run_commandLine_subprocess, which raises."""
+    """``check=True`` reaches run_command, which raises."""
     with pytest.raises(RuntimeError):
         build_environment.echo_check_call(
             [sys.executable, "-c", "import sys; sys.exit(3)"],
@@ -51,7 +51,7 @@ def test_pixi_run_preamble_only_outside_the_target_and_hostsystem(
         seen["cmd"] = cmd
         return subprocess.CompletedProcess(cmd, 0, "", "")
 
-    monkeypatch.setattr(build_environment, "run_commandLine_subprocess", fake_run)
+    monkeypatch.setattr(build_environment, "run_command", fake_run)
     build_environment.echo_check_call(
         ["cmake", "--version"], pixi_env_name="macosx-py311", pixi_executable="pixi"
     )
