@@ -13,7 +13,7 @@ from target_platform import OS
 VERSION_SCRIPT = f"-Wl,--version-script={PYTHON_MODULE_EXPORTS.as_posix()}"
 
 
-def test_linux_sets_sections_and_gc_for_every_target_kind():
+def test_linux_sets_sections_and_gc_for_every_target_kind() -> None:
     defs = dead_strip_cmake_definitions(OS.LINUX, {})
     assert defs["CMAKE_C_FLAGS:STRING"] == SECTION_FLAGS
     assert defs["CMAKE_CXX_FLAGS:STRING"] == SECTION_FLAGS
@@ -21,7 +21,7 @@ def test_linux_sets_sections_and_gc_for_every_target_kind():
         assert defs[f"CMAKE_{kind}_LINKER_FLAGS:STRING"] == LINKER_FLAGS
 
 
-def test_python_modules_export_only_pyinit():
+def test_python_modules_export_only_pyinit() -> None:
     defs = dead_strip_cmake_definitions(OS.LINUX, {})
     assert (
         defs["CMAKE_MODULE_LINKER_FLAGS:STRING"] == f"{LINKER_FLAGS} {VERSION_SCRIPT}"
@@ -32,25 +32,25 @@ def test_python_modules_export_only_pyinit():
     assert "local: *;" in text
 
 
-def test_default_linker_is_used():
+def test_default_linker_is_used() -> None:
     """gold is deprecated since binutils 2.44 and its --icf saved nothing."""
     flags = " ".join(dead_strip_cmake_definitions(OS.LINUX, {}).values())
     assert "-fuse-ld" not in flags
     assert "--icf" not in flags
 
 
-def test_windows_is_unchanged():
+def test_windows_is_unchanged() -> None:
     assert dead_strip_cmake_definitions(OS.WINDOWS, {"LDFLAGS": "-Wl,-x"}) == {}
 
 
-def test_darwin_strips_and_limits_exports_of_python_modules_only():
+def test_darwin_strips_and_limits_exports_of_python_modules_only() -> None:
     defs = dead_strip_cmake_definitions(OS.DARWIN, {})
     assert defs == {"CMAKE_MODULE_LINKER_FLAGS:STRING": DARWIN_MODULE_FLAGS}
     assert "-Wl,-dead_strip " in DARWIN_MODULE_FLAGS
     assert "-Wl,-exported_symbol,_PyInit_*" in DARWIN_MODULE_FLAGS
 
 
-def test_darwin_keeps_environment_and_user_linker_flags():
+def test_darwin_keeps_environment_and_user_linker_flags() -> None:
     env = {"LDFLAGS": "-Wl,-dead_strip_dylibs"}
     defs = dead_strip_cmake_definitions(OS.DARWIN, env)
     assert defs["CMAKE_MODULE_LINKER_FLAGS:STRING"] == (
@@ -63,7 +63,7 @@ def test_darwin_keeps_environment_and_user_linker_flags():
     )
 
 
-def test_environment_flags_are_kept():
+def test_environment_flags_are_kept() -> None:
     defs = dead_strip_cmake_definitions(
         OS.LINUX, {"CFLAGS": "-O2", "CXXFLAGS": "-g0", "LDFLAGS": "-Wl,-z,now"}
     )
@@ -73,19 +73,19 @@ def test_environment_flags_are_kept():
 
 
 @pytest.mark.parametrize("key", ["CMAKE_CXX_FLAGS:STRING", "CMAKE_CXX_FLAGS"])
-def test_user_flags_replace_environment_and_are_merged(key):
+def test_user_flags_replace_environment_and_are_merged(key: str) -> None:
     user = {key: "-march=native"}
     defs = dead_strip_cmake_definitions(OS.LINUX, {"CXXFLAGS": "-g0"}, user)
     assert defs["CMAKE_CXX_FLAGS:STRING"] == f"-march=native {SECTION_FLAGS}"
     assert user_flag_key(user, "CMAKE_CXX_FLAGS") == key
 
 
-def test_user_module_linker_flags_keep_the_version_script():
+def test_user_module_linker_flags_keep_the_version_script() -> None:
     user = CMakeArgumentBuilder({"CMAKE_MODULE_LINKER_FLAGS:STRING": "-Wl,-z,now"})
     defs = dead_strip_cmake_definitions(OS.LINUX, {}, user)
     assert defs["CMAKE_MODULE_LINKER_FLAGS:STRING"].startswith("-Wl,-z,now ")
     assert VERSION_SCRIPT in defs["CMAKE_MODULE_LINKER_FLAGS:STRING"]
 
 
-def test_user_flag_key_absent():
+def test_user_flag_key_absent() -> None:
     assert user_flag_key({}, "CMAKE_C_FLAGS") is None
