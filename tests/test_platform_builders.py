@@ -263,7 +263,7 @@ def test_fixup_wheel_fails_loudly_when_the_build_env_lib_dir_is_absent(
 
 
 def test_posix_build_tarball_delegates(macos_builder):
-    """build_tarball is a base hook now; the Middle Man override is gone."""
+    """The POSIX build_tarball delegates to create_posix_tarball."""
     with patch.object(macos_builder, "create_posix_tarball") as created:
         macos_builder.build_tarball()
     created.assert_called_once()

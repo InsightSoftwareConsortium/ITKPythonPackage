@@ -697,13 +697,6 @@ class BuildPythonInstanceBase(ABC):
                 )
                 raise RuntimeError(msg)
 
-    def find_unix_exectable_paths(
-        self,
-        venv_dir: Path,
-    ) -> tuple[str, str, str, str, str]:
-        """Delegate to the module-level implementation."""
-        return build_environment.find_unix_exectable_paths(venv_dir)
-
     def clone(self):
         """Return a deep copy of this instance for building a dependency.
 
@@ -715,30 +708,9 @@ class BuildPythonInstanceBase(ABC):
         new.__dict__ = copy.deepcopy(self.__dict__)
         return new
 
+    @abstractmethod
     def venv_paths(self) -> None:
-        """Populate ``venv_info_dict`` from the pixi-managed Python interpreter.
-
-        Default Unix implementation shared by Linux and macOS.  Windows
-        overrides this method with its own path conventions.
-        """
-        primary_python_base_dir = Path(
-            self.package_env_config["PYTHON_EXECUTABLE"]
-        ).parent.parent
-        (
-            python_executable,
-            python_include_dir,
-            python_library,
-            venv_bin_path,
-            venv_base_dir,
-        ) = self.find_unix_exectable_paths(primary_python_base_dir)
-        self.venv_info_dict = {
-            "python_executable": python_executable,
-            "python_include_dir": python_include_dir,
-            "python_library": python_library,
-            "venv_bin_path": venv_bin_path,
-            "venv_base_dir": venv_base_dir,
-            "python_root_dir": primary_python_base_dir,
-        }
+        """Populate ``venv_info_dict`` from the pixi-managed Python interpreter."""
 
     @abstractmethod
     def fixup_wheel(
@@ -1134,10 +1106,6 @@ class BuildPythonInstanceBase(ABC):
         )
         itk_dir = self.installed_itk_dir()
         print(f"# FINISHED-Install ITK C++: ITK_DIR={itk_dir}")
-
-    def create_posix_tarball(self) -> None:
-        """Create a compressed tarball of the ITK Python build tree."""
-        wheel_packaging.create_posix_tarball(self)
 
     def get_pixi_environment_name(self) -> str:
         """Delegate, naming the pixi environment for this build."""
