@@ -301,8 +301,7 @@ def build_wheels_main() -> None:
     # MANYLINUX_VERSION must not influence this resolution.
     target = TargetPlatform.detect(os.environ, manylinux_version="")
     os_name = target.os_name
-    ipp_script_dir: Path = Path(__file__).parent
-    ipp_dir: Path = ipp_script_dir.parent
+    ipp_dir: Path = Path(__file__).parent.parent
     if (ipp_dir / ".pixi" / "bin").exists():
         os.environ["PATH"] = (
             str(ipp_dir / ".pixi" / "bin") + os.pathsep + os.environ["PATH"]
@@ -566,13 +565,11 @@ def build_wheels_main() -> None:
         args.build_dir_root, args.module_dependencies_root_dir
     )
 
-    _ipp_dir_path: Path = Path(__file__).resolve().parent.parent
     dist_dir: Path = Path(args.build_dir_root) / "dist"
 
-    binary_ext: str = ".exe" if os_name is OS.WINDOWS else ""
     env_bin_dir: str = "Scripts" if os_name is OS.WINDOWS else "bin"
 
-    env_path = _ipp_dir_path / ".pixi" / "envs" / args.platform_env
+    env_path = ipp_dir / ".pixi" / "envs" / args.platform_env
     env_subdirs = (
         [env_bin_dir, "Library/bin"] if os_name is OS.WINDOWS else [env_bin_dir]
     )
@@ -580,11 +577,11 @@ def build_wheels_main() -> None:
     os.environ["PATH"] = os.pathsep.join(
         [
             *[str(env_path / d) for d in env_subdirs],
-            str(_ipp_dir_path / ".pixi" / "bin"),
+            str(ipp_dir / ".pixi" / "bin"),
             os.environ.get("PATH", ""),
         ]
     )
-    pixi_exec_path: Path = which_required("pixi" + binary_ext)
+    pixi_executable = which_required("pixi")
     package_env_config: dict[str, str | Path | None] = {}
 
     args.build_dir_root = Path(args.build_dir_root)
@@ -612,7 +609,7 @@ def build_wheels_main() -> None:
                 "https://github.com/InsightSoftwareConsortium/ITK.git",
                 str(args.itk_source_dir),
             ],
-            cwd=_ipp_dir_path,
+            cwd=ipp_dir,
             env=os.environ.copy(),
         )
         if run_result.returncode != 0:
@@ -625,7 +622,7 @@ def build_wheels_main() -> None:
     # any other value is used as given, as a cache-restored tree has no repository.
     if derives_package_version(args.itk_package_version):
         args.itk_package_version = compute_itk_package_version(
-            args.itk_source_dir, args.itk_git_tag, pixi_exec_path, os.environ
+            args.itk_source_dir, args.itk_git_tag, pixi_executable, os.environ
         )
 
     # Every wheel writer and repair tool stamps zip entries with this time.
@@ -659,7 +656,6 @@ def build_wheels_main() -> None:
     package_env_config["ITK_MODULE_NO_CLEANUP"] = module_no_cleanup
     package_env_config["USE_CCACHE"] = use_ccache
     package_env_config["DEAD_STRIP"] = "ON" if args.dead_strip else "OFF"
-    pixi_executable = which_required("pixi")
     package_env_config["PIXI_EXECUTABLE"] = pixi_executable
     # Build tools come from the target environment, not the launching one, so a
     # stray same-named executable on PATH cannot be handed to CMake.
