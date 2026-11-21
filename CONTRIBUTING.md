@@ -9,10 +9,19 @@ git clone https://github.com/InsightSoftwareConsortium/ITKPythonPackage.git
 cd ITKPythonPackage
 ```
 
-Install the hooks with [pre-commit](https://pre-commit.com):
+Install [Pixi](https://pixi.sh) for managing the build environment:
 
 ```bash
-pre-commit install
+curl -fsSL https://pixi.sh/install.sh | bash
+pixi install
+```
+
+Install pre-commit hooks
+
+```bash
+pixi run pre-commit-install
+# optionally run pre-commit hooks
+pixi run pre-commit-run
 ```
 
 ## Development Workflow
@@ -56,8 +65,8 @@ sphinx-build -W -b html docs docs/_build/html
 
 ### Running Checks with Nox
 
-[Nox](https://nox.thea.codes) runs the same checks in isolated
-environments. With [uv](https://docs.astral.sh/uv/) installed:
+[Nox](https://nox.thea.codes) runs the same checks without a pixi
+environment. With [uv](https://docs.astral.sh/uv/) installed:
 
 ```bash
 uvx nox -l               # list sessions
@@ -68,7 +77,9 @@ uvx nox -s docs -- --serve
 ```
 
 Arguments after `--` go to the underlying tool, for example
-`uvx nox -s tests-3.12 -- -k configure`.
+`uvx nox -s tests-3.12 -- -k configure`. Wheel builds are not nox
+sessions; use `pixi run -e <platform-env> build-itk-wheels`, naming the
+environment as AGENTS.md describes.
 
 ## Submitting a Pull Request
 

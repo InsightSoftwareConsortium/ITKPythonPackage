@@ -102,12 +102,8 @@ repos:
         exclude: |
           (?x)^scripts/(
             dockcross-manylinux-build-module-deps|
-            dockcross-manylinux-build-module-wheels|
             dockcross-manylinux-build-tarball|
-            dockcross-manylinux-build-wheels|
             dockcross-manylinux-cleanup|
-            dockcross-manylinux-download-cache|
-            dockcross-manylinux-download-cache-and-build-module-wheels|
             dockcross-manylinux-set-vars|
             internal/manylinux-aarch64-build-module-wheels|
             internal/manylinux-build-common|
@@ -119,7 +115,6 @@ repos:
             macpython-build-module-wheels|
             macpython-build-tarball|
             macpython-build-wheels|
-            macpython-download-cache-and-build-module-wheels|
             macpython-install-python|
             oci_exe
           )\.sh$
