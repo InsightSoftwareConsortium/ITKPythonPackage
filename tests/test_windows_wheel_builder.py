@@ -28,8 +28,8 @@ def _fake_delvewheel(wheel: Path) -> tuple[Callable[..., int], list[Path]]:
 
 
 def test_remote_module_repaired_wheel_lands_in_the_module_dist(
-    tmp_path, windows_builder
-):
+    tmp_path: Path, windows_builder: WindowsBuildPythonInstance
+) -> None:
     """A remote module's repaired wheel belongs in the module's own ``dist/``.
 
     The expectation is derived from ``module_source_dir`` rather than
@@ -53,7 +53,9 @@ def test_remote_module_repaired_wheel_lands_in_the_module_dist(
     assert (expected_dir / wheel.name).exists()
 
 
-def test_non_remote_repaired_wheel_lands_in_the_build_dist(tmp_path, windows_builder):
+def test_non_remote_repaired_wheel_lands_in_the_build_dist(
+    tmp_path: Path, windows_builder: WindowsBuildPythonInstance
+) -> None:
     """Without ``remote_module_wheel`` the main build ``dist/`` is still used."""
     windows_builder.module_source_dir = tmp_path / "BioCell"
     main_dist = windows_builder.build_dir_root / "dist"
@@ -69,7 +71,9 @@ def test_non_remote_repaired_wheel_lands_in_the_build_dist(tmp_path, windows_bui
     assert not (windows_builder.module_source_dir / "dist").exists()
 
 
-def test_repair_that_writes_nothing_fails_even_beside_the_input(windows_builder):
+def test_repair_that_writes_nothing_fails_even_beside_the_input(
+    windows_builder: WindowsBuildPythonInstance,
+) -> None:
     """ITK wheels are repaired in the ``dist/`` they were built in.
 
     The unrepaired input already sits at the output name there, so the
@@ -87,7 +91,9 @@ def test_repair_that_writes_nothing_fails_even_beside_the_input(windows_builder)
         windows_builder.fixup_wheel(str(wheel))
 
 
-def test_repaired_wheel_replaces_the_input_in_place(windows_builder):
+def test_repaired_wheel_replaces_the_input_in_place(
+    windows_builder: WindowsBuildPythonInstance,
+) -> None:
     """A successful repair leaves only the repaired wheel in ``dist/``."""
     main_dist = windows_builder.build_dir_root / "dist"
     main_dist.mkdir(parents=True, exist_ok=True)
@@ -122,7 +128,9 @@ def _run_build_tarball(
     return captured["cmd"]
 
 
-def test_seven_zip_command_carries_no_recursive_flag(tmp_path, windows_builder):
+def test_seven_zip_command_carries_no_recursive_flag(
+    tmp_path: Path, windows_builder: WindowsBuildPythonInstance
+) -> None:
     """``-r`` makes 7-Zip treat each name as a recursive pattern.
 
     With it, the bare directory name ``build`` matches every directory of
@@ -137,7 +145,9 @@ def test_seven_zip_command_carries_no_recursive_flag(tmp_path, windows_builder):
     assert "-r0" not in cmd
 
 
-def test_seven_zip_archives_absolute_roots_not_bare_names(tmp_path, windows_builder):
+def test_seven_zip_archives_absolute_roots_not_bare_names(
+    tmp_path: Path, windows_builder: WindowsBuildPythonInstance
+) -> None:
     """Each archived root is an absolute path under the build root.
 
     A bare ``build``/``ITK`` name is what makes ``-r`` dangerous; pinning
@@ -152,7 +162,9 @@ def test_seven_zip_archives_absolute_roots_not_bare_names(tmp_path, windows_buil
     assert str(windows_builder.ipp_dir) in cmd
 
 
-def test_zip_fallback_archives_the_seven_zip_roots(tmp_path, windows_builder):
+def test_zip_fallback_archives_the_seven_zip_roots(
+    tmp_path: Path, windows_builder: WindowsBuildPythonInstance
+) -> None:
     """Without 7-Zip the zip holds the same roots and exclusions."""
     root = windows_builder.build_dir_root
     windows_builder.ipp_dir = tmp_path / "IPP"
@@ -193,8 +205,8 @@ def test_zip_fallback_archives_the_seven_zip_roots(tmp_path, windows_builder):
 
 
 def test_venv_paths_names_the_version_and_stable_abi_libraries(
-    tmp_path, windows_builder
-):
+    tmp_path: Path, windows_builder: WindowsBuildPythonInstance
+) -> None:
     env_root = tmp_path / "env"
     (env_root / "include").mkdir(parents=True)
     (env_root / "libs").mkdir()
@@ -214,7 +226,9 @@ def test_venv_paths_names_the_version_and_stable_abi_libraries(
     assert env.executable is None
 
 
-def test_venv_paths_refuses_a_missing_stable_abi_library(tmp_path, windows_builder):
+def test_venv_paths_refuses_a_missing_stable_abi_library(
+    tmp_path: Path, windows_builder: WindowsBuildPythonInstance
+) -> None:
     env_root = tmp_path / "env"
     (env_root / "include").mkdir(parents=True)
     (env_root / "libs").mkdir()
