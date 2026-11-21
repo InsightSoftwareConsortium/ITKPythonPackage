@@ -40,11 +40,6 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
             binary_wheel_glob_pattern: str = f"itk_*-*{cp_prefix}*-linux_*.whl"
             dist_path: Path = self.build_dir_root / "dist"
             for whl in dist_path.glob(binary_wheel_glob_pattern):
-                if whl.name.startswith("itk-"):
-                    print(
-                        f"Skipping the itk-meta wheel that has nothing to fixup {whl}"
-                    )
-                    continue
                 self.fixup_wheel(str(whl))
             del whl
             # Retag meta-wheel: Special handling for the itk meta wheel to adjust tag
