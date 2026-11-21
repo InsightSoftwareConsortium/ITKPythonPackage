@@ -197,6 +197,7 @@ module = [
   "macos_build_python_instance",
   "windows_build_python_instance",
   "tests.conftest",
+  "tests.test_build_environment",
 ]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true

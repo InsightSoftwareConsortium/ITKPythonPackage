@@ -1,20 +1,21 @@
 import shutil
 import subprocess
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 
 import build_environment
 import pytest
 
 
-def test_echo_check_call_returns_zero_on_success():
+def test_echo_check_call_returns_zero_on_success() -> None:
     rc = build_environment.echo_check_call(
         [sys.executable, "-c", "pass"], use_pixi_env=False
     )
     assert rc == 0
 
 
-def test_echo_check_call_returns_nonzero_rather_than_raising():
+def test_echo_check_call_returns_nonzero_rather_than_raising() -> None:
     """It returns the exit status; it does not raise on its own.
 
     Callers that must stop the build therefore have to forward
@@ -26,7 +27,7 @@ def test_echo_check_call_returns_nonzero_rather_than_raising():
     assert rc == 3
 
 
-def test_echo_check_call_raises_when_check_is_forwarded():
+def test_echo_check_call_raises_when_check_is_forwarded() -> None:
     """``check=True`` reaches run_command, which raises."""
     with pytest.raises(RuntimeError):
         build_environment.echo_check_call(
@@ -41,13 +42,15 @@ def test_echo_check_call_raises_when_check_is_forwarded():
     [("hostsystem", False), ("macosx-py311", False), ("default", True)],
 )
 def test_pixi_run_preamble_only_outside_the_target_and_hostsystem(
-    monkeypatch, active, wrapped
-):
+    monkeypatch: pytest.MonkeyPatch, active: str, wrapped: bool
+) -> None:
     """hostsystem runs tools from PATH, as AGENTS.md documents."""
     monkeypatch.setenv("PIXI_ENVIRONMENT_NAME", active)
-    seen = {}
+    seen: dict[str, Sequence[str | Path]] = {}
 
-    def fake_run(cmd, **kwargs):
+    def fake_run(
+        cmd: Sequence[str | Path], **kwargs: object
+    ) -> subprocess.CompletedProcess[str]:
         seen["cmd"] = cmd
         return subprocess.CompletedProcess(cmd, 0, "", "")
 
@@ -59,12 +62,12 @@ def test_pixi_run_preamble_only_outside_the_target_and_hostsystem(
     assert seen["cmd"][-2:] == ["cmake", "--version"]
 
 
-def test_find_unix_python_paths_raises_when_interpreter_absent(tmp_path):
+def test_find_unix_python_paths_raises_when_interpreter_absent(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError):
         build_environment.find_unix_python_paths(tmp_path)
 
 
-def test_find_unix_python_paths_resolves_a_venv_layout(tmp_path):
+def test_find_unix_python_paths_resolves_a_venv_layout(tmp_path: Path) -> None:
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     # A real venv symlinks its interpreter, but creating a symlink needs
@@ -105,7 +108,7 @@ def _environment(
     return build_environment.PythonEnvironment(**fields)  # type: ignore[arg-type]
 
 
-def test_python_environment_accepts_existing_paths(tmp_path):
+def test_python_environment_accepts_existing_paths(tmp_path: Path) -> None:
     library = tmp_path / "python311.lib"
     sabi = tmp_path / "python3.lib"
     library.touch()
@@ -115,18 +118,20 @@ def test_python_environment_accepts_existing_paths(tmp_path):
     assert env.sabi_library == sabi
 
 
-def test_python_environment_requires_the_include_dir(tmp_path):
+def test_python_environment_requires_the_include_dir(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError, match="include directory"):
         _environment(tmp_path, include_dir=tmp_path / "missing")
 
 
 @pytest.mark.parametrize("field", ["library", "sabi_library"])
-def test_python_environment_requires_named_libraries(tmp_path, field):
+def test_python_environment_requires_named_libraries(
+    tmp_path: Path, field: str
+) -> None:
     with pytest.raises(FileNotFoundError, match="library not found"):
         _environment(tmp_path, **{field: tmp_path / "python3.lib"})
 
 
-def test_python_environment_is_frozen(tmp_path):
+def test_python_environment_is_frozen(tmp_path: Path) -> None:
     env = _environment(tmp_path)
     with pytest.raises(AttributeError):
         env.root_dir = tmp_path / "other"  # type: ignore[misc]
