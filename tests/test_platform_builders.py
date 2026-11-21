@@ -121,6 +121,8 @@ def test_fixup_wheel_runs_delocate_when_binaries_present(tmp_path, macos_builder
         tmp_path / "itk_core-6.0.0-cp311-abi3-macosx_11_0_arm64.whl",
         {"itk/_ITKCommonPython.so": "\x7fELF"},
     )
+    macos_builder.python_env.bin_path.mkdir(parents=True, exist_ok=True)
+    (macos_builder.python_env.bin_path / "delocate-wheel").touch()
     with patch.object(macos_builder, "echo_check_call") as called:
         macos_builder.fixup_wheel(str(wheel))
     assert called.call_count >= 1
@@ -702,3 +704,18 @@ def test_only_the_windows_builder_takes_extra_lib_paths():
     windows = inspect.signature(WindowsBuildPythonInstance.__init__).parameters
     assert "windows_extra_lib_paths" not in base
     assert "windows_extra_lib_paths" in windows
+
+
+def test_fixup_wheel_fails_when_delocate_is_missing(tmp_path, macos_builder):
+    """A wheel with binaries must not ship unrepaired because delocate is absent."""
+    wheel = _make_wheel(
+        tmp_path / "itk_core-6.0.0-cp311-abi3-macosx_14_0_arm64.whl",
+        {"itk/_ITKCommonPython.so": "\x7fELF"},
+    )
+    with (
+        patch.object(macos_builder, "echo_check_call") as called,
+        pytest.raises(RuntimeError, match="delocate-wheel not found"),
+    ):
+        macos_builder.fixup_wheel(str(wheel))
+    flat = " ".join(str(a) for c in called.call_args_list for a in c.args[0])
+    assert "delocate" not in flat

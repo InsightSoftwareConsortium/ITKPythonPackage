@@ -59,6 +59,12 @@ class MacOSBuildPythonInstance(PosixBuildPythonInstance):
         venv_bin_path = self.python_env.bin_path
         delocate_listdeps = f"{venv_bin_path}/delocate-listdeps"
         delocate_wheel = f"{venv_bin_path}/delocate-wheel"
+        if not Path(delocate_wheel).is_file():
+            msg = (
+                f"delocate-wheel not found in {venv_bin_path}; cannot repair "
+                f"{Path(filepath).name}. Install delocate in the build environment."
+            )
+            raise RuntimeError(msg)
         self.echo_check_call([str(delocate_listdeps), str(filepath)])
         self.echo_check_call(
             [
