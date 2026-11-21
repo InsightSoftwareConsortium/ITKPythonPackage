@@ -123,11 +123,11 @@ class TargetPlatform:
                 msg = "manylinux_version is only meaningful on linux"
                 raise ValueError(msg)
             if (self.arch, self.manylinux_version) not in _MANYLINUX_IMAGE_TAGS:
-                msg_0 = (
+                msg = (
                     f"Unknown manylinux version "
                     f"{self.manylinux_version!r} for {self.arch.value}"
                 )
-                raise ValueError(msg_0)
+                raise ValueError(msg)
 
     @property
     def pixi_suffix(self) -> str:

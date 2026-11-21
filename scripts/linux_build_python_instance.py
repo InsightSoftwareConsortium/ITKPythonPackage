@@ -126,11 +126,11 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
             raise RuntimeError(msg)
         lib_dir = Path(python_executable).resolve().parent.parent / "lib"
         if not lib_dir.is_dir():
-            msg_0 = (
+            msg = (
                 f"Build environment library directory {lib_dir} does not exist "
                 f"(derived from PYTHON_EXECUTABLE={python_executable})"
             )
-            raise RuntimeError(msg_0)
+            raise RuntimeError(msg)
         return lib_dir
 
     def fixup_module_wheel(self, filepath) -> None:
