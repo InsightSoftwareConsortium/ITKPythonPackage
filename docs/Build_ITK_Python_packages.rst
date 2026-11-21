@@ -32,8 +32,16 @@ seven sequential steps:
 6. *(optional)* Build a remote module against the ITK build
 7. *(optional)* Create a reusable ITK build tarball cache
 
-Step state is persisted to ``<build-dir-root>/dist/build_report-<platform>.json`` so that a
+Step state is persisted to ``<build-dir-root>/dist/build_log_<platform-env>.json`` so that a
 build interrupted part-way through can be resumed by re-running the same command.
+The log also records the build's inputs: the ITK commit, the package version,
+a fingerprint of the build scripts, CMake settings, and ``pixi.lock``, and for a
+remote module its git commit and uncommitted changes. When any of them differs
+from the recorded run, every step runs again.
+
+Wheels already in ``dist/`` when the wheel step starts are moved to
+``dist/earlier-wheels/<YYYYmmdd_HHMMSS>/``, so ``dist/`` holds only this run's
+wheels.
 
 
 Setup
@@ -150,8 +158,10 @@ Key Options
      - ``../ITKPythonPackage-build``
      - Root directory for all build artifacts
    * - ``--manylinux-version``
-     - ``_2_28``
-     - Manylinux compatibility standard (e.g. ``_2_28``, ``_2_34``)
+     - ``$MANYLINUX_VERSION``, else empty
+     - Manylinux compatibility standard (e.g. ``_2_28``, ``_2_34``); empty
+       builds native Linux, and a ``manylinux228-*`` platform env implies
+       ``_2_28``
    * - ``--itk-source-dir``
      - cloned automatically
      - Path to a local ITK checkout (skips git clone)
@@ -185,8 +195,8 @@ Key Options
      - Linux and macOS: discard unreferenced code and export only
        ``PyInit_*`` from the Python modules
    * - ``--macosx-deployment-target``
-     - ``10.7``
-     - Minimum macOS version for compiled binaries
+     - ``14.0``
+     - Minimum macOS version for compiled binaries and the wheel tag
 
 Any remaining positional arguments are forwarded to CMake as ``-D`` definitions,
 for example::
@@ -224,9 +234,24 @@ useful in CI pipelines:
    * - ``CONTAINER_DNS``
      - DNS servers (space- or comma-separated) passed as ``--dns`` to the
        manylinux build container, for hosts whose containers cannot resolve
-       names; unset leaves the runtime default
+       names; unset leaves the runtime default. Read only by
+       ``dockcross-manylinux-build-wheels.sh``, not the module scripts
    * - ``USE_COMPILER_CACHE`` (or ``USE_CCACHE``)
-     - ``--use-compiler-cache``
+     - ``--use-compiler-cache``; ``USE_COMPILER_CACHE`` wins when both are set
+   * - ``CCACHE_MAXSIZE`` (``SCCACHE_CACHE_SIZE`` on Windows)
+     - compiler cache size limit; default ``30G``
+   * - ``ITK_CONTAINER_CCACHE_DIR``
+     - host directory mounted as the manylinux container's ccache; default
+       ``~/.cache/itk-ccache-manylinux<version>-<arch>``
+   * - ``ITK_BUILD_JOBS``
+     - total ninja jobs; default bounded by CPU count and physical memory
+   * - ``ITK_BUILD_LOAD_LIMIT``
+     - ninja ``-l`` load limit; default the hardware thread count
+   * - ``SOURCE_DATE_EPOCH``
+     - timestamp written into the wheels' zip entries; default the ITK
+       commit's committer time, so rebuilds of a commit are byte-comparable.
+       On Windows ``/Brepro`` is also added to ``_LINK_`` so the linker
+       writes no timestamps
    * - ``CMAKE_OPTIONS``
      - extra CMake ``-D`` definitions
    * - ``MACOSX_DEPLOYMENT_TARGET``
@@ -315,18 +340,18 @@ Output Artifacts
    * - Effective command line
      - ``<build-dir-root>/effective_cmdline_<env>.sh``
    * - manylinux tarball caches
-     - ``<build-dir-root>/ITKPythonBuilds-manylinux_2_28-*.tar.zst``
+     - ``<build-dir-root>/dist/ITKPythonBuilds-manylinux_2_28-*.tar.zst``
    * - Linux tarball caches
-     - ``<build-dir-root>/ITKPythonBuilds-linux-*.tar.zst``
+     - ``<build-dir-root>/dist/ITKPythonBuilds-linux-*.tar.zst``
    * - macOS tarball caches
-     - ``<build-dir-root>/ITKPythonBuilds-macosx-*.tar.zst``
+     - ``<build-dir-root>/dist/ITKPythonBuilds-macosx-*.tar.zst``
    * - Windows ZIP cache
      - ``<build-dir-root>/ITKPythonBuilds-windows.zip``
 
 Example wheel names::
 
    itk-6.0.0-cp311-abi3-manylinux_2_28_x86_64.whl
-   itk-6.0.0-cp311-abi3-macosx_11_0_arm64.whl
+   itk-6.0.0-cp311-abi3-macosx_14_0_arm64.whl
    itk-6.0.0-cp311-abi3-win_amd64.whl
 
 
@@ -337,7 +362,7 @@ Install and smoke-test a wheel directly from the ``dist/`` directory:
 
 .. code-block:: bash
 
-   pip install dist/itk-6.0.0-cp311-abi3-macosx_11_0_arm64.whl
+   pip install dist/itk-6.0.0-cp311-abi3-macosx_14_0_arm64.whl
    python -c "import itk; print(itk.__version__)"
 
 
@@ -426,7 +451,7 @@ Additional options:
    * - ``--itk-package-version``
      - **(required)** Release tag name (e.g. ``v6.0b02``)
    * - ``--build-dir-root``
-     - Root of the build directory; tarballs are found in its parent
+     - Root of the build directory; tarballs are found in its ``dist/``
        (POSIX ``.tar.zst``) or inside it (Windows ``.zip``)
    * - ``--repo``
      - Target GitHub repository (default: ``InsightSoftwareConsortium/ITKPythonBuilds``)

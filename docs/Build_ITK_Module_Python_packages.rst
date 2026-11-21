@@ -270,7 +270,7 @@ Example output::
 
    dist/
    itk-mymodule-1.0.0-cp311-abi3-manylinux_2_28_x86_64.whl
-   itk-mymodule-1.0.0-cp311-abi3-macosx_11_0_arm64.whl
+   itk-mymodule-1.0.0-cp311-abi3-macosx_14_0_arm64.whl
    itk-mymodule-1.0.0-cp311-abi3-win_amd64.whl
 
 

@@ -113,8 +113,9 @@ prints the builds without running them.
 
 The script keeps its own ITK clone in `../ITKPythonPackage-build/ITK`
 (`C:\BDR\ITK` on Windows) and refuses one with uncommitted changes. Wheels
-and the ITKPythonBuilds tarball caches land in that build directory's `dist`,
-or in `../ITKPythonPackage-manylinux_2_28-<arch>-build/dist` for Linux wheels. A
+and the POSIX ITKPythonBuilds tarball caches land in that build directory's
+`dist` (the Windows `.zip` sits in the build directory itself), or in
+`../ITKPythonPackage-manylinux_2_28-<arch>-build/dist` for Linux wheels. A
 branch or commit without a package version gets a `git describe` version,
 which is for testing only.
 
@@ -343,15 +344,19 @@ where `<arch>` is `TARGET_ARCH` (`x64` or `aarch64`).
 
 Key environment variables:
 
-| Variable              | Default                                                           | Description                                                    |
-| --------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------- |
-| `ITK_GIT_TAG`         | `main`                                                            | ITK branch/tag/commit to build                                 |
-| `ITK_SOURCE_DIR`      | `<build-root>/ITKPythonPackage-build/ITK`                         | Path to local ITK source (skips git clone)                     |
-| `ITK_PACKAGE_VERSION` | derived from git                                                  | PEP 440 version of the wheels                                  |
-| `TARGET_ARCH`         | host architecture                                                 | `x64` or `aarch64`                                             |
-| `MANYLINUX_VERSION`   | `_2_28`                                                           | Manylinux standard to target                                   |
-| `IMAGE_TAG`           | `20260203-3dfb3ff` (dockcross) or `2025.08.12-1` (quay manylinux) | Container image tag; the default depends on `CONTAINER_SOURCE` |
-| `CONTAINER_DNS`       | unset (container runtime default)                                 | DNS servers for the build container, space- or comma-separated |
+| Variable                   | Default                                                           | Description                                                                      |
+| -------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `ITK_GIT_TAG`              | `main`                                                            | ITK branch/tag/commit to build                                                   |
+| `ITK_SOURCE_DIR`           | `<build-root>/ITKPythonPackage-build/ITK`                         | Path to local ITK source (skips git clone)                                       |
+| `ITK_PACKAGE_VERSION`      | derived from git                                                  | PEP 440 version of the wheels                                                    |
+| `TARGET_ARCH`              | host architecture                                                 | `x64` or `aarch64`                                                               |
+| `MANYLINUX_VERSION`        | `_2_28`                                                           | Manylinux standard to target                                                     |
+| `IMAGE_TAG`                | `20260203-3dfb3ff` (dockcross) or `2025.08.12-1` (quay manylinux) | Container image tag; the default depends on `CONTAINER_SOURCE`                   |
+| `CONTAINER_DNS`            | unset (container runtime default)                                 | DNS servers for the build container, space- or comma-separated; this script only |
+| `USE_COMPILER_CACHE`       | `0` (`USE_CCACHE` also accepted)                                  | Compile through ccache in the container                                          |
+| `CCACHE_MAXSIZE`           | `30G`                                                             | ccache size limit                                                                |
+| `ITK_CONTAINER_CCACHE_DIR` | `~/.cache/itk-ccache-manylinux<version>-<arch>`                   | Host directory mounted as the container's ccache                                 |
+| `SOURCE_DATE_EPOCH`        | ITK commit time                                                   | Timestamp of the wheels' zip entries                                             |
 
 #### Linux/macOS/Windows: building ITK from source
 
