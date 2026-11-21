@@ -133,11 +133,11 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
             raise RuntimeError(msg)
         return lib_dir
 
-    def fixup_module_wheel(self, filepath) -> None:
+    def fixup_module_wheel(self, filepath: str) -> None:
         """Repair a remote module's wheel into the module's ``dist/``."""
         self.fixup_wheel(filepath, remote_module_wheel=True)
 
-    def fixup_wheel(self, filepath, remote_module_wheel: bool = False) -> None:
+    def fixup_wheel(self, filepath: str, remote_module_wheel: bool = False) -> None:
         """Repair a wheel with ``auditwheel`` and apply manylinux platform tags.
 
         Parameters

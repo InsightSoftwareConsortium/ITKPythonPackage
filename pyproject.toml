@@ -193,6 +193,7 @@ module = [
   "wheel_packaging",
   "pyproject_configure",
   "build_python_instance_base",
+  "linux_build_python_instance",
 ]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
