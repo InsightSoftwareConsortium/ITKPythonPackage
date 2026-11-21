@@ -37,7 +37,7 @@ class MacOSBuildPythonInstance(PosixBuildPythonInstance):
         for wheel in (self.build_dir_root / "dist").glob("*.whl"):
             self.fixup_wheel(str(wheel))
 
-    def fixup_wheel(self, filepath) -> None:
+    def fixup_wheel(self, filepath: str) -> None:
         """Repair a wheel in place using ``delocate``, cleaning AppleDouble files first.
 
         Parameters
