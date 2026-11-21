@@ -19,7 +19,7 @@ def _run(env: dict[str, str], *names: str) -> subprocess.CompletedProcess[str]:
 
 
 @pytest.mark.skipif(shutil.which("bash") is None, reason="needs bash")
-def test_every_missing_variable_is_reported_before_exiting():
+def test_every_missing_variable_is_reported_before_exiting() -> None:
     result = _run({"SET": "1", "EMPTY": ""}, "SET", "EMPTY", "UNSET")
     assert result.returncode == 1
     assert "reached" not in result.stdout
@@ -30,7 +30,7 @@ def test_every_missing_variable_is_reported_before_exiting():
 
 
 @pytest.mark.skipif(shutil.which("bash") is None, reason="needs bash")
-def test_set_variables_pass():
+def test_set_variables_pass() -> None:
     result = _run({"A": "1", "B": "2"}, "A", "B")
     assert result.returncode == 0
     assert result.stdout.strip() == "reached"

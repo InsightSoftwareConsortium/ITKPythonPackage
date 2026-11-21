@@ -213,6 +213,7 @@ module = [
   "tests.test_platform_builders",
   "tests.test_pyproject_configure",
   "tests.test_release_wheels",
+  "tests.test_require_env_vars",
 ]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
