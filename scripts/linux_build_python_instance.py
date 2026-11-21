@@ -203,7 +203,7 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
                 ]
                 if entry
             )
-            print(f'RUNNING WITH PATH {os.environ["PATH"]}')
+            print(f"RUNNING WITH PATH {os.environ['PATH']}")
             env["PATH"] = os.environ["PATH"]
             repair_status = self.echo_check_call(cmd, env=env)
 

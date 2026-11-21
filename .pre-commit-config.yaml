@@ -30,21 +30,16 @@ repos:
         exclude: \.ps1$
         stages: [pre-commit]
 
-  # Python: formatting
-  - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 24.10.0
-    hooks:
-      - id: black
-        exclude: ^docs/
-        stages: [pre-commit]
-
-  # Python: linting + import sorting
+  # Python: linting, import sorting, and formatting
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.17.6
     hooks:
       - id: ruff-check
         exclude: ^docs/
         args: [--fix, --show-fixes]
+        stages: [pre-commit]
+      - id: ruff-format
+        exclude: ^docs/
         stages: [pre-commit]
 
   # Python: type checking
@@ -74,11 +69,12 @@ repos:
       - id: rst-inline-touching-normal
         stages: [pre-commit]
 
-  # Python code blocks in documentation
+  # Python code blocks in the reStructuredText docs; ruff formats the rest
   - repo: https://github.com/adamchainz/blacken-docs
     rev: 1.20.0
     hooks:
       - id: blacken-docs
+        files: ^docs/.*\.rst$
         additional_dependencies: [black==24.10.0]
         stages: [pre-commit]
 

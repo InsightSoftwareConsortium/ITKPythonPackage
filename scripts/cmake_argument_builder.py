@@ -20,8 +20,8 @@ class CMakeArgumentBuilder:
     Examples
     --------
     >>> flags = {
-    ...     'CMAKE_BUILD_TYPE:STRING': 'Release',
-    ...     'CMAKE_OSX_ARCHITECTURES:STRING': 'arm64',
+    ...     "CMAKE_BUILD_TYPE:STRING": "Release",
+    ...     "CMAKE_OSX_ARCHITECTURES:STRING": "arm64",
     ... }
     >>> builder = CMakeArgumentBuilder(flags)
     >>> builder.getCMakeCommandLineArguments()

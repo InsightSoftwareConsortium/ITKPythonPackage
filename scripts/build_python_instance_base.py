@@ -1007,7 +1007,7 @@ class BuildPythonInstanceBase(ABC):
                 "--skip-dependency-check",
                 f"--config-setting=cmake.build-type={self.package_env_config['BUILD_TYPE']}",
                 f"--config-setting=cmake.source-dir={self.package_env_config['IPP_SOURCE_DIR'] / 'BuildWheelsSupport'}",
-                f"--config-setting=build-dir={wheel_configbuild_dir_root/'build'}",
+                f"--config-setting=build-dir={wheel_configbuild_dir_root / 'build'}",
             ]
             if self.target.os_name == "windows":
                 # Ninja, as for the remote-module build above.

@@ -6,15 +6,14 @@
 [dependency-groups]
 dev = ["pytest>=8", "hypothesis>=6"]
 
-[tool.black]
-line-length = 88
-target-version = ["py311"]
-
 [tool.ruff]
 line-length = 88
 target-version = "py311"
 show-fixes = true
 extend-exclude = ["docs"] # example snippets, excluded from pre-commit too
+
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.ruff.lint]
 # E/F/W: pycodestyle and pyflakes; I: isort; UP: pyupgrade; B: flake8-bugbear
@@ -88,7 +87,7 @@ extend-select = [
 ]
 ignore = [
   # Accepted: not required by the Scientific Python guide.
-  "E501",    # line-too-long: black owns line length
+  "E501",    # line-too-long: ruff format owns line length
   "PLR09",   # too-many-*: build drivers take many options by design
   "PLR2004", # magic-value-comparison
   "T201",    # `print` found: printing is these build scripts' output

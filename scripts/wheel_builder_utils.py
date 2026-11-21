@@ -389,7 +389,7 @@ def git_describe_to_pep440(desc: str) -> str:
         groupdict = m.groupdict()
 
         semver_format = (
-            f"{groupdict.get('majorver','')}" + f"{groupdict.get('minor','')}"
+            f"{groupdict.get('majorver', '')}" + f"{groupdict.get('minor', '')}"
         )
         patch = groupdict.get("patch", None)
         if patch:

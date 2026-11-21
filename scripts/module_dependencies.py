@@ -257,9 +257,7 @@ def build_module_dependencies(context) -> None:
             )
 
         if (dependant_module_clone_dir / "setup.py").exists():
-            msg: str = (
-                f"Old sci-kit-build with setup.py is no longer supported for {dependant_module_clone_dir} at {tag}"
-            )
+            msg: str = f"Old sci-kit-build with setup.py is no longer supported for {dependant_module_clone_dir} at {tag}"
             raise RuntimeError(msg)
 
         # Clone the current build environment and modify for the current module

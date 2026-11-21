@@ -30,7 +30,7 @@ pixi run pre-commit-run
 
 Pre-commit hooks enforce all formatting and linting automatically on commit:
 
-- **Python**: Black (formatting), Ruff (linting + import sorting)
+- **Python**: Ruff (formatting, linting, and import sorting)
 - **Shell**: ShellCheck (linting), shfmt (formatting)
 - **TOML**: Taplo (formatting)
 
