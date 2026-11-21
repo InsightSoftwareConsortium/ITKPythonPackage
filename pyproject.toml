@@ -231,3 +231,26 @@ PP003 = "Root pyproject.toml configures tooling only; wheels are generated from 
 [tool.codespell]
 # DEPENDEES is a CMake ExternalProject keyword; Nd is a Unicode category name.
 ignore-words-list = "dependees,nd"
+
+[tool.mypy]
+files = ["scripts", "tests"]
+mypy_path = ["scripts"]
+explicit_package_bases = true
+python_version = "3.11"
+# Check every host as the Linux CI does; platform branches differ otherwise.
+platform = "linux"
+warn_unused_configs = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+strict = true
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+# Superseded build scripts; type-checked once rewritten.
+module = [
+  "pyproject_configure",
+  "update_python_version",
+  "windows_build_wheels",
+  "windows_build_module_wheels",
+  "internal.*",
+]
+ignore_errors = true
