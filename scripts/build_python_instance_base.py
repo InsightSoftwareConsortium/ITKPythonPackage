@@ -31,7 +31,11 @@ from compiler_cache import (
 )
 from dead_strip import dead_strip_cmake_definitions, user_flag_key
 from module_dependencies import build_module_dependencies, update_module_itk_deps
-from pyproject_configure import STABLE_ABI_TAG, configure_one_pyproject_file
+from pyproject_configure import (
+    STABLE_ABI_TAG,
+    PyprojectInputs,
+    configure_one_pyproject_file,
+)
 from target_platform import TargetPlatform
 from wheel_builder_utils import (
     remove_tree,
@@ -934,7 +938,11 @@ class BuildPythonInstanceBase(ABC):
             wheel_configbuild_dir_root.mkdir(parents=True, exist_ok=True)
             configure_one_pyproject_file(
                 str(self.ipp_dir / "scripts"),
-                self.package_env_config,
+                PyprojectInputs(
+                    itk_source_dir=self.package_env_config["ITK_SOURCE_DIR"],
+                    itk_git_tag=self.package_env_config["ITK_GIT_TAG"],
+                    itk_package_version=self.package_env_config["ITK_PACKAGE_VERSION"],
+                ),
                 wheel_configbuild_dir_root,
                 wheel_name,
             )

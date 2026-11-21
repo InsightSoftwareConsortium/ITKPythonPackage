@@ -247,6 +247,9 @@ def test_the_wheel_step_starts_from_an_empty_dist(
             "IPP_SOURCE_DIR": macos_builder.build_dir_root,
             "USE_TBB": "OFF",
             "DOXYGEN_EXECUTABLE": "doxygen",
+            "ITK_SOURCE_DIR": "ITK",
+            "ITK_GIT_TAG": "main",
+            "ITK_PACKAGE_VERSION": "6.0b3",
         }
     )
     with (

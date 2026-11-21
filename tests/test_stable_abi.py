@@ -7,7 +7,11 @@ from unittest.mock import patch
 
 import pytest
 from build_python_instance_base import verify_stable_abi_wheels
-from pyproject_configure import STABLE_ABI_TAG, build_base_pyproject_parameters
+from pyproject_configure import (
+    STABLE_ABI_TAG,
+    PyprojectInputs,
+    build_base_pyproject_parameters,
+)
 
 
 def test_stable_abi_tag_is_cp311() -> None:
@@ -19,7 +23,7 @@ def test_py_api_ignores_the_running_interpreter() -> None:
     fake = SimpleNamespace(major=3, minor=14)
     with patch.object(sys, "version_info", fake):
         params = build_base_pyproject_parameters(
-            {"ITK_SOURCE_DIR": "ITK"}, "pyproject_configure.py", "6.0.0"
+            PyprojectInputs("ITK", "main", "6.0.0"), "pyproject_configure.py", "6.0.0"
         )
     assert params["PYPROJECT_PY_API"] == "cp311"
 
