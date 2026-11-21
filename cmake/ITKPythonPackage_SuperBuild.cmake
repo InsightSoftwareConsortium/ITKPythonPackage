@@ -80,6 +80,15 @@ elseif(NOT "$ENV{CC}" STREQUAL "")
     list(APPEND ep_common_cmake_cache_args -DCMAKE_C_COMPILER:PATH=$ENV{CC})
 endif()
 
+foreach(lang C CXX)
+    if(CMAKE_${lang}_COMPILER_LAUNCHER)
+        list(
+            APPEND ep_common_cmake_cache_args
+            -DCMAKE_${lang}_COMPILER_LAUNCHER:FILEPATH=${CMAKE_${lang}_COMPILER_LAUNCHER}
+        )
+    endif()
+endforeach()
+
 #-----------------------------------------------------------------------------
 # compile with multiple processors
 include(ProcessorCount)

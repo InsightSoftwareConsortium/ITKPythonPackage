@@ -178,9 +178,10 @@ Key Options
    * - ``--cleanup``
      - off
      - Remove intermediate build files after completion
-   * - ``--use-ccache``
+   * - ``--use-compiler-cache`` / ``--no-use-compiler-cache``
      - off
-     - Enable ccache to speed up recompilation
+     - Compile through sccache on Windows or ccache elsewhere; ``--use-ccache``
+       is an alias
    * - ``--dead-strip`` / ``--no-dead-strip``
      - on
      - Linux and macOS: discard unreferenced code and export only
@@ -222,8 +223,13 @@ useful in CI pipelines:
      - target architecture (``x64`` or ``aarch64``)
    * - ``IMAGE_TAG``
      - Docker image tag for manylinux builds
-   * - ``USE_CCACHE``
-     - ``--use-ccache``
+   * - ``USE_COMPILER_CACHE`` (or ``USE_CCACHE``)
+     - ``--use-compiler-cache``; ``USE_COMPILER_CACHE`` wins when both are set
+   * - ``CCACHE_MAXSIZE`` (``SCCACHE_CACHE_SIZE`` on Windows)
+     - compiler cache size limit; default ``30G``, or ccache's configured limit if larger
+   * - ``ITK_CONTAINER_CCACHE_DIR``
+     - host directory mounted as the manylinux container's ccache; default
+       ``~/.cache/itk-ccache-manylinux<version>-<arch>``
    * - ``ITK_BUILD_JOBS``
      - total ninja jobs; default bounded by CPU count and physical memory
    * - ``ITK_BUILD_LOAD_LIMIT``

@@ -72,8 +72,7 @@ for py_indicator in "${PY_ENVS_ARRAY[@]}"; do
       --itk-source-dir "${CONTAINER_ITK_SOURCE_DIR}" \
       --itk-git-tag "${ITK_GIT_TAG}" \
       --itk-package-version "${ITK_PACKAGE_VERSION:-}" \
-      --manylinux-version "${MANYLINUX_VERSION}" \
-      --no-use-ccache
+      --manylinux-version "${MANYLINUX_VERSION}"
   fi
   build_status=$?
   if [ "${build_status}" -ne 0 ]; then

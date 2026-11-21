@@ -14,7 +14,7 @@ def _args(**overrides: object) -> argparse.Namespace:
         "itk_package_version": "6.0.0b2",
         "macosx_deployment_target": "14.0",
         "itk_module_deps": "",
-        "use_ccache": False,
+        "use_ccache": None,
         "dead_strip": True,
         "manylinux_version": "",
     }
@@ -143,13 +143,14 @@ def test_fields_are_typed() -> None:
 @pytest.mark.parametrize(
     ("flag", "env", "expected"),
     [
-        (False, {"USE_CCACHE": "1"}, "ON"),
-        (False, {}, "OFF"),
+        (None, {"USE_CCACHE": "1"}, "ON"),
+        (None, {}, "OFF"),
+        (False, {"USE_CCACHE": "1"}, "OFF"),
         (True, {}, "ON"),
     ],
 )
-def test_ccache_is_on_with_the_flag_or_the_environment(
-    flag: bool, env: dict[str, str], expected: str
+def test_compiler_cache_flag_wins_over_the_environment(
+    flag: bool | None, env: dict[str, str], expected: str
 ) -> None:
     config = _config(TargetPlatform(OS.LINUX, Arch.X86_64), env, use_ccache=flag)
     assert config.to_environment()["USE_CCACHE"] == expected

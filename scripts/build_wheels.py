@@ -433,20 +433,23 @@ def build_argument_parser(os_name: OS, ipp_dir: Path) -> argparse.ArgumentParser
         )
 
     parser.add_argument(
+        "--use-compiler-cache",
         "--use-ccache",
         action="store_true",
         dest="use_ccache",
-        default=False,
+        default=None,
         help="""
-         -  Option to indicate that ccache should be used
+         -  Compile through sccache on Windows or ccache elsewhere. Without this
+            flag or its --no- form, USE_COMPILER_CACHE or USE_CCACHE decides.
          """,
     )
     parser.add_argument(
+        "--no-use-compiler-cache",
         "--no-use-ccache",
         action="store_false",
         dest="use_ccache",
         help="""
-         -  Option to indicate that ccache should not be used
+         -  Do not use a compiler cache, whatever the environment says
          """,
     )
 

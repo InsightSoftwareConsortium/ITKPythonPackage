@@ -16,6 +16,14 @@ from build_environment import PythonEnvironment
 from build_jobs import compute_build_jobs, compute_load_limit, physical_memory_gb
 from build_manager import BuildManager
 from cmake_argument_builder import CMakeArgumentBuilder, definitions_from_cmake_options
+from compiler_cache import (
+    compiler_cache_definitions,
+    compiler_cache_environment,
+    compiler_cache_max_size,
+    compiler_cache_session,
+    compiler_cache_size_setting,
+    compiler_cache_tool,
+)
 from dead_strip import dead_strip_cmake_definitions, user_flag_key
 from module_dependencies import build_module_dependencies, update_module_itk_deps
 from pyproject_configure import (
@@ -285,16 +293,27 @@ class BuildPythonInstanceBase(ABC):
             }
         )
 
+        self.compiler_cache_commands: tuple[list[list[str]], list[list[str]]] = (
+            [],
+            [],
+        )
         if config.use_ccache:
-            ccache_exe: Path | None = which("ccache")
-            if ccache_exe is None:
-                msg = "ccache was requested but is not on PATH"
+            cache_tool = compiler_cache_tool(self.target.os_name)
+            cache_exe: Path | None = which(cache_tool)
+            if cache_exe is None:
+                msg = f"{cache_tool} was requested but is not on PATH"
                 raise RuntimeError(msg)
-            self.cmake_compiler_configurations.set(
-                "CMAKE_C_COMPILER_LAUNCHER:FILEPATH", f"{ccache_exe}"
+            self.cmake_compiler_configurations.update(
+                compiler_cache_definitions(cache_tool, cache_exe)
             )
-            self.cmake_compiler_configurations.set(
-                "CMAKE_CXX_COMPILER_LAUNCHER:FILEPATH", f"{ccache_exe}"
+            os.environ.update(
+                compiler_cache_size_setting(cache_tool, cache_exe, os.environ)
+            )
+            os.environ.update(compiler_cache_environment(cache_tool, os.environ))
+            self.compiler_cache_commands = compiler_cache_session(
+                cache_tool,
+                cache_exe,
+                compiler_cache_max_size(cache_tool, os.environ),
             )
 
         if config.dead_strip:
@@ -408,6 +427,32 @@ class BuildPythonInstanceBase(ABC):
             build_report_fn, list(python_package_build_steps.keys())
         )
         build_manager.save()
+        cache_before, cache_after = self.compiler_cache_commands
+        for cmd in cache_before:
+            self.echo_check_call(cmd, use_pixi_env=False)
+        try:
+            self._run_build_steps(
+                build_manager, build_report_fn, python_package_build_steps
+            )
+        finally:
+            # Statistics are informational: a failure here must not mask the build's.
+            for cmd in cache_after:
+                self.echo_check_call(cmd, use_pixi_env=False)
+
+    def build_dependency_module(self, module_source_dir: Path) -> None:
+        """Build the wheel of a dependency module with a copy of this builder."""
+        dependency_build = self.clone()
+        dependency_build.module_source_dir = module_source_dir
+        dependency_build.itk_module_deps = None  # Prevent recursion
+        dependency_build.run()
+
+    def _run_build_steps(
+        self,
+        build_manager: BuildManager,
+        build_report_fn: Path,
+        python_package_build_steps: OrderedDict[str, Callable[[], object]],
+    ) -> None:
+        """Run each build step in order, recording its status in the report."""
         for build_step_name, build_step_func in python_package_build_steps.items():
             print("=" * 80)
             print(
@@ -424,13 +469,6 @@ class BuildPythonInstanceBase(ABC):
                 f"Build step {build_step_name} completed.  Edit {build_report_fn} to rerun step."
             )
             print("=" * 80)
-
-    def build_dependency_module(self, module_source_dir: Path) -> None:
-        """Build the wheel of a dependency module with a copy of this builder."""
-        dependency_build = self.clone()
-        dependency_build.module_source_dir = module_source_dir
-        dependency_build.itk_module_deps = None  # Prevent recursion
-        dependency_build.run()
 
     def build_superbuild_support_components(self) -> None:
         """Configure and build the superbuild support components (ITK source, TBB)."""

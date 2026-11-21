@@ -312,6 +312,7 @@ def plan(
                         "--itk-package-version",
                         version,
                         "--build-itk-tarball-cache",
+                        "--use-compiler-cache",
                     ],
                     dist_dir=native_build_root() / "dist",
                 )
@@ -336,6 +337,7 @@ def plan(
                         "TARGET_ARCH": _CONTAINER_ARCH_SPELLING[arch],
                         # Docker Desktop and docker-group users need no sudo.
                         "NO_SUDO": os.environ.get("NO_SUDO", "1"),
+                        "USE_CCACHE": "1",
                         "BUILD_WHEELS_EXTRA_FLAGS": "--build-itk-tarball-cache",
                     },
                     dist_dir=container_build_root(arch) / "dist",

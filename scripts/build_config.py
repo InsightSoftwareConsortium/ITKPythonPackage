@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from compiler_cache import use_compiler_cache
 from target_platform import OS, TargetPlatform
 
 if TYPE_CHECKING:
@@ -46,6 +47,10 @@ def _flag(field: str, value: object) -> bool:
     if not isinstance(value, bool):
         raise BuildConfigError(field, value, "expected True or False")
     return value
+
+
+def _optional_flag(field: str, value: object) -> bool | None:
+    return None if value is None else _flag(field, value)
 
 
 def _with_manylinux_version(target: TargetPlatform, value: object) -> TargetPlatform:
@@ -147,8 +152,9 @@ class BuildConfig:
             itk_module_no_cleanup=_env_flag(
                 "ITK_MODULE_NO_CLEANUP", env.get("ITK_MODULE_NO_CLEANUP", "1")
             ),
-            use_ccache=_flag("use_ccache", args.use_ccache)
-            or env.get("USE_CCACHE", "0").upper() in ("1", "ON", "TRUE", "YES"),
+            use_ccache=use_compiler_cache(
+                _optional_flag("use_ccache", args.use_ccache), env
+            ),
             dead_strip=_flag("dead_strip", args.dead_strip),
             pixi_executable=_path("pixi_executable", pixi_executable),
             cmake_executable=_path("cmake_executable", cmake_executable),
