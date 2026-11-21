@@ -73,18 +73,9 @@ required_vars=(
 
 )
 
-# Sanity Validation loop
-_missing_required=0
-for v in "${required_vars[@]}"; do
-  if [ -z "${!v:-}" ]; then
-    _missing_required=1
-    echo "ERROR: Required environment variable '$v' is not set or empty."
-  fi
-done
-if [ "${_missing_required}" -ne 0 ]; then
-  exit 1
-fi
-unset _missing_required
+# shellcheck source=/dev/null
+source "${script_dir}/require_env_vars.sh"
+require_env_vars "${required_vars[@]}"
 
 if [ ! -d "${DASHBOARD_BUILD_DIRECTORY}" ]; then
   # This is the expected directory for the cache, It may require creation with administrator credentials
