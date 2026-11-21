@@ -79,7 +79,8 @@ cd "${DASHBOARD_BUILD_DIRECTORY}" || exit
 # NOTE: download phase will install pixi in the DASHBOARD_BUILD_DIRECTORY (which is separate from the pixi
 #       environment used by ITKPythonPackage).
 export PIXI_HOME=${DASHBOARD_BUILD_DIRECTORY}/.pixi
-if [ ! -f "${PIXI_HOME}/.pixi/bin/pixi" ]; then
+export PATH="${PIXI_HOME}/bin:$PATH"
+if [ ! -f "${PIXI_HOME}/bin/pixi" ]; then
   # Install pixi
   curl -fsSL https://pixi.sh/install.sh | sh
   # These are the tools needed for cross platform downloads of the ITK build caches stored in https://github.com/InsightSoftwareConsortium/ITKPythonBuilds
@@ -89,7 +90,6 @@ if [ ! -f "${PIXI_HOME}/.pixi/bin/pixi" ]; then
   pixi global install git
   pixi global install rsync
 fi
-export PATH="${PIXI_HOME}/bin:$PATH"
 
 tarball_arch="-$(arch)"
 TARBALL_NAME="ITKPythonBuilds-macosx${tarball_arch}.tar"
@@ -155,7 +155,6 @@ for py_indicator in "$@"; do
   pixi run -e "macosx-${pyenv}" -- python \
     "${DASHBOARD_BUILD_DIRECTORY}/ITKPythonPackage/scripts/build_wheels.py" \
     --platform-env "macosx-${pyenv}" \
-    --lib-paths '' '' \
     --module-source-dir "${MODULE_SRC_DIRECTORY}" \
     --module-dependencies-root-dir "${DASHBOARD_BUILD_DIRECTORY}/MODULE_DEPENDENCIES" \
     --itk-module-deps "${ITK_MODULE_PREQ}" \
