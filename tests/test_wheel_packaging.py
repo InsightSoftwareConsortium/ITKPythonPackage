@@ -2,7 +2,6 @@ import shutil
 import subprocess
 import tarfile
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import patch
 
 import build_python_instance_base
@@ -19,19 +18,16 @@ from wheel_packaging import (
 )
 
 
-def _cleanup_builder(build_root: Path, arch: str):
-    """A builder stub carrying exactly what post_build_cleanup reads."""
+def _cleanup(build_root: Path, arch: str) -> None:
+    """Run the real cleanup with a source directory under *build_root*."""
     source_dir = build_root / "src"
     source_dir.mkdir(parents=True, exist_ok=True)
-    return SimpleNamespace(
-        build_dir_root=build_root,
-        package_env_config={"IPP_SOURCE_DIR": source_dir, "ARCH": arch},
-    )
+    post_build_cleanup(build_root, arch, source_dir, "")
 
 
 def _run_cleanup(build_root: Path, arch: str) -> set[str]:
     """Run the real cleanup and return the names it left behind."""
-    post_build_cleanup(_cleanup_builder(build_root, arch))
+    _cleanup(build_root, arch)
     survivors = set()
     for sub in ("build", "dist"):
         survivors |= {p.name for p in (build_root / sub).iterdir()}
@@ -94,7 +90,7 @@ def test_cleanup_never_removes_a_wheel(other, tmp_path_factory):
     (root / "build" / f"ITK-{other}_x64").mkdir(exist_ok=True)
     wheel = root / "dist" / "itk_core-6.0.0-cp311-abi3.whl"
     wheel.touch()
-    post_build_cleanup(_cleanup_builder(root, "x64"))
+    _cleanup(root, "x64")
     assert wheel.exists()
 
 
@@ -110,10 +106,19 @@ class _FakeBuilder:
         source_dir.mkdir(parents=True, exist_ok=True)
         build_dir_root.mkdir(parents=True, exist_ok=True)
         self.build_dir_root = build_dir_root
-        self.package_env_config = {"IPP_SOURCE_DIR": source_dir, "ARCH": "x64"}
+        self.source_dir = source_dir
         self._tar_ok = tar_ok
         self._zstd_ok = zstd_ok
         self.commands: list[str] = []
+
+    def create_tarball(self) -> None:
+        create_posix_tarball(
+            self.build_dir_root,
+            "x64",
+            self.source_dir,
+            "linux",
+            self.echo_check_call,
+        )
 
     def echo_check_call(self, cmd, check: bool = False, **kwargs) -> int:
         cmd = [str(c) for c in cmd]
@@ -135,7 +140,7 @@ def test_failed_tar_aborts_before_zstd(tmp_path):
     """A tar that produces nothing must stop the cache from being published."""
     builder = _FakeBuilder(tmp_path / "build-root", tar_ok=False, zstd_ok=True)
     with pytest.raises(RuntimeError):
-        create_posix_tarball(builder)
+        builder.create_tarball()
     assert "zstd" not in builder.commands
 
 
@@ -144,7 +149,7 @@ def test_failed_zstd_does_not_delete_the_uncompressed_tar(tmp_path):
     build_root = tmp_path / "build-root"
     builder = _FakeBuilder(build_root, tar_ok=True, zstd_ok=False)
     with pytest.raises(RuntimeError):
-        create_posix_tarball(builder)
+        builder.create_tarball()
     dist = build_root / "dist"
     assert [p.name for p in dist.glob("ITKPythonBuilds-*.tar")]
     assert not list(dist.glob("ITKPythonBuilds-*.tar.zst"))
@@ -180,7 +185,7 @@ def test_git_directory_is_excluded_entirely_not_just_its_contents(tmp_path):
     (git_dir / "HEAD").write_text("ref: refs/heads/main\n")
     (git_dir.parent / "CMakeLists.txt").write_text("project(ITK)\n")
 
-    create_posix_tarball(builder)
+    builder.create_tarball()
 
     with tarfile.open(builder.archive) as archive:
         names = archive.getnames()

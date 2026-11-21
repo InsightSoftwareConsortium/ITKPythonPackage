@@ -266,9 +266,14 @@ def test_fixup_wheel_fails_loudly_when_the_build_env_lib_dir_is_absent(
 
 def test_posix_build_tarball_delegates(macos_builder):
     """The POSIX build_tarball delegates to wheel_packaging.create_posix_tarball."""
+    macos_builder.package_env_config["IPP_SOURCE_DIR"] = Path("/ipp")
     with patch.object(wheel_packaging, "create_posix_tarball") as created:
         macos_builder.build_tarball()
     created.assert_called_once()
+    kwargs = created.call_args.kwargs
+    assert kwargs["build_dir_root"] == macos_builder.build_dir_root
+    assert kwargs["arch"] == "arm64"
+    assert kwargs["ipp_source_dir"] == Path("/ipp")
 
 
 def test_prepare_build_env_names_the_build_by_platform_env(macos_builder):

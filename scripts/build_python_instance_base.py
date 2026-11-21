@@ -723,7 +723,13 @@ class BuildPythonInstanceBase(ABC):
 
     def post_build_cleanup(self) -> None:
         """Remove intermediate build artifacts, leaving ``dist/`` intact."""
-        wheel_packaging.post_build_cleanup(self)
+        wheel_packaging.post_build_cleanup(
+            build_dir_root=self.build_dir_root,
+            arch=self.package_env_config["ARCH"],
+            ipp_source_dir=Path(self.package_env_config["IPP_SOURCE_DIR"]),
+            module_preq=self.package_env_config.get("ITK_MODULE_PREQ")
+            or os.environ.get("ITK_MODULE_PREQ", ""),
+        )
 
     def prepare_build_env(self) -> None:
         """Skeleton shared by every platform.

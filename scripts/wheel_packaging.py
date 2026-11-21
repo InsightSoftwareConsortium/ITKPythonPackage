@@ -6,10 +6,10 @@ express the path and cleanup rules without invoking ``tar`` or ``zstd``.
 """
 
 import contextlib
-from os import environ
+from collections.abc import Callable
 from pathlib import Path
 
-from wheel_builder_utils import _remove_tree, get_default_platform_build
+from wheel_builder_utils import _remove_tree
 
 
 def tarball_paths(
@@ -52,7 +52,9 @@ def move_earlier_wheels(dist_dir: Path, stamp: str) -> Path | None:
     return destination
 
 
-def post_build_cleanup(builder) -> None:
+def post_build_cleanup(
+    build_dir_root: Path, arch: str, ipp_source_dir: Path, module_preq: str
+) -> None:
     """Remove intermediate build artifacts, leaving ``dist/`` intact.
 
     Actions:
@@ -60,9 +62,9 @@ def post_build_cleanup(builder) -> None:
     - remove ITKPythonPackage/, tools/, _skbuild/, build/
     - remove top-level *.egg-info
     - remove ITK-* build tree and tarballs
-    - if ITK_MODULE_PREQ is set, remove cloned module dirs
+    - if *module_preq* (ITK_MODULE_PREQ) is set, remove cloned module dirs
     """
-    base = Path(builder.package_env_config["IPP_SOURCE_DIR"])
+    base = Path(ipp_source_dir)
 
     def rm(tree_path: Path):
         with contextlib.suppress(Exception):
@@ -89,21 +91,17 @@ def post_build_cleanup(builder) -> None:
     # 4) ITK build tree and tarballs, both under the build root rather than
     #    the source checkout: ITK-<platform-env>-<pixi-env>_<arch> in build/,
     #    and the cache in dist/.
-    target_arch = builder.package_env_config["ARCH"]
-    for p in (builder.build_dir_root / "build").glob(f"ITK-*_{target_arch}"):
+    for p in (build_dir_root / "build").glob(f"ITK-*_{arch}"):
         rm(p)
 
     # Tarballs
-    for p in (builder.build_dir_root / "dist").glob("ITKPythonBuilds-*.tar*"):
+    for p in (build_dir_root / "dist").glob("ITKPythonBuilds-*.tar*"):
         rm(p)
 
     # 5) Optional module prerequisites cleanup (ITK_MODULE_PREQ)
     # Format: "InsightSoftwareConsortium/ITKModuleA@v1.0:Kitware/ITKModuleB@sha"
-    itk_preq = builder.package_env_config.get("ITK_MODULE_PREQ") or environ.get(
-        "ITK_MODULE_PREQ", ""
-    )
-    if itk_preq:
-        for raw_entry in itk_preq.split(":"):
+    if module_preq:
+        for raw_entry in module_preq.split(":"):
             entry = raw_entry.strip()
             if not entry:
                 continue
@@ -114,22 +112,24 @@ def post_build_cleanup(builder) -> None:
             rm(base / module_name)
 
 
-def create_posix_tarball(builder) -> None:
+def create_posix_tarball(
+    build_dir_root: Path,
+    arch: str,
+    ipp_source_dir: Path,
+    platform_name: str,
+    run: Callable[..., int],
+) -> None:
     """Create a zstd-compressed tarball of the ITK Python build tree.
 
-    Warns if directory structure doesn't match expected layout for GitHub Actions.
+    *run* executes each command (``tar``, ``zstd``), as the builder's
+    ``echo_check_call`` does. Warns if directory structure doesn't match
+    expected layout for GitHub Actions.
     """
-    arch_postfix: str = f"{builder.package_env_config['ARCH']}"
-    # Fixup platform name for macOS, eventually need to standardize on macosx naming convention
-    platform_name: str = get_default_platform_build().split("-")[0]
-    itk_packaging_reference_dir = builder.build_dir_root.parent
+    itk_packaging_reference_dir = build_dir_root.parent
 
-    tar_path, zst_path = tarball_paths(
-        builder.build_dir_root, platform_name, arch_postfix
-    )
+    tar_path, zst_path = tarball_paths(build_dir_root, platform_name, arch)
 
-    itk_resources_build_dir: Path = builder.build_dir_root
-    ipp_source_dir: Path = builder.package_env_config["IPP_SOURCE_DIR"]
+    itk_resources_build_dir: Path = build_dir_root
 
     issues = []
 
@@ -175,7 +175,7 @@ def create_posix_tarball(builder) -> None:
         print(f"Removing existing zstd tarball {zst_path}")
         zst_path.unlink()
 
-    builder.echo_check_call(
+    run(
         [
             "tar",
             "-C",
@@ -203,7 +203,7 @@ def create_posix_tarball(builder) -> None:
         msg = f"tar produced no usable archive at {tar_path}"
         raise RuntimeError(msg)
 
-    builder.echo_check_call(
+    run(
         [
             "zstd",
             "-f",
