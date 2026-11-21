@@ -114,7 +114,7 @@ prints the builds without running them.
 The script keeps its own ITK clone in `../ITKPythonPackage-build/ITK`
 (`C:\BDR\ITK` on Windows) and refuses one with uncommitted changes. Wheels
 and the ITKPythonBuilds tarball caches land in that build directory's `dist`,
-or in `../ITKPythonPackage-manylinux_2_28-build/dist` for Linux wheels. A
+or in `../ITKPythonPackage-manylinux_2_28-<arch>-build/dist` for Linux wheels. A
 branch or commit without a package version gets a `git describe` version,
 which is for testing only.
 
@@ -332,7 +332,8 @@ ITK_PACKAGE_VERSION=v6.0b03 \
 bash scripts/dockcross-manylinux-build-wheels.sh py311
 ```
 
-The wheels land in `../ITKPythonPackage-manylinux_2_28-build/dist`.
+The wheels land in `../ITKPythonPackage-manylinux_2_28-<arch>-build/dist`,
+where `<arch>` is `TARGET_ARCH` (`x64` or `aarch64`).
 
 > [!IMPORTANT]
 > Do not run `build_wheels.py --platform-env manylinux228-py311` on the host.

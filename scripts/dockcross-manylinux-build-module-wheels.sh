@@ -43,7 +43,7 @@
 #
 # DIRECTORY STRUCTURE (expected):
 #   ${IPP_DIR}/                              <- ITKPythonPackage
-#   ${BUILD_DIR}/                            <- ITKPythonPackage-manylinux${VERSION}-build
+#   ${BUILD_DIR}/                            <- ITKPythonPackage-build (extracted cache)
 #   ${MODULE_SOURCE_DIR}/                    <- Module source (current directory)
 ########################################################################
 

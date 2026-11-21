@@ -90,6 +90,7 @@ def test_native_build_passes_the_commit_and_version(tmp_path):
 
 def test_container_build_runs_without_sudo_unless_asked(tmp_path, monkeypatch):
     monkeypatch.delenv("NO_SUDO", raising=False)
+    monkeypatch.delenv("MANYLINUX_VERSION", raising=False)
     (step,) = rw.plan(["manylinux-aarch64"], tmp_path / "ITK", "abc123", "gitauto")
     assert step.command[-2].endswith("dockcross-manylinux-build-wheels.sh")
     assert step.env == {
@@ -101,10 +102,12 @@ def test_container_build_runs_without_sudo_unless_asked(tmp_path, monkeypatch):
         "USE_CCACHE": "1",
         "BUILD_WHEELS_EXTRA_FLAGS": "--build-itk-tarball-cache",
     }
+    assert step.dist_dir.parent.name == "ITKPythonPackage-manylinux_2_28-aarch64-build"
     monkeypatch.setenv("NO_SUDO", "")
     (step,) = rw.plan(["manylinux-x64"], tmp_path / "ITK", "abc123", "6.0b3")
     assert step.env["NO_SUDO"] == ""
     assert step.env["TARGET_ARCH"] == "x64"
+    assert step.dist_dir.parent.name == "ITKPythonPackage-manylinux_2_28-x64-build"
 
 
 @pytest.fixture

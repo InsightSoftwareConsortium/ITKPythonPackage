@@ -150,10 +150,10 @@ def native_build_root() -> Path:
     return IPP_DIR.parent / "ITKPythonPackage-build"
 
 
-def container_build_root() -> Path:
-    """Host directory that the manylinux container builds in."""
+def container_build_root(arch: str) -> Path:
+    """Host directory that the manylinux container builds *arch* wheels in."""
     manylinux = os.environ.get("MANYLINUX_VERSION") or "_2_28"
-    return IPP_DIR.parent / f"ITKPythonPackage-manylinux{manylinux}-build"
+    return IPP_DIR.parent / f"ITKPythonPackage-manylinux{manylinux}-{arch}-build"
 
 
 def _git(*args: str, cwd: Path, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -293,7 +293,7 @@ def plan(
                         "USE_CCACHE": "1",
                         "BUILD_WHEELS_EXTRA_FLAGS": "--build-itk-tarball-cache",
                     },
-                    dist_dir=container_build_root() / "dist",
+                    dist_dir=container_build_root(CONTAINER_ARCH[target]) / "dist",
                 )
             )
     if epoch:
