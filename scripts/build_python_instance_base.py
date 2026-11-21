@@ -32,7 +32,7 @@ from compiler_cache import (
 from dead_strip import dead_strip_cmake_definitions, user_flag_key
 from module_dependencies import build_module_dependencies, update_module_itk_deps
 from pyproject_configure import STABLE_ABI_TAG, configure_one_pyproject_file
-from target_platform import OS, TargetPlatform
+from target_platform import TargetPlatform
 from wheel_builder_utils import (
     _remove_tree,
     _which,
@@ -768,6 +768,10 @@ class BuildPythonInstanceBase(ABC):
             self.package_env_config["USE_TBB"] = "OFF"
             self.package_env_config["TBB_DIR"] = "NOT_FOUND"
 
+    def python_build_generator_args(self) -> list[str]:
+        """Extra ``python -m build`` settings choosing the CMake generator."""
+        return []
+
     @abstractmethod
     def _configure_toolchain(self) -> None:  # pragma: no cover - abstract
         """Set platform-specific compiler and deployment values."""
@@ -868,10 +872,7 @@ class BuildPythonInstanceBase(ABC):
             f"--config-setting=cmake.build-type={self.package_env_config['BUILD_TYPE']}",
         ]
 
-        if self.target.os_name is OS.WINDOWS:
-            # pixi's vs2022 activation sets a Visual Studio CMAKE_GENERATOR, whose
-            # multi-config wrapping output collides; ITK itself is built with Ninja.
-            cmd.append("--config-setting=cmake.args=-GNinja")
+        cmd += self.python_build_generator_args()
 
         # Collect scikit-build CMake definitions
         defs = CMakeArgumentBuilder()
@@ -965,9 +966,7 @@ class BuildPythonInstanceBase(ABC):
                 f"--config-setting=cmake.source-dir={self.package_env_config['IPP_SOURCE_DIR'] / 'BuildWheelsSupport'}",
                 f"--config-setting=build-dir={wheel_configbuild_dir_root / 'build'}",
             ]
-            if self.target.os_name is OS.WINDOWS:
-                # Ninja, as for the remote-module build above.
-                cmd.append("--config-setting=cmake.args=-GNinja")
+            cmd += self.python_build_generator_args()
             # Build scikit-build defines via builder
             scikitbuild_cmdline_args = CMakeArgumentBuilder()
             scikitbuild_cmdline_args.update(self.cmake_compiler_configurations.items())

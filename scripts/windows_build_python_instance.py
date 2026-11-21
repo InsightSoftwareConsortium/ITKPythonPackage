@@ -50,6 +50,12 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
     def _configure_toolchain(self) -> None:
         """Windows needs no toolchain values beyond the shared TBB settings."""
 
+    def python_build_generator_args(self) -> list[str]:
+        """Build wheels with Ninja, as ITK itself is built."""
+        # pixi's vs2022 activation sets a Visual Studio CMAKE_GENERATOR, whose
+        # multi-config wrapping output collides.
+        return ["--config-setting=cmake.args=-GNinja"]
+
     def post_build_fixup(self) -> None:
         """Repair wheels with ``delvewheel``, including oneTBB library paths."""
         # append the oneTBB-prefix\\bin directory for fixing wheels built with local oneTBB

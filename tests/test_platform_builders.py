@@ -618,3 +618,55 @@ def test_configure_tbb_per_platform(request, builder_fixture, use_tbb, tbb_dir_p
         else "NOT_FOUND"
     )
     assert builder.package_env_config["TBB_DIR"] == expected
+
+
+@pytest.mark.parametrize(
+    ("builder_fixture", "expected_tag"),
+    [
+        ("linux_builder", "cp311-abi3-manylinux_2_28_x86_64"),
+        ("linux_aarch64_builder", "cp311-abi3-manylinux_2_28_aarch64"),
+    ],
+)
+def test_metawheel_tag_comes_from_the_target(
+    request, tmp_path, builder_fixture, expected_tag
+):
+    builder = request.getfixturevalue(builder_fixture)
+    _prepare_metawheel(builder, tmp_path)
+    wheel_file = tmp_path / "metawheel" / "itk-6.0.0" / "itk.dist-info" / "WHEEL"
+
+    def fake(cmd, *args, check: bool = False, **kwargs) -> int:
+        rendered = [str(c) for c in cmd]
+        if "unpack" in rendered:
+            wheel_file.parent.mkdir(parents=True, exist_ok=True)
+            wheel_file.write_text("Wheel-Version: 1.0\nTag: cp311-abi3-linux_x86_64\n")
+        else:
+            assert wheel_file.read_text().splitlines()[-1] == f"Tag: {expected_tag}"
+            dest = Path(rendered[rendered.index("--dest") + 1])
+            (dest / f"itk-6.0.0-{expected_tag}.whl").touch()
+        return 0
+
+    with patch.object(builder, "echo_check_call", side_effect=fake):
+        builder.post_build_fixup()
+    assert (tmp_path / "dist" / f"itk-6.0.0-{expected_tag}.whl").exists()
+
+
+def test_only_a_manylinux_target_is_repaired(linux_builder):
+    assert linux_builder.builds_manylinux()
+    linux_builder.target = TargetPlatform(OS.LINUX, Arch.X86_64)
+    assert not linux_builder.builds_manylinux()
+    with patch.object(linux_builder, "echo_check_call") as called:
+        linux_builder.fixup_wheel("itk_core-6.0.0-cp311-abi3-linux_x86_64.whl")
+    called.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("builder_fixture", "expected"),
+    [
+        ("windows_builder", ["--config-setting=cmake.args=-GNinja"]),
+        ("linux_builder", []),
+        ("macos_builder", []),
+    ],
+)
+def test_only_windows_chooses_the_generator(request, builder_fixture, expected):
+    builder = request.getfixturevalue(builder_fixture)
+    assert builder.python_build_generator_args() == expected

@@ -16,6 +16,10 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
     Linux-specific compiler/target triple configuration.
     """
 
+    def builds_manylinux(self) -> bool:
+        """True when the wheels are repaired and tagged for manylinux."""
+        return bool(self.target.manylinux_version)
+
     def _configure_toolchain(self) -> None:
         self.cmake_compiler_configurations.set(
             "CMAKE_CXX_COMPILER_TARGET:STRING", self.target.linux_triple
@@ -23,10 +27,7 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
 
     def post_build_fixup(self) -> None:
         """Repair wheels with ``auditwheel`` and retag the ITK meta-wheel."""
-        manylinux_ver: str | None = self.package_env_config.get(
-            "MANYLINUX_VERSION", None
-        )
-        if manylinux_ver:
+        if self.builds_manylinux():
             # Repair all produced wheels with auditwheel for packages with so elements (starts with itk_)
             whl = None
             # e.g. itk_segmentation-6.0.0b2-cp311-abi3-linux_x86_64.whl
@@ -66,18 +67,11 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
                 )
                 # Find unpacked dir
                 unpacked_dirs = list(metawheel_dir.glob("itk-*/itk*.dist-info/WHEEL"))
+                # Wheel filename: {name}-{version}-{python}-{abi}-{platform}.whl
+                python_tag, abi_tag = metawhl.stem.split("-")[-3:-1]
+                tag = f"{python_tag}-{abi_tag}-{self.target.wheel_plat_tag}"
                 for wheel_file in unpacked_dirs:
                     content = wheel_file.read_text(encoding="utf-8").splitlines()
-                    base = metawhl.name
-                    if len(manylinux_ver) > 0:
-                        base = metawhl.name.replace(
-                            "linux", f"manylinux{manylinux_ver}"
-                        )
-                    # Wheel filename: {name}-{version}-{python}-{abi}-{platform}.whl
-                    # Tag must be only "{python}-{abi}-{platform}", not the full stem.
-                    stem = Path(base).stem
-                    parts = stem.split("-")
-                    tag = "-".join(parts[-3:])
                     new = []
                     for line in content:
                         if line.startswith("Tag: "):
@@ -155,8 +149,7 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
             directory instead of the main build ``dist/``.
         """
         # Use auditwheel to repair wheels and set manylinux tags
-        manylinux_ver = self.package_env_config.get("MANYLINUX_VERSION", "")
-        if len(manylinux_ver) > 1:
+        if self.builds_manylinux():
             output_dir = self._repair_output_dir(remote_module_wheel)
             cmd = [
                 self.package_env_config["PYTHON_EXECUTABLE"],
