@@ -80,19 +80,19 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         search_lib_paths_str: str = ";".join(map(str, search_lib_paths))
         self.fixup_wheels(search_lib_paths_str)
 
-    def fixup_wheels(self, lib_paths: str = ""):
+    def fixup_wheels(self, lib_paths: str = "") -> None:
         """Repair the ``itk_core`` wheels, which link oneTBB."""
         # TBB library fix-up (applies to itk_core wheel)
         tbb_wheel = "itk_core"
         for wheel in (self.build_dir_root / "dist").glob(f"{tbb_wheel}*.whl"):
             self.fixup_wheel(str(wheel), lib_paths)
 
-    def fixup_module_wheel(self, filepath) -> None:
+    def fixup_module_wheel(self, filepath: str) -> None:
         """Repair a remote module's wheel into the module's ``dist/``."""
         self.fixup_wheel(filepath, remote_module_wheel=True)
 
     def fixup_wheel(
-        self, filepath, lib_paths: str = "", remote_module_wheel: bool = False
+        self, filepath: str, lib_paths: str = "", remote_module_wheel: bool = False
     ) -> None:
         """Repair a wheel using ``delvewheel`` with the given library paths.
 

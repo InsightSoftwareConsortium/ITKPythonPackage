@@ -195,6 +195,7 @@ module = [
   "build_python_instance_base",
   "linux_build_python_instance",
   "macos_build_python_instance",
+  "windows_build_python_instance",
 ]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
