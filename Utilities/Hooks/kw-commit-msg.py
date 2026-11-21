@@ -70,12 +70,12 @@ def main():
     max_subjectline_length: int = get_max_length()
 
     original_input_file_lines: list[str] = []
-    with open(input_file) as f_in:
+    with Path(input_file).open() as f_in:
         original_input_file_lines = f_in.readlines()
 
     input_file_lines: list[str] = []
-    for test_line in original_input_file_lines:
-        test_line = test_line.strip()
+    for raw_line in original_input_file_lines:
+        test_line = raw_line.strip()
         is_empty_line_before_subject: bool = (
             len(input_file_lines) == 0 and len(test_line) == 0
         )
@@ -83,7 +83,7 @@ def main():
             continue
         input_file_lines.append(f"{test_line}\n")
 
-    with open(commit_msg_path, "w") as f_out:
+    with Path(commit_msg_path).open("w") as f_out:
         f_out.writelines(input_file_lines)
 
     subject_line: str = input_file_lines[0]

@@ -33,7 +33,7 @@ def venv_paths(python_version):
     else:
         python_sabi_library = python_library
 
-    print("")
+    print()
     print("Python3_EXECUTABLE: %s" % python_executable)
     print("Python3_INCLUDE_DIR: %s" % python_include_dir)
     print("Python3_LIBRARY: %s" % python_library)

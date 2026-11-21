@@ -198,9 +198,7 @@ def build_wheel(
             # Build wheels
             if wheel_names is None:
                 with open(os.path.join(SCRIPT_DIR, "WHEEL_NAMES.txt")) as content:
-                    wheel_names = [
-                        wheel_name.strip() for wheel_name in content.readlines()
-                    ]
+                    wheel_names = [wheel_name.strip() for wheel_name in content]
 
             for wheel_name in wheel_names:
                 # Configure pyproject.toml

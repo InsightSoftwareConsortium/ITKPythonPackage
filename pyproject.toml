@@ -18,23 +18,151 @@ docstring-code-format = true
 [tool.ruff.lint]
 # E/F/W: pycodestyle and pyflakes; I: isort; UP: pyupgrade; B: flake8-bugbear
 select = ["E", "F", "I", "UP", "B", "W"]
+extend-select = [
+  # Rules adopted one per commit, named so each stays enforced.
+  "ARG005",  # unused-lambda-argument
+  "EM101",   # raw-string-in-exception
+  "EM102",   # f-string-in-exception
+  "EXE001",  # shebang-not-executable
+  "FURB110", # if-exp-instead-of-or-operator
+  "FURB129", # readlines-in-for
+  "ISC001",  # single-line-implicit-string-concatenation
+  "ISC003",  # explicit-string-concatenation
+  "PLR1711", # useless-return
+  "PLR5501", # collapsible-else-if
+  "PLW1510", # subprocess-run-without-check
+  "PLW2901", # redefined-loop-name
+  "PTH100",  # os-path-abspath
+  "PTH118",  # os-path-join
+  "PTH119",  # os-path-basename
+  "PTH120",  # os-path-dirname
+  "PTH123",  # builtin-open
+  "RET504",  # unnecessary-assign
+  "RET505",  # superfluous-else-return
+  "RUF002",  # ambiguous-unicode-character-docstring
+  "RUF005",  # collection-literal-concatenation
+  "RUF010",  # explicit-f-string-type-conversion
+  "RUF013",  # implicit-optional
+  "RUF036",  # none-not-at-end-of-union
+  "RUF043",  # pytest-raises-ambiguous-pattern
+  "RUF059",  # unused-unpacked-variable
+  "RUF100",  # unused-noqa
+  "SIM105",  # suppressible-exception
+  "SIM108",  # if-else-block-instead-of-if-exp
+  "SIM115",  # open-file-with-context-handler
+  "SIM117",  # multiple-with-statements
+  "SIM118",  # in-dict-keys
+  "SIM910",  # dict-get-with-none-default
+  "TC003",   # typing-only-standard-library-import
+  "TRY003",  # raise-vanilla-args
+  "TRY300",  # try-consider-else
+  # Rule families recommended by the Scientific Python guide.
+  "ARG",  # flake8-unused-arguments
+  "C4",   # flake8-comprehensions
+  "EM",   # flake8-errmsg
+  "EXE",  # flake8-executable
+  "FURB", # refurb
+  "G",    # flake8-logging-format
+  "ICN",  # flake8-import-conventions
+  "ISC",  # flake8-implicit-str-concat
+  "LOG",  # flake8-logging
+  "NPY",  # NumPy specific rules
+  "PD",   # pandas-vet
+  "PERF", # perflint
+  "PGH",  # pygrep-hooks
+  "PL",   # pylint
+  "PT",   # flake8-pytest-style
+  "PTH",  # flake8-use-pathlib
+  "PYI",  # flake8-pyi
+  "Q",    # flake8-quotes
+  "RET",  # flake8-return
+  "RSE",  # flake8-raise
+  "RUF",  # Ruff-specific
+  "SIM",  # flake8-simplify
+  "SLOT", # flake8-slots
+  "T10",  # flake8-debugger
+  "T20",  # flake8-print
+  "TC",   # flake8-type-checking
+  "TRY",  # tryceratops
+]
 ignore = [
-  "E501", # line-too-long: ruff format owns line length
+  # Accepted: not required by the Scientific Python guide.
+  "E501",    # line-too-long: ruff format owns line length
+  "PLR09",   # too-many-*: build drivers take many options by design
+  "PLR2004", # magic-value-comparison
+  "T201",    # `print` found: printing is these build scripts' output
+  "PLC0415", # import-outside-top-level: per-platform builders and patched test modules load lazily
+  # Parked so the rule list could be adopted with lint passing.
+  # Each is removed by the commit that fixes it.
+  # Parked by decision: fixing them changes signatures. Six are overrides of
+  # shared method signatures, one is a public function's argument, and 45
+  # are test fakes that mirror the function they patch.
+  "ARG001", # unused-function-argument (44)
+  "ARG002", # unused-method-argument (8)
 ]
 
 [tool.ruff.lint.per-file-ignores]
 # Superseded build scripts; linted in full once rewritten.
-"scripts/internal/windows_build_common.py" = ["UP031"]
-"scripts/pyproject_configure.py" = ["UP031", "UP036"]
-"scripts/update_python_version.py" = ["F821"]
+"scripts/internal/wheel_builder_utils.py" = ["PTH103", "PTH109", "PTH112"]
+"scripts/internal/windows_build_common.py" = [
+  "PTH100",
+  "PTH110",
+  "PTH118",
+  "PTH120",
+  "UP031",
+]
+"scripts/pyproject_configure.py" = [
+  "PLW0602",
+  "PLW2901",
+  "PTH100",
+  "PTH118",
+  "PTH119",
+  "PTH120",
+  "PTH123",
+  "RET504",
+  "SIM118",
+  "UP031",
+  "UP036",
+]
+"scripts/update_python_version.py" = [
+  "F821",
+  "PTH100",
+  "PTH110",
+  "PTH118",
+  "PTH120",
+  "PTH123",
+]
 "scripts/windows_build_module_wheels.py" = [
   "B006",
   "E402",
   "F821",
   "F841",
+  "PTH100",
+  "PTH109",
+  "PTH110",
+  "PTH113",
+  "PTH118",
+  "PTH120",
+  "PTH207",
+  "RUF059",
+  "SIM108",
   "UP031",
 ]
-"scripts/windows_build_wheels.py" = ["B006", "E402", "UP031"]
+"scripts/windows_build_wheels.py" = [
+  "B006",
+  "E402",
+  "EXE001",
+  "PTH100",
+  "PTH107",
+  "PTH110",
+  "PTH118",
+  "PTH120",
+  "PTH122",
+  "PTH123",
+  "PTH207",
+  "RUF059",
+  "UP031",
+]
 
 [tool.commitizen]
 name = "cz_customize"

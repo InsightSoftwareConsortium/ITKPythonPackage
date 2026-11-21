@@ -51,7 +51,7 @@ def parameter_option(key, option):
     `PARAMETER_OPTION_DEFAULTS` is returned.
     """
     default = PARAMETER_OPTION_DEFAULTS.get(option)
-    if key not in PARAMETER_OPTIONS.keys():
+    if key not in PARAMETER_OPTIONS:
         return default
     return PARAMETER_OPTIONS[key].get(option, default)
 
@@ -208,7 +208,7 @@ def update_wheel_pyproject_toml_parameters():
 
 def get_wheel_names():
     with open(os.path.join(SCRIPT_DIR, "WHEEL_NAMES.txt")) as _file:
-        return [wheel_name.strip() for wheel_name in _file.readlines()]
+        return [wheel_name.strip() for wheel_name in _file]
 
 
 def get_version():
@@ -223,20 +223,19 @@ def get_py_api():
 
     if sys.version_info < (3, 11):
         return ""
-    else:
-        return "cp" + str(sys.version_info.major) + str(sys.version_info.minor)
+    return "cp" + str(sys.version_info.major) + str(sys.version_info.minor)
 
 
 def get_wheel_dependencies():
     """Return a dictionary of ITK wheel dependencies."""
     all_depends = {}
     regex_group_depends = (
-        r"set\s*\(\s*ITK\_GROUP\_([a-zA-Z0-9\_\-]+)\_DEPENDS\s*([a-zA-Z0-9\_\-\s]*)\s*"  # noqa: E501
+        r"set\s*\(\s*ITK\_GROUP\_([a-zA-Z0-9\_\-]+)\_DEPENDS\s*([a-zA-Z0-9\_\-\s]*)\s*"
     )
     pattern = re.compile(regex_group_depends)
     version = get_version()
     with open(os.path.join(SCRIPT_DIR, "..", "CMakeLists.txt")) as file_:
-        for line in file_.readlines():
+        for line in file_:
             match = re.search(pattern, line)
             if not match:
                 continue
@@ -279,7 +278,7 @@ ITK_PYPROJECT_PY_PARAMETERS = {
         ]
     ),
     "PYPROJECT_DOWNLOAD_URL": r"https://github.com/InsightSoftwareConsortium/ITK/releases",
-    "PYPROJECT_DESCRIPTION": r"ITK is an open-source toolkit for multidimensional image analysis",  # noqa: E501
+    "PYPROJECT_DESCRIPTION": r"ITK is an open-source toolkit for multidimensional image analysis",
     "PYPROJECT_LONG_DESCRIPTION": r"ITK is an open-source, cross-platform library that "
     "provides developers with an extensive suite of software "
     "tools for image analysis. Developed through extreme "
