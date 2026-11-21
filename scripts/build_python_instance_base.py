@@ -34,8 +34,8 @@ from module_dependencies import build_module_dependencies, update_module_itk_dep
 from pyproject_configure import STABLE_ABI_TAG, configure_one_pyproject_file
 from target_platform import TargetPlatform
 from wheel_builder_utils import (
-    _remove_tree,
-    _which,
+    remove_tree,
+    which,
 )
 
 
@@ -304,7 +304,7 @@ class BuildPythonInstanceBase(ABC):
         )
         if self.package_env_config.get("USE_CCACHE", "OFF") == "ON":
             cache_tool = compiler_cache_tool(self.target.os_name)
-            cache_exe: Path | None = _which(cache_tool)
+            cache_exe: Path | None = which(cache_tool)
             if cache_exe is None:
                 msg = f"{cache_tool} was requested but is not on PATH"
                 raise RuntimeError(msg)
@@ -965,7 +965,7 @@ class BuildPythonInstanceBase(ABC):
                     if p.is_file() and p.suffix in [".cpp", ".xml", ".obj", ".o"]:
                         with contextlib.suppress(OSError):
                             p.unlink()
-                _remove_tree(bp / "Wrapping" / "Generators" / "CastXML")
+                remove_tree(bp / "Wrapping" / "Generators" / "CastXML")
 
     def build_wrapped_itk_cplusplus(self):
         """Configure and build the ITK C++ libraries with Python wrapping."""
@@ -976,7 +976,7 @@ class BuildPythonInstanceBase(ABC):
                 self.cmake_itk_source_build_configurations["ITK_BINARY_DIR:PATH"]
             ).exists()
         ):
-            _remove_tree(
+            remove_tree(
                 Path(self.cmake_itk_source_build_configurations["ITK_BINARY_DIR:PATH"])
             )
 

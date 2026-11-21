@@ -5,7 +5,7 @@ from pathlib import Path
 
 from posix_build_python_instance import PosixBuildPythonInstance
 from wheel_builder_utils import (
-    _remove_tree,
+    remove_tree,
 )
 
 
@@ -108,8 +108,8 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
                 # Remove old and temp
                 with contextlib.suppress(OSError):
                     metawhl.unlink()
-                _remove_tree(metawheel_dir)
-                _remove_tree(metawheel_dist)
+                remove_tree(metawheel_dir)
+                remove_tree(metawheel_dist)
 
     def _build_env_lib_dir(self) -> Path:
         """Return the build environment's ``lib`` directory.
@@ -203,7 +203,7 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
                     f"Removing original linux wheel after repair: {filepath_obj.name}"
                 )
                 try:
-                    _remove_tree(filepath_obj)
+                    remove_tree(filepath_obj)
                 except OSError as e:
                     print(f"Warning: Could not remove {filepath_obj.name}: {e}")
         else:

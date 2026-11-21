@@ -32,7 +32,7 @@ def test_resolves_inside_target_env_not_launching_path(monkeypatch):
 def test_uses_current_env_when_already_inside_it(monkeypatch):
     monkeypatch.setenv("PIXI_ENVIRONMENT_NAME", "windows-py311")
     monkeypatch.setattr(
-        "wheel_builder_utils._which", lambda _: Path("/envs/windows-py311/bin/cmake")
+        "wheel_builder_utils.which", lambda _: Path("/envs/windows-py311/bin/cmake")
     )
 
     def explode(*_args, **_kwargs):  # nesting pixi run would overflow cmd.exe
@@ -87,7 +87,7 @@ def test_hostsystem_opts_out_of_the_environment_guard(monkeypatch):
 def test_hostsystem_resolves_tools_from_host_path(monkeypatch):
     monkeypatch.setenv("PIXI_ENVIRONMENT_NAME", "hostsystem")
     monkeypatch.setattr(
-        "wheel_builder_utils._which", lambda _: Path("/usr/local/bin/doxygen")
+        "wheel_builder_utils.which", lambda _: Path("/usr/local/bin/doxygen")
     )
 
     def explode(*_args, **_kwargs):

@@ -9,7 +9,7 @@ import contextlib
 from collections.abc import Callable
 from pathlib import Path
 
-from wheel_builder_utils import _remove_tree
+from wheel_builder_utils import remove_tree
 
 
 def tarball_paths(
@@ -68,7 +68,7 @@ def post_build_cleanup(
 
     def rm(tree_path: Path):
         with contextlib.suppress(Exception):
-            _remove_tree(tree_path)
+            remove_tree(tree_path)
 
     # 1) unlink oneTBB-prefix if it's a symlink or file
     tbb_prefix_dir = base / "oneTBB-prefix"

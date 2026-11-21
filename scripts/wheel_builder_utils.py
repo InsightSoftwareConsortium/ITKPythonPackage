@@ -14,7 +14,7 @@ from os import environ
 from pathlib import Path
 
 
-def _remove_tree(path: Path) -> None:
+def remove_tree(path: Path) -> None:
     """Recursively delete a file or directory using pathlib only.
 
     Parameters
@@ -30,7 +30,7 @@ def _remove_tree(path: Path) -> None:
             path.unlink()
         return
     for child in path.iterdir():
-        _remove_tree(child)
+        remove_tree(child)
     with contextlib.suppress(OSError):
         path.rmdir()
 
@@ -93,7 +93,7 @@ def read_env_file(
     return result
 
 
-def _which(exe_name: str) -> Path | None:
+def which(exe_name: str) -> Path | None:
     """Locate an executable on ``PATH`` using pathlib.
 
     A custom implementation is used because ``shutil.which`` does not
@@ -231,7 +231,7 @@ def which_required(name: str) -> Path:
     RuntimeError
         If *name* is not on ``PATH``.
     """
-    path = _which(name)
+    path = which(name)
     if not path:
         msg = f"MISSING: {name} not found in PATH; aborting until required executables can be found"
         raise RuntimeError(msg)
@@ -479,7 +479,7 @@ def resolve_oci_exe(env: dict[str, str]) -> str:
     if env.get("OCI_EXE"):
         return env["OCI_EXE"]
     for cand in ("docker", "podman", "nerdctl"):
-        if _which(cand):  # NOTE shutil.which ALWAYS RETURNS NONE ON WINDOWS before 3.12
+        if which(cand):  # NOTE shutil.which ALWAYS RETURNS NONE ON WINDOWS before 3.12
             return cand
     # Default to docker name if nothing found
     return "docker"
