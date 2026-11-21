@@ -28,7 +28,7 @@ def _steps_run(
     return manager, ran
 
 
-def test_identical_inputs_skip_the_steps_already_done(tmp_path):
+def test_identical_inputs_skip_the_steps_already_done(tmp_path: Path) -> None:
     report = tmp_path / "build_log.json"
     _finish_every_step(report, INPUTS)
     manager, ran = _steps_run(report, dict(INPUTS))
@@ -36,7 +36,7 @@ def test_identical_inputs_skip_the_steps_already_done(tmp_path):
     assert manager.changed_inputs == []
 
 
-def test_identical_inputs_resume_after_the_failed_step(tmp_path):
+def test_identical_inputs_resume_after_the_failed_step(tmp_path: Path) -> None:
     report = tmp_path / "build_log.json"
     manager = BuildManager(report, STEPS, INPUTS)
     manager.run_step(STEPS[0], lambda: None)
@@ -46,12 +46,12 @@ def test_identical_inputs_resume_after_the_failed_step(tmp_path):
     assert ran == STEPS[1:]
 
 
-def _fail():
+def _fail() -> None:
     raise RuntimeError
 
 
 @pytest.mark.parametrize("changed", sorted(INPUTS))
-def test_a_changed_input_runs_every_step_again(tmp_path, changed):
+def test_a_changed_input_runs_every_step_again(tmp_path: Path, changed: str) -> None:
     report = tmp_path / "build_log.json"
     _finish_every_step(report, INPUTS)
     manager, ran = _steps_run(report, {**INPUTS, changed: "something else"})
@@ -59,7 +59,7 @@ def test_a_changed_input_runs_every_step_again(tmp_path, changed):
     assert manager.changed_inputs == [changed]
 
 
-def test_a_report_without_inputs_runs_every_step_again(tmp_path):
+def test_a_report_without_inputs_runs_every_step_again(tmp_path: Path) -> None:
     """A report written before inputs were recorded cannot vouch for them."""
     report = tmp_path / "build_log.json"
     _finish_every_step(report, None)
@@ -67,14 +67,14 @@ def test_a_report_without_inputs_runs_every_step_again(tmp_path):
     assert ran == STEPS
 
 
-def test_the_report_records_the_inputs_of_the_run(tmp_path):
+def test_the_report_records_the_inputs_of_the_run(tmp_path: Path) -> None:
     report = tmp_path / "build_log.json"
     _finish_every_step(report, INPUTS)
     _steps_run(report, {**INPUTS, "itk_commit": "b" * 40})
     assert json.loads(report.read_text())["inputs"]["itk_commit"] == "b" * 40
 
 
-def test_a_corrupt_report_stops_the_build_and_names_the_file(tmp_path):
+def test_a_corrupt_report_stops_the_build_and_names_the_file(tmp_path: Path) -> None:
     report = tmp_path / "build_log.json"
     report.write_text("{not json")
     with pytest.raises(RuntimeError, match=r"build_log\.json"):
