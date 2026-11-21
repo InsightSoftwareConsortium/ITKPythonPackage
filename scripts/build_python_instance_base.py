@@ -793,9 +793,9 @@ class BuildPythonInstanceBase(ABC):
             self.package_env_config["USE_TBB"] = "OFF"
             self.package_env_config["TBB_DIR"] = "NOT_FOUND"
 
-    def _configure_toolchain(self) -> None:
+    @abstractmethod
+    def _configure_toolchain(self) -> None:  # pragma: no cover - abstract
         """Set platform-specific compiler and deployment values."""
-        raise NotImplementedError
 
     @abstractmethod
     def post_build_fixup(self) -> None:  # pragma: no cover - abstract
