@@ -5,6 +5,7 @@ The install tree is a sibling of the build tree, is produced by
 module build files and wrapping infrastructure a remote module includes.
 """
 
+from collections.abc import Sequence
 from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
@@ -12,6 +13,7 @@ from unittest.mock import patch
 import pytest
 from build_python_instance_base import BuildPythonInstanceBase
 from cmake_argument_builder import CMakeArgumentBuilder
+from linux_build_python_instance import LinuxBuildPythonInstance
 
 
 def _wire(
@@ -45,26 +47,30 @@ def _lay_out_install_tree(prefix: Path, *, with_module_support: bool) -> Path:
     return itk_dir
 
 
-def test_the_default_is_the_build_tree():
+def test_the_default_is_the_build_tree() -> None:
     assert BuildPythonInstanceBase.module_itk_dir == "build"
     assert BuildPythonInstanceBase.MODULE_ITK_DIR_CHOICES == ("build", "install")
 
 
-def test_install_prefix_is_a_sibling_of_the_build_tree(tmp_path, linux_builder):
+def test_install_prefix_is_a_sibling_of_the_build_tree(
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     """Inside build/, so a cache of that directory carries the install tree."""
     _wire(linux_builder, tmp_path, module_itk_dir="install")
     assert linux_builder.itk_install_prefix() == tmp_path / "build" / "ITK-bld-install"
 
 
-def test_installed_itk_dir_requires_an_install_tree(tmp_path, linux_builder):
+def test_installed_itk_dir_requires_an_install_tree(
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     _wire(linux_builder, tmp_path, module_itk_dir="install")
     with pytest.raises(RuntimeError, match="No installed ITK"):
         linux_builder.installed_itk_dir()
 
 
 def test_installed_itk_dir_rejects_an_itk_without_module_support(
-    tmp_path, linux_builder
-):
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     """A stock ITK installs ITKConfig.cmake but not the module build files;
     the module's first include would fail, so say why up front."""
     _wire(linux_builder, tmp_path, module_itk_dir="install")
@@ -76,7 +82,9 @@ def test_installed_itk_dir_rejects_an_itk_without_module_support(
     assert "ITK_INSTALL_WRAPPING_DEVELOPMENT_FILES" in message
 
 
-def test_installed_itk_dir_is_the_versioned_cmake_package_dir(tmp_path, linux_builder):
+def test_installed_itk_dir_is_the_versioned_cmake_package_dir(
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     _wire(linux_builder, tmp_path, module_itk_dir="install")
     itk_dir = _lay_out_install_tree(
         linux_builder.itk_install_prefix(), with_module_support=True
@@ -84,12 +92,16 @@ def test_installed_itk_dir_is_the_versioned_cmake_package_dir(tmp_path, linux_bu
     assert linux_builder.installed_itk_dir() == itk_dir
 
 
-def test_install_step_runs_cmake_install_into_the_prefix(tmp_path, linux_builder):
+def test_install_step_runs_cmake_install_into_the_prefix(
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     _wire(linux_builder, tmp_path, module_itk_dir="install")
     prefix = linux_builder.itk_install_prefix()
     seen: dict[str, object] = {}
 
-    def fake_install(cmd, *args, check=False, **kwargs):
+    def fake_install(
+        cmd: Sequence[str | Path], *args: object, check: bool = False, **kwargs: object
+    ) -> int:
         seen["cmd"] = [str(c) for c in cmd]
         seen["check"] = check
         _lay_out_install_tree(prefix, with_module_support=True)
@@ -108,12 +120,16 @@ def test_install_step_runs_cmake_install_into_the_prefix(tmp_path, linux_builder
     assert seen["check"] is True
 
 
-def test_install_step_fails_when_the_install_tree_is_unusable(tmp_path, linux_builder):
+def test_install_step_fails_when_the_install_tree_is_unusable(
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     """cmake --install succeeding is not enough: the tree must be one a
     module can be configured against."""
     _wire(linux_builder, tmp_path, module_itk_dir="install")
 
-    def stock_itk_install(cmd, *args, **kwargs):
+    def stock_itk_install(
+        cmd: Sequence[str | Path], *args: object, **kwargs: object
+    ) -> int:
         _lay_out_install_tree(
             linux_builder.itk_install_prefix(), with_module_support=False
         )
@@ -126,14 +142,16 @@ def test_install_step_fails_when_the_install_tree_is_unusable(tmp_path, linux_bu
         linux_builder.install_wrapped_itk_cplusplus()
 
 
-def _module_configure_defines(builder, tmp_path) -> list[str]:
+def _module_configure_defines(
+    builder: BuildPythonInstanceBase, tmp_path: Path
+) -> list[str]:
     """Run the module build with the tools stubbed out; return its -D list."""
     module = tmp_path / "ITKFoo"
     module.mkdir(exist_ok=True)
     builder.module_source_dir = module
-    seen = {}
+    seen: dict[str, list[str]] = {}
 
-    def capture(cmd, *args, **kwargs):
+    def capture(cmd: Sequence[str | Path], *args: object, **kwargs: object) -> int:
         seen["cmd"] = [str(c) for c in cmd]
         return 0
 
@@ -146,8 +164,8 @@ def _module_configure_defines(builder, tmp_path) -> list[str]:
 
 
 def test_module_is_configured_against_the_install_tree_when_asked(
-    tmp_path, linux_builder
-):
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     _wire(linux_builder, tmp_path, module_itk_dir="install")
     itk_dir = _lay_out_install_tree(
         linux_builder.itk_install_prefix(), with_module_support=True
@@ -159,8 +177,8 @@ def test_module_is_configured_against_the_install_tree_when_asked(
 
 
 def test_module_is_configured_against_the_build_tree_by_default(
-    tmp_path, linux_builder
-):
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     _wire(linux_builder, tmp_path, module_itk_dir="build")
     defines = _module_configure_defines(linux_builder, tmp_path)
     assert len(defines) == 1
@@ -169,8 +187,8 @@ def test_module_is_configured_against_the_build_tree_by_default(
 
 
 def test_module_against_a_missing_install_tree_fails_before_configuring(
-    tmp_path, linux_builder
-):
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     """Falling back to the build tree here would silently test the wrong
     thing; the whole point of the mode is that only the install tree is used."""
     _wire(linux_builder, tmp_path, module_itk_dir="install")
@@ -178,7 +196,9 @@ def test_module_against_a_missing_install_tree_fails_before_configuring(
         _module_configure_defines(linux_builder, tmp_path)
 
 
-def test_the_itk_configure_asks_for_the_wrapping_development_files(tmp_path):
+def test_the_itk_configure_asks_for_the_wrapping_development_files(
+    tmp_path: Path,
+) -> None:
     """Every ITK build is configured so its tree can be installed for module
     use later; an ITK without the option just reports it unused."""
     from build_python_instance_base import itk_source_build_configuration
@@ -199,8 +219,11 @@ def test_the_itk_configure_asks_for_the_wrapping_development_files(tmp_path):
     [('["itk == 5.4.*"]', True), ('["numpy >= 1.26"]', False)],
 )
 def test_module_pyproject_is_left_as_found(
-    tmp_path, linux_builder, dependencies, rewritten
-):
+    tmp_path: Path,
+    linux_builder: LinuxBuildPythonInstance,
+    dependencies: str,
+    rewritten: bool,
+) -> None:
     """No backup is left behind, whether or not the ITK pins were rewritten."""
     _wire(linux_builder, tmp_path, module_itk_dir="build")
     linux_builder.package_env_config["ITK_PACKAGE_VERSION"] = "6.0.0"
