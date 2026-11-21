@@ -137,7 +137,7 @@ def copy_files(
             relative = src.relative_to(source_root) if source_root else Path(src.name)
             dst = destination / relative
             dst.parent.mkdir(parents=True, exist_ok=True)
-            with contextlib.suppress(Exception):
+            with contextlib.suppress(OSError):
                 shutil.copy2(src, dst)
 
 

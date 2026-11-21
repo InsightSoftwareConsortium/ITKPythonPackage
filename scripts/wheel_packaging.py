@@ -67,7 +67,7 @@ def post_build_cleanup(
     base = Path(ipp_source_dir)
 
     def rm(tree_path: Path):
-        with contextlib.suppress(Exception):
+        with contextlib.suppress(OSError):
             remove_tree(tree_path)
 
     # 1) unlink oneTBB-prefix if it's a symlink or file
@@ -77,7 +77,7 @@ def post_build_cleanup(
             tbb_prefix_dir.unlink(missing_ok=True)
         elif tbb_prefix_dir.exists():
             rm(tbb_prefix_dir)
-    except Exception:
+    except OSError:
         pass
 
     # 2) standard build directories
@@ -107,7 +107,7 @@ def post_build_cleanup(
                 continue
             try:
                 module_name = entry.split("@", 1)[0].split("/", 1)[1]
-            except Exception:
+            except IndexError:
                 continue
             rm(base / module_name)
 

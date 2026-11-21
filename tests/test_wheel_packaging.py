@@ -244,3 +244,12 @@ def test_the_wheel_step_starts_from_an_empty_dist(macos_builder):
         macos_builder.build_itk_python_wheels()
 
     assert sorted(dist.glob("*.whl")) == [new_wheel]
+
+
+def test_cleanup_removes_listed_module_clones_and_skips_bare_names(tmp_path):
+    source_dir = tmp_path / "src"
+    (source_dir / "ITKFoo").mkdir(parents=True)
+    (source_dir / "Bare").mkdir()
+    post_build_cleanup(tmp_path, "x64", source_dir, "Bare@v1:Org/ITKFoo@v2")
+    assert not (source_dir / "ITKFoo").exists()
+    assert (source_dir / "Bare").exists()

@@ -150,7 +150,7 @@ def find_unix_python_paths(venv_dir: Path) -> PythonEnvironment:
             ],
             text=True,
         ).strip()
-    except Exception as e:
+    except (OSError, subprocess.CalledProcessError) as e:
         msg = f"Failed to compute Python include dir from {python_executable}: {e}"
         raise RuntimeError(msg) from e
     if not python_include_dir:
