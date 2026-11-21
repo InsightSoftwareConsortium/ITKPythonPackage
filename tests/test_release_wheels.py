@@ -1,13 +1,15 @@
+import platform
 import subprocess
 
 import pytest
 import release_wheels as rw
 from release_wheels import Host
+from target_platform import OS, Arch
 
-LINUX_X64 = Host("linux", "x64")
-LINUX_ARM64 = Host("linux", "arm64")
-MAC_ARM64 = Host("darwin", "arm64")
-WINDOWS_X64 = Host("windows", "x64")
+LINUX_X64 = Host(OS.LINUX, Arch.X86_64)
+LINUX_ARM64 = Host(OS.LINUX, Arch.AARCH64)
+MAC_ARM64 = Host(OS.DARWIN, Arch.AARCH64)
+WINDOWS_X64 = Host(OS.WINDOWS, Arch.X86_64)
 
 
 @pytest.mark.parametrize(
@@ -24,8 +26,34 @@ def test_each_host_builds_the_targets_it_can(host, expected):
 
 
 def test_an_unsupported_host_has_no_default():
-    with pytest.raises(SystemExit):
-        rw.select_targets(None, Host("darwin", "x64"))
+    with pytest.raises(SystemExit, match="built on darwin x64"):
+        rw.select_targets(None, Host(OS.DARWIN, Arch.X86_64))
+
+
+@pytest.mark.parametrize(
+    ("system", "machine", "label"),
+    [
+        ("Linux", "x86_64", "linux x64"),
+        ("Windows", "AMD64", "windows x64"),
+        ("Darwin", "arm64", "darwin arm64"),
+        ("Linux", "aarch64", "linux arm64"),
+        ("Linux", "riscv64", "linux riscv64"),
+        ("FreeBSD", "amd64", "freebsd x64"),
+    ],
+)
+def test_host_detection_maps_spellings_and_keeps_the_label(
+    monkeypatch, system, machine, label
+):
+    monkeypatch.setattr(platform, "system", lambda: system)
+    monkeypatch.setattr(platform, "machine", lambda: machine)
+    host = Host.detect()
+    assert host.label == label
+    if label == "linux x64":
+        assert host == LINUX_X64
+    if label == "linux riscv64":
+        assert host.arch is None
+        with pytest.raises(SystemExit, match="built on linux riscv64"):
+            rw.select_targets(None, host)
 
 
 @pytest.mark.parametrize(

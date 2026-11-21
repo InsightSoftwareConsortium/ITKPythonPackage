@@ -171,7 +171,7 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
             cmd += [str(filepath), "-w", str(output_dir)]
             # Provide LD_LIBRARY_PATH for oneTBB and common system paths
             extra_lib = str(self._tbb_prefix / "lib")
-            env = dict(self.package_env_config)
+            env = {k: v for k, v in self.package_env_config.items() if v is not None}
             env["LD_LIBRARY_PATH"] = ":".join(
                 entry
                 for entry in [

@@ -8,7 +8,7 @@ from build_python_instance_base import BuildPythonInstanceBase
 from cmake_argument_builder import CMakeArgumentBuilder
 from linux_build_python_instance import LinuxBuildPythonInstance
 from macos_build_python_instance import MacOSBuildPythonInstance
-from target_platform import Arch, TargetPlatform
+from target_platform import OS, Arch, TargetPlatform
 from windows_build_python_instance import WindowsBuildPythonInstance
 
 BuilderT = TypeVar("BuilderT", bound=BuildPythonInstanceBase)
@@ -52,7 +52,7 @@ def macos_builder(tmp_path):
         MacOSBuildPythonInstance,
         tmp_path,
         "macosx-py311",
-        TargetPlatform("darwin", Arch.AARCH64),
+        TargetPlatform(OS.DARWIN, Arch.AARCH64),
         {"ARCH": "arm64"},
     )
 
@@ -64,7 +64,7 @@ def linux_builder(tmp_path):
         LinuxBuildPythonInstance,
         tmp_path,
         "manylinux228-py311",
-        TargetPlatform("linux", Arch.X86_64, "_2_28"),
+        TargetPlatform(OS.LINUX, Arch.X86_64, "_2_28"),
         {"ARCH": "x64"},
     )
 
@@ -76,7 +76,7 @@ def linux_aarch64_builder(tmp_path):
         LinuxBuildPythonInstance,
         tmp_path,
         "manylinux228-py311",
-        TargetPlatform("linux", Arch.AARCH64, "_2_28"),
+        TargetPlatform(OS.LINUX, Arch.AARCH64, "_2_28"),
         {"ARCH": "aarch64"},
     )
 
@@ -88,6 +88,6 @@ def windows_builder(tmp_path):
         WindowsBuildPythonInstance,
         tmp_path,
         "windows-py311",
-        TargetPlatform("windows", Arch.X86_64),
+        TargetPlatform(OS.WINDOWS, Arch.X86_64),
         {"ARCH": "x64"},
     )

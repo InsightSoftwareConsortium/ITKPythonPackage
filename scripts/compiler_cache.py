@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from target_platform import OS
+
 if TYPE_CHECKING:
     from collections.abc import Mapping
     from pathlib import Path
@@ -33,9 +35,9 @@ def use_compiler_cache(flag: bool | None, env: Mapping[str, str]) -> bool:
     return value.upper() in _TRUE_VALUES
 
 
-def compiler_cache_tool(os_name: str) -> str:
+def compiler_cache_tool(os_name: OS) -> str:
     """Return the cache program for *os_name*: sccache on Windows, else ccache."""
-    return "sccache" if os_name == "windows" else "ccache"
+    return "sccache" if os_name is OS.WINDOWS else "ccache"
 
 
 def compiler_cache_definitions(tool: str, launcher: Path | str) -> dict[str, str]:

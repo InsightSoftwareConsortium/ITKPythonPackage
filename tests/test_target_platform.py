@@ -10,6 +10,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 from target_platform import (
     _MACOSX_DEPLOYMENT_TARGET,
+    OS,
     Arch,
     ContainerImage,
     TargetPlatform,
@@ -21,31 +22,31 @@ NICKNAMES = {"x64", "arm64", "amd64", "x86"}
 # (os_name, arch, manylinux) -> (pixi_suffix, linux_triple,
 #                                cmake_osx_arch, wheel_plat_tag)
 EXPECTED = {
-    ("linux", Arch.X86_64, "_2_28"): (
+    (OS.LINUX, Arch.X86_64, "_2_28"): (
         "x64",
         "x86_64-linux-gnu",
         None,
         "manylinux_2_28_x86_64",
     ),
-    ("linux", Arch.AARCH64, "_2_28"): (
+    (OS.LINUX, Arch.AARCH64, "_2_28"): (
         "aarch64",
         "aarch64-linux-gnu",
         None,
         "manylinux_2_28_aarch64",
     ),
-    ("linux", Arch.X86_64, "_2_34"): (
+    (OS.LINUX, Arch.X86_64, "_2_34"): (
         "x64",
         "x86_64-linux-gnu",
         None,
         "manylinux_2_34_x86_64",
     ),
-    ("darwin", Arch.AARCH64, ""): (
+    (OS.DARWIN, Arch.AARCH64, ""): (
         "arm64",
         None,
         "arm64",
         "macosx_14_0_arm64",
     ),
-    ("windows", Arch.X86_64, ""): (
+    (OS.WINDOWS, Arch.X86_64, ""): (
         "x64",
         None,
         None,
@@ -70,21 +71,21 @@ def test_translations(key):
 
 def test_unknown_manylinux_version_raises():
     with pytest.raises(ValueError, match="Unknown manylinux version"):
-        TargetPlatform("linux", Arch.X86_64, "_2_99")
+        TargetPlatform(OS.LINUX, Arch.X86_64, "_2_99")
 
 
 def test_unsupported_os_arch_combination_raises():
     with pytest.raises(ValueError, match="Unsupported combination"):
-        TargetPlatform("darwin", Arch.I686)
+        TargetPlatform(OS.DARWIN, Arch.I686)
 
 
 def test_manylinux_on_non_linux_raises():
     with pytest.raises(ValueError, match="only meaningful on linux"):
-        TargetPlatform("darwin", Arch.AARCH64, "_2_28")
+        TargetPlatform(OS.DARWIN, Arch.AARCH64, "_2_28")
 
 
 def test_x86_64_uses_dockcross_with_hyphen():
-    image = TargetPlatform("linux", Arch.X86_64, "_2_28").container_image
+    image = TargetPlatform(OS.LINUX, Arch.X86_64, "_2_28").container_image
     assert image == ContainerImage(
         name="manylinux_2_28-x64:20260203-3dfb3ff",
         registry="docker.io/dockcross",
@@ -95,7 +96,7 @@ def test_x86_64_uses_dockcross_with_hyphen():
 
 
 def test_aarch64_uses_pypa_with_underscore():
-    image = TargetPlatform("linux", Arch.AARCH64, "_2_28").container_image
+    image = TargetPlatform(OS.LINUX, Arch.AARCH64, "_2_28").container_image
     assert image == ContainerImage(
         name="manylinux_2_28_aarch64:2025.08.12-1",
         registry="quay.io/pypa",
@@ -126,20 +127,20 @@ def _patch_posix_uname(
 def test_detect_resolves_linux_sysname(monkeypatch):
     _patch_posix_uname(monkeypatch, "Linux", "x86_64")
     plat = TargetPlatform.detect({})
-    assert plat.os_name == "linux"
+    assert plat.os_name is OS.LINUX
 
 
 def test_detect_resolves_darwin_sysname(monkeypatch):
     _patch_posix_uname(monkeypatch, "Darwin", "arm64")
     plat = TargetPlatform.detect({})
-    assert plat.os_name == "darwin"
+    assert plat.os_name is OS.DARWIN
 
 
 def test_detect_resolves_windows_via_os_name_nt(monkeypatch):
     monkeypatch.delattr(os, "uname", raising=False)
     monkeypatch.setattr(os, "name", "nt")
     plat = TargetPlatform.detect({"PROCESSOR_ARCHITECTURE": "AMD64"})
-    assert plat.os_name == "windows"
+    assert plat.os_name is OS.WINDOWS
 
 
 def test_detect_unsupported_sysname_raises(monkeypatch):
@@ -200,7 +201,7 @@ def test_macosx_deployment_target_matches_wheel_tag_version(monkeypatch):
 
 
 def test_macos_wheel_plat_tag_is_installable_on_arm64():
-    tag = TargetPlatform("darwin", Arch.AARCH64, "").wheel_plat_tag
+    tag = TargetPlatform(OS.DARWIN, Arch.AARCH64, "").wheel_plat_tag
     match = re.fullmatch(r"macosx_(\d+)_0_arm64", tag)
     assert match is not None
     assert int(match.group(1)) >= 11

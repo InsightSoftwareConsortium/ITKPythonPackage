@@ -27,6 +27,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from target_platform import OS
+
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
@@ -62,7 +64,7 @@ def user_flag_key(
 
 
 def dead_strip_cmake_definitions(
-    os_name: str,
+    os_name: OS,
     env: Mapping[str, str],
     user_defs: Mapping[str, str] | CMakeArgumentBuilder | None = None,
 ) -> dict[str, str]:
@@ -72,7 +74,7 @@ def dead_strip_cmake_definitions(
     value when one was given, otherwise from ``CFLAGS``/``CXXFLAGS``/
     ``LDFLAGS``, so neither the user's flags nor these are lost.
     """
-    if os_name not in ("linux", "darwin"):
+    if os_name not in (OS.LINUX, OS.DARWIN):
         return {}
     user_defs = user_defs or {}
 
@@ -83,7 +85,7 @@ def dead_strip_cmake_definitions(
     def joined(cmake_var: str, extra: str) -> str:
         return f"{base(cmake_var)} {extra}".strip()
 
-    if os_name == "darwin":
+    if os_name is OS.DARWIN:
         return {
             "CMAKE_MODULE_LINKER_FLAGS:STRING": joined(
                 "CMAKE_MODULE_LINKER_FLAGS", DARWIN_MODULE_FLAGS

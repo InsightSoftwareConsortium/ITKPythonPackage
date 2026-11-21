@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from compiler_cache import use_compiler_cache
 from target_platform import (
+    OS,
     TargetPlatform,
     manylinux_version_from_platform_env,
 )
@@ -181,9 +182,9 @@ def source_date_epoch(env: "Mapping[str, str]", commit_time: str | None) -> str 
     return commit_time if commit_time.isdigit() else None
 
 
-def windows_link_options(os_name: str, link_options: str | None) -> str | None:
+def windows_link_options(os_name: OS, link_options: str | None) -> str | None:
     """Return *link_options* (the _LINK_ value) with /Brepro added on Windows."""
-    if os_name != "windows":
+    if os_name is not OS.WINDOWS:
         return link_options
     link_options = link_options or ""
     if any(o.lower() in ("/brepro", "-brepro") for o in link_options.split()):
@@ -387,7 +388,7 @@ def build_wheels_main() -> None:
     # set the default build_dir_root to a very short path on Windows to avoid path too long errors
     default_build_dir_root = (
         ipp_dir.parent / "ITKPythonPackage-build"
-        if os_name != "windows"
+        if os_name is not OS.WINDOWS
         else Path("C:/") / "BDR"
     )
     parser.add_argument(
@@ -420,7 +421,7 @@ def build_wheels_main() -> None:
 
     default_itk_source_dir = (
         ipp_dir.parent / "ITKPythonPackage-build" / "ITK"
-        if os_name != "windows"
+        if os_name is not OS.WINDOWS
         else Path("C:/") / "BDR" / "ITK"
     )
     parser.add_argument(
@@ -449,7 +450,7 @@ def build_wheels_main() -> None:
        """,
     )
 
-    if os_name == "darwin":
+    if os_name is OS.DARWIN:
         parser.add_argument(
             "--macosx-deployment-target",
             type=str,
@@ -564,12 +565,12 @@ def build_wheels_main() -> None:
     _ipp_dir_path: Path = Path(__file__).resolve().parent.parent
     dist_dir: Path = Path(args.build_dir_root) / "dist"
 
-    binary_ext: str = ".exe" if os_name == "windows" else ""
-    env_bin_dir: str = "Scripts" if os_name == "windows" else "bin"
+    binary_ext: str = ".exe" if os_name is OS.WINDOWS else ""
+    env_bin_dir: str = "Scripts" if os_name is OS.WINDOWS else "bin"
 
     env_path = _ipp_dir_path / ".pixi" / "envs" / args.platform_env
     env_subdirs = (
-        [env_bin_dir, "Library/bin"] if os_name == "windows" else [env_bin_dir]
+        [env_bin_dir, "Library/bin"] if os_name is OS.WINDOWS else [env_bin_dir]
     )
 
     os.environ["PATH"] = os.pathsep.join(
@@ -594,7 +595,7 @@ def build_wheels_main() -> None:
     ipp_superbuild_binary_dir: Path = args.build_dir_root / "build" / "ITK-support-bld"
     package_env_config["IPP_SUPERBUILD_BINARY_DIR"] = ipp_superbuild_binary_dir
 
-    package_env_config["OS_NAME"] = os_name
+    package_env_config["OS_NAME"] = os_name.value
     package_env_config["ARCH"] = target.pixi_suffix
 
     if not Path(args.itk_source_dir).exists():
@@ -647,10 +648,9 @@ def build_wheels_main() -> None:
     package_env_config["ITK_GIT_TAG"] = args.itk_git_tag
     package_env_config["ITK_SOURCE_DIR"] = args.itk_source_dir
     package_env_config["ITK_PACKAGE_VERSION"] = args.itk_package_version
-    if os_name == "darwin":
-        package_env_config["MACOSX_DEPLOYMENT_TARGET"] = args.macosx_deployment_target
-    else:
-        package_env_config["MACOSX_DEPLOYMENT_TARGET"] = "RELEVANT_FOR_MACOS_ONLY"
+    package_env_config["MACOSX_DEPLOYMENT_TARGET"] = (
+        args.macosx_deployment_target if os_name is OS.DARWIN else None
+    )
     package_env_config["ITK_MODULE_PREQ"] = args.itk_module_deps
     package_env_config["ITK_MODULE_NO_CLEANUP"] = module_no_cleanup
     package_env_config["USE_CCACHE"] = use_ccache

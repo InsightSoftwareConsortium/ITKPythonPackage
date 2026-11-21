@@ -9,7 +9,7 @@ import wheel_packaging
 from build_python_instance_base import BuildPythonInstanceBase
 from cmake_argument_builder import CMakeArgumentBuilder
 from linux_build_python_instance import LinuxBuildPythonInstance
-from target_platform import Arch, TargetPlatform, host_arch
+from target_platform import OS, Arch, TargetPlatform, host_arch
 
 
 def test_build_dir_suffix_is_the_documented_token_per_platform():
@@ -20,12 +20,12 @@ def test_build_dir_suffix_is_the_documented_token_per_platform():
     defined as ``return self.pixi_suffix``.
     """
     expected = {
-        ("linux", Arch.X86_64): "x64",
-        ("linux", Arch.AARCH64): "aarch64",
-        ("linux", Arch.I686): "x86",
-        ("darwin", Arch.AARCH64): "arm64",
-        ("darwin", Arch.X86_64): "x86_64",
-        ("windows", Arch.X86_64): "x64",
+        (OS.LINUX, Arch.X86_64): "x64",
+        (OS.LINUX, Arch.AARCH64): "aarch64",
+        (OS.LINUX, Arch.I686): "x86",
+        (OS.DARWIN, Arch.AARCH64): "arm64",
+        (OS.DARWIN, Arch.X86_64): "x86_64",
+        (OS.WINDOWS, Arch.X86_64): "x64",
     }
     for (os_name, arch), token in expected.items():
         assert TargetPlatform(os_name, arch).build_dir_suffix == token

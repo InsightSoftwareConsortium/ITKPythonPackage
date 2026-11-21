@@ -10,11 +10,12 @@ from compiler_cache import (
     compiler_cache_tool,
     use_compiler_cache,
 )
+from target_platform import OS
 
 
 @pytest.mark.parametrize(
     ("os_name", "tool"),
-    [("windows", "sccache"), ("darwin", "ccache"), ("linux", "ccache")],
+    [(OS.WINDOWS, "sccache"), (OS.DARWIN, "ccache"), (OS.LINUX, "ccache")],
 )
 def test_each_platform_uses_its_cache(os_name, tool):
     assert compiler_cache_tool(os_name) == tool

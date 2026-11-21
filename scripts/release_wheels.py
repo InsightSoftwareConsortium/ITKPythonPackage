@@ -39,6 +39,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from build_wheels import source_date_epoch
+from target_platform import OS, Arch, arch_from_machine, os_from_system
 
 IPP_DIR = Path(__file__).resolve().parent.parent
 ITK_REPOSITORY = "https://github.com/InsightSoftwareConsortium/ITK.git"
@@ -57,20 +58,33 @@ WHEEL_GLOB = {
 _PEP440_RELEASE = re.compile(r"^\d+(\.\d+)*((a|b|rc)\d+)?(\.post\d+)?(\.dev\d+)?$")
 
 
+# How messages spell a host architecture.
+_HOST_ARCH_LABEL = {Arch.X86_64: "x64", Arch.AARCH64: "arm64"}
+
+
 @dataclass(frozen=True)
 class Host:
-    """Operating system (``linux``, ``darwin``, ``windows``) and architecture."""
+    """Operating system and architecture; None for one no target knows."""
 
-    system: str
-    arch: str  # "x64" or "arm64"
+    system: OS | None
+    arch: Arch | None
+    label: str = field(default="", compare=False)
+
+    def __post_init__(self) -> None:
+        if not self.label:
+            system = self.system.value if self.system else "unknown"
+            arch = (
+                _HOST_ARCH_LABEL.get(self.arch, "unknown") if self.arch else "unknown"
+            )
+            object.__setattr__(self, "label", f"{system} {arch}")
 
     @classmethod
     def detect(cls) -> Host:
+        system = platform.system().lower()
         machine = platform.machine().lower()
-        arch = {"x86_64": "x64", "amd64": "x64", "aarch64": "arm64"}.get(
-            machine, machine
-        )
-        return cls(platform.system().lower(), arch)
+        arch = arch_from_machine(machine)
+        shown = _HOST_ARCH_LABEL.get(arch, machine) if arch else machine
+        return cls(os_from_system(system), arch, f"{system} {shown}")
 
 
 @dataclass
@@ -86,30 +100,30 @@ class Step:
 def default_targets(host: Host) -> list[str]:
     """Targets built when ``--targets`` is not given."""
     defaults = {
-        ("windows", "x64"): ["windows-x64"],
-        ("darwin", "arm64"): ["macos-arm64", "manylinux-aarch64"],
-        ("linux", "x64"): ["manylinux-x64"],
-        ("linux", "arm64"): ["manylinux-aarch64"],
+        Host(OS.WINDOWS, Arch.X86_64): ["windows-x64"],
+        Host(OS.DARWIN, Arch.AARCH64): ["macos-arm64", "manylinux-aarch64"],
+        Host(OS.LINUX, Arch.X86_64): ["manylinux-x64"],
+        Host(OS.LINUX, Arch.AARCH64): ["manylinux-aarch64"],
     }
     try:
-        return defaults[(host.system, host.arch)]
+        return defaults[host]
     except KeyError:
-        msg = f"No ITK wheel target is built on {host.system} {host.arch}."
+        msg = f"No ITK wheel target is built on {host.label}."
         raise SystemExit(msg) from None
 
 
 def unbuildable_reason(target: str, host: Host) -> str | None:
     """Why *host* cannot build *target*, or None when it can."""
     if target in CONTAINER_ARCH:
-        if host.system == "windows":
+        if host.system is OS.WINDOWS:
             return "manylinux wheels are built with docker from Linux or macOS"
         return None
-    if target == "macos-arm64" and host != Host("darwin", "arm64"):
+    if target == "macos-arm64" and host != Host(OS.DARWIN, Arch.AARCH64):
         return (
             "macOS wheels need an Apple Silicon Mac: the build uses Apple's "
             "SDK and tools, and the import test runs the wheels"
         )
-    if target == "windows-x64" and host != Host("windows", "x64"):
+    if target == "windows-x64" and host != Host(OS.WINDOWS, Arch.X86_64):
         return "Windows wheels need a Windows x64 host"
     return None
 
@@ -145,7 +159,7 @@ def package_version(itk_ref: str, ref_is_tag: bool, version: str | None) -> str:
 
 def native_build_root() -> Path:
     """``build_wheels.py``'s default build root on this host."""
-    if platform.system().lower() == "windows":
+    if os_from_system(platform.system()) is OS.WINDOWS:
         return Path("C:/") / "BDR"
     return IPP_DIR.parent / "ITKPythonPackage-build"
 

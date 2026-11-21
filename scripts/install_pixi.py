@@ -3,12 +3,12 @@
 import os
 from pathlib import Path
 
-from target_platform import TargetPlatform
+from target_platform import OS, TargetPlatform
 from wheel_builder_utils import run_commandLine_subprocess
 
 
 def download_and_install_pixi(
-    binary_ext: str, os_name: str, pixi_home: Path, platform_env: str = "default"
+    binary_ext: str, os_name: OS, pixi_home: Path, platform_env: str = "default"
 ) -> Path:
     """Download pixi (if not already present) and install a platform environment.
 
@@ -44,7 +44,7 @@ def download_and_install_pixi(
     # If not found, we will install into the local build .pixi
     if pixi_exec_path.is_file():
         print(f"Previous install of pixi will be used {pixi_exec_path}.")
-    elif os_name == "windows":
+    elif os_name is OS.WINDOWS:
         # Use PowerShell to install pixi on Windows
         result = run_commandLine_subprocess(
             [
@@ -116,7 +116,7 @@ def install_pixi_tools(platform_env: str = "default"):
     """
     _ipp_dir_path: Path = Path(__file__).resolve().parent.parent
     os_name = TargetPlatform.detect(os.environ, manylinux_version="").os_name
-    binary_ext: str = ".exe" if os_name == "windows" else ""
+    binary_ext: str = ".exe" if os_name is OS.WINDOWS else ""
 
     pixi_home: Path = (
         Path(os.environ["PIXI_HOME"])

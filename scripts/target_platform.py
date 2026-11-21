@@ -26,6 +26,14 @@ class Arch(Enum):
     I686 = "i686"
 
 
+class OS(Enum):
+    """Canonical operating system name, as ``uname`` spells it in lower case."""
+
+    LINUX = "linux"
+    DARWIN = "darwin"
+    WINDOWS = "windows"
+
+
 _MACHINE_ALIASES: dict[str, Arch] = {
     "x86_64": Arch.X86_64,
     "amd64": Arch.X86_64,
@@ -36,8 +44,6 @@ _MACHINE_ALIASES: dict[str, Arch] = {
     "i386": Arch.I686,
 }
 
-_OS_NAMES = ("linux", "darwin", "windows")
-
 # (arch, manylinux_version) -> container image tag
 _MANYLINUX_IMAGE_TAGS: dict[tuple[Arch, str], str] = {
     # manylinux_2_28 is what ships; the _2_34 entry is deliberate headroom
@@ -47,16 +53,29 @@ _MANYLINUX_IMAGE_TAGS: dict[tuple[Arch, str], str] = {
     (Arch.AARCH64, "_2_28"): "2025.08.12-1",
 }
 
-_PIXI_SUFFIX: dict[tuple[str, Arch], str] = {
-    ("linux", Arch.X86_64): "x64",
-    ("linux", Arch.AARCH64): "aarch64",
-    ("linux", Arch.I686): "x86",
-    ("darwin", Arch.AARCH64): "arm64",
-    ("darwin", Arch.X86_64): "x86_64",
-    ("windows", Arch.X86_64): "x64",
+_PIXI_SUFFIX: dict[tuple[OS, Arch], str] = {
+    (OS.LINUX, Arch.X86_64): "x64",
+    (OS.LINUX, Arch.AARCH64): "aarch64",
+    (OS.LINUX, Arch.I686): "x86",
+    (OS.DARWIN, Arch.AARCH64): "arm64",
+    (OS.DARWIN, Arch.X86_64): "x86_64",
+    (OS.WINDOWS, Arch.X86_64): "x64",
 }
 
 _MACOSX_DEPLOYMENT_TARGET = "14_0"
+
+
+def arch_from_machine(machine: str) -> Arch | None:
+    """The Arch a machine name (``uname -m``, ``platform.machine()``) denotes."""
+    return _MACHINE_ALIASES.get(machine.lower())
+
+
+def os_from_system(system: str) -> OS | None:
+    """The OS a system name (``platform.system()``) denotes."""
+    try:
+        return OS(system.lower())
+    except ValueError:
+        return None
 
 
 def manylinux_version_from_platform_env(platform_env: str) -> str:
@@ -90,22 +109,22 @@ class ContainerImage:
 class TargetPlatform:
     """The platform being built *for*, with every spelling it needs."""
 
-    os_name: str
+    os_name: OS
     arch: Arch
     manylinux_version: str = ""
 
     def __post_init__(self) -> None:
-        if self.os_name not in _OS_NAMES:
-            msg = f"Unknown os_name {self.os_name!r}; expected one of {_OS_NAMES}"
-            raise ValueError(msg)
+        if not isinstance(self.os_name, OS):
+            msg = f"os_name must be an OS, got {self.os_name!r}"  # type: ignore[unreachable]
+            raise TypeError(msg)
         if not isinstance(self.arch, Arch):
             msg = f"arch must be an Arch, got {self.arch!r}"  # type: ignore[unreachable]
             raise TypeError(msg)
         if (self.os_name, self.arch) not in _PIXI_SUFFIX:
-            msg = f"Unsupported combination {self.os_name}/{self.arch.value}"
+            msg = f"Unsupported combination {self.os_name.value}/{self.arch.value}"
             raise ValueError(msg)
         if self.manylinux_version:
-            if self.os_name != "linux":
+            if self.os_name is not OS.LINUX:
                 msg = "manylinux_version is only meaningful on linux"
                 raise ValueError(msg)
             if (self.arch, self.manylinux_version) not in _MANYLINUX_IMAGE_TAGS:
@@ -127,29 +146,29 @@ class TargetPlatform:
 
     @property
     def linux_triple(self) -> str:
-        if self.os_name != "linux":
+        if self.os_name is not OS.LINUX:
             msg = "linux_triple is only defined on linux"
             raise ValueError(msg)
         return f"{self.arch.value}-linux-gnu"
 
     @property
     def cmake_osx_arch(self) -> str:
-        if self.os_name != "darwin":
+        if self.os_name is not OS.DARWIN:
             msg = "cmake_osx_arch is only defined on darwin"
             raise ValueError(msg)
         return "arm64" if self.arch is Arch.AARCH64 else self.arch.value
 
     @property
     def wheel_plat_tag(self) -> str:
-        if self.os_name == "linux":
+        if self.os_name is OS.LINUX:
             return f"manylinux{self.manylinux_version}_{self.arch.value}"
-        if self.os_name == "darwin":
+        if self.os_name is OS.DARWIN:
             return f"macosx_{_MACOSX_DEPLOYMENT_TARGET}_{self.cmake_osx_arch}"
         return "win_amd64"
 
     @property
     def container_image(self) -> ContainerImage:
-        if self.os_name != "linux" or not self.manylinux_version:
+        if self.os_name is not OS.LINUX or not self.manylinux_version:
             msg = "container_image requires a manylinux linux target"
             raise ValueError(msg)
         tag = _MANYLINUX_IMAGE_TAGS[(self.arch, self.manylinux_version)]
@@ -183,11 +202,11 @@ class TargetPlatform:
         uname = os.uname() if hasattr(os, "uname") else None
         sysname = uname.sysname.lower() if uname else ""
         if sysname.startswith("linux"):
-            os_name = "linux"
+            os_name = OS.LINUX
         elif sysname.startswith("darwin"):
-            os_name = "darwin"
+            os_name = OS.DARWIN
         elif os.name == "nt":
-            os_name = "windows"
+            os_name = OS.WINDOWS
         else:
             msg = f"Unsupported operating system {sysname!r}"
             raise ValueError(msg)
@@ -201,7 +220,7 @@ class TargetPlatform:
         machine = env.get("TARGET_ARCH") or (
             uname.machine if uname else ambient_machine
         )
-        arch = _MACHINE_ALIASES.get(machine.lower())
+        arch = arch_from_machine(machine)
         if arch is None:
             msg = f"Unknown machine {machine!r}"
             raise ValueError(msg)
@@ -229,7 +248,7 @@ def host_arch(env: Mapping[str, str] | None = None) -> Arch:
         "PROCESSOR_ARCHITECTURE", ""
     )
     machine = uname.machine if uname else ambient_machine
-    arch = _MACHINE_ALIASES.get(machine.lower())
+    arch = arch_from_machine(machine)
     if arch is None:
         msg = f"Unknown host machine {machine!r}"
         raise ValueError(msg)
