@@ -127,7 +127,7 @@ def test_install_step_fails_when_the_install_tree_is_unusable(tmp_path, linux_bu
 def _module_configure_defines(builder, tmp_path) -> list[str]:
     """Run the module build with the tools stubbed out; return its -D list."""
     module = tmp_path / "ITKFoo"
-    module.mkdir()
+    module.mkdir(exist_ok=True)
     builder.module_source_dir = module
     seen = {}
 
@@ -190,3 +190,23 @@ def test_the_itk_configure_asks_for_the_wrapping_development_files(tmp_path):
         }
     )
     assert config["ITK_INSTALL_WRAPPING_DEVELOPMENT_FILES:BOOL"] == "ON"
+
+
+@pytest.mark.parametrize(
+    ("dependencies", "rewritten"),
+    [('["itk == 5.4.*"]', True), ('["numpy >= 1.26"]', False)],
+)
+def test_module_pyproject_is_left_as_found(
+    tmp_path, linux_builder, dependencies, rewritten
+):
+    """No backup is left behind, whether or not the ITK pins were rewritten."""
+    _wire(linux_builder, tmp_path, module_itk_dir="build")
+    linux_builder.package_env_config["ITK_PACKAGE_VERSION"] = "6.0.0"
+    module = tmp_path / "ITKFoo"
+    module.mkdir()
+    original = f'[project]\nname = "itk-foo"\ndependencies = {dependencies}\n'
+    (module / "pyproject.toml").write_text(original)
+    _module_configure_defines(linux_builder, tmp_path)
+    assert (module / "pyproject.toml").read_text() == original
+    assert not (module / "pyproject.toml.orig").exists()
+    assert (module / "pyproject.toml.whl").exists() is rewritten

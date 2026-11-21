@@ -843,6 +843,8 @@ class BuildPythonInstanceBase(ABC):
             if itk_ver:
                 shutil.copy2(module_pyproject, pyproject_orig)
                 deps_rewritten = update_module_itk_deps(module_pyproject, itk_ver)
+                if not deps_rewritten:
+                    pyproject_orig.unlink()
 
         # Ensure venv tools are first in PATH
         py_exe = str(self.package_env_config["PYTHON_EXECUTABLE"])  # Python3_EXECUTABLE
