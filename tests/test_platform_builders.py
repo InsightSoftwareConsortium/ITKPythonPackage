@@ -270,34 +270,19 @@ def test_posix_build_tarball_delegates(macos_builder):
     created.assert_called_once()
 
 
-def _itk_binary_dir_after_prepare(builder) -> object:
+def test_prepare_build_env_names_the_build_by_platform_env(macos_builder):
+    """The build directory repeats platform_env, which names the pixi environment."""
+    macos_builder.platform_env = "pixi-env"
     with (
-        patch.object(builder, "venv_paths"),
-        patch.object(builder, "update_venv_itk_build_configurations"),
-        patch.object(builder, "_configure_toolchain"),
-        patch.object(builder, "get_pixi_environment_name", return_value="pixi-env"),
+        patch.object(macos_builder, "venv_paths"),
+        patch.object(macos_builder, "update_venv_itk_build_configurations"),
+        patch.object(macos_builder, "_configure_toolchain"),
     ):
-        builder.prepare_build_env()
-    return builder.cmake_itk_source_build_configurations.get("ITK_BINARY_DIR:PATH")
-
-
-def test_prepare_build_env_uses_existing_downloaded_binaries(macos_builder):
-    """Pin the downloaded-cache probe, whose platform_env appears twice.
-
-    The pixi environment name is made to differ from the platform env so
-    the probe and the fallback name different directories.
-    """
-    build_root = macos_builder.build_dir_root / "build"
-    doubled = build_root / "ITK-macosx-py311-macosx-py311_arm64"
-    doubled.mkdir(parents=True)
-    assert _itk_binary_dir_after_prepare(macos_builder) == doubled.as_posix()
-
-
-def test_prepare_build_env_names_a_fresh_build_by_pixi_environment(macos_builder):
-    """Without downloaded binaries the build directory carries the pixi env name."""
-    build_root = macos_builder.build_dir_root / "build"
-    expected = build_root / "ITK-macosx-py311-pixi-env_arm64"
-    assert _itk_binary_dir_after_prepare(macos_builder) == expected.as_posix()
+        macos_builder.prepare_build_env()
+    expected = macos_builder.build_dir_root / "build" / "ITK-pixi-env-pixi-env_arm64"
+    assert macos_builder.cmake_itk_source_build_configurations.get(
+        "ITK_BINARY_DIR:PATH"
+    ) == (expected.as_posix())
 
 
 def test_configure_toolchain_routes_arch_through_the_target(macos_builder):

@@ -58,10 +58,6 @@ def test_pixi_run_preamble_only_outside_the_target_and_hostsystem(
     assert seen["cmd"][-2:] == ["cmake", "--version"]
 
 
-def test_get_pixi_environment_name_is_the_platform_env():
-    assert build_environment.get_pixi_environment_name("macosx-py311") == "macosx-py311"
-
-
 def test_find_unix_exectable_paths_raises_when_interpreter_absent(tmp_path):
     with pytest.raises(FileNotFoundError):
         build_environment.find_unix_exectable_paths(tmp_path)

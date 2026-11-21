@@ -2,8 +2,7 @@
 
 These are the pieces of the build that talk to the surrounding machine
 rather than to a particular platform: running a command inside a pixi
-environment, resolving interpreter paths in a Unix virtualenv, and
-naming the pixi environment itself. They are module-level functions so
+environment and resolving interpreter paths in a Unix virtualenv. They are module-level functions so
 they can be exercised without constructing a builder.
 """
 
@@ -14,16 +13,6 @@ from pathlib import Path
 from typing import Any
 
 from wheel_builder_utils import HOST_SYSTEM_ENVIRONMENT_NAME, run_commandLine_subprocess
-
-
-def get_pixi_environment_name(platform_env: str) -> str:
-    """Return the pixi environment name for a platform environment.
-
-    The pixi environment name is the same as the platform_env and is
-    related to the environment setups defined in pixi.toml in the root
-    of this git directory that contains these scripts.
-    """
-    return platform_env
 
 
 def echo_check_call(

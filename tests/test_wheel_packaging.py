@@ -231,7 +231,6 @@ def test_the_wheel_step_starts_from_an_empty_dist(macos_builder):
             "DOXYGEN_EXECUTABLE": "doxygen",
         }
     )
-    macos_builder.get_pixi_environment_name = lambda: "macosx-py311"
     macos_builder.echo_check_call = lambda _cmd, **_kw: new_wheel.write_bytes(b"")
 
     with patch.object(

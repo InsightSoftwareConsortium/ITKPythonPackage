@@ -735,18 +735,14 @@ class BuildPythonInstanceBase(ABC):
         self._configure_tbb()
         self._configure_toolchain()
 
-        build_root = self.build_dir_root / "build"
-        downloaded = build_root / (
-            f"ITK-{self.platform_env}-{self.platform_env}"
-            f"_{self.target.build_dir_suffix}"
-        )
-        if downloaded.exists():
-            itk_binary_build_name = downloaded
-        else:
-            itk_binary_build_name = build_root / (
-                f"ITK-{self.platform_env}-{self.get_pixi_environment_name()}"
+        itk_binary_build_name = (
+            self.build_dir_root
+            / "build"
+            / (
+                f"ITK-{self.platform_env}-{self.platform_env}"
                 f"_{self.target.build_dir_suffix}"
             )
+        )
         self.cmake_itk_source_build_configurations.set(
             "ITK_BINARY_DIR:PATH", itk_binary_build_name.as_posix()
         )
@@ -941,7 +937,7 @@ class BuildPythonInstanceBase(ABC):
             wheel_configbuild_dir_root: Path = (
                 self.build_dir_root
                 / "wheelbuilds"
-                / f"{wheel_name}_{self.get_pixi_environment_name()}"
+                / f"{wheel_name}_{self.platform_env}"
             )
             wheel_configbuild_dir_root.mkdir(parents=True, exist_ok=True)
             configure_one_pyproject_file(
@@ -1112,17 +1108,13 @@ class BuildPythonInstanceBase(ABC):
         itk_dir = self.installed_itk_dir()
         print(f"# FINISHED-Install ITK C++: ITK_DIR={itk_dir}")
 
-    def get_pixi_environment_name(self) -> str:
-        """Delegate, naming the pixi environment for this build."""
-        return build_environment.get_pixi_environment_name(self.platform_env)
-
     def echo_check_call(
         self, cmd, use_pixi_env: bool = True, env=None, **kwargs
     ) -> int:
-        """Delegate, supplying this build's pixi environment name."""
+        """Run *cmd* in this build's pixi environment, which is named after ``platform_env``."""
         return build_environment.echo_check_call(
             cmd,
-            pixi_env_name=self.get_pixi_environment_name(),
+            pixi_env_name=self.platform_env,
             pixi_executable=self.package_env_config["PIXI_EXECUTABLE"],
             run_dir=self.ipp_dir,
             use_pixi_env=use_pixi_env,
