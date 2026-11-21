@@ -291,6 +291,7 @@ def plan(
                         # Docker Desktop and docker-group users need no sudo.
                         "NO_SUDO": os.environ.get("NO_SUDO", "1"),
                         "USE_CCACHE": "1",
+                        "BUILD_WHEELS_EXTRA_FLAGS": "--build-itk-tarball-cache",
                     },
                     dist_dir=container_build_root() / "dist",
                 )

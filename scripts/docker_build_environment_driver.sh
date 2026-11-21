@@ -77,7 +77,6 @@ for py_indicator in "${PY_ENVS_ARRAY[@]}"; do
       "${CONTAINER_PACKAGE_SCRIPTS_DIR}/scripts/build_wheels.py" \
       --platform-env "${PIXI_ENV}" \
       "${BUILD_WHEELS_EXTRA_FLAGS_ARRAY[@]}" \
-      --build-itk-tarball-cache \
       --build-dir-root "${CONTAINER_PACKAGE_BUILD_DIR}" \
       --itk-source-dir "${CONTAINER_ITK_SOURCE_DIR}" \
       --itk-git-tag "${ITK_GIT_TAG}" \

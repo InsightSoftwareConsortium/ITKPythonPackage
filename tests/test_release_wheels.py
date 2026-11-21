@@ -99,6 +99,7 @@ def test_container_build_runs_without_sudo_unless_asked(tmp_path, monkeypatch):
         "TARGET_ARCH": "aarch64",
         "NO_SUDO": "1",
         "USE_CCACHE": "1",
+        "BUILD_WHEELS_EXTRA_FLAGS": "--build-itk-tarball-cache",
     }
     monkeypatch.setenv("NO_SUDO", "")
     (step,) = rw.plan(["manylinux-x64"], tmp_path / "ITK", "abc123", "6.0b3")
