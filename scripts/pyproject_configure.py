@@ -214,56 +214,6 @@ def update_wheel_pyproject_toml_parameters(
         else:
             params["PYPROJECT_NAME"] = wheel_name
 
-        # long description
-        if wheel_name == "itk-core":
-            params["PYPROJECT_LONG_DESCRIPTION"] += (
-                r"\n\n"
-                "This package contain the toolkit framework used"
-                " by other modules. There are common base classes for data objects and process"
-                " objects, basic data structures such as Image, Mesh, QuadEdgeMesh, and"
-                " SpatialObjects, and common functionality for operations such as finite"
-                " differences, image adaptors, or image transforms."
-            )
-        elif wheel_name == "itk-filtering":
-            params["PYPROJECT_LONG_DESCRIPTION"] += (
-                r"\n\n"
-                "These packages contains filters that modify data"
-                " in the ITK pipeline framework.  These filters take an input object, such as an"
-                " Image, and modify it to create an output.  Filters can be chained together to"
-                " create a processing pipeline."
-            )
-        elif wheel_name == "itk-filtering-extra":
-            params["PYPROJECT_LONG_DESCRIPTION"] += (
-                r"\n\n"
-                "This package contains additional filters, contributed as ITK"
-                " remote modules and since integrated into the toolkit."
-            )
-        elif wheel_name == "itk-io":
-            params["PYPROJECT_LONG_DESCRIPTION"] += (
-                r"\n\n"
-                "This package contains classes for reading and writing images and other data objects."
-            )
-        elif wheel_name == "itk-numerics":
-            params["PYPROJECT_LONG_DESCRIPTION"] += (
-                r"\n\n"
-                "This package contains basic numerical tools and algorithms that"
-                " have general applications outside of imaging."
-            )
-        elif wheel_name == "itk-registration":
-            params["PYPROJECT_LONG_DESCRIPTION"] += (
-                r"\n\n"
-                "This package addresses the registration problem: "
-                " find the spatial transformation between two images. This is a high"
-                " level package that makes use of many lower level packages."
-            )
-        elif wheel_name == "itk-segmentation":
-            params["PYPROJECT_LONG_DESCRIPTION"] += (
-                r"\n\n"
-                "This package addresses the segmentation problem: "
-                " partition the image into classified regions (labels). This is a high"
-                " level package that makes use of many lower level packages."
-            )
-
         # cmake_args
         params["PYPROJECT_CMAKE_ARGS"] = list_to_str(
             [
@@ -417,12 +367,6 @@ def build_base_pyproject_parameters(
         ),
         "PYPROJECT_DOWNLOAD_URL": r"https://github.com/InsightSoftwareConsortium/ITK/releases",
         "PYPROJECT_DESCRIPTION": r"ITK is an open-source toolkit for multidimensional image analysis",
-        "PYPROJECT_LONG_DESCRIPTION": r"ITK is an open-source, cross-platform library that "
-        "provides developers with an extensive suite of software "
-        "tools for image analysis. Developed through extreme "
-        "programming methodologies, ITK employs leading-edge "
-        "algorithms for registering and segmenting "
-        "multidimensional scientific images.",
         "PYPROJECT_EXTRA_KEYWORDS": r'"scientific", "medical", "image", "imaging"',
         "PYPROJECT_DEPENDENCIES": r"",
     }
