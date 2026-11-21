@@ -183,3 +183,8 @@ strict = true
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = ["wheel_builder_utils"]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true

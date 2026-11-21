@@ -9,7 +9,7 @@ import os
 import re
 import subprocess
 import sys
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from os import environ
 from pathlib import Path
 
@@ -241,7 +241,7 @@ def which_required(name: str) -> Path:
 def run_command(
     cmd: Sequence[str | Path],
     cwd: Path | None = None,
-    env: dict[str, str] | None = None,
+    env: Mapping[str, str] | None = None,
     check: bool = False,
 ) -> subprocess.CompletedProcess[str]:
     """Run a command via ``subprocess.run`` with logging.
@@ -252,7 +252,7 @@ def run_command(
         Command and arguments to execute.
     cwd : Path, optional
         Working directory for the subprocess.
-    env : dict, optional
+    env : Mapping, optional
         Environment variables for the subprocess.
     check : bool, optional
         If True, raise ``RuntimeError`` on non-zero exit codes.
@@ -366,7 +366,9 @@ def git_describe_to_pep440(desc: str) -> str:
     return semver_format
 
 
-def compute_itk_package_version(itk_dir: Path, itk_git_tag: str, env) -> str:
+def compute_itk_package_version(
+    itk_dir: Path, itk_git_tag: str, env: Mapping[str, str]
+) -> str:
     """Compute a PEP 440 version string for the ITK package.
 
     Fetches tags, checks out *itk_git_tag*, and runs
@@ -379,7 +381,7 @@ def compute_itk_package_version(itk_dir: Path, itk_git_tag: str, env) -> str:
         Path to the ITK source repository.
     itk_git_tag : str
         Git tag, branch, or commit to check out before describing.
-    env : dict
+    env : Mapping
         Environment variables passed to Git subprocesses.
 
     Returns
