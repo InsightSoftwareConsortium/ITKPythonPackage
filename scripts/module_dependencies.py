@@ -3,7 +3,7 @@ import os
 import re
 import shutil
 import tomllib
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from pathlib import Path
 
 
@@ -141,12 +141,21 @@ def copy_files(
                 shutil.copy2(src, dst)
 
 
-def build_module_dependencies(context) -> None:
+def build_module_dependencies(
+    itk_module_deps: str,
+    module_source_dir: Path,
+    module_dependencies_root_dir: Path | None,
+    run: Callable[..., int],
+    build_module: Callable[[Path], None],
+) -> None:
     """
     Build prerequisite ITK external modules, mirroring the behavior of
     the platform shell scripts that use the ITK_MODULE_PREQ environment.
 
-    Accepted formats in context.itk_module_deps (colon-delimited):
+    *run* executes each git command, as the builder's ``echo_check_call``
+    does; *build_module* builds one cloned dependency's wheel.
+
+    Accepted formats in *itk_module_deps* (colon-delimited):
       - "MeshToPolyData@v0.10.0"  -> defaults to
         "InsightSoftwareConsortium/ITKMeshToPolyData@v0.10.0"
       - "InsightSoftwareConsortium/ITKMeshToPolyData@v0.10.0"
@@ -158,10 +167,11 @@ def build_module_dependencies(context) -> None:
     The cache is not downloaded or extracted again for a dependency.
     """
 
-    if len(context.itk_module_deps) == 0:
+    if len(itk_module_deps) == 0:
         return
-    print(f"Building module dependencies: {context.itk_module_deps}")
-    context.module_dependencies_root_dir.mkdir(parents=True, exist_ok=True)
+    print(f"Building module dependencies: {itk_module_deps}")
+    if module_dependencies_root_dir is not None:
+        module_dependencies_root_dir.mkdir(parents=True, exist_ok=True)
 
     # Normalize entries to "Org/Repo@Tag"
     def _normalize(entry: str) -> str:
@@ -181,13 +191,13 @@ def build_module_dependencies(context) -> None:
         return f"InsightSoftwareConsortium/{repo}@{tag}"
 
     # Ensure working directories exist
-    module_root = Path(context.module_source_dir).resolve()
+    module_root = Path(module_source_dir).resolve()
     include_dir = module_root / "include"
     wrapping_dir = module_root / "wrapping"
     include_dir.mkdir(parents=True, exist_ok=True)
     wrapping_dir.mkdir(parents=True, exist_ok=True)
 
-    dep_entries = [e for e in (s for s in context.itk_module_deps.split(":")) if e]
+    dep_entries = [e for e in (s for s in itk_module_deps.split(":")) if e]
     normalized = [_normalize(e) for e in dep_entries]
     normalized = [e for e in normalized if e]
 
@@ -203,18 +213,18 @@ def build_module_dependencies(context) -> None:
 
         upstream = f"https://github.com/{org}/{repo}.git"
         dependent_module_clone_dir = (
-            context.module_dependencies_root_dir / repo
-            if context.module_dependencies_root_dir
+            module_dependencies_root_dir / repo
+            if module_dependencies_root_dir
             else module_root / repo
         )
         if not dependent_module_clone_dir.exists():
-            context.echo_check_call(
+            run(
                 ["git", "clone", upstream, dependent_module_clone_dir],
                 check=True,
             )
 
         # Checkout requested tag
-        context.echo_check_call(
+        run(
             [
                 "git",
                 "-C",
@@ -226,7 +236,7 @@ def build_module_dependencies(context) -> None:
             check=True,
         )
         if tag:
-            context.echo_check_call(
+            run(
                 ["git", "-C", dependent_module_clone_dir, "checkout", tag],
                 check=True,
             )
@@ -235,13 +245,7 @@ def build_module_dependencies(context) -> None:
             msg: str = f"Old sci-kit-build with setup.py is no longer supported for {dependent_module_clone_dir} at {tag}"
             raise RuntimeError(msg)
 
-        # Clone the current build environment and modify for the current module
-        dependent_module_build_setup = context.clone()
-        dependent_module_build_setup.module_source_dir = Path(
-            dependent_module_clone_dir
-        )
-        dependent_module_build_setup.itk_module_deps = None  # Prevent recursion
-        dependent_module_build_setup.run()
+        build_module(Path(dependent_module_clone_dir))
 
         # After building dependency, copy includes and wrapping files
         # 1) Top-level include/* -> include/

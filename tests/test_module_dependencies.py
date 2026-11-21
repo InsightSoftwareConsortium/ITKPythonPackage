@@ -116,7 +116,7 @@ def test_output_is_still_valid_toml(version, tmp_path_factory):
 
 
 class _DepContext:
-    """A build context carrying only what build_module_dependencies reads."""
+    """The values and callbacks build_module_dependencies is given."""
 
     def __init__(self, module_source_dir: Path, deps: str, failing: str):
         self.module_source_dir = module_source_dir
@@ -137,7 +137,7 @@ class _DepContext:
             Path(cmd[3]).mkdir(parents=True, exist_ok=True)
         return 0
 
-    def clone(self):  # pragma: no cover - not reached by these tests
+    def build_module(self, _source_dir: Path) -> None:  # pragma: no cover
         msg = "dependency build must not start after a git failure"
         raise AssertionError(msg)
 
@@ -147,7 +147,13 @@ def test_dependency_git_failures_stop_the_build(tmp_path, failing):
     """A pinned dependency tag is a constraint, not a suggestion."""
     context = _DepContext(tmp_path, "InsightSoftwareConsortium/ITKFoo@v1.2.3", failing)
     with pytest.raises(RuntimeError):
-        build_module_dependencies(context)
+        build_module_dependencies(
+            context.itk_module_deps,
+            context.module_source_dir,
+            context.module_dependencies_root_dir,
+            context.echo_check_call,
+            context.build_module,
+        )
 
 
 def test_copy_files_places_each_file_where_asked(tmp_path):
@@ -162,3 +168,23 @@ def test_copy_files_places_each_file_where_asked(tmp_path):
     flat = tmp_path / "flat"
     copy_files(src_root.rglob("*.h"), flat)
     assert sorted(p.name for p in flat.iterdir()) == ["a.h", "b.h"]
+
+
+def test_each_dependency_is_cloned_checked_out_and_built_in_order(tmp_path):
+    context = _DepContext(tmp_path, "Foo@v1:Org/ITKBar@abc", failing="none")
+    built: list[Path] = []
+    build_module_dependencies(
+        context.itk_module_deps,
+        context.module_source_dir,
+        context.module_dependencies_root_dir,
+        context.echo_check_call,
+        built.append,
+    )
+    assert built == [tmp_path / "deps" / "ITKFoo", tmp_path / "deps" / "ITKBar"]
+    clones = [c for c in context.calls if c[1] == "clone"]
+    assert [c[2] for c in clones] == [
+        "https://github.com/InsightSoftwareConsortium/ITKFoo.git",
+        "https://github.com/Org/ITKBar.git",
+    ]
+    checkouts = [c[-1] for c in context.calls if "checkout" in c]
+    assert checkouts == ["v1", "abc"]

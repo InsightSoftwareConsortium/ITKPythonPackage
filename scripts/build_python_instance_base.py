@@ -413,7 +413,13 @@ class BuildPythonInstanceBase(ABC):
         # Use BuildManager to persist and resume build steps
 
         if self.itk_module_deps:
-            build_module_dependencies(self)
+            build_module_dependencies(
+                itk_module_deps=self.itk_module_deps,
+                module_source_dir=self.required_module_source_dir(),
+                module_dependencies_root_dir=self.module_dependencies_root_dir,
+                run=self.echo_check_call,
+                build_module=self.build_dependency_module,
+            )
 
         python_package_build_steps = self.build_step_table()
 
@@ -441,6 +447,13 @@ class BuildPythonInstanceBase(ABC):
             # Statistics are informational: a failure here must not mask the build's.
             for cmd in cache_after:
                 self.echo_check_call(cmd, use_pixi_env=False)
+
+    def build_dependency_module(self, module_source_dir: Path) -> None:
+        """Build the wheel of a dependency module with a copy of this builder."""
+        dependency_build = self.clone()
+        dependency_build.module_source_dir = module_source_dir
+        dependency_build.itk_module_deps = None  # Prevent recursion
+        dependency_build.run()
 
     def build_inputs(self) -> dict[str, str]:
         """Return the ITK commit, package version, and fingerprint of this build."""
@@ -674,7 +687,7 @@ class BuildPythonInstanceBase(ABC):
                 )
                 raise RuntimeError(msg)
 
-    def clone(self):
+    def clone(self) -> "BuildPythonInstanceBase":
         """Return a deep copy of this instance for building a dependency.
 
         Uses ``self.__class__`` so the returned object is the same concrete
