@@ -86,11 +86,11 @@ def test_manylinux_on_non_linux_raises():
 def test_x86_64_uses_dockcross_with_hyphen():
     image = TargetPlatform("linux", Arch.X86_64, "_2_28").container_image
     assert image == ContainerImage(
-        name="manylinux_2_28-x64:20250913-6ea98ba",
+        name="manylinux_2_28-x64:20260203-3dfb3ff",
         registry="docker.io/dockcross",
     )
     assert image.reference == (
-        "docker.io/dockcross/manylinux_2_28-x64:20250913-6ea98ba"
+        "docker.io/dockcross/manylinux_2_28-x64:20260203-3dfb3ff"
     )
 
 

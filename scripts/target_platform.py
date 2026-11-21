@@ -43,7 +43,7 @@ _MANYLINUX_IMAGE_TAGS: dict[tuple[Arch, str], str] = {
     # manylinux_2_28 is what ships; the _2_34 entry is deliberate headroom
     # for evaluating a higher glibc floor and is not a shipping target.
     (Arch.X86_64, "_2_34"): "latest",
-    (Arch.X86_64, "_2_28"): "20250913-6ea98ba",
+    (Arch.X86_64, "_2_28"): "20260203-3dfb3ff",
     (Arch.AARCH64, "_2_28"): "2025.08.12-1",
 }
 

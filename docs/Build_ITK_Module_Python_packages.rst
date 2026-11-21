@@ -150,7 +150,7 @@ Key environment variables:
      - ``x64``
      - ``x64`` or ``aarch64``
    * - ``IMAGE_TAG``
-     - ``20250913-6ea98ba``
+     - ``20260203-3dfb3ff``
      - Dockcross Docker image tag
    * - ``MODULE_SRC_DIRECTORY``
      - script directory
