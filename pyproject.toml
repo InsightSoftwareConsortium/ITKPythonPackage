@@ -207,6 +207,7 @@ module = [
   "tests.test_dead_strip",
   "tests.test_final_wheel_import_test",
   "tests.test_installed_itk_dir",
+  "tests.test_itk_source_without_git",
 ]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true

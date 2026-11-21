@@ -1,6 +1,7 @@
 """A cache-restored ITK tree has no .git and must not abort the build."""
 
 import subprocess
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 import build_wheels
@@ -15,16 +16,22 @@ class _FakeGit:
         self.failing = failing
         self.head = head
         self.calls: list[list[str]] = []
-        self.envs: list[dict[str, str] | None] = []
+        self.envs: list[Mapping[str, str] | None] = []
 
-    def __call__(self, cmd, cwd=None, env=None, check=False):
-        cmd = [str(c) for c in cmd]
-        self.calls.append(cmd)
+    def __call__(
+        self,
+        cmd: Sequence[str | Path],
+        cwd: Path | None = None,
+        env: Mapping[str, str] | None = None,
+        check: bool = False,
+    ) -> subprocess.CompletedProcess[str]:
+        args = [str(c) for c in cmd]
+        self.calls.append(args)
         self.envs.append(env)
-        name = " ".join(cmd[1:3])
+        name = " ".join(args[1:3])
         failed = any(name.startswith(f) for f in self.failing)
-        stdout = self.head if cmd[1:3] == ["rev-parse", "HEAD"] else ""
-        return subprocess.CompletedProcess(cmd, 1 if failed else 0, stdout, "")
+        stdout = self.head if args[1:3] == ["rev-parse", "HEAD"] else ""
+        return subprocess.CompletedProcess(args, 1 if failed else 0, stdout, "")
 
     def ran(self, *subcommand: str) -> bool:
         return any(c[1 : 1 + len(subcommand)] == list(subcommand) for c in self.calls)
@@ -40,38 +47,50 @@ def _sync(
     return build_wheels.sync_itk_source(tmp_path, tag)
 
 
-def test_a_tree_without_a_repository_is_used_as_it_is(tmp_path, monkeypatch):
+def test_a_tree_without_a_repository_is_used_as_it_is(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     git = _FakeGit(failing={"rev-parse --git-dir"})
     assert _sync(monkeypatch, tmp_path, git) == "v6.0.0"
     assert not git.ran("fetch")
     assert not git.ran("checkout")
 
 
-def test_a_repository_is_fetched_and_checked_out(tmp_path, monkeypatch):
+def test_a_repository_is_fetched_and_checked_out(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     git = _FakeGit(failing=set())
     assert _sync(monkeypatch, tmp_path, git) == "v6.0.0"
     assert git.ran("fetch", "--tags", "origin")
     assert git.ran("checkout", "v6.0.0")
 
 
-def test_a_failed_fetch_is_fatal_when_the_revision_is_missing(tmp_path, monkeypatch):
+def test_a_failed_fetch_is_fatal_when_the_revision_is_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     git = _FakeGit(failing={"fetch", "rev-parse --verify"})
     with pytest.raises(RuntimeError, match="Failed to fetch ITK tags"):
         _sync(monkeypatch, tmp_path, git)
 
 
-def test_a_failed_fetch_is_survived_when_the_revision_is_present(tmp_path, monkeypatch):
+def test_a_failed_fetch_is_survived_when_the_revision_is_present(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     git = _FakeGit(failing={"fetch"})
     assert _sync(monkeypatch, tmp_path, git) == "v6.0.0"
     assert git.ran("checkout", "v6.0.0")
 
 
-def test_a_failed_checkout_keeps_the_commit_already_checked_out(tmp_path, monkeypatch):
+def test_a_failed_checkout_keeps_the_commit_already_checked_out(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     git = _FakeGit(failing={"checkout"}, head="deadbeef")
     assert _sync(monkeypatch, tmp_path, git) == "deadbeef"
 
 
-def test_every_git_call_stops_at_the_itk_tree(tmp_path, monkeypatch):
+def test_every_git_call_stops_at_the_itk_tree(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """A cache extracted inside a module checkout must not act on that checkout."""
     git = _FakeGit(failing={"checkout"})
     _sync(monkeypatch, tmp_path, git)
@@ -80,7 +99,7 @@ def test_every_git_call_stops_at_the_itk_tree(tmp_path, monkeypatch):
     assert all(env and env["GIT_CEILING_DIRECTORIES"] == ceiling for env in git.envs)
 
 
-def test_a_tree_inside_another_repository_is_not_a_repository(tmp_path):
+def test_a_tree_inside_another_repository_is_not_a_repository(tmp_path: Path) -> None:
     """The real git honors the ceiling for a tree nested in a module checkout."""
     module = tmp_path / "module"
     source = module / "ITKPythonPackage-build" / "ITK"
@@ -97,7 +116,7 @@ def test_a_tree_inside_another_repository_is_not_a_repository(tmp_path):
     assert probe.returncode != 0
 
 
-def test_empty_git_directory_is_not_a_repository(tmp_path):
+def test_empty_git_directory_is_not_a_repository(tmp_path: Path) -> None:
     """The cache excludes .git contents but keeps the directory.
 
     A filesystem test passes on that empty directory while git reports
@@ -116,7 +135,7 @@ def test_empty_git_directory_is_not_a_repository(tmp_path):
     assert probe.returncode != 0  # what the new guard checks
 
 
-def test_gitauto_is_the_default_version(monkeypatch):
+def test_gitauto_is_the_default_version(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("ITK_PACKAGE_VERSION", raising=False)
     assert (
         build_wheels.remotemodulebuildandtestaction()["ITK_PACKAGE_VERSION"]
@@ -125,12 +144,12 @@ def test_gitauto_is_the_default_version(monkeypatch):
 
 
 @pytest.mark.parametrize("sentinel", ["gitauto", "auto", "", None])
-def test_sentinel_values_derive_the_version_from_git(sentinel):
+def test_sentinel_values_derive_the_version_from_git(sentinel: str | None) -> None:
     assert build_wheels.derives_package_version(sentinel)
 
 
 @pytest.mark.parametrize("supplied", ["v6.0rc01.dev20260915", "6.0.1", "1.2.3.post4"])
-def test_an_explicit_version_never_consults_git(supplied):
+def test_an_explicit_version_never_consults_git(supplied: str) -> None:
     """An override must not reach the git-based derivation.
 
     The derivation needs a repository, and a source tree restored from a build
@@ -140,10 +159,17 @@ def test_an_explicit_version_never_consults_git(supplied):
     assert not build_wheels.derives_package_version(supplied)
 
 
-def test_version_derivation_explains_a_cache_tree(tmp_path, monkeypatch):
+def test_version_derivation_explains_a_cache_tree(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Without a repository the error must name the fix, not just the failure."""
 
-    def not_a_repository(cmd, cwd=None, env=None, check=False):
+    def not_a_repository(
+        cmd: Sequence[str | Path],
+        cwd: Path | None = None,
+        env: Mapping[str, str] | None = None,
+        check: bool = False,
+    ) -> subprocess.CompletedProcess[str]:
         return subprocess.CompletedProcess(cmd, 128, "", "fatal: not a git repository")
 
     monkeypatch.setattr(wheel_builder_utils, "run_command", not_a_repository)
