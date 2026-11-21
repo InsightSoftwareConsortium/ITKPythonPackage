@@ -107,7 +107,7 @@ def download_and_install_pixi(
     return pixi_exec_path
 
 
-def install_pixi_tools(platform_env: str = "default"):
+def install_pixi_tools(platform_env: str = "default") -> None:
     """High-level helper: detect the platform, install pixi, and set up *platform_env*.
 
     Parameters

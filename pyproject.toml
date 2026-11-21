@@ -185,6 +185,11 @@ disallow_incomplete_defs = false
 warn_unreachable = true
 
 [[tool.mypy.overrides]]
-module = ["wheel_builder_utils", "build_environment", "build_manager"]
+module = [
+  "wheel_builder_utils",
+  "build_environment",
+  "build_manager",
+  "install_pixi",
+]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
