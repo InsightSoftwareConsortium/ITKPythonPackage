@@ -24,9 +24,9 @@ class CMakeArgumentBuilder:
     ...     "CMAKE_OSX_ARCHITECTURES:STRING": "arm64",
     ... }
     >>> builder = CMakeArgumentBuilder(flags)
-    >>> builder.getCMakeCommandLineArguments()
+    >>> builder.cmake_command_line_arguments()
     ["-DCMAKE_BUILD_TYPE:STRING='Release'", "-DCMAKE_OSX_ARCHITECTURES:STRING='arm64'"]
-    >>> builder.getPythonBuildCommandLineArguments()
+    >>> builder.python_build_command_line_arguments()
     ["--config-setting=cmake.define.CMAKE_BUILD_TYPE:STRING='Release'",
      "--config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING='arm64'"]
     """
@@ -81,7 +81,7 @@ class CMakeArgumentBuilder:
         return self._defs.items()
 
     # Renderers
-    def getCMakeCommandLineArguments(self) -> list[str]:
+    def cmake_command_line_arguments(self) -> list[str]:
         """Render definitions as CMake ``-D`` arguments.
 
         Returns
@@ -91,7 +91,7 @@ class CMakeArgumentBuilder:
         """
         return [f"""-D{k}='{drop_quotes(v)}'""" for k, v in self._defs.items()]
 
-    def getPythonBuildCommandLineArguments(self) -> list[str]:
+    def python_build_command_line_arguments(self) -> list[str]:
         """Render definitions as scikit-build-core ``--config-setting`` arguments.
 
         Returns

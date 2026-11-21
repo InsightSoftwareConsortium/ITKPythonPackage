@@ -543,12 +543,12 @@ def test_ingested_remote_modules_are_enabled_and_can_be_overridden(linux_builder
     linux_builder.enable_ingested_remote_modules()
     defs = CMakeArgumentBuilder()
     defs.update(linux_builder.cmake_itk_source_build_configurations.items())
-    args = defs.getCMakeCommandLineArguments()
+    args = defs.cmake_command_line_arguments()
     for module in ITK_INGESTED_REMOTE_MODULES:
         assert f"-DModule_{module}:BOOL='ON'" in args
 
     defs.update({"Module_Montage:BOOL": "OFF"})
-    args = defs.getCMakeCommandLineArguments()
+    args = defs.cmake_command_line_arguments()
     assert "-DModule_Montage:BOOL='OFF'" in args
     assert "-DModule_Montage:BOOL='ON'" not in args
 

@@ -512,7 +512,7 @@ class BuildPythonInstanceBase(ABC):
             "Ninja",
         ]
 
-        cmd += cmake_superbuild_arguments.getCMakeCommandLineArguments()
+        cmd += cmake_superbuild_arguments.cmake_command_line_arguments()
 
         cmd += [
             "-S",
@@ -877,7 +877,7 @@ class BuildPythonInstanceBase(ABC):
         defs.update(self.cmake_cmdline_definitions.items())
 
         # Append all cmake.define entries to the build cmd
-        cmd += defs.getPythonBuildCommandLineArguments()
+        cmd += defs.python_build_command_line_arguments()
 
         # Stable ABI setting if applicable
         if wheel_py_api:
@@ -951,7 +951,7 @@ class BuildPythonInstanceBase(ABC):
 
             # Do last to override with command line items
             scikitbuild_cmdline_args.update(self.cmake_cmdline_definitions.items())
-            cmd += scikitbuild_cmdline_args.getPythonBuildCommandLineArguments()
+            cmd += scikitbuild_cmdline_args.python_build_command_line_arguments()
             # The location of the generated pyproject.toml file
             cmd += [str(wheel_configbuild_dir_root)]
             self.echo_check_call(cmd, check=True)
@@ -996,7 +996,7 @@ class BuildPythonInstanceBase(ABC):
         defs.update(self.cmake_itk_source_build_configurations.items())
         # NOTE Do cmake_cmdline_definitions last so they override internal defaults
         defs.update(self.cmake_cmdline_definitions.items())
-        cmd += defs.getCMakeCommandLineArguments()
+        cmd += defs.cmake_command_line_arguments()
         cmd += [
             "-S",
             self.package_env_config["ITK_SOURCE_DIR"],
