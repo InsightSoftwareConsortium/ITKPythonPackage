@@ -31,8 +31,7 @@
 # -----------------------------------------------------------------------
 # Script argument parsing
 #
-usage()
-{
+usage() {
   echo "Usage:
   dockcross-manylinux-download-cache-and-build-module-wheels
     [ -h | --help ]           show usage
@@ -47,15 +46,29 @@ PARSED_ARGS=$(getopt -a -n dockcross-manylinux-download-cache-and-build-module-w
   -o hc:x: --long help,cmake_options:,exclude_libs: -- "$@")
 eval set -- "$PARSED_ARGS"
 
-while :
-do
+while :; do
   case "$1" in
-    -h | --help) usage; break ;;
-    -c | --cmake_options) CMAKE_OPTIONS="$2" ; shift 2 ;;
-    -x | --exclude_libs) EXCLUDE_LIBS="$2" ; shift 2 ;;
-    --) shift; break ;;
-    *) echo "Unexpected option: $1.";
-       usage; break ;;
+  -h | --help)
+    usage
+    break
+    ;;
+  -c | --cmake_options)
+    CMAKE_OPTIONS="$2"
+    shift 2
+    ;;
+  -x | --exclude_libs)
+    EXCLUDE_LIBS="$2"
+    shift 2
+    ;;
+  --)
+    shift
+    break
+    ;;
+  *)
+    echo "Unexpected option: $1."
+    usage
+    break
+    ;;
   esac
 done
 
@@ -71,5 +84,5 @@ chmod u+x dockcross-manylinux-download-cache.sh
 # Build module wheels
 
 echo "Building module wheels"
-set -- "${FORWARD_ARGS[@]}"; # Restore initial argument list
+set -- "${FORWARD_ARGS[@]}" # Restore initial argument list
 ./ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh "$@"

@@ -27,7 +27,10 @@
 
 # Initialize variables
 
-script_dir=$(cd $(dirname $0) || exit 1; pwd)
+script_dir=$(
+  cd $(dirname $0) || exit 1
+  pwd
+)
 if [[ ! -f "${script_dir}/dockcross-manylinux-download-cache-and-build-module-wheels.sh" ]]; then
   echo "Could not find download script to use for building module dependencies!"
   exit 1
@@ -45,9 +48,9 @@ export ITK_MODULE_NO_CLEANUP="ON"
 # Build ITK module dependencies
 
 for MODULE_INFO in ${ITK_MODULE_PREQ_TOPLEVEL//:/ }; do
-  MODULE_ORG=`(echo ${MODULE_INFO} | cut -d'/' -f 1)`
-  MODULE_NAME=`(echo ${MODULE_INFO} | cut -d'@' -f 1 | cut -d'/' -f 2)`
-  MODULE_TAG=`(echo ${MODULE_INFO} | cut -d'@' -f 2)`
+  MODULE_ORG=$( (echo ${MODULE_INFO} | cut -d'/' -f 1))
+  MODULE_NAME=$( (echo ${MODULE_INFO} | cut -d'@' -f 1 | cut -d'/' -f 2))
+  MODULE_TAG=$( (echo ${MODULE_INFO} | cut -d'@' -f 2))
 
   MODULE_UPSTREAM=https://github.com/${MODULE_ORG}/${MODULE_NAME}.git
   echo "Cloning from ${MODULE_UPSTREAM}"
@@ -56,7 +59,7 @@ for MODULE_INFO in ${ITK_MODULE_PREQ_TOPLEVEL//:/ }; do
   # Reuse cached build archive instead of redownloading.
   # Build archives are usually ~2GB so it is reasonable to move
   # instead of redownloading.
-  if [[ `(compgen -G ./ITKPythonBuilds-linux*.tar.zst)` ]]; then
+  if [[ $( (compgen -G ./ITKPythonBuilds-linux*.tar.zst)) ]]; then
     mv ITKPythonBuilds-linux*.tar.zst ${MODULE_NAME}/
   fi
 
@@ -82,7 +85,7 @@ for MODULE_INFO in ${ITK_MODULE_PREQ_TOPLEVEL//:/ }; do
   find ${MODULE_NAME}/*build/*/include -type f -print -exec cp {} include \;
 
   # Cache build archive
-  if [[ `(compgen -G ./ITKPythonBuilds-linux*.tar.zst)` ]]; then
+  if [[ $( (compgen -G ./ITKPythonBuilds-linux*.tar.zst)) ]]; then
     rm -f ./${MODULE_NAME}/ITKPythonBuilds-linux*.tar.zst
   else
     mv ./${MODULE_NAME}/ITKPythonBuilds-linux*.tar.zst .

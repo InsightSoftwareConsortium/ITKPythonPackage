@@ -2,13 +2,12 @@
 
 # See usage with .\scripts\windows_build_module_wheels.py --help
 
-from subprocess import check_call
-import os
-import glob
-import sys
 import argparse
+import glob
+import os
 import shutil
-from pathlib import Path
+import sys
+from subprocess import check_call
 
 SCRIPT_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.abspath(os.getcwd())
@@ -18,7 +17,7 @@ print("ROOT_DIR: %s" % ROOT_DIR)
 
 sys.path.insert(0, os.path.join(SCRIPT_DIR, "internal"))
 
-from wheel_builder_utils import push_dir, push_env
+from wheel_builder_utils import push_env
 from windows_build_common import DEFAULT_PY_ENVS, venv_paths
 
 
@@ -109,8 +108,7 @@ def build_wheels(py_envs=DEFAULT_PY_ENVS, cleanup=True, cmake_options=[]):
                     "--config-setting=cmake.define.CMAKE_BUILD_TYPE:STRING=Release",
                     "--config-setting=cmake.define.CMAKE_MAKE_PROGRAM:FILEPATH=%s"
                     % ninja_executable,
-                    "--config-setting=cmake.define.ITK_DIR:PATH=%s"
-                    % itk_build_path,
+                    "--config-setting=cmake.define.ITK_DIR:PATH=%s" % itk_build_path,
                     "--config-setting=cmake.define.WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel",
                     "--config-setting=cmake.define.SWIG_EXECUTABLE:FILEPATH=%s/Wrapping/Generators/SwigInterface/swig/bin/swig.exe"
                     % itk_build_path,

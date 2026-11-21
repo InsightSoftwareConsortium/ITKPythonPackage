@@ -1,8 +1,8 @@
 __all__ = ["DEFAULT_PY_ENVS", "venv_paths"]
 
-from subprocess import check_call
 import os
 import shutil
+from subprocess import check_call
 
 DEFAULT_PY_ENVS = ["310-x64", "311-x64"]
 

@@ -6,7 +6,7 @@
 
 # -----------------------------------------------------------------------
 
-zstd_exe=`(which zstd)`
+zstd_exe=$( (which zstd))
 
 # Find an appropriately versioned zstd.
 #
@@ -17,8 +17,8 @@ zstd_exe=`(which zstd)`
 # *** zstd command line interface 64-bits v1.4.4, by Yann Collet *** #
 ZSTD_MIN_VERSION="1.3.2"
 
-if [[ -n `(which dpkg)` && `(${zstd_exe} --version)` =~ v([0-9]+.[0-9]+.[0-9]+) ]]; then
-  if $(dpkg --compare-versions ${BASH_REMATCH[1]} "ge" ${ZSTD_MIN_VERSION} ); then
+if [[ -n $( (which dpkg)) && $( (${zstd_exe} --version)) =~ v([0-9]+.[0-9]+.[0-9]+) ]]; then
+  if $(dpkg --compare-versions ${BASH_REMATCH[1]} "ge" ${ZSTD_MIN_VERSION}); then
     echo "Found zstd v${BASH_REMATCH[1]} at ${zstd_exe}"
   else
     echo "Expected zstd v${ZSTD_MIN_VERSION} or higher but found v${BASH_REMATCH[1]} at ${zstd_exe}"

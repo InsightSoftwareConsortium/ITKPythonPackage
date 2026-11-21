@@ -1,4 +1,95 @@
+# Pre-commit configuration for ITKPythonPackage
+# Run `pre-commit install` to install git hooks locally
+# Run `pre-commit run --all-files` to check all files
+# Run `pre-commit autoupdate` to update hook versions
+
+# Exclude generated/vendored directories from all hooks
+exclude: ^(\.pixi/|build/|docs/data/|pixi\.lock$)
+
 repos:
+  # General file hygiene
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        stages: [pre-commit]
+      - id: end-of-file-fixer
+        stages: [pre-commit]
+      - id: check-yaml
+        stages: [pre-commit]
+      - id: check-toml
+        stages: [pre-commit]
+      - id: check-merge-conflict
+        stages: [pre-commit]
+      - id: check-added-large-files
+        args: [--maxkb=500]
+        stages: [pre-commit]
+      # Enforce LF line endings everywhere except Windows PowerShell scripts
+      - id: mixed-line-ending
+        args: [--fix=lf]
+        exclude: \.ps1$
+        stages: [pre-commit]
+
+  # Python: linting, import sorting, and formatting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.6
+    hooks:
+      - id: ruff-check
+        exclude: ^docs/
+        args: [--fix, --show-fixes]
+        stages: [pre-commit]
+      - id: ruff-format
+        exclude: ^docs/
+        stages: [pre-commit]
+
+  # Shell: linting
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        # Superseded build scripts; checked once rewritten.
+        exclude: |
+          (?x)^scripts/(
+            dockcross-manylinux-build-module-deps|
+            dockcross-manylinux-build-module-wheels|
+            dockcross-manylinux-build-tarball|
+            dockcross-manylinux-build-wheels|
+            dockcross-manylinux-cleanup|
+            dockcross-manylinux-download-cache|
+            dockcross-manylinux-download-cache-and-build-module-wheels|
+            dockcross-manylinux-set-vars|
+            internal/manylinux-aarch64-build-module-wheels|
+            internal/manylinux-build-common|
+            internal/manylinux-build-module-wheels|
+            internal/manylinux-build-wheels|
+            lint-shell-scripts|
+            macpython-build-common|
+            macpython-build-module-deps|
+            macpython-build-module-wheels|
+            macpython-build-tarball|
+            macpython-build-wheels|
+            macpython-download-cache-and-build-module-wheels|
+            macpython-install-python|
+            oci_exe
+          )\.sh$
+        stages: [pre-commit]
+
+  # Shell: formatting
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.12.0-2
+    hooks:
+      - id: shfmt
+        args: [-i, "2", -w]
+        stages: [pre-commit]
+
+  # TOML: formatting
+  - repo: https://github.com/ComPWA/taplo-pre-commit
+    rev: v0.9.3
+    hooks:
+      - id: taplo-format
+        stages: [pre-commit]
+
+  # ITK commit message hooks (matching ITK/Utilities/Hooks/)
   - repo: local
     hooks:
       - id: local-prepare-commit-msg
@@ -11,3 +102,8 @@ repos:
         entry: 'python3 Utilities/Hooks/kw-commit-msg.py'
         language: system
         stages: [commit-msg]
+
+ci:
+  autoupdate_commit_msg: "COMP: Update pre-commit hooks"
+  autofix_commit_msg: "STYLE: Apply pre-commit fixes"
+  autoupdate_schedule: monthly

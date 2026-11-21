@@ -46,7 +46,7 @@ elif [[ ${MANYLINUX_VERSION} == 2014 ]]; then
   IMAGE_TAG=${IMAGE_TAG:=20240304-9e57d2b}
 else
   echo "Unknown manylinux version ${MANYLINUX_VERSION}"
-  exit 1;
+  exit 1
 fi
 
 # Set container for requested version/arch/tag.
@@ -58,5 +58,5 @@ elif [[ ${TARGET_ARCH} == aarch64 ]]; then
   CONTAINER_SOURCE="quay.io/pypa/${MANYLINUX_IMAGE_NAME}"
 else
   echo "Unknown target architecture ${TARGET_ARCH}"
-  exit 1;
+  exit 1
 fi

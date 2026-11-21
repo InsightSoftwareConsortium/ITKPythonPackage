@@ -29,8 +29,7 @@
 # -----------------------------------------------------------------------
 # Script argument parsing
 #
-usage()
-{
+usage() {
   echo "Usage:
   manylinux-build-module-wheels
     [ -h | --help ]           show usage
@@ -44,15 +43,29 @@ PARSED_ARGS=$(getopt -a -n dockcross-manylinux-download-cache-and-build-module-w
   -o hc:x: --long help,cmake_options:,exclude_libs: -- "$@")
 eval set -- "$PARSED_ARGS"
 
-while :
-do
+while :; do
   case "$1" in
-    -h | --help) usage; break ;;
-    -c | --cmake_options) CMAKE_OPTIONS="$2" ; shift 2 ;;
-    -x | --exclude_libs) EXCLUDE_LIBS="$2" ; shift 2 ;;
-    --) shift; break ;;
-    *) echo "Unexpected option: $1.";
-       usage; break ;;
+  -h | --help)
+    usage
+    break
+    ;;
+  -c | --cmake_options)
+    CMAKE_OPTIONS="$2"
+    shift 2
+    ;;
+  -x | --exclude_libs)
+    EXCLUDE_LIBS="$2"
+    shift 2
+    ;;
+  --)
+    shift
+    break
+    ;;
+  *)
+    echo "Unexpected option: $1."
+    usage
+    break
+    ;;
   esac
 done
 
@@ -65,7 +78,10 @@ PYTHON_VERSION="$@"
 ARCH=""
 PYBINARIES=""
 
-script_dir=$(cd $(dirname $0) || exit 1; pwd)
+script_dir=$(
+  cd $(dirname $0) || exit 1
+  pwd
+)
 source "${script_dir}/manylinux-build-common.sh"
 # -----------------------------------------------------------------------
 
@@ -75,56 +91,56 @@ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/work/oneTBB-prefix/lib:/usr/lib:/usr/
 
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
-    Python3_EXECUTABLE=${PYBIN}/python
-    Python3_INCLUDE_DIR=$( find -L ${PYBIN}/../include/ -name Python.h -exec dirname {} \; )
+  Python3_EXECUTABLE=${PYBIN}/python
+  Python3_INCLUDE_DIR=$(find -L ${PYBIN}/../include/ -name Python.h -exec dirname {} \;)
 
-    echo ""
-    echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
-    echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
+  echo ""
+  echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
+  echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
 
-    if [[ -e /work/requirements-dev.txt ]]; then
-      sudo ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
-    fi
-    if [[ -e /ITKPythonPackage/requirements-dev.txt ]]; then
-      sudo ${PYBIN}/pip install --upgrade -r /ITKPythonPackage/requirements-dev.txt
-    fi
-    version=$(basename $(dirname ${PYBIN}))
-    # Remove "m" -- not present in Python 3.8 and later
-    version=${version:0:9}
-    itk_build_dir=/work/$(basename /ITKPythonPackage/ITK-${version}*-manylinux${MANYLINUX_VERSION}_${ARCH})
-    ln -fs /ITKPythonPackage/ITK-${version}*-manylinux${MANYLINUX_VERSION}_${ARCH} $itk_build_dir
-    if [[ ! -d ${itk_build_dir} ]]; then
-      echo 'ITK build tree not available!' 1>&2
-      exit 1
-    fi
-    itk_source_dir=/work/ITK-source/ITK
-    ln -fs /ITKPythonPackage/ITK-source/ /work/ITK-source
-    if [[ ! -d ${itk_source_dir} ]]; then
-      echo 'ITK source tree not available!' 1>&2
-      exit 1
-    fi
-    py_minor=$(echo $version | cut -d '-' -f 1 | cut -d '3' -f 2)
-    wheel_py_api=""
-    if test $py_minor -ge 11; then
-      wheel_py_api=cp3$py_minor
-    fi
-    ${PYBIN}/python -m build \
-      --verbose \
-      --wheel \
-      --outdir dist \
-      --no-isolation \
-      --skip-dependency-check \
-      --config-setting=cmake.define.ITK_DIR:PATH=${itk_build_dir} \
-      --config-setting=cmake.define.WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
-      --config-setting=cmake.define.CMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
-      --config-setting=cmake.define.CMAKE_INSTALL_LIBDIR:STRING=lib \
-      --config-setting=cmake.define.PY_SITE_PACKAGES_PATH:PATH="." \
-      --config-setting=wheel.py-api=$wheel_py_api \
-      --config-setting=cmake.define.BUILD_TESTING:BOOL=OFF \
-      --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-      --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-      ${CMAKE_OPTIONS//'-D'/'--config-setting=cmake.define.'} \
-    || exit 1
+  if [[ -e /work/requirements-dev.txt ]]; then
+    sudo ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
+  fi
+  if [[ -e /ITKPythonPackage/requirements-dev.txt ]]; then
+    sudo ${PYBIN}/pip install --upgrade -r /ITKPythonPackage/requirements-dev.txt
+  fi
+  version=$(basename $(dirname ${PYBIN}))
+  # Remove "m" -- not present in Python 3.8 and later
+  version=${version:0:9}
+  itk_build_dir=/work/$(basename /ITKPythonPackage/ITK-${version}*-manylinux${MANYLINUX_VERSION}_${ARCH})
+  ln -fs /ITKPythonPackage/ITK-${version}*-manylinux${MANYLINUX_VERSION}_${ARCH} $itk_build_dir
+  if [[ ! -d ${itk_build_dir} ]]; then
+    echo 'ITK build tree not available!' 1>&2
+    exit 1
+  fi
+  itk_source_dir=/work/ITK-source/ITK
+  ln -fs /ITKPythonPackage/ITK-source/ /work/ITK-source
+  if [[ ! -d ${itk_source_dir} ]]; then
+    echo 'ITK source tree not available!' 1>&2
+    exit 1
+  fi
+  py_minor=$(echo $version | cut -d '-' -f 1 | cut -d '3' -f 2)
+  wheel_py_api=""
+  if test $py_minor -ge 11; then
+    wheel_py_api=cp3$py_minor
+  fi
+  ${PYBIN}/python -m build \
+    --verbose \
+    --wheel \
+    --outdir dist \
+    --no-isolation \
+    --skip-dependency-check \
+    --config-setting=cmake.define.ITK_DIR:PATH=${itk_build_dir} \
+    --config-setting=cmake.define.WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=PythonWheel \
+    --config-setting=cmake.define.CMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
+    --config-setting=cmake.define.CMAKE_INSTALL_LIBDIR:STRING=lib \
+    --config-setting=cmake.define.PY_SITE_PACKAGES_PATH:PATH="." \
+    --config-setting=wheel.py-api=$wheel_py_api \
+    --config-setting=cmake.define.BUILD_TESTING:BOOL=OFF \
+    --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+    --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+    ${CMAKE_OPTIONS//'-D'/'--config-setting=cmake.define.'} ||
+    exit 1
 done
 
 # Convert list of excluded libs in --exclude_libs to auditwheel --exclude options
@@ -137,7 +153,7 @@ for whl in dist/*linux*$(uname -m).whl; do
   auditwheel repair ${whl} -w /work/dist/ ${AUDITWHEEL_EXCLUDE_ARGS}
 done
 
-if compgen -G "dist/itk*-linux*.whl" > /dev/null; then
+if compgen -G "dist/itk*-linux*.whl" >/dev/null; then
   for itk_wheel in dist/itk*-linux*.whl; do
     rm ${itk_wheel}
   done

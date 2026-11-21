@@ -34,8 +34,7 @@
 # -----------------------------------------------------------------------
 # Script argument parsing
 #
-usage()
-{
+usage() {
   echo "Usage:
   dockcross-manylinux-download-cache.sh
     [ -h | --help ]           show usage
@@ -48,27 +47,35 @@ PARSED_ARGS=$(getopt -a -n dockcross-manylinux-download-cache-and-build-module-w
   -o hc:x: --long help,cmake_options:,exclude_libs: -- "$@")
 eval set -- "$PARSED_ARGS"
 
-while :
-do
+while :; do
   case "$1" in
-    -h | --help) usage; break ;;
-    --) shift; break ;;
-    *) echo "Unexpected option: $1.";
-       usage; break ;;
+  -h | --help)
+    usage
+    break
+    ;;
+  --)
+    shift
+    break
+    ;;
+  *)
+    echo "Unexpected option: $1."
+    usage
+    break
+    ;;
   esac
 done
 
 # -----------------------------------------------------------------------
 # Verify that unzstd binary is available to decompress ITK build archives.
 
-unzstd_exe=`(which unzstd)`
+unzstd_exe=$( (which unzstd))
 
 if [[ -z ${unzstd_exe} ]]; then
   echo "ERROR: can not find required binary 'unzstd' "
   exit 255
 fi
 
-# Expect unzstd > v1.3.2, see discussion in `dockcross-manylinux-build-tarball.sh`
+# --long=31 needs unzstd 1.3.2 or newer
 ${unzstd_exe} --version
 
 # -----------------------------------------------------------------------
@@ -78,12 +85,12 @@ MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
 TARGET_ARCH=${TARGET_ARCH:=x64}
 
 case ${TARGET_ARCH} in
-    x64)
-        TARBALL_SPECIALIZATION="-manylinux${MANYLINUX_VERSION}"
-        ;;
-    *)
-        TARBALL_SPECIALIZATION="-manylinux${MANYLINUX_VERSION}_${TARGET_ARCH}"
-        ;;
+x64)
+  TARBALL_SPECIALIZATION="-manylinux${MANYLINUX_VERSION}"
+  ;;
+*)
+  TARBALL_SPECIALIZATION="-manylinux${MANYLINUX_VERSION}_${TARGET_ARCH}"
+  ;;
 esac
 TARBALL_NAME="ITKPythonBuilds-linux${TARBALL_SPECIALIZATION}.tar"
 
@@ -97,10 +104,10 @@ if [[ ! -f ./${TARBALL_NAME}.zst ]]; then
 fi
 ${unzstd_exe} --long=31 ./${TARBALL_NAME}.zst -o ${TARBALL_NAME}
 if [ "$#" -lt 1 ]; then
-  echo "Extracting all files";
+  echo "Extracting all files"
   tar xf ${TARBALL_NAME}
 else
-  echo "Extracting files relevant for: $1";
+  echo "Extracting files relevant for: $1"
   tar xf ${TARBALL_NAME} ITKPythonPackage/scripts/
   tar xf ${TARBALL_NAME} ITKPythonPackage/ITK-source/
   tar xf ${TARBALL_NAME} ITKPythonPackage/oneTBB-prefix/

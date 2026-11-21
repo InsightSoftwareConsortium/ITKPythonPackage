@@ -38,7 +38,7 @@ ${rm_prefix} rm -rf ./ITKPythonBuilds-linux-manylinux*${MANYLINUX_VERSION}*.tar.
 
 if [[ -n ${ITK_MODULE_PREQ} ]]; then
   for MODULE_INFO in ${ITK_MODULE_PREQ//:/ }; do
-    MODULE_NAME=`(echo ${MODULE_INFO} | cut -d'@' -f 1 | cut -d'/' -f 2)`
+    MODULE_NAME=$( (echo ${MODULE_INFO} | cut -d'@' -f 1 | cut -d'/' -f 2))
     ${rm_prefix} rm -rf ${MODULE_NAME}/
   done
 fi

@@ -33,17 +33,20 @@ ARCH=""
 PYBINARIES=""
 Python3_LIBRARY=""
 
-script_dir=$(cd $(dirname $0) || exit 1; pwd)
+script_dir=$(
+  cd $(dirname $0) || exit 1
+  pwd
+)
 source "${script_dir}/manylinux-build-common.sh"
 
 # -----------------------------------------------------------------------
 
 # Build standalone project and populate archive cache
 mkdir -p /work/ITK-source
-pushd /work/ITK-source > /dev/null 2>&1
-  cmake -DITKPythonPackage_BUILD_PYTHON:PATH=0 -G Ninja ../
-  ninja
-popd > /dev/null 2>&1
+pushd /work/ITK-source >/dev/null 2>&1
+cmake -DITKPythonPackage_BUILD_PYTHON:PATH=0 -G Ninja ../
+ninja
+popd >/dev/null 2>&1
 tbb_dir=/work/oneTBB-prefix/lib/cmake/TBB
 # So auditwheel can find the libs
 sudo ldconfig
@@ -54,65 +57,65 @@ SINGLE_WHEEL=0
 
 # Compile wheels re-using standalone project and archive cache
 for PYBIN in "${PYBINARIES[@]}"; do
-    export Python3_EXECUTABLE=${PYBIN}/python3
-    Python3_INCLUDE_DIR=$( find -L ${PYBIN}/../include/ -name Python.h -exec dirname {} \; )
+  export Python3_EXECUTABLE=${PYBIN}/python3
+  Python3_INCLUDE_DIR=$(find -L ${PYBIN}/../include/ -name Python.h -exec dirname {} \;)
 
-    echo ""
-    echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
-    echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
+  echo ""
+  echo "Python3_EXECUTABLE:${Python3_EXECUTABLE}"
+  echo "Python3_INCLUDE_DIR:${Python3_INCLUDE_DIR}"
 
-    # Install dependencies
-    sudo ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
+  # Install dependencies
+  sudo ${PYBIN}/pip install --upgrade -r /work/requirements-dev.txt
 
-    build_type="Release"
-    compile_flags="-O3 -DNDEBUG"
-    source_path=/work/ITK-source/ITK
-    build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux${MANYLINUX_VERSION}_${ARCH}
-    PYPROJECT_CONFIGURE="${script_dir}/../pyproject_configure.py"
+  build_type="Release"
+  compile_flags="-O3 -DNDEBUG"
+  source_path=/work/ITK-source/ITK
+  build_path=/work/ITK-$(basename $(dirname ${PYBIN}))-manylinux${MANYLINUX_VERSION}_${ARCH}
+  PYPROJECT_CONFIGURE="${script_dir}/../pyproject_configure.py"
 
-    # Clean up previous invocations
-    # rm -rf ${build_path}
+  # Clean up previous invocations
+  # rm -rf ${build_path}
 
-    if [[ ${SINGLE_WHEEL} == 1 ]]; then
+  if [[ ${SINGLE_WHEEL} == 1 ]]; then
 
-      echo "#"
-      echo "# Build single ITK wheel"
-      echo "#"
+    echo "#"
+    echo "# Build single ITK wheel"
+    echo "#"
 
-      # Configure pyproject.toml
-      ${PYBIN}/python ${PYPROJECT_CONFIGURE} "itk"
-      # Generate wheel
-      ${PYBIN}/python -m build \
-            --verbose \
-            --wheel \
-            --outdir dist \
-            --no-isolation \
-            --skip-dependency-check \
-            --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
-            --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
-            --config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=OFF \
-            --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=itk \
-            --config-setting=cmake.define.CMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
-            "--config-setting=cmake.define.CMAKE_CXX_FLAGS:STRING=$compile_flags" \
-            "--config-setting=cmake.define.CMAKE_C_FLAGS:STRING=$compile_flags" \
-            "--config-setting=cmake.define.CMAKE_BUILD_TYPE:STRING=${build_type}" \
-            --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-            --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-            --config-setting=cmake.define.Module_ITKTBB:BOOL=ON \
-            --config-setting=cmake.define.TBB_DIR:PATH=${tbb_dir} \
-            .
+    # Configure pyproject.toml
+    ${PYBIN}/python ${PYPROJECT_CONFIGURE} "itk"
+    # Generate wheel
+    ${PYBIN}/python -m build \
+      --verbose \
+      --wheel \
+      --outdir dist \
+      --no-isolation \
+      --skip-dependency-check \
+      --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
+      --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
+      --config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=OFF \
+      --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=itk \
+      --config-setting=cmake.define.CMAKE_CXX_COMPILER_TARGET:STRING=$(uname -m)-linux-gnu \
+      "--config-setting=cmake.define.CMAKE_CXX_FLAGS:STRING=$compile_flags" \
+      "--config-setting=cmake.define.CMAKE_C_FLAGS:STRING=$compile_flags" \
+      "--config-setting=cmake.define.CMAKE_BUILD_TYPE:STRING=${build_type}" \
+      --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+      --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+      --config-setting=cmake.define.Module_ITKTBB:BOOL=ON \
+      --config-setting=cmake.define.TBB_DIR:PATH=${tbb_dir} \
+      .
 
-    else
+  else
 
-      echo "#"
-      echo "# Build multiple ITK wheels"
-      echo "#"
+    echo "#"
+    echo "# Build multiple ITK wheels"
+    echo "#"
 
-      # Build ITK python
-      (
-        mkdir -p ${build_path} \
-        && cd ${build_path} \
-        && cmake \
+    # Build ITK python
+    (
+      mkdir -p ${build_path} &&
+        cd ${build_path} &&
+        cmake \
           -DCMAKE_BUILD_TYPE:STRING=${build_type} \
           -DITK_SOURCE_DIR:PATH=${source_path} \
           -DITK_BINARY_DIR:PATH=${build_path} \
@@ -136,39 +139,39 @@ for PYBIN in "${PYBINARIES[@]}"; do
           -DModule_ITKTBB:BOOL=ON \
           -DTBB_DIR:PATH=${tbb_dir} \
           -G Ninja \
-          ${source_path} \
-        && ninja \
-        || exit 1
-      )
+          ${source_path} &&
+        ninja ||
+        exit 1
+    )
 
-      wheel_names=$(cat ${script_dir}/../WHEEL_NAMES.txt)
-      for wheel_name in ${wheel_names}; do
-        # Configure pyproject.toml
-        ${PYBIN}/python ${PYPROJECT_CONFIGURE} ${wheel_name}
-        # Generate wheel
-        ${PYBIN}/python -m build \
-          --verbose \
-          --wheel \
-          --outdir dist \
-          --no-isolation \
-          --skip-dependency-check \
-          --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
-          --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
-          --config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
-          --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
-          --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
-          --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
-          --config-setting=cmake.define.CMAKE_CXX_FLAGS:STRING="${compile_flags}" \
-          --config-setting=cmake.define.CMAKE_C_FLAGS:STRING="${compile_flags}" \
-          . \
-          || exit 1
-      done
-    fi
+    wheel_names=$(cat ${script_dir}/../WHEEL_NAMES.txt)
+    for wheel_name in ${wheel_names}; do
+      # Configure pyproject.toml
+      ${PYBIN}/python ${PYPROJECT_CONFIGURE} ${wheel_name}
+      # Generate wheel
+      ${PYBIN}/python -m build \
+        --verbose \
+        --wheel \
+        --outdir dist \
+        --no-isolation \
+        --skip-dependency-check \
+        --config-setting=cmake.define.ITK_SOURCE_DIR:PATH=${source_path} \
+        --config-setting=cmake.define.ITK_BINARY_DIR:PATH=${build_path} \
+        --config-setting=cmake.define.ITKPythonPackage_ITK_BINARY_REUSE:BOOL=ON \
+        --config-setting=cmake.define.ITKPythonPackage_WHEEL_NAME:STRING=${wheel_name} \
+        --config-setting=cmake.define.Python3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE} \
+        --config-setting=cmake.define.Python3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR} \
+        --config-setting=cmake.define.CMAKE_CXX_FLAGS:STRING="${compile_flags}" \
+        --config-setting=cmake.define.CMAKE_C_FLAGS:STRING="${compile_flags}" \
+        . ||
+        exit 1
+    done
+  fi
 
-    # Remove unnecessary files for building against ITK
-    find ${build_path} -name '*.cpp' -delete -o -name '*.xml' -delete
-    rm -rf ${build_path}/Wrapping/Generators/castxml*
-    find ${build_path} -name '*.o' -delete
+  # Remove unnecessary files for building against ITK
+  find ${build_path} -name '*.cpp' -delete -o -name '*.xml' -delete
+  rm -rf ${build_path}/Wrapping/Generators/castxml*
+  find ${build_path} -name '*.o' -delete
 
 done
 
@@ -177,11 +180,11 @@ sudo /opt/python/cp311-cp311/bin/pip3 install auditwheel wheel
 if test "${ARCH}" == "x64"; then
   # This step will fixup the wheel switching from 'linux' to 'manylinux<version>' tag
   for whl in dist/itk_*linux_*.whl; do
-      /opt/python/cp311-cp311/bin/auditwheel repair --plat manylinux${MANYLINUX_VERSION}_x86_64 ${whl} -w /work/dist/
+    /opt/python/cp311-cp311/bin/auditwheel repair --plat manylinux${MANYLINUX_VERSION}_x86_64 ${whl} -w /work/dist/
   done
 else
   for whl in dist/itk_*$(uname -m).whl; do
-      /opt/python/cp311-cp311/bin/auditwheel repair ${whl} -w /work/dist/
+    /opt/python/cp311-cp311/bin/auditwheel repair ${whl} -w /work/dist/
   done
 fi
 
@@ -203,13 +206,13 @@ rm dist/itk_*-linux_*.whl
 
 # Install packages and test
 for PYBIN in "${PYBINARIES[@]}"; do
-    ${PYBIN}/pip install --user numpy
-    sudo ${PYBIN}/pip install --upgrade pip
-    ${PYBIN}/pip install itk --user --no-cache-dir --no-index -f /work/dist
-    (cd $HOME && ${PYBIN}/python -c 'from itk import ITKCommon;')
-    (cd $HOME && ${PYBIN}/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
-    (cd $HOME && ${PYBIN}/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
-    (cd $HOME && ${PYBIN}/python ${script_dir}/../../docs/code/test.py )
+  ${PYBIN}/pip install --user numpy
+  sudo ${PYBIN}/pip install --upgrade pip
+  ${PYBIN}/pip install itk --user --no-cache-dir --no-index -f /work/dist
+  (cd $HOME && ${PYBIN}/python -c 'from itk import ITKCommon;')
+  (cd $HOME && ${PYBIN}/python -c 'import itk; image = itk.Image[itk.UC, 2].New()')
+  (cd $HOME && ${PYBIN}/python -c 'import itkConfig; itkConfig.LazyLoading = False; import itk;')
+  (cd $HOME && ${PYBIN}/python ${script_dir}/../../docs/code/test.py)
 done
 
 rm -f dist/numpy*.whl

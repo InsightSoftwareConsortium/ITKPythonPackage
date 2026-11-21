@@ -2,7 +2,7 @@
 
 This project configures pyproject.toml files and manages environmental
 variables needed to build ITK Python binary wheels on MacOS, Linux, and Windows platforms.
-Scripts are available for both [ITK infrastructure](https://github.com/insightSoftwareConsortium/ITK) and 
+Scripts are available for both [ITK infrastructure](https://github.com/insightSoftwareConsortium/ITK) and
 ITK external module Python packages.
 
 The Insight Toolkit (ITK) is an open-source, cross-platform system that provides developers

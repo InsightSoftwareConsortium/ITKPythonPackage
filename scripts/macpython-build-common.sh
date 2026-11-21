@@ -3,15 +3,17 @@
 
 set -e -x
 
-SCRIPT_DIR=$(cd $(dirname $0) || exit 1; pwd)
+SCRIPT_DIR=$(
+  cd $(dirname $0) || exit 1
+  pwd
+)
 
 MACPYTHON_PY_PREFIX=/Library/Frameworks/Python.framework/Versions
 
 # -----------------------------------------------------------------------
 # Script argument parsing
 #
-usage()
-{
+usage() {
   echo "Usage:
   macpython-build-common
     [ -h | --help ]           show usage
@@ -23,28 +25,32 @@ usage()
 PYTHON_VERSIONS=""
 CMAKE_OPTIONS=""
 
-while (( "$#" )); do
+while (("$#")); do
   case "$1" in
-    -c|--cmake_options)
-      CMAKE_OPTIONS="$2";
-      shift 2;;
-    -h|--help)
-      usage;
-      break;;
-    --)
-      shift;
-      break;;
-    *)
-      # Parse any unrecognized arguments as python versions
-      PYTHON_VERSIONS="${PYTHON_VERSIONS} $1";
-      shift;;
+  -c | --cmake_options)
+    CMAKE_OPTIONS="$2"
+    shift 2
+    ;;
+  -h | --help)
+    usage
+    break
+    ;;
+  --)
+    shift
+    break
+    ;;
+  *)
+    # Parse any unrecognized arguments as python versions
+    PYTHON_VERSIONS="${PYTHON_VERSIONS} $1"
+    shift
+    ;;
   esac
 done
 
 # Parse all arguments after "--" as python versions
 PYTHON_VERSIONS="${PYTHON_VERSIONS} $@"
 # Trim whitespace
-PYTHON_VERSIONS=$(xargs <<< "${PYTHON_VERSIONS}")
+PYTHON_VERSIONS=$(xargs <<<"${PYTHON_VERSIONS}")
 
 # Versions can be restricted by passing them in as arguments to the script
 # For example,
@@ -61,12 +67,12 @@ fi
 VENVS=()
 mkdir -p ${SCRIPT_DIR}/../venvs
 for PYBIN in "${PYBINARIES[@]}"; do
-    if [[ $(basename $PYBIN) = "Current" ]]; then
-      continue
-    fi
-    py_mm=$(basename ${PYBIN})
-    VENV=${SCRIPT_DIR}/../venvs/${py_mm}
-    VENVS+=(${VENV})
+  if [[ $(basename $PYBIN) = "Current" ]]; then
+    continue
+  fi
+  py_mm=$(basename ${PYBIN})
+  VENV=${SCRIPT_DIR}/../venvs/${py_mm}
+  VENVS+=(${VENV})
 done
 
 # -----------------------------------------------------------------------

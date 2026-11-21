@@ -61,7 +61,7 @@ gtar xf ITKPythonBuilds-macosx${tarball_arch}.tar --warning=no-unknown-keyword -
   ITKPythonPackage/scripts
 
 # Extract subdirectories specific to the compiled python versions
-args=( "$@"  )
+args=("$@")
 source ITKPythonPackage/scripts/macpython-build-common.sh
 for version in "$PYTHON_VERSIONS"; do
   gtar xf ITKPythonBuilds-macosx${tarball_arch}.tar --warning=no-unknown-keyword --checkpoint=10000 --checkpoint-action=dot \

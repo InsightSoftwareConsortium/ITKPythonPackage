@@ -2,15 +2,10 @@
 
 import argparse
 import glob
-import json
 import os
 import shutil
 import sys
-import tempfile
-import textwrap
-
-from subprocess import check_call, check_output
-
+from subprocess import check_call
 
 SCRIPT_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
@@ -202,7 +197,7 @@ def build_wheel(
 
             # Build wheels
             if wheel_names is None:
-                with open(os.path.join(SCRIPT_DIR, "WHEEL_NAMES.txt"), "r") as content:
+                with open(os.path.join(SCRIPT_DIR, "WHEEL_NAMES.txt")) as content:
                     wheel_names = [
                         wheel_name.strip() for wheel_name in content.readlines()
                     ]

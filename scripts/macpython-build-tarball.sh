@@ -12,7 +12,7 @@ if test $(arch) == "arm64"; then
   tbb_contents=""
 fi
 
-pushd /Users/svc-dashboard/D/P > /dev/null
+pushd /Users/svc-dashboard/D/P >/dev/null
 dot_clean ITKPythonPackage
 tar -cf ITKPythonBuilds-macosx${arch_postfix}.tar \
   ITKPythonPackage/ITK-* \
@@ -26,4 +26,4 @@ zstd -f \
   --long=31 \
   ./ITKPythonBuilds-macosx${arch_postfix}.tar \
   -o ./ITKPythonBuilds-macosx${arch_postfix}.tar.zst
-popd > /dev/null
+popd >/dev/null

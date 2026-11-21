@@ -38,7 +38,7 @@
 #   - https://quay.io/organization/pypa (ARM architecture)
 #
 # `ITK_MODULE_PREQ`: Prerequisite ITK modules that must be built before the requested module.
-#   See notes in `dockcross-manylinux-build-module-deps.sh`.
+#   Colon-delimited, for example `<org>/<repo>@<tag>:<org>/<repo>@<tag>`.
 #
 # `ITK_MODULE_NO_CLEANUP`: Option to skip cleanup steps.
 #
@@ -47,7 +47,10 @@
 ########################################################################
 
 # Handle case where the script directory is not the working directory
-script_dir=$(cd $(dirname $0) || exit 1; pwd)
+script_dir=$(
+  cd $(dirname $0) || exit 1
+  pwd
+)
 source "${script_dir}/dockcross-manylinux-set-vars.sh"
 source "${script_dir}/oci_exe.sh"
 
@@ -68,11 +71,11 @@ DOCKER_ARGS+=" -e LD_LIBRARY_PATH"
 # Mount any shared libraries
 if [[ -n ${LD_LIBRARY_PATH} ]]; then
   for libpath in ${LD_LIBRARY_PATH//:/ }; do
-          DOCKER_LIBRARY_PATH="/usr/lib64/$(basename -- ${libpath})"
-          DOCKER_ARGS+=" -v ${libpath}:${DOCKER_LIBRARY_PATH}"
-          if test -d ${libpath}; then
-              DOCKER_LD_LIBRARY_PATH+="${DOCKER_LIBRARY_PATH}:${DOCKER_LD_LIBRARY_PATH}"
-          fi
+    DOCKER_LIBRARY_PATH="/usr/lib64/$(basename -- ${libpath})"
+    DOCKER_ARGS+=" -v ${libpath}:${DOCKER_LIBRARY_PATH}"
+    if test -d ${libpath}; then
+      DOCKER_LD_LIBRARY_PATH+="${DOCKER_LIBRARY_PATH}:${DOCKER_LD_LIBRARY_PATH}"
+    fi
   done
 fi
 export LD_LIBRARY_PATH="${DOCKER_LD_LIBRARY_PATH}"
@@ -91,7 +94,7 @@ if [[ "${TARGET_ARCH}" = "aarch64" ]]; then
   ${docker_prefix} $oci_exe run $DOCKER_ARGS ${CONTAINER_SOURCE} "/ITKPythonPackage/scripts/internal/manylinux-aarch64-build-module-wheels.sh" "$@"
 else
   # Generate dockcross scripts
-  $oci_exe run --rm ${CONTAINER_SOURCE} > /tmp/dockcross-manylinux-x64
+  $oci_exe run --rm ${CONTAINER_SOURCE} >/tmp/dockcross-manylinux-x64
   chmod u+x /tmp/dockcross-manylinux-x64
 
   # Build wheels

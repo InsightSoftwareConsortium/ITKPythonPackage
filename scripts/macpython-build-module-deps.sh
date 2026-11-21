@@ -25,7 +25,10 @@
 #
 ########################################################################
 
-script_dir=$(cd $(dirname $0) || exit 1; pwd)
+script_dir=$(
+  cd $(dirname $0) || exit 1
+  pwd
+)
 if [[ ! -f "${script_dir}/macpython-download-cache-and-build-module-wheels.sh" ]]; then
   echo "Could not find download script to use for building module dependencies!"
   exit 1
@@ -41,9 +44,9 @@ export ITK_USE_LOCAL_PYTHON="ON"
 echo "Building ITK module dependencies: ${ITK_MODULE_PREQ_TOPLEVEL}"
 
 for MODULE_INFO in ${ITK_MODULE_PREQ_TOPLEVEL//:/ }; do
-  MODULE_ORG=`(echo ${MODULE_INFO} | cut -d'/' -f 1)`
-  MODULE_NAME=`(echo ${MODULE_INFO} | cut -d'@' -f 1 | cut -d'/' -f 2)`
-  MODULE_TAG=`(echo ${MODULE_INFO} | cut -d'@' -f 2)`
+  MODULE_ORG=$( (echo ${MODULE_INFO} | cut -d'/' -f 1))
+  MODULE_NAME=$( (echo ${MODULE_INFO} | cut -d'@' -f 1 | cut -d'/' -f 2))
+  MODULE_TAG=$( (echo ${MODULE_INFO} | cut -d'@' -f 2))
 
   MODULE_UPSTREAM=https://github.com/${MODULE_ORG}/${MODULE_NAME}.git
   echo "Cloning from ${MODULE_UPSTREAM}"

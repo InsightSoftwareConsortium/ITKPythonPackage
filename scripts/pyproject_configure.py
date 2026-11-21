@@ -90,7 +90,7 @@ def configure(template_file, parameters, output_file):
     `parameters`.
     """
     updated_lines = []
-    with open(template_file, "r") as file_:
+    with open(template_file) as file_:
         lines = file_.readlines()
         for line in lines:
             append = True
@@ -207,7 +207,7 @@ def update_wheel_pyproject_toml_parameters():
 
 
 def get_wheel_names():
-    with open(os.path.join(SCRIPT_DIR, "WHEEL_NAMES.txt"), "r") as _file:
+    with open(os.path.join(SCRIPT_DIR, "WHEEL_NAMES.txt")) as _file:
         return [wheel_name.strip() for wheel_name in _file.readlines()]
 
 
@@ -230,10 +230,12 @@ def get_py_api():
 def get_wheel_dependencies():
     """Return a dictionary of ITK wheel dependencies."""
     all_depends = {}
-    regex_group_depends = r"set\s*\(\s*ITK\_GROUP\_([a-zA-Z0-9\_\-]+)\_DEPENDS\s*([a-zA-Z0-9\_\-\s]*)\s*"  # noqa: E501
+    regex_group_depends = (
+        r"set\s*\(\s*ITK\_GROUP\_([a-zA-Z0-9\_\-]+)\_DEPENDS\s*([a-zA-Z0-9\_\-\s]*)\s*"  # noqa: E501
+    )
     pattern = re.compile(regex_group_depends)
     version = get_version()
-    with open(os.path.join(SCRIPT_DIR, "..", "CMakeLists.txt"), "r") as file_:
+    with open(os.path.join(SCRIPT_DIR, "..", "CMakeLists.txt")) as file_:
         for line in file_.readlines():
             match = re.search(pattern, line)
             if not match:
