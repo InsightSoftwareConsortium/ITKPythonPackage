@@ -169,8 +169,6 @@ class BuildPythonInstanceBase(ABC):
         Whether to create a reusable tarball of the ITK build tree.
     cmake_options : list[str]
         Extra ``-D`` options forwarded to CMake.
-    windows_extra_lib_paths : list[str]
-        Additional library paths for Windows wheel fixup (delvewheel).
     dist_dir : Path
         Output directory for built wheel files.
     module_source_dir : Path, optional
@@ -207,7 +205,6 @@ class BuildPythonInstanceBase(ABC):
         cleanup: bool,
         build_itk_tarball_cache: bool,
         cmake_options: list[str],
-        windows_extra_lib_paths: list[str],
         dist_dir: Path,
         module_source_dir: Path | None = None,
         module_dependencies_root_dir: Path | None = None,
@@ -265,7 +262,6 @@ class BuildPythonInstanceBase(ABC):
 
         self.cleanup = cleanup
         self.build_itk_tarball_cache = build_itk_tarball_cache
-        self.windows_extra_lib_paths = windows_extra_lib_paths
         self.dist_dir = dist_dir
         # Needed for processing remote modules and their dependencies
         self.module_source_dir: Path | None = (
@@ -694,21 +690,18 @@ class BuildPythonInstanceBase(ABC):
         """Return the pixi-managed Python environment the wheels build against."""
 
     @abstractmethod
-    def fixup_wheel(
-        self, filepath, lib_paths: str = "", remote_module_wheel: bool = False
-    ):  # pragma: no cover - abstract
+    def fixup_wheel(self, filepath) -> None:  # pragma: no cover - abstract
         """Apply platform-specific wheel repairs (auditwheel, delocate, delvewheel).
 
         Parameters
         ----------
         filepath : str
             Path to the ``.whl`` file to fix.
-        lib_paths : str, optional
-            Additional library search paths (semicolon-delimited on Windows).
-        remote_module_wheel : bool, optional
-            True when fixing a wheel for an external remote module.
         """
-        pass
+
+    def fixup_module_wheel(self, filepath) -> None:
+        """Repair a remote module's wheel; by default as an ITK wheel is."""
+        self.fixup_wheel(filepath)
 
     @abstractmethod
     def build_tarball(self) -> None:
@@ -900,7 +893,7 @@ class BuildPythonInstanceBase(ABC):
 
             # Repair the module wheels (auditwheel, delocate, or delvewheel).
             for wheel in built_wheels:
-                self.fixup_wheel(str(wheel), remote_module_wheel=True)
+                self.fixup_module_wheel(str(wheel))
         finally:
             # Restore original pyproject.toml so the working tree stays clean
             if deps_rewritten and pyproject_orig.is_file():

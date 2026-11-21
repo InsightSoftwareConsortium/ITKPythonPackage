@@ -37,19 +37,13 @@ class MacOSBuildPythonInstance(PosixBuildPythonInstance):
         for wheel in (self.build_dir_root / "dist").glob("*.whl"):
             self.fixup_wheel(str(wheel))
 
-    def fixup_wheel(
-        self, filepath, lib_paths: str = "", remote_module_wheel: bool = False
-    ) -> None:
-        """Repair a wheel using ``delocate``, cleaning AppleDouble files first.
+    def fixup_wheel(self, filepath) -> None:
+        """Repair a wheel in place using ``delocate``, cleaning AppleDouble files first.
 
         Parameters
         ----------
         filepath : str
             Path to the ``.whl`` file.
-        lib_paths : str, optional
-            Unused on macOS (kept for interface compatibility).
-        remote_module_wheel : bool, optional
-            Unused on macOS (kept for interface compatibility).
         """
         self.remove_apple_double_files()
         # delocate --require-archs errors on a wheel with no compiled binaries (e.g. the itk metapackage).

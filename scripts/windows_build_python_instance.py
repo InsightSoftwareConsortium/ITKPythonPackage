@@ -5,6 +5,7 @@ import re
 import shutil
 import zipfile
 from pathlib import Path, PurePath
+from typing import Any
 
 from build_environment import PythonEnvironment
 from build_python_instance_base import BuildPythonInstanceBase
@@ -47,6 +48,13 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
     discovery, and ``delvewheel`` for wheel repair.
     """
 
+    def __init__(
+        self, *, windows_extra_lib_paths: list[str] | str = "", **kwargs: Any
+    ) -> None:
+        """Take the ``--lib-paths`` value; the other arguments are the base's."""
+        super().__init__(**kwargs)
+        self.windows_extra_lib_paths = windows_extra_lib_paths
+
     def _configure_toolchain(self) -> None:
         """Windows needs no toolchain values beyond the shared TBB settings."""
 
@@ -78,6 +86,10 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         tbb_wheel = "itk_core"
         for wheel in (self.build_dir_root / "dist").glob(f"{tbb_wheel}*.whl"):
             self.fixup_wheel(str(wheel), lib_paths)
+
+    def fixup_module_wheel(self, filepath) -> None:
+        """Repair a remote module's wheel into the module's ``dist/``."""
+        self.fixup_wheel(filepath, remote_module_wheel=True)
 
     def fixup_wheel(
         self, filepath, lib_paths: str = "", remote_module_wheel: bool = False

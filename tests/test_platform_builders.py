@@ -678,3 +678,29 @@ def test_python_build_wheel_command_orders_settings_before_the_generator(
         "--config-setting=x",
         "--config-setting=cmake.args=-GNinja",
     ]
+
+
+def test_module_wheels_are_repaired_into_the_module_dist(
+    linux_builder, windows_builder
+):
+    for builder in (linux_builder, windows_builder):
+        with patch.object(builder, "fixup_wheel") as fixed:
+            builder.fixup_module_wheel("mod.whl")
+        fixed.assert_called_once_with("mod.whl", remote_module_wheel=True)
+
+
+def test_macos_repairs_module_wheels_in_place(macos_builder):
+    with patch.object(macos_builder, "fixup_wheel") as fixed:
+        macos_builder.fixup_module_wheel("mod.whl")
+    fixed.assert_called_once_with("mod.whl")
+
+
+def test_only_the_windows_builder_takes_extra_lib_paths():
+    import inspect
+
+    from windows_build_python_instance import WindowsBuildPythonInstance
+
+    base = inspect.signature(BuildPythonInstanceBase.__init__).parameters
+    windows = inspect.signature(WindowsBuildPythonInstance.__init__).parameters
+    assert "windows_extra_lib_paths" not in base
+    assert "windows_extra_lib_paths" in windows

@@ -133,17 +133,17 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
             raise RuntimeError(msg_0)
         return lib_dir
 
-    def fixup_wheel(
-        self, filepath, lib_paths: str = "", remote_module_wheel: bool = False
-    ) -> None:
+    def fixup_module_wheel(self, filepath) -> None:
+        """Repair a remote module's wheel into the module's ``dist/``."""
+        self.fixup_wheel(filepath, remote_module_wheel=True)
+
+    def fixup_wheel(self, filepath, remote_module_wheel: bool = False) -> None:
         """Repair a wheel with ``auditwheel`` and apply manylinux platform tags.
 
         Parameters
         ----------
         filepath : str
             Path to the ``.whl`` file.
-        lib_paths : str, optional
-            Unused on Linux (kept for interface compatibility).
         remote_module_wheel : bool, optional
             If True, output repaired wheel to the remote module's ``dist/``
             directory instead of the main build ``dist/``.

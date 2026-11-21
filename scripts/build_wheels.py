@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import functools
 import os
 import shlex
 import sys
@@ -23,7 +24,7 @@ from wheel_builder_utils import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Callable, Mapping
 
     from build_python_instance_base import BuildPythonInstanceBase
 
@@ -695,11 +696,14 @@ def build_wheels_main() -> None:
     package_env_config["OCI_EXE"] = oci_exe
     del oci_exe
 
-    builder_cls: type[BuildPythonInstanceBase]
+    # Platform-only options go to the one builder that takes them.
+    builder_cls: Callable[..., BuildPythonInstanceBase]
     if os_name is OS.WINDOWS:
         from windows_build_python_instance import WindowsBuildPythonInstance
 
-        builder_cls = WindowsBuildPythonInstance
+        builder_cls = functools.partial(
+            WindowsBuildPythonInstance, windows_extra_lib_paths=args.lib_paths
+        )
     elif os_name is OS.DARWIN:
         from macos_build_python_instance import MacOSBuildPythonInstance
 
@@ -769,7 +773,6 @@ def build_wheels_main() -> None:
         cleanup=args.cleanup,
         build_itk_tarball_cache=args.build_itk_tarball_cache,
         cmake_options=args.cmake_options,
-        windows_extra_lib_paths=args.lib_paths,
         dist_dir=dist_dir,
         module_source_dir=args.module_source_dir,
         module_dependencies_root_dir=args.module_dependencies_root_dir,
