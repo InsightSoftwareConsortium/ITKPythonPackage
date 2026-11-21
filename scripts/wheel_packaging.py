@@ -66,7 +66,7 @@ def post_build_cleanup(
     """
     base = Path(ipp_source_dir)
 
-    def rm(tree_path: Path):
+    def rm(tree_path: Path) -> None:
         with contextlib.suppress(OSError):
             remove_tree(tree_path)
 

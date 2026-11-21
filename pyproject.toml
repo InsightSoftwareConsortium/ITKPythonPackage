@@ -190,6 +190,7 @@ module = [
   "build_environment",
   "build_manager",
   "install_pixi",
+  "wheel_packaging",
 ]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
