@@ -1,12 +1,16 @@
+from collections.abc import Iterator
 from pathlib import Path
 from subprocess import CompletedProcess
 from unittest.mock import patch
 
 import pytest
+from linux_build_python_instance import LinuxBuildPythonInstance
 
 
 @pytest.fixture(autouse=True)
-def _wire_final_import_test_config(linux_builder, tmp_path):
+def _wire_final_import_test_config(
+    linux_builder: LinuxBuildPythonInstance, tmp_path: Path
+) -> None:
     linux_builder.package_env_config.update(
         {
             "PYTHON_EXECUTABLE": "python3",
@@ -16,7 +20,7 @@ def _wire_final_import_test_config(linux_builder, tmp_path):
 
 
 @pytest.fixture(autouse=True)
-def _no_itk_packages_installed():
+def _no_itk_packages_installed() -> Iterator[None]:
     """Default `pip list` to empty so the uninstall step is a no-op.
 
     Without this, `_pip_uninstall_itk_wildcard` would run the real `pip
@@ -30,7 +34,9 @@ def _no_itk_packages_installed():
         yield
 
 
-def test_final_wheel_import_test_raises_on_failed_install(tmp_path, linux_builder):
+def test_final_wheel_import_test_raises_on_failed_install(
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     """A failed pip install must fail the step, not just print a warning."""
     with (
         patch.object(linux_builder, "echo_check_call", return_value=1),
@@ -39,7 +45,9 @@ def test_final_wheel_import_test_raises_on_failed_install(tmp_path, linux_builde
         linux_builder.final_wheel_import_test(tmp_path)
 
 
-def test_final_wheel_import_test_raises_on_failed_import(tmp_path, linux_builder):
+def test_final_wheel_import_test_raises_on_failed_import(
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     """Install succeeds but a later import check fails: step must fail."""
     statuses = iter([0, 1])
     with (
@@ -54,14 +62,16 @@ def test_final_wheel_import_test_raises_on_failed_import(tmp_path, linux_builder
 
 
 def test_final_wheel_import_test_passes_when_every_check_succeeds(
-    tmp_path, linux_builder
-):
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     with patch.object(linux_builder, "echo_check_call", return_value=0) as called:
         linux_builder.final_wheel_import_test(tmp_path)
     assert called.call_count == 5
 
 
-def test_final_wheel_import_test_uninstalls_before_installing(tmp_path, linux_builder):
+def test_final_wheel_import_test_uninstalls_before_installing(
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     """The stale-install bug: uninstall must run BEFORE `pip install itk`.
 
     Checking only that both calls happened would still pass if the
@@ -84,7 +94,9 @@ def test_final_wheel_import_test_uninstalls_before_installing(tmp_path, linux_bu
     assert uninstall_index < install_index
 
 
-def test_final_wheel_import_test_raises_when_uninstall_fails(tmp_path, linux_builder):
+def test_final_wheel_import_test_raises_when_uninstall_fails(
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
     """A failed uninstall must fail the step, not silently proceed to install."""
     with (
         patch(

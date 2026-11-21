@@ -205,6 +205,7 @@ module = [
   "tests.test_cmake_define_args",
   "tests.test_compiler_cache",
   "tests.test_dead_strip",
+  "tests.test_final_wheel_import_test",
 ]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
