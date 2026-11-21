@@ -2,13 +2,83 @@
 
 from __future__ import annotations
 
+import os
+import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from pathlib import Path
+from target_platform import OS, TargetPlatform
 
-    from target_platform import TargetPlatform
+if TYPE_CHECKING:
+    import argparse
+    from collections.abc import Mapping
+
+_DEPLOYMENT_TARGET = re.compile(r"\d+(\.\d+){0,2}")
+
+
+class BuildConfigError(ValueError):
+    """A build setting is missing or has a value the build cannot use."""
+
+    def __init__(self, field: str, value: object, reason: str) -> None:
+        super().__init__(f"{field}={value!r}: {reason}")
+        self.field = field
+        self.value = value
+
+
+def _text(field: str, value: object, *, allow_empty: bool = True) -> str:
+    if not isinstance(value, str):
+        raise BuildConfigError(field, value, "expected a string")
+    if not allow_empty and not value:
+        raise BuildConfigError(field, value, "must not be empty")
+    return value
+
+
+def _path(field: str, value: object) -> Path:
+    if isinstance(value, Path):
+        return value
+    if isinstance(value, os.PathLike | str) and str(value):
+        return Path(value)
+    raise BuildConfigError(field, value, "expected a non-empty path")
+
+
+def _flag(field: str, value: object) -> bool:
+    if not isinstance(value, bool):
+        raise BuildConfigError(field, value, "expected True or False")
+    return value
+
+
+def _with_manylinux_version(target: TargetPlatform, value: object) -> TargetPlatform:
+    field = "manylinux_version"
+    if target.os_name is not OS.LINUX:
+        return TargetPlatform(target.os_name, target.arch)
+    version = _text(field, value or "")
+    try:
+        return TargetPlatform(target.os_name, target.arch, version)
+    except ValueError as e:
+        raise BuildConfigError(field, version, str(e)) from e
+
+
+_ENV_TRUE = ("1", "ON", "TRUE", "YES")
+_ENV_FALSE = ("0", "OFF", "FALSE", "NO")
+
+
+def _env_flag(field: str, value: str) -> bool:
+    if value.upper() in _ENV_TRUE:
+        return True
+    if value.upper() in _ENV_FALSE:
+        return False
+    raise BuildConfigError(field, value, "expected 1 or 0")
+
+
+def _deployment_target(target: TargetPlatform, value: object) -> str | None:
+    field = "macosx_deployment_target"
+    if target.os_name is not OS.DARWIN:
+        return None
+    version = _text(field, value)
+    if version and not _DEPLOYMENT_TARGET.fullmatch(version):
+        raise BuildConfigError(field, version, "expected a macOS version such as 14.0")
+    return version
 
 
 def _on_off(value: bool) -> str:
@@ -36,6 +106,56 @@ class BuildConfig:
     git_executable: Path
     python_executable: Path
     oci_exe: str
+
+    @classmethod
+    def from_args_and_env(
+        cls,
+        args: argparse.Namespace,
+        env: Mapping[str, str],
+        *,
+        target: TargetPlatform,
+        pixi_executable: Path,
+        cmake_executable: Path,
+        ninja_executable: Path,
+        doxygen_executable: Path,
+        git_executable: Path,
+        python_executable: str,
+        oci_exe: str,
+    ) -> BuildConfig:
+        """Validate and convert the parsed arguments, environment, and tools.
+
+        Raises
+        ------
+        BuildConfigError
+            Naming the first setting whose value the build cannot use.
+        """
+        target = _with_manylinux_version(target, args.manylinux_version)
+        macosx_deployment_target = _deployment_target(
+            target, getattr(args, "macosx_deployment_target", None)
+        )
+        return cls(
+            itk_source_dir=_path("itk_source_dir", args.itk_source_dir),
+            build_dir_root=_path("build_dir_root", args.build_dir_root),
+            target=target,
+            itk_git_tag=_text("itk_git_tag", args.itk_git_tag, allow_empty=False),
+            itk_package_version=_text(
+                "itk_package_version", args.itk_package_version, allow_empty=False
+            ),
+            macosx_deployment_target=macosx_deployment_target,
+            itk_module_preq=_text("itk_module_preq", args.itk_module_deps),
+            itk_module_no_cleanup=_env_flag(
+                "ITK_MODULE_NO_CLEANUP", env.get("ITK_MODULE_NO_CLEANUP", "1")
+            ),
+            use_ccache=_flag("use_ccache", args.use_ccache)
+            or env.get("USE_CCACHE", "0").upper() in ("1", "ON", "TRUE", "YES"),
+            pixi_executable=_path("pixi_executable", pixi_executable),
+            cmake_executable=_path("cmake_executable", cmake_executable),
+            ninja_executable=_path("ninja_executable", ninja_executable),
+            doxygen_executable=_path("doxygen_executable", doxygen_executable),
+            git_executable=_path("git_executable", git_executable),
+            python_executable=_path("python_executable", python_executable),
+            oci_exe=_text("oci_exe", oci_exe, allow_empty=False),
+        )
 
     @property
     def pixi_suffix(self) -> str:

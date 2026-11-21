@@ -3,9 +3,11 @@ import re
 from types import SimpleNamespace
 
 import pytest
+from build_wheels import in_manylinux_container, remotemodulebuildandtestaction
 from hypothesis import given
 from hypothesis import strategies as st
 from target_platform import (
+    _MACOSX_DEPLOYMENT_TARGET,
     OS,
     Arch,
     ContainerImage,
@@ -201,6 +203,14 @@ def test_detect_manylinux_override_still_validates(
         TargetPlatform.detect({}, manylinux_version="_2_99")
 
 
+def test_macosx_deployment_target_matches_wheel_tag_version(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("MACOSX_DEPLOYMENT_TARGET", raising=False)
+    build_default = remotemodulebuildandtestaction()["MACOSX_DEPLOYMENT_TARGET"]
+    assert build_default.replace(".", "_") == _MACOSX_DEPLOYMENT_TARGET
+
+
 def test_macos_wheel_plat_tag_is_installable_on_arm64() -> None:
     tag = TargetPlatform(OS.DARWIN, Arch.AARCH64, "").wheel_plat_tag
     match = re.fullmatch(r"macosx_(\d+)_0_arm64", tag)
@@ -225,3 +235,19 @@ def test_manylinux_version_is_implied_by_the_platform_env(
     platform_env: str, expected: str
 ) -> None:
     assert manylinux_version_from_platform_env(platform_env) == expected
+
+
+@pytest.mark.parametrize(
+    ("env", "inside"),
+    [
+        ({}, False),
+        ({"CROSS_TRIPLE": "x86_64-linux-gnu"}, True),
+        ({"AUDITWHEEL_PLAT": "manylinux_2_28_aarch64"}, True),
+        ({"CROSS_TRIPLE": "", "AUDITWHEEL_PLAT": ""}, False),
+    ],
+)
+def test_both_manylinux_images_count_as_the_container(
+    env: dict[str, str], inside: bool
+) -> None:
+    """The aarch64 build uses a pypa image, which has no CROSS_TRIPLE."""
+    assert in_manylinux_container(env) is inside

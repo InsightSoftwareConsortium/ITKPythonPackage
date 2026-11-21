@@ -75,3 +75,5 @@ docs/_build
 # IDE junk
 .idea/*
 *.swp
+# PyPI credentials
+.pypirc
