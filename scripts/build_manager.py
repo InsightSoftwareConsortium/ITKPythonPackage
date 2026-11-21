@@ -1,6 +1,6 @@
 import json
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -47,7 +47,9 @@ class BuildManager:
         self._load_if_exists()
 
     # ---- Public API ----
-    def run_step(self, step_name: str, func, force_rerun=False) -> None:
+    def run_step(
+        self, step_name: str, func: Callable[[], object], force_rerun: bool = False
+    ) -> None:
         """Execute a build step, recording timing and status.
 
         Parameters

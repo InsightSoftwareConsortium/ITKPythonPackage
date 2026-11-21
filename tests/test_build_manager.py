@@ -1,5 +1,6 @@
 """BuildManager resumes a run only when the build's inputs are unchanged."""
 
+import functools
 import json
 from collections.abc import Mapping
 from pathlib import Path
@@ -23,7 +24,7 @@ def _steps_run(
     manager = BuildManager(report, STEPS, inputs)
     ran: list[str] = []
     for step in STEPS:
-        manager.run_step(step, lambda step=step: ran.append(step))
+        manager.run_step(step, functools.partial(ran.append, step))
     return manager, ran
 
 
