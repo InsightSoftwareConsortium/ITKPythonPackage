@@ -144,8 +144,11 @@ class BuildManager:
                 "updated_at", self.report["updated_at"]
             )
         except Exception as e:
-            # Corrupt or unreadable file; keep freshly initialized structure
-            msg = f"Failed to load build report: {e}"
+            # Guessing the step states of a damaged report could skip real work.
+            msg = (
+                f"Failed to load build report {self.report_path}: {e}. "
+                f"Fix or delete it to continue."
+            )
             raise RuntimeError(msg) from e
 
     @staticmethod

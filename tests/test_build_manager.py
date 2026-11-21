@@ -71,3 +71,10 @@ def test_the_report_records_the_inputs_of_the_run(tmp_path):
     _finish_every_step(report, INPUTS)
     _steps_run(report, {**INPUTS, "itk_commit": "b" * 40})
     assert json.loads(report.read_text())["inputs"]["itk_commit"] == "b" * 40
+
+
+def test_a_corrupt_report_stops_the_build_and_names_the_file(tmp_path):
+    report = tmp_path / "build_log.json"
+    report.write_text("{not json")
+    with pytest.raises(RuntimeError, match=r"build_log\.json"):
+        BuildManager(report, STEPS, INPUTS)
