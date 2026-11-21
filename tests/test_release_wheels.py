@@ -1,5 +1,6 @@
 import platform
 import subprocess
+from pathlib import Path
 
 import pytest
 import release_wheels as rw
@@ -11,6 +12,8 @@ LINUX_ARM64 = Host(OS.LINUX, Arch.AARCH64)
 MAC_ARM64 = Host(OS.DARWIN, Arch.AARCH64)
 WINDOWS_X64 = Host(OS.WINDOWS, Arch.X86_64)
 
+ItkRepository = tuple[Path, str, str]
+
 
 @pytest.mark.parametrize(
     ("host", "expected"),
@@ -21,11 +24,11 @@ WINDOWS_X64 = Host(OS.WINDOWS, Arch.X86_64)
         (LINUX_ARM64, ["manylinux-aarch64"]),
     ],
 )
-def test_each_host_builds_the_targets_it_can(host, expected):
+def test_each_host_builds_the_targets_it_can(host: Host, expected: list[str]) -> None:
     assert rw.select_targets(None, host) == expected
 
 
-def test_an_unsupported_host_has_no_default():
+def test_an_unsupported_host_has_no_default() -> None:
     with pytest.raises(SystemExit, match="built on darwin x64"):
         rw.select_targets(None, Host(OS.DARWIN, Arch.X86_64))
 
@@ -42,8 +45,8 @@ def test_an_unsupported_host_has_no_default():
     ],
 )
 def test_host_detection_maps_spellings_and_keeps_the_label(
-    monkeypatch, system, machine, label
-):
+    monkeypatch: pytest.MonkeyPatch, system: str, machine: str, label: str
+) -> None:
     monkeypatch.setattr(platform, "system", lambda: system)
     monkeypatch.setattr(platform, "machine", lambda: machine)
     host = Host.detect()
@@ -66,12 +69,12 @@ def test_host_detection_maps_spellings_and_keeps_the_label(
         ("linux-riscv", LINUX_X64),
     ],
 )
-def test_targets_the_host_cannot_build_are_refused(target, host):
+def test_targets_the_host_cannot_build_are_refused(target: str, host: Host) -> None:
     with pytest.raises(SystemExit):
         rw.select_targets([target], host)
 
 
-def test_an_emulated_linux_architecture_can_be_requested():
+def test_an_emulated_linux_architecture_can_be_requested() -> None:
     assert rw.select_targets(["manylinux-aarch64"], LINUX_X64) == ["manylinux-aarch64"]
 
 
@@ -86,7 +89,9 @@ def test_an_emulated_linux_architecture_can_be_requested():
         ("v6.0b03", True, "6.0b3.post1", "6.0b3.post1"),
     ],
 )
-def test_package_version(ref, is_tag, version, expected):
+def test_package_version(
+    ref: str, is_tag: bool, version: str | None, expected: str
+) -> None:
     assert rw.package_version(ref, is_tag, version) == expected
 
 
@@ -98,12 +103,14 @@ def test_package_version(ref, is_tag, version, expected):
         ("main", False, "latest"),
     ],
 )
-def test_versions_pypi_rejects_are_refused(ref, is_tag, version):
+def test_versions_pypi_rejects_are_refused(
+    ref: str, is_tag: bool, version: str | None
+) -> None:
     with pytest.raises(SystemExit):
         rw.package_version(ref, is_tag, version)
 
 
-def test_native_build_passes_the_commit_and_version(tmp_path):
+def test_native_build_passes_the_commit_and_version(tmp_path: Path) -> None:
     (step,) = rw.plan(["macos-arm64"], tmp_path / "ITK", "abc123", "6.0b3")
     cmd = step.command
     assert cmd[:4] == ["pixi", "run", "-e", "macosx-py311"]
@@ -116,7 +123,9 @@ def test_native_build_passes_the_commit_and_version(tmp_path):
     assert step.env == {}
 
 
-def test_container_build_runs_without_sudo_unless_asked(tmp_path, monkeypatch):
+def test_container_build_runs_without_sudo_unless_asked(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.delenv("NO_SUDO", raising=False)
     monkeypatch.delenv("MANYLINUX_VERSION", raising=False)
     (step,) = rw.plan(["manylinux-aarch64"], tmp_path / "ITK", "abc123", "gitauto")
@@ -139,7 +148,7 @@ def test_container_build_runs_without_sudo_unless_asked(tmp_path, monkeypatch):
 
 
 @pytest.fixture
-def itk_repository(tmp_path, monkeypatch):
+def itk_repository(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ItkRepository:
     """A repository with a tag, a branch and a commit only reachable by hash."""
     for key, value in {
         "GIT_AUTHOR_NAME": "t",
@@ -169,7 +178,7 @@ def itk_repository(tmp_path, monkeypatch):
     return repo, tagged, main
 
 
-def test_refs_resolve_to_commits(tmp_path, itk_repository):
+def test_refs_resolve_to_commits(tmp_path: Path, itk_repository: ItkRepository) -> None:
     repo, tagged, main = itk_repository
     src = tmp_path / "build" / "ITK"
     assert rw.prepare_itk_source(src, str(repo), "v1.0b01") == (tagged, True)
@@ -179,7 +188,9 @@ def test_refs_resolve_to_commits(tmp_path, itk_repository):
         rw.prepare_itk_source(src, str(repo), "no-such-ref")
 
 
-def test_a_branch_resolves_to_the_fetched_tip(tmp_path, itk_repository):
+def test_a_branch_resolves_to_the_fetched_tip(
+    tmp_path: Path, itk_repository: ItkRepository
+) -> None:
     repo, _, _ = itk_repository
     src = tmp_path / "build" / "ITK"
     rw.prepare_itk_source(src, str(repo), "main")
@@ -195,7 +206,9 @@ def test_a_branch_resolves_to_the_fetched_tip(tmp_path, itk_repository):
     assert rw.prepare_itk_source(src, str(repo), "main") == (newer, False)
 
 
-def test_a_source_tree_with_local_changes_is_not_used(tmp_path, itk_repository):
+def test_a_source_tree_with_local_changes_is_not_used(
+    tmp_path: Path, itk_repository: ItkRepository
+) -> None:
     repo, _, _ = itk_repository
     src = tmp_path / "build" / "ITK"
     rw.prepare_itk_source(src, str(repo), "main")
@@ -204,7 +217,9 @@ def test_a_source_tree_with_local_changes_is_not_used(tmp_path, itk_repository):
         rw.prepare_itk_source(src, str(repo), "main")
 
 
-def test_a_directory_that_is_not_a_repository_is_not_used(tmp_path, itk_repository):
+def test_a_directory_that_is_not_a_repository_is_not_used(
+    tmp_path: Path, itk_repository: ItkRepository
+) -> None:
     repo, _, _ = itk_repository
     src = tmp_path / "build" / "ITK"
     src.mkdir(parents=True)
@@ -212,7 +227,9 @@ def test_a_directory_that_is_not_a_repository_is_not_used(tmp_path, itk_reposito
         rw.prepare_itk_source(src, str(repo), "main")
 
 
-def test_every_build_is_stamped_with_the_itk_commit_time(tmp_path, itk_repository):
+def test_every_build_is_stamped_with_the_itk_commit_time(
+    tmp_path: Path, itk_repository: ItkRepository
+) -> None:
     repo, tagged, _ = itk_repository
     src = tmp_path / "ITK"
     commit, _ = rw.prepare_itk_source(src, str(repo), "v1.0b01")
@@ -225,7 +242,9 @@ def test_every_build_is_stamped_with_the_itk_commit_time(tmp_path, itk_repositor
     assert [s.env["SOURCE_DATE_EPOCH"] for s in steps] == [expected, expected]
 
 
-def test_a_caller_set_epoch_wins(tmp_path, itk_repository, monkeypatch):
+def test_a_caller_set_epoch_wins(
+    tmp_path: Path, itk_repository: ItkRepository, monkeypatch: pytest.MonkeyPatch
+) -> None:
     repo, _, _ = itk_repository
     src = tmp_path / "ITK"
     commit, _ = rw.prepare_itk_source(src, str(repo), "main")
@@ -233,7 +252,7 @@ def test_a_caller_set_epoch_wins(tmp_path, itk_repository, monkeypatch):
     assert rw.wheel_epoch(src, commit) == "1234567890"
 
 
-def test_the_summary_lists_this_runs_wheels_only(tmp_path):
+def test_the_summary_lists_this_runs_wheels_only(tmp_path: Path) -> None:
     dist = tmp_path / "dist"
     earlier = dist / "earlier-wheels" / "20261119_020000"
     earlier.mkdir(parents=True)
@@ -244,14 +263,14 @@ def test_the_summary_lists_this_runs_wheels_only(tmp_path):
     assert rw.built_wheels(step) == [current]
 
 
-def test_every_target_is_either_native_or_in_a_container():
+def test_every_target_is_either_native_or_in_a_container() -> None:
     for name, target in rw.RELEASE_TARGETS.items():
         assert target.name == name
         assert (target.pixi_env is not None) == (target.native_host is not None)
         assert target.in_container == (target.pixi_env is None)
 
 
-def test_container_targets_spell_the_architecture_for_the_scripts():
+def test_container_targets_spell_the_architecture_for_the_scripts() -> None:
     assert rw.RELEASE_TARGETS["manylinux-x64"].container_arch is Arch.X86_64
     assert rw.RELEASE_TARGETS["manylinux-aarch64"].container_arch is Arch.AARCH64
     assert rw.TARGETS == (
@@ -272,7 +291,9 @@ def test_container_targets_spell_the_architecture_for_the_scripts():
         ("macos-arm64", MAC_ARM64, None),
     ],
 )
-def test_unbuildable_reason_reads_the_native_host(target, host, reason):
+def test_unbuildable_reason_reads_the_native_host(
+    target: str, host: Host, reason: str | None
+) -> None:
     found = rw.unbuildable_reason(target, host)
     if reason is None:
         assert found is None
