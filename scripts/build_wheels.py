@@ -296,18 +296,16 @@ def parse_args_with_cmake_defines(
     return args
 
 
-def build_wheels_main() -> None:
-    """Entry point: parse arguments, configure, and run the wheel build."""
-    # Pre-parse: the command line has not been read yet, so ambient
-    # MANYLINUX_VERSION must not influence this resolution.
-    target = TargetPlatform.detect(os.environ, manylinux_version="")
-    os_name = target.os_name
-    ipp_dir: Path = Path(__file__).parent.parent
-    if (ipp_dir / ".pixi" / "bin").exists():
-        os.environ["PATH"] = (
-            str(ipp_dir / ".pixi" / "bin") + os.pathsep + os.environ["PATH"]
-        )
+def default_build_dir_root(ipp_dir: Path, os_name: OS) -> Path:
+    """The build root used when --build-dir-root is not given."""
+    # Windows gets a very short path to avoid path-too-long errors.
+    if os_name is OS.WINDOWS:
+        return WINDOWS_BUILD_DIR_ROOT
+    return ipp_dir.parent / "ITKPythonPackage-build"
 
+
+def build_argument_parser(os_name: OS, ipp_dir: Path) -> argparse.ArgumentParser:
+    """Return the command line parser; defaults come from the environment."""
     remote_module_build_dict = remotemodulebuildandtestaction()
     parser = argparse.ArgumentParser(
         description="Driver script to build ITK Python wheels."
@@ -389,16 +387,11 @@ def build_wheels_main() -> None:
         help="Do not build an uploadable tarball.  The tarball can be used as a cache for remote module builds.",
     )
 
-    # set the default build_dir_root to a very short path on Windows to avoid path too long errors
-    default_build_dir_root = (
-        ipp_dir.parent / "ITKPythonPackage-build"
-        if os_name is not OS.WINDOWS
-        else WINDOWS_BUILD_DIR_ROOT
-    )
+    build_dir_root = default_build_dir_root(ipp_dir, os_name)
     parser.add_argument(
         "--build-dir-root",
         type=str,
-        default=f"{default_build_dir_root}",
+        default=f"{build_dir_root}",
         help="The root of the build resources.",
     )
     parser.add_argument(
@@ -423,15 +416,10 @@ def build_wheels_main() -> None:
         """,
     )
 
-    default_itk_source_dir = (
-        ipp_dir.parent / "ITKPythonPackage-build" / "ITK"
-        if os_name is not OS.WINDOWS
-        else WINDOWS_BUILD_DIR_ROOT / "ITK"
-    )
     parser.add_argument(
         "--itk-source-dir",
         type=str,
-        default=os.environ.get("ITK_SOURCE_DIR", str(default_itk_source_dir)),
+        default=os.environ.get("ITK_SOURCE_DIR", str(build_dir_root / "ITK")),
         help="""
         - 'ITK_SOURCE_DIR':  When building different 'flavor' of ITK python packages
           on a given platform, explicitly setting the ITK_SOURCE_DIR options allow to
@@ -556,7 +544,13 @@ def build_wheels_main() -> None:
             (ITK_INSTALL_WRAPPING_DEVELOPMENT_FILES).
          """,
     )
+    return parser
 
+
+def parse_arguments(
+    parser: argparse.ArgumentParser, ipp_dir: Path, os_name: OS
+) -> argparse.Namespace:
+    """Parse the command line and settle the build and ITK source paths."""
     args = parse_args_with_cmake_defines(parser)
 
     abort_if_wrong_pixi_environment(args.platform_env)
@@ -566,8 +560,18 @@ def build_wheels_main() -> None:
         args.build_dir_root, args.module_dependencies_root_dir
     )
 
-    dist_dir: Path = Path(args.build_dir_root) / "dist"
+    build_dir_root = default_build_dir_root(ipp_dir, os_name)
+    args.build_dir_root = Path(args.build_dir_root)
+    if str(args.build_dir_root) != str(build_dir_root) and str(
+        args.itk_source_dir
+    ) == str(build_dir_root / "ITK"):
+        args.itk_source_dir = args.build_dir_root / "ITK"
+    args.itk_source_dir = Path(args.itk_source_dir)
+    return args
 
+
+def resolve_environment(args: argparse.Namespace, ipp_dir: Path, os_name: OS) -> Path:
+    """Put the pixi environment's tools first on PATH and return pixi."""
     env_bin_dir: str = "Scripts" if os_name is OS.WINDOWS else "bin"
 
     env_path = ipp_dir / ".pixi" / "envs" / args.platform_env
@@ -582,24 +586,11 @@ def build_wheels_main() -> None:
             os.environ.get("PATH", ""),
         ]
     )
-    pixi_executable = which_required("pixi")
-    package_env_config: dict[str, str | Path | None] = {}
+    return which_required("pixi")
 
-    args.build_dir_root = Path(args.build_dir_root)
-    if str(args.build_dir_root) != str(default_build_dir_root) and str(
-        args.itk_source_dir
-    ) == str(default_itk_source_dir):
-        args.itk_source_dir = args.build_dir_root / "ITK"
 
-    args.itk_source_dir = Path(args.itk_source_dir)
-    package_env_config["ITK_SOURCE_DIR"] = Path(args.itk_source_dir)
-
-    ipp_superbuild_binary_dir: Path = args.build_dir_root / "build" / "ITK-support-bld"
-    package_env_config["IPP_SUPERBUILD_BINARY_DIR"] = ipp_superbuild_binary_dir
-
-    package_env_config["OS_NAME"] = os_name.value
-    package_env_config["ARCH"] = target.pixi_suffix
-
+def sync_itk_source_tree(args: argparse.Namespace, ipp_dir: Path) -> None:
+    """Clone ITK when absent, check out the tag, and settle the package version."""
     if not Path(args.itk_source_dir).exists():
         args.itk_source_dir.parent.mkdir(parents=True, exist_ok=True)
         print(f"Cloning ITK into {args.itk_source_dir}...")
@@ -626,6 +617,9 @@ def build_wheels_main() -> None:
             args.itk_source_dir, args.itk_git_tag, os.environ
         )
 
+
+def pin_build_timestamps(args: argparse.Namespace, os_name: OS) -> None:
+    """Make the wheels' zip entries and Windows PE headers reproducible."""
     # Every wheel writer and repair tool stamps zip entries with this time.
     epoch = source_date_epoch(
         os.environ, itk_commit_time(args.itk_source_dir, args.itk_git_tag)
@@ -642,6 +636,22 @@ def build_wheels_main() -> None:
     link_options = windows_link_options(os_name, os.environ.get("_LINK_"))
     if link_options:
         os.environ["_LINK_"] = link_options
+
+
+def assemble_package_env_config(
+    args: argparse.Namespace,
+    os_name: OS,
+    target: TargetPlatform,
+    pixi_executable: Path,
+) -> dict[str, str | Path | None]:
+    """Collect the configuration every builder reads, from the arguments and tools."""
+    package_env_config: dict[str, str | Path | None] = {}
+    package_env_config["ITK_SOURCE_DIR"] = Path(args.itk_source_dir)
+    package_env_config["IPP_SUPERBUILD_BINARY_DIR"] = (
+        args.build_dir_root / "build" / "ITK-support-bld"
+    )
+    package_env_config["OS_NAME"] = os_name.value
+    package_env_config["ARCH"] = target.pixi_suffix
 
     module_no_cleanup = os.environ.get("ITK_MODULE_NO_CLEANUP", "1")
     use_ccache = "ON" if use_compiler_cache(args.use_ccache, os.environ) else "OFF"
@@ -696,6 +706,53 @@ def build_wheels_main() -> None:
     package_env_config["OCI_EXE"] = oci_exe
     del oci_exe
 
+    if os_name is OS.LINUX:
+        configure_linux_target(args, package_env_config)
+    return package_env_config
+
+
+def configure_linux_target(
+    args: argparse.Namespace, package_env_config: dict[str, str | Path | None]
+) -> None:
+    """Resolve the Linux target, adding the manylinux image when there is one."""
+    # A manylinux environment always means manylinux wheels.
+    if not args.manylinux_version:
+        args.manylinux_version = manylinux_version_from_platform_env(args.platform_env)
+    # Manylinux/docker bits for Linux. The command line wins over the
+    # environment, so pin it before the target is resolved.
+    if args.manylinux_version:
+        os.environ["MANYLINUX_VERSION"] = args.manylinux_version
+    target = TargetPlatform.detect(os.environ)
+    package_env_config["ARCH"] = target.pixi_suffix
+    if args.manylinux_version:
+        package_env_config["MANYLINUX_VERSION"] = args.manylinux_version
+        image = target.container_image
+        package_env_config["MANYLINUX_IMAGE_NAME"] = image.name
+        package_env_config["CONTAINER_SOURCE"] = image.reference
+        package_env_config["TARGET_ARCH"] = target.arch.value
+        if not in_manylinux_container(os.environ):
+            msg = (
+                f"ERROR: MANYLINUX_VERSION={args.manylinux_version} "
+                f"and TARGET_ARCH={target.arch.value} but not "
+                f"building in dockcross.\n"
+                f"  manylinux wheels are built inside the container; "
+                f"start it with:\n"
+                f"      ITK_SOURCE_DIR={args.itk_source_dir} "
+                f"ITK_GIT_TAG={args.itk_git_tag} "
+                f"ITK_PACKAGE_VERSION={args.itk_package_version} \\\n"
+                f"        bash scripts/dockcross-manylinux-build-wheels.sh\n"
+                f"  For wheels tied to this host instead, use "
+                f"--platform-env linux-py311."
+            )
+            raise RuntimeError(msg)
+
+
+def make_builder(
+    args: argparse.Namespace,
+    os_name: OS,
+    package_env_config: dict[str, str | Path | None],
+) -> "BuildPythonInstanceBase":
+    """Construct the platform's builder."""
     # Platform-only options go to the one builder that takes them.
     builder_cls: Callable[..., BuildPythonInstanceBase]
     if os_name is OS.WINDOWS:
@@ -711,41 +768,28 @@ def build_wheels_main() -> None:
     else:
         from linux_build_python_instance import LinuxBuildPythonInstance
 
-        # A manylinux environment always means manylinux wheels.
-        if not args.manylinux_version:
-            args.manylinux_version = manylinux_version_from_platform_env(
-                args.platform_env
-            )
-        # Manylinux/docker bits for Linux. The command line wins over the
-        # environment, so pin it before the target is resolved.
-        if args.manylinux_version:
-            os.environ["MANYLINUX_VERSION"] = args.manylinux_version
-        target = TargetPlatform.detect(os.environ)
-        package_env_config["ARCH"] = target.pixi_suffix
-        if args.manylinux_version:
-            package_env_config["MANYLINUX_VERSION"] = args.manylinux_version
-            image = target.container_image
-            package_env_config["MANYLINUX_IMAGE_NAME"] = image.name
-            package_env_config["CONTAINER_SOURCE"] = image.reference
-            package_env_config["TARGET_ARCH"] = target.arch.value
-            if not in_manylinux_container(os.environ):
-                msg = (
-                    f"ERROR: MANYLINUX_VERSION={args.manylinux_version} "
-                    f"and TARGET_ARCH={target.arch.value} but not "
-                    f"building in dockcross.\n"
-                    f"  manylinux wheels are built inside the container; "
-                    f"start it with:\n"
-                    f"      ITK_SOURCE_DIR={args.itk_source_dir} "
-                    f"ITK_GIT_TAG={args.itk_git_tag} "
-                    f"ITK_PACKAGE_VERSION={args.itk_package_version} \\\n"
-                    f"        bash scripts/dockcross-manylinux-build-wheels.sh\n"
-                    f"  For wheels tied to this host instead, use "
-                    f"--platform-env linux-py311."
-                )
-                raise RuntimeError(msg)
-
         builder_cls = LinuxBuildPythonInstance
+    return builder_cls(
+        platform_env=args.platform_env,
+        build_dir_root=args.build_dir_root,
+        package_env_config=package_env_config,
+        cleanup=args.cleanup,
+        build_itk_tarball_cache=args.build_itk_tarball_cache,
+        cmake_options=args.cmake_options,
+        dist_dir=args.build_dir_root / "dist",
+        module_source_dir=args.module_source_dir,
+        module_dependencies_root_dir=args.module_dependencies_root_dir,
+        itk_module_deps=args.itk_module_deps,
+        skip_itk_build=args.skip_itk_build,
+        skip_itk_wheel_build=args.skip_itk_wheel_build,
+        module_itk_dir=args.module_itk_dir,
+    )
 
+
+def write_effective_command_line(
+    parser: argparse.ArgumentParser, args: argparse.Namespace
+) -> None:
+    """Print the effective command line and save it beside the build."""
     print("=" * 80)
     print("=" * 80)
     print("= Building Wheels with effective command line")
@@ -766,21 +810,30 @@ def build_wheels_main() -> None:
     print("=" * 80)
     print("=" * 80)
     print(f"Building wheels for platform: {args.platform_env}")
-    builder = builder_cls(
-        platform_env=args.platform_env,
-        build_dir_root=args.build_dir_root,
-        package_env_config=package_env_config,
-        cleanup=args.cleanup,
-        build_itk_tarball_cache=args.build_itk_tarball_cache,
-        cmake_options=args.cmake_options,
-        dist_dir=dist_dir,
-        module_source_dir=args.module_source_dir,
-        module_dependencies_root_dir=args.module_dependencies_root_dir,
-        itk_module_deps=args.itk_module_deps,
-        skip_itk_build=args.skip_itk_build,
-        skip_itk_wheel_build=args.skip_itk_wheel_build,
-        module_itk_dir=args.module_itk_dir,
+
+
+def build_wheels_main() -> None:
+    """Entry point: parse arguments, configure, and run the wheel build."""
+    # Pre-parse: the command line has not been read yet, so ambient
+    # MANYLINUX_VERSION must not influence this resolution.
+    target = TargetPlatform.detect(os.environ, manylinux_version="")
+    os_name = target.os_name
+    ipp_dir: Path = Path(__file__).parent.parent
+    if (ipp_dir / ".pixi" / "bin").exists():
+        os.environ["PATH"] = (
+            str(ipp_dir / ".pixi" / "bin") + os.pathsep + os.environ["PATH"]
+        )
+
+    parser = build_argument_parser(os_name, ipp_dir)
+    args = parse_arguments(parser, ipp_dir, os_name)
+    pixi_executable = resolve_environment(args, ipp_dir, os_name)
+    sync_itk_source_tree(args, ipp_dir)
+    pin_build_timestamps(args, os_name)
+    package_env_config = assemble_package_env_config(
+        args, os_name, target, pixi_executable
     )
+    write_effective_command_line(parser, args)
+    builder = make_builder(args, os_name, package_env_config)
     builder.run()
 
 
