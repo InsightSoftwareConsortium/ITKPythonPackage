@@ -181,6 +181,10 @@ Key Options
    * - ``--use-ccache``
      - off
      - Enable ccache to speed up recompilation
+   * - ``--dead-strip`` / ``--no-dead-strip``
+     - on
+     - Linux and macOS: discard unreferenced code and export only
+       ``PyInit_*`` from the Python modules
    * - ``--macosx-deployment-target``
      - ``14.0``
      - Minimum macOS version for compiled binaries and the wheel tag

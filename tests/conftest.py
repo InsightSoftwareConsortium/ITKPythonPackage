@@ -27,6 +27,7 @@ def make_config(root: Path, target: TargetPlatform) -> BuildConfig:
         itk_module_preq="",
         itk_module_no_cleanup=True,
         use_ccache=False,
+        dead_strip=False,
         pixi_executable=Path("pixi"),
         cmake_executable=Path("cmake"),
         ninja_executable=Path("ninja"),

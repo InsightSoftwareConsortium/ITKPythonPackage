@@ -451,6 +451,25 @@ def build_argument_parser(os_name: OS, ipp_dir: Path) -> argparse.ArgumentParser
     )
 
     parser.add_argument(
+        "--dead-strip",
+        action="store_true",
+        dest="dead_strip",
+        default=True,
+        help="""
+         -  Linux and macOS, on by default: drop unreferenced code and export
+            only PyInit_* from Python modules
+         """,
+    )
+    parser.add_argument(
+        "--no-dead-strip",
+        action="store_false",
+        dest="dead_strip",
+        help="""
+         -  Link without dead stripping
+         """,
+    )
+
+    parser.add_argument(
         "--skip-itk-build",
         action="store_true",
         dest="skip_itk_build",

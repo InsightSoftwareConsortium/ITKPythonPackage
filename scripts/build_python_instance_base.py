@@ -16,6 +16,7 @@ from build_environment import PythonEnvironment
 from build_jobs import compute_build_jobs, compute_load_limit, physical_memory_gb
 from build_manager import BuildManager
 from cmake_argument_builder import CMakeArgumentBuilder, definitions_from_cmake_options
+from dead_strip import dead_strip_cmake_definitions, user_flag_key
 from module_dependencies import build_module_dependencies, update_module_itk_deps
 from pyproject_configure import (
     STABLE_ABI_TAG,
@@ -295,6 +296,18 @@ class BuildPythonInstanceBase(ABC):
             self.cmake_compiler_configurations.set(
                 "CMAKE_CXX_COMPILER_LAUNCHER:FILEPATH", f"{ccache_exe}"
             )
+
+        if config.dead_strip:
+            user_defs = self.cmake_cmdline_definitions
+            dead_strip_defs = dead_strip_cmake_definitions(
+                self.target.os_name, os.environ, user_defs
+            )
+            self.cmake_compiler_configurations.update(dead_strip_defs)
+            # Command-line definitions are applied last, so carry the merged value there.
+            for key, value in dead_strip_defs.items():
+                user_key = user_flag_key(user_defs, key.split(":")[0])
+                if user_key:
+                    user_defs.set(user_key, value)
 
         self.cmake_itk_source_build_configurations.update(
             itk_source_build_configuration(config, self.tbb_dir)

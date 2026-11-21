@@ -15,6 +15,7 @@ def _args(**overrides: object) -> argparse.Namespace:
         "macosx_deployment_target": "14.0",
         "itk_module_deps": "",
         "use_ccache": False,
+        "dead_strip": True,
         "manylinux_version": "",
     }
     values.update(overrides)
@@ -53,6 +54,7 @@ COMMON_TAIL = [
     ("ITK_MODULE_PREQ", ""),
     ("ITK_MODULE_NO_CLEANUP", "1"),
     ("USE_CCACHE", "OFF"),
+    ("DEAD_STRIP", "ON"),
     ("PIXI_EXECUTABLE", "/px/pixi"),
     ("CMAKE_EXECUTABLE", "/env/bin/cmake"),
     ("NINJA_EXECUTABLE", "/env/bin/ninja"),
@@ -128,11 +130,14 @@ def test_fields_are_typed() -> None:
         TargetPlatform(OS.LINUX, Arch.X86_64),
         itk_source_dir="/src/ITK",
         build_dir_root="/b",
+        dead_strip=False,
     )
     assert config.itk_source_dir == Path("/src/ITK")
     assert config.build_dir_root == Path("/b")
     assert config.ipp_superbuild_binary_dir == Path("/b/build/ITK-support-bld")
     assert config.python_executable == Path("/env/bin/python")
+    assert config.dead_strip is False
+    assert config.to_environment()["DEAD_STRIP"] == "OFF"
 
 
 @pytest.mark.parametrize(
@@ -175,6 +180,11 @@ def test_module_no_cleanup_must_be_a_flag() -> None:
             TargetPlatform(OS.LINUX, Arch.AARCH64),
             {"manylinux_version": "_2_34"},
             "manylinux_version",
+        ),
+        (
+            TargetPlatform(OS.LINUX, Arch.X86_64),
+            {"dead_strip": "yes"},
+            "dead_strip",
         ),
         (
             TargetPlatform(OS.LINUX, Arch.X86_64),

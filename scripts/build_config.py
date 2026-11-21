@@ -99,6 +99,7 @@ class BuildConfig:
     itk_module_preq: str
     itk_module_no_cleanup: bool
     use_ccache: bool
+    dead_strip: bool
     pixi_executable: Path
     cmake_executable: Path
     ninja_executable: Path
@@ -148,6 +149,7 @@ class BuildConfig:
             ),
             use_ccache=_flag("use_ccache", args.use_ccache)
             or env.get("USE_CCACHE", "0").upper() in ("1", "ON", "TRUE", "YES"),
+            dead_strip=_flag("dead_strip", args.dead_strip),
             pixi_executable=_path("pixi_executable", pixi_executable),
             cmake_executable=_path("cmake_executable", cmake_executable),
             ninja_executable=_path("ninja_executable", ninja_executable),
@@ -183,6 +185,7 @@ class BuildConfig:
                 "ITK_MODULE_PREQ": self.itk_module_preq,
                 "ITK_MODULE_NO_CLEANUP": "1" if self.itk_module_no_cleanup else "0",
                 "USE_CCACHE": _on_off(self.use_ccache),
+                "DEAD_STRIP": _on_off(self.dead_strip),
                 "PIXI_EXECUTABLE": str(self.pixi_executable),
                 "CMAKE_EXECUTABLE": str(self.cmake_executable),
                 "NINJA_EXECUTABLE": str(self.ninja_executable),
