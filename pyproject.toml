@@ -101,56 +101,6 @@ ignore = [
   "ARG002", # unused-method-argument (8)
 ]
 
-[tool.ruff.lint.per-file-ignores]
-# Superseded build scripts; linted in full once rewritten.
-"scripts/internal/wheel_builder_utils.py" = ["PTH103", "PTH109", "PTH112"]
-"scripts/internal/windows_build_common.py" = [
-  "PTH100",
-  "PTH110",
-  "PTH118",
-  "PTH120",
-  "UP031",
-]
-"scripts/update_python_version.py" = [
-  "F821",
-  "PTH100",
-  "PTH110",
-  "PTH118",
-  "PTH120",
-  "PTH123",
-]
-"scripts/windows_build_module_wheels.py" = [
-  "B006",
-  "E402",
-  "F821",
-  "F841",
-  "PTH100",
-  "PTH109",
-  "PTH110",
-  "PTH113",
-  "PTH118",
-  "PTH120",
-  "PTH207",
-  "RUF059",
-  "SIM108",
-  "UP031",
-]
-"scripts/windows_build_wheels.py" = [
-  "B006",
-  "E402",
-  "EXE001",
-  "PTH100",
-  "PTH107",
-  "PTH110",
-  "PTH118",
-  "PTH120",
-  "PTH122",
-  "PTH123",
-  "PTH207",
-  "RUF059",
-  "UP031",
-]
-
 [tool.commitizen]
 name = "cz_customize"
 
@@ -230,13 +180,3 @@ warn_unused_configs = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 strict = true
 warn_unreachable = true
-
-[[tool.mypy.overrides]]
-# Superseded build scripts; type-checked once rewritten.
-module = [
-  "update_python_version",
-  "windows_build_wheels",
-  "windows_build_module_wheels",
-  "internal.*",
-]
-ignore_errors = true

@@ -98,26 +98,6 @@ repos:
     rev: v0.10.0.1
     hooks:
       - id: shellcheck
-        # Superseded build scripts; checked once rewritten.
-        exclude: |
-          (?x)^scripts/(
-            dockcross-manylinux-build-module-deps|
-            dockcross-manylinux-build-tarball|
-            dockcross-manylinux-cleanup|
-            dockcross-manylinux-set-vars|
-            internal/manylinux-aarch64-build-module-wheels|
-            internal/manylinux-build-common|
-            internal/manylinux-build-module-wheels|
-            internal/manylinux-build-wheels|
-            lint-shell-scripts|
-            macpython-build-common|
-            macpython-build-module-deps|
-            macpython-build-module-wheels|
-            macpython-build-tarball|
-            macpython-build-wheels|
-            macpython-install-python|
-            oci_exe
-          )\.sh$
         stages: [pre-commit]
 
   # Shell: formatting

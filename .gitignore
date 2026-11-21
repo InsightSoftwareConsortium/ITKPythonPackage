@@ -75,6 +75,7 @@ docs/_build
 # IDE junk
 .idea/*
 *.swp
+/itkVersion.py
 # PyPI credentials
 .pypirc
 
