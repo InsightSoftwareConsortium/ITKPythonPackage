@@ -17,10 +17,6 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
     """
 
     def _configure_toolchain(self) -> None:
-        self.package_env_config["USE_TBB"] = "ON"
-        self.package_env_config["TBB_DIR"] = str(
-            self.build_dir_root / "build" / "oneTBB-prefix" / "lib" / "cmake" / "TBB"
-        )
         self.cmake_compiler_configurations.set(
             "CMAKE_CXX_COMPILER_TARGET:STRING", self.target.linux_triple
         )
@@ -179,11 +175,7 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
             ]
             cmd += [str(filepath), "-w", str(output_dir)]
             # Provide LD_LIBRARY_PATH for oneTBB and common system paths
-            extra_lib = str(
-                self.package_env_config["IPP_SUPERBUILD_BINARY_DIR"].parent
-                / "oneTBB-prefix"
-                / "lib"
-            )
+            extra_lib = str(self._tbb_prefix / "lib")
             env = dict(self.package_env_config)
             env["LD_LIBRARY_PATH"] = ":".join(
                 entry

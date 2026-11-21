@@ -81,13 +81,14 @@ def test_linux_configure_toolchain_takes_the_triple_from_the_target(
             )
             == triple
         )
+        builder._configure_tbb()
         assert builder.package_env_config["USE_TBB"] == "ON"
         # One key, one type: TBB_DIR is a str on Linux as well as Windows.
         assert isinstance(builder.package_env_config["TBB_DIR"], str)
 
 
-def test_windows_configure_toolchain_sets_tbb_dir_as_str(windows_builder):
-    windows_builder._configure_toolchain()
+def test_windows_configure_tbb_sets_tbb_dir_as_str(windows_builder):
+    windows_builder._configure_tbb()
     assert windows_builder.package_env_config["USE_TBB"] == "ON"
     tbb_dir = windows_builder.package_env_config["TBB_DIR"]
     assert isinstance(tbb_dir, str)
@@ -299,7 +300,6 @@ def test_configure_toolchain_routes_arch_through_the_target(macos_builder):
         )
         == "arm64"
     )
-    assert macos_builder.package_env_config["TBB_DIR"] == "NOT_FOUND"
 
 
 def test_configure_toolchain_sets_python_host_platform_from_the_same_values(
@@ -596,3 +596,24 @@ def test_require_repaired_raises_on_status_or_missing_output(tmp_path, windows_b
     with pytest.raises(RuntimeError, match="exit status 2"):
         windows_builder._require_repaired("delvewheel", source, 2, expected, "x")
     windows_builder._require_repaired("delvewheel", source, 0, expected, "x")
+
+
+@pytest.mark.parametrize(
+    ("builder_fixture", "use_tbb", "tbb_dir_parts"),
+    [
+        ("linux_builder", "ON", ("build", "oneTBB-prefix", "lib", "cmake", "TBB")),
+        ("windows_builder", "ON", ("build", "oneTBB-prefix", "lib", "cmake", "TBB")),
+        ("macos_builder", "OFF", None),
+    ],
+)
+def test_configure_tbb_per_platform(request, builder_fixture, use_tbb, tbb_dir_parts):
+    builder = request.getfixturevalue(builder_fixture)
+    builder._configure_tbb()
+    assert builder._tbb_prefix == builder.build_dir_root / "build" / "oneTBB-prefix"
+    assert builder.package_env_config["USE_TBB"] == use_tbb
+    expected = (
+        str(builder.build_dir_root.joinpath(*tbb_dir_parts))
+        if tbb_dir_parts
+        else "NOT_FOUND"
+    )
+    assert builder.package_env_config["TBB_DIR"] == expected

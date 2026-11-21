@@ -13,9 +13,9 @@ class MacOSBuildPythonInstance(PosixBuildPythonInstance):
     every wheel with ``delocate`` on both x86_64 and arm64.
     """
 
+    uses_tbb = False
+
     def _configure_toolchain(self) -> None:
-        self.package_env_config["USE_TBB"] = "OFF"
-        self.package_env_config["TBB_DIR"] = "NOT_FOUND"
         macosx_target = self.package_env_config.get("MACOSX_DEPLOYMENT_TARGET", "")
         if macosx_target:
             self.cmake_compiler_configurations.set(

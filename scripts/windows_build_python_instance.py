@@ -14,10 +14,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
     """
 
     def _configure_toolchain(self) -> None:
-        self.package_env_config["USE_TBB"] = "ON"
-        self.package_env_config["TBB_DIR"] = str(
-            self.build_dir_root / "build" / "oneTBB-prefix" / "lib" / "cmake" / "TBB"
-        )
+        """Windows needs no toolchain values beyond the shared TBB settings."""
 
     def post_build_fixup(self) -> None:
         """Repair wheels with ``delvewheel``, including oneTBB library paths."""
@@ -31,12 +28,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             if self.windows_extra_lib_paths
             else []
         )
-        # oneTBB is built by 01_superbuild_support_components into
-        # <build_dir_root>/build/oneTBB-prefix, the same prefix
-        # _configure_toolchain() points TBB_DIR at.
-        search_lib_paths.append(
-            str(self.build_dir_root / "build" / "oneTBB-prefix" / "bin")
-        )
+        search_lib_paths.append(str(self._tbb_prefix / "bin"))
         search_lib_paths_str: str = ";".join(map(str, search_lib_paths))
         self.fixup_wheels(search_lib_paths_str)
 

@@ -184,6 +184,7 @@ class BuildPythonInstanceBase(ABC):
     MODULE_ITK_DIR_CHOICES = ("build", "install")
     #: Class-level default for instances built without ``__init__`` (test fixtures).
     module_itk_dir: str = "build"
+    uses_tbb: bool = True
 
     def __init__(
         self,
@@ -760,10 +761,11 @@ class BuildPythonInstanceBase(ABC):
     def prepare_build_env(self) -> None:
         """Skeleton shared by every platform.
 
-        Subclasses vary only in ``_configure_toolchain``.
+        Subclasses vary only in ``uses_tbb`` and ``_configure_toolchain``.
         """
         self.venv_paths()
         self.update_venv_itk_build_configurations()
+        self._configure_tbb()
         self._configure_toolchain()
 
         build_root = self.build_dir_root / "build"
@@ -782,8 +784,24 @@ class BuildPythonInstanceBase(ABC):
             "ITK_BINARY_DIR:PATH", itk_binary_build_name.as_posix()
         )
 
+    @property
+    def _tbb_prefix(self) -> Path:
+        """Return the oneTBB install prefix the support superbuild creates."""
+        return Path(self.build_dir_root) / "build" / "oneTBB-prefix"
+
+    def _configure_tbb(self) -> None:
+        """Set ``USE_TBB`` and ``TBB_DIR`` from ``uses_tbb``."""
+        if self.uses_tbb:
+            self.package_env_config["USE_TBB"] = "ON"
+            self.package_env_config["TBB_DIR"] = str(
+                self._tbb_prefix / "lib" / "cmake" / "TBB"
+            )
+        else:
+            self.package_env_config["USE_TBB"] = "OFF"
+            self.package_env_config["TBB_DIR"] = "NOT_FOUND"
+
     def _configure_toolchain(self) -> None:
-        """Set platform-specific TBB, compiler, and deployment values."""
+        """Set platform-specific compiler and deployment values."""
         raise NotImplementedError
 
     @abstractmethod
