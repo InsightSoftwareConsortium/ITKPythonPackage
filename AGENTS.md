@@ -91,7 +91,7 @@ confirm the source and the resulting tag rather than assuming:
 
 ```bash
 git -C "$ITK_SRC" rev-parse --short HEAD          # same as step 1
-ls "$HOME/src/ITKPythonPackage-build"/dist/*.whl  # expect 7 wheels
+ls "$HOME/src/ITKPythonPackage-build"/dist/*.whl  # expect 8 wheels
 ```
 
 Every wheel should be named `*-cp311-abi3-macosx_26_0_arm64.whl`. Check
@@ -190,6 +190,23 @@ not a real flag; do not invent one.
 **Positional**: CMake definitions after the flags go to CMake unchanged,
 for example `-DBUILD_SHARED_LIBS:BOOL=OFF`. These override defaults.
 Anything that is not a `-D<KEY>=<VALUE>` definition is refused.
+
+## Ingested remote modules
+
+Modules that moved from remote modules into the ITK tree are marked
+`EXCLUDE_FROM_DEFAULT` there. The wheels ship them:
+`ITK_INGESTED_REMOTE_MODULES` in `scripts/build_python_instance_base.py`
+turns each on. When ITK ingests another module, add it to that tuple. A
+positional `-DModule_<name>:BOOL=OFF` overrides one.
+
+Which wheel a module lands in follows from its ITK group and its
+dependees; see `cmake/ITKPythonPackage_BuildWheels.cmake`. No wheel may
+exceed PyPI's 100 MB limit on any platform; Linux x86_64 is the largest,
+and the build fails before the import test when a wheel is over. To
+rebalance, list modules in an `ITK_WHEEL_<group>_MODULE_OVERRIDES`
+variable in that file. `itk-filtering-extra` exists for this reason: it
+holds the ingested filtering modules, which would otherwise take
+`itk-filtering` to 148 MB.
 
 ## Build steps and what skipping them means
 

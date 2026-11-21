@@ -50,6 +50,56 @@ def verify_stable_abi_wheels(out_dir: Path, py_api: str) -> list[Path]:
 
 BUILD_TYPE = "Release"
 
+# PyPI rejects larger files.
+PYPI_MAX_WHEEL_BYTES: int = 100 * 1000 * 1000
+
+# ITK modules ingested from remote modules. ITK excludes them from its default
+# build; the wheels ship them. Override one with -DModule_<name>:BOOL=OFF.
+ITK_INGESTED_REMOTE_MODULES: tuple[str, ...] = (
+    "AdaptiveDenoising",
+    "AnisotropicDiffusionLBR",
+    "BoneEnhancement",
+    "BoneMorphometry",
+    "BSplineGradient",
+    "Cuberille",
+    "FastBilateral",
+    "FixedPointInverseDisplacementField",
+    "Fpfh",
+    "GenericLabelInterpolator",
+    "GrowCut",
+    "HigherOrderAccurateGradient",
+    "IOFDF",
+    "IOMeshMZ3",
+    "IOMeshSTL",
+    "IOMeshSWC",
+    "IOScanco",
+    "IOTransformDCMTK",
+    "IsotropicWavelets",
+    "LabelErodeDilate",
+    "MGHIO",
+    "MeshNoise",
+    "MeshToPolyData",
+    "MinimalPathExtraction",
+    "Montage",
+    "MorphologicalContourInterpolation",
+    "MultipleImageIterator",
+    "ParabolicMorphology",
+    "PhaseSymmetry",
+    "PolarTransform",
+    "PrincipalComponentsAnalysis",
+    "RANSAC",
+    "RLEImage",
+    "SmoothingRecursiveYvvGaussianFilter",
+    "SplitComponents",
+    "Strain",
+    "SubdivisionQuadEdgeMeshFilter",
+    "TextureFeatures",
+    "Thickness3D",
+    "TotalVariation",
+    "TwoProjectionRegistration",
+    "VariationalRegistration",
+)
+
 
 def use_tbb_setting(tbb_dir: Path | None) -> str:
     """The ``ON``/``OFF`` value of the TBB options for *tbb_dir*."""
@@ -248,6 +298,13 @@ class BuildPythonInstanceBase(ABC):
 
         self.cmake_itk_source_build_configurations.update(
             itk_source_build_configuration(config, self.tbb_dir)
+        )
+        self.enable_ingested_remote_modules()
+
+    def enable_ingested_remote_modules(self) -> None:
+        """Turn on the ingested remote modules in the ITK build configuration."""
+        self.cmake_itk_source_build_configurations.update(
+            {f"Module_{module}:BOOL": "ON" for module in ITK_INGESTED_REMOTE_MODULES}
         )
 
     def update_venv_itk_build_configurations(self) -> None:
@@ -665,7 +722,23 @@ class BuildPythonInstanceBase(ABC):
 
     def final_import_test(self) -> None:  # pragma: no cover
         """Install and smoke-test the built wheels."""
+        self.check_wheel_sizes(self.dist_dir)
         self.final_wheel_import_test(installed_dist_dir=self.dist_dir)
+
+    def check_wheel_sizes(self, dist_dir: Path) -> None:
+        """Fail when a wheel in *dist_dir* is too large to upload to PyPI."""
+        oversized = [
+            f"{wheel.name}: {wheel.stat().st_size / 1e6:.1f} MB"
+            for wheel in sorted(Path(dist_dir).glob("itk*.whl"))
+            if wheel.stat().st_size > PYPI_MAX_WHEEL_BYTES
+        ]
+        if oversized:
+            msg = (
+                f"Wheels over the {PYPI_MAX_WHEEL_BYTES / 1e6:.0f} MB PyPI "
+                f"limit: {'; '.join(oversized)}. Move modules to another "
+                f"wheel in cmake/ITKPythonPackage_BuildWheels.cmake."
+            )
+            raise RuntimeError(msg)
 
     def build_external_module_python_wheel(self) -> None:
         """Build a wheel for an external ITK remote module via scikit-build-core."""

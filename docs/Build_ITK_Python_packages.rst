@@ -4,7 +4,7 @@ Build ITK Python Packages
 
 This section describes how to build ITK's core Python wheels
 (``itk-core``, ``itk-numerics``, ``itk-io``, ``itk-filtering``,
-``itk-registration``, ``itk-segmentation``, and ``itk-meta``). In most cases, the pre-built ITK binary wheels can be used.
+``itk-filtering-extra``, ``itk-registration``, ``itk-segmentation``, and ``itk-meta``). In most cases, the pre-built ITK binary wheels can be used.
 
 You may only need to build ITK from source if you need a custom patch, a specific unreleased
 commit, or are developing ITK core itself.

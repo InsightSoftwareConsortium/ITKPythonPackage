@@ -588,6 +588,40 @@ def test_windows_lib_paths_are_split_on_semicolons(
     assert not any(len(e) == 1 for e in entries)
 
 
+def test_ingested_remote_modules_are_enabled_and_can_be_overridden(
+    linux_builder: LinuxBuildPythonInstance,
+) -> None:
+    from build_python_instance_base import ITK_INGESTED_REMOTE_MODULES
+
+    linux_builder.enable_ingested_remote_modules()
+    defs = CMakeArgumentBuilder()
+    defs.update(linux_builder.cmake_itk_source_build_configurations.items())
+    args = defs.cmake_command_line_arguments()
+    for module in ITK_INGESTED_REMOTE_MODULES:
+        assert f"-DModule_{module}:BOOL='ON'" in args
+
+    defs.update({"Module_Montage:BOOL": "OFF"})
+    args = defs.cmake_command_line_arguments()
+    assert "-DModule_Montage:BOOL='OFF'" in args
+    assert "-DModule_Montage:BOOL='ON'" not in args
+
+
+def test_check_wheel_sizes_rejects_a_wheel_over_the_pypi_limit(
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
+    from build_python_instance_base import PYPI_MAX_WHEEL_BYTES
+
+    small = tmp_path / "itk_core-6.0.0-cp311-abi3-manylinux_2_28_x86_64.whl"
+    small.write_bytes(b"0")
+    linux_builder.check_wheel_sizes(tmp_path)
+
+    big = tmp_path / "itk_filtering-6.0.0-cp311-abi3-manylinux_2_28_x86_64.whl"
+    with Path(big).open("wb") as f:
+        f.truncate(PYPI_MAX_WHEEL_BYTES + 1)
+    with pytest.raises(RuntimeError, match="itk_filtering"):
+        linux_builder.check_wheel_sizes(tmp_path)
+
+
 def test_repair_output_dir_picks_the_module_or_main_dist(
     tmp_path: Path, linux_builder: LinuxBuildPythonInstance
 ) -> None:

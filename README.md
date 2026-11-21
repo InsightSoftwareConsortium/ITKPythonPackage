@@ -119,6 +119,12 @@ Each completed step is recorded, so a re-run skips what already finished.
 > [!NOTE]
 > When using the download-and-build scripts, steps 2–3 are skipped because the pre-built cache covers them.
 
+The ITK modules ingested from remote modules (Montage, RLEImage,
+TextureFeatures, ...) are excluded from ITK's default build but enabled in the
+wheels. The list is `ITK_INGESTED_REMOTE_MODULES` in
+`scripts/build_python_instance_base.py`; pass `-DModule_<name>:BOOL=OFF` to
+leave one out.
+
 You can invoke the `build_wheels.py` script directly for more control shown below
 
 Available pixi platform build environments:
