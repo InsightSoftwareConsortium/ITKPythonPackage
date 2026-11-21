@@ -214,7 +214,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                 return None
             return 3, int(m.group("minor"))
 
-        python_exe = Path(self.package_env_config["PYTHON_EXECUTABLE"])
+        python_exe = self.config.python_executable
 
         env_root = python_exe.parent
 

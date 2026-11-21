@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from dataclasses import replace
 from pathlib import Path
 from subprocess import CompletedProcess
 from unittest.mock import patch
@@ -11,12 +12,10 @@ from linux_build_python_instance import LinuxBuildPythonInstance
 def _wire_final_import_test_config(
     linux_builder: LinuxBuildPythonInstance, tmp_path: Path
 ) -> None:
-    linux_builder.package_env_config.update(
-        {
-            "PYTHON_EXECUTABLE": "python3",
-            "IPP_SOURCE_DIR": Path(tmp_path),
-        }
+    linux_builder.config = replace(
+        linux_builder.config, python_executable=Path("python3")
     )
+    linux_builder.ipp_dir = tmp_path
 
 
 @pytest.fixture(autouse=True)

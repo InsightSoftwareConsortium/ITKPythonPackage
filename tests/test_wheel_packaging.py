@@ -240,18 +240,6 @@ def test_the_wheel_step_starts_from_an_empty_dist(
     macos_builder.cleanup = False
     macos_builder.ipp_dir = macos_builder.build_dir_root
     macos_builder.cmake_cmdline_definitions = CMakeArgumentBuilder()
-    macos_builder.package_env_config.update(
-        {
-            "PYTHON_EXECUTABLE": "python",
-            "BUILD_TYPE": "Release",
-            "IPP_SOURCE_DIR": macos_builder.build_dir_root,
-            "USE_TBB": "OFF",
-            "DOXYGEN_EXECUTABLE": "doxygen",
-            "ITK_SOURCE_DIR": "ITK",
-            "ITK_GIT_TAG": "main",
-            "ITK_PACKAGE_VERSION": "6.0b3",
-        }
-    )
     with (
         patch.object(
             macos_builder,

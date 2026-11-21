@@ -2,6 +2,7 @@
 
 import zipfile
 from collections.abc import Callable, Sequence
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -212,8 +213,8 @@ def test_venv_paths_names_the_version_and_stable_abi_libraries(
     (env_root / "libs").mkdir()
     (env_root / "libs" / "python311.lib").touch()
     (env_root / "libs" / "python3.lib").touch()
-    windows_builder.package_env_config["PYTHON_EXECUTABLE"] = str(
-        env_root / "python.exe"
+    windows_builder.config = replace(
+        windows_builder.config, python_executable=env_root / "python.exe"
     )
 
     env = windows_builder.venv_paths()
@@ -233,8 +234,8 @@ def test_venv_paths_refuses_a_missing_stable_abi_library(
     (env_root / "include").mkdir(parents=True)
     (env_root / "libs").mkdir()
     (env_root / "libs" / "python311.lib").touch()
-    windows_builder.package_env_config["PYTHON_EXECUTABLE"] = str(
-        env_root / "python.exe"
+    windows_builder.config = replace(
+        windows_builder.config, python_executable=env_root / "python.exe"
     )
     with pytest.raises(FileNotFoundError, match=r"python3\.lib"):
         windows_builder.venv_paths()

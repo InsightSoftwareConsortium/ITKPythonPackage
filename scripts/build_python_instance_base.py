@@ -12,6 +12,7 @@ from typing import Any
 
 import build_environment
 import wheel_packaging
+from build_config import BuildConfig
 from build_environment import PythonEnvironment
 from build_inputs import (
     build_fingerprint,
@@ -61,6 +62,8 @@ def verify_stable_abi_wheels(out_dir: Path, py_api: str) -> list[Path]:
         raise RuntimeError(msg)
     return built_wheels
 
+
+BUILD_TYPE = "Release"
 
 # PyPI rejects larger files.
 PYPI_MAX_WHEEL_BYTES: int = 100 * 1000 * 1000
@@ -113,12 +116,22 @@ ITK_INGESTED_REMOTE_MODULES: tuple[str, ...] = (
 )
 
 
+def use_tbb_setting(tbb_dir: Path | None) -> str:
+    """The ``ON``/``OFF`` value of the TBB options for *tbb_dir*."""
+    return "OFF" if tbb_dir is None else "ON"
+
+
+def tbb_dir_setting(tbb_dir: Path | None) -> str:
+    """The ``TBB_DIR`` value for *tbb_dir*."""
+    return "NOT_FOUND" if tbb_dir is None else str(tbb_dir)
+
+
 def itk_source_build_configuration(
-    package_env_config: Mapping[str, Any],
+    config: BuildConfig, tbb_dir: Path | None
 ) -> dict[str, str]:
     """Return the CMake definitions every ITK wrapping build is configured with."""
     return {
-        "ITK_SOURCE_DIR:PATH": f"{package_env_config['ITK_SOURCE_DIR']}",
+        "ITK_SOURCE_DIR:PATH": f"{config.itk_source_dir}",
         "BUILD_TESTING:BOOL": "OFF",
         "ITK_WRAP_unsigned_short:BOOL": "ON",
         "ITK_WRAP_double:BOOL": "ON",
@@ -133,9 +146,9 @@ def itk_source_build_configuration(
         "ITK_WRAP_DOC:BOOL": "ON",
         # Set for every build so a cached tree can later be installed for module_itk_dir="install".
         "ITK_INSTALL_WRAPPING_DEVELOPMENT_FILES:BOOL": "ON",
-        "DOXYGEN_EXECUTABLE:FILEPATH": f"{package_env_config['DOXYGEN_EXECUTABLE']}",
-        "Module_ITKTBB:BOOL": package_env_config["USE_TBB"],
-        "TBB_DIR:PATH": package_env_config["TBB_DIR"],
+        "DOXYGEN_EXECUTABLE:FILEPATH": f"{config.doxygen_executable}",
+        "Module_ITKTBB:BOOL": use_tbb_setting(tbb_dir),
+        "TBB_DIR:PATH": tbb_dir_setting(tbb_dir),
         # Python settings
         "SKBUILD:BOOL": "ON",
     }
@@ -165,8 +178,8 @@ class BuildPythonInstanceBase(ABC):
         Platform/environment identifier (e.g. ``'manylinux228-py311'``).
     build_dir_root : Path
         Root directory for all build artifacts.
-    package_env_config : dict
-        Mutable configuration dictionary populated throughout the build.
+    config : BuildConfig
+        The validated build settings.
     cleanup : bool
         Whether to remove intermediate build artifacts.
     build_itk_tarball_cache : bool
@@ -198,6 +211,8 @@ class BuildPythonInstanceBase(ABC):
     #: Class-level default for instances built without ``__init__`` (test fixtures).
     module_itk_dir: str = "build"
     uses_tbb: bool = True
+    #: oneTBB's CMake package directory, or None when the build uses no TBB.
+    tbb_dir: Path | None = None
     python_env: PythonEnvironment
 
     def __init__(
@@ -205,7 +220,7 @@ class BuildPythonInstanceBase(ABC):
         *,
         platform_env: str,
         build_dir_root: Path,
-        package_env_config: dict[str, Any],
+        config: BuildConfig,
         cleanup: bool,
         build_itk_tarball_cache: bool,
         cmake_options: list[str],
@@ -251,18 +266,13 @@ class BuildPythonInstanceBase(ABC):
         self.cmake_compiler_configurations: CMakeArgumentBuilder = (
             CMakeArgumentBuilder()
         )
-        package_env_config["IPP_SOURCE_DIR"] = self.ipp_dir
-        IPP_BuildWheelsSupport_DIR: Path = self.ipp_dir / "BuildWheelsSupport"
-        package_env_config["IPP_BuildWheelsSupport_DIR"] = IPP_BuildWheelsSupport_DIR
+        self.config = config
+        self.target: TargetPlatform = TargetPlatform.detect(config.to_environment())
 
-        self.package_env_config = package_env_config
-        self.target: TargetPlatform = TargetPlatform.detect(self.package_env_config)
-
-        with (IPP_BuildWheelsSupport_DIR / "WHEEL_NAMES.txt").open(
+        with (self.ipp_dir / "BuildWheelsSupport" / "WHEEL_NAMES.txt").open(
             encoding="utf-8"
         ) as content:
             self.wheel_names = [wheel_name.strip() for wheel_name in content]
-        del package_env_config
 
         self.cleanup = cleanup
         self.build_itk_tarball_cache = build_itk_tarball_cache
@@ -279,34 +289,21 @@ class BuildPythonInstanceBase(ABC):
         self.skip_itk_wheel_build = skip_itk_wheel_build
         self.prepare_build_env()
 
-        self.package_env_config["BUILD_TYPE"] = "Release"
         self.cmake_cmdline_definitions: CMakeArgumentBuilder = (
             definitions_from_cmake_options(cmake_options or [])
         )
 
         self.cmake_compiler_configurations.update(
             {
-                "CMAKE_BUILD_TYPE:STRING": self.package_env_config["BUILD_TYPE"],
+                "CMAKE_BUILD_TYPE:STRING": BUILD_TYPE,
             }
         )
-        # Set cmake flags for the compiler if CC or CXX are specified
-        cxx_compiler: str = self.package_env_config.get("CXX", "")
-        if cxx_compiler != "":
-            self.cmake_compiler_configurations.set(
-                "CMAKE_CXX_COMPILER:STRING", cxx_compiler
-            )
-
-        c_compiler: str = self.package_env_config.get("CC", "")
-        if c_compiler != "":
-            self.cmake_compiler_configurations.set(
-                "CMAKE_C_COMPILER:STRING", c_compiler
-            )
 
         self.compiler_cache_commands: tuple[list[list[str]], list[list[str]]] = (
             [],
             [],
         )
-        if self.package_env_config.get("USE_CCACHE", "OFF") == "ON":
+        if config.use_ccache:
             cache_tool = compiler_cache_tool(self.target.os_name)
             cache_exe: Path | None = which(cache_tool)
             if cache_exe is None:
@@ -322,7 +319,7 @@ class BuildPythonInstanceBase(ABC):
                 compiler_cache_max_size(cache_tool, os.environ),
             )
 
-        if self.package_env_config.get("DEAD_STRIP", "OFF") == "ON":
+        if config.dead_strip:
             user_defs = self.cmake_cmdline_definitions
             dead_strip_defs = dead_strip_cmake_definitions(
                 self.target.os_name, os.environ, user_defs
@@ -335,7 +332,7 @@ class BuildPythonInstanceBase(ABC):
                     user_defs.set(user_key, value)
 
         self.cmake_itk_source_build_configurations.update(
-            itk_source_build_configuration(self.package_env_config)
+            itk_source_build_configuration(config, self.tbb_dir)
         )
         self.enable_ingested_remote_modules()
 
@@ -402,7 +399,7 @@ class BuildPythonInstanceBase(ABC):
             )
         if self.build_itk_tarball_cache:
             python_package_build_steps[
-                f"07_build_itk_tarball_cache_{self.package_env_config['OS_NAME']}_{self.package_env_config['ARCH']}"
+                f"07_build_itk_tarball_cache_{self.config.os_name.value}_{self.config.pixi_suffix}"
             ] = self.build_tarball
         if self.cleanup and not self.build_itk_tarball_cache:
             # Cleanup globs dist/ITKPythonBuilds-*.tar*, so it is incompatible
@@ -461,7 +458,7 @@ class BuildPythonInstanceBase(ABC):
 
     def build_inputs(self) -> dict[str, str]:
         """Return the ITK commit, package version, and fingerprint of this build."""
-        cfg = self.package_env_config
+        cfg = self.config.to_environment()
         settings: dict[str, str] = {}
         for group, definitions in (
             ("compiler", self.cmake_compiler_configurations),
@@ -470,17 +467,17 @@ class BuildPythonInstanceBase(ABC):
         ):
             settings.update({f"{group}:{k}": str(v) for k, v in definitions.items()})
         for key in ("USE_CCACHE", "MANYLINUX_VERSION", "CONTAINER_SOURCE"):
-            settings[key] = str(cfg.get(key, ""))
-        git = str(cfg.get("GIT_EXECUTABLE") or "git")
+            settings[key] = cfg.get(key, "")
+        git = str(self.config.git_executable)
         module_state = None
         if self.module_source_dir is not None:
             settings["itk_module_deps"] = str(self.itk_module_deps or "")
             module_state = module_source_state(Path(self.module_source_dir), git)
         return build_inputs(
             itk_commit=resolved_itk_commit(
-                Path(cfg["ITK_SOURCE_DIR"]), str(cfg["ITK_GIT_TAG"]), git
+                self.config.itk_source_dir, self.config.itk_git_tag, git
             ),
-            package_version=str(cfg["ITK_PACKAGE_VERSION"]),
+            package_version=self.config.itk_package_version,
             fingerprint=build_fingerprint(self.ipp_dir, settings),
             module_state=module_state,
         )
@@ -515,16 +512,16 @@ class BuildPythonInstanceBase(ABC):
         cmake_superbuild_arguments.update(self.cmake_compiler_configurations.items())
         cmake_superbuild_arguments.update(
             {
-                "ITKPythonPackage_USE_TBB:BOOL": self.package_env_config["USE_TBB"],
-                "ITK_SOURCE_DIR:PATH": f"{self.package_env_config['ITK_SOURCE_DIR']}",
-                "ITK_GIT_TAG:STRING": f"{self.package_env_config['ITK_GIT_TAG']}",
+                "ITKPythonPackage_USE_TBB:BOOL": use_tbb_setting(self.tbb_dir),
+                "ITK_SOURCE_DIR:PATH": f"{self.config.itk_source_dir}",
+                "ITK_GIT_TAG:STRING": f"{self.config.itk_git_tag}",
             }
         )
         # Command-line definitions go last so they override the defaults above.
         cmake_superbuild_arguments.update(self.cmake_cmdline_definitions.items())
 
-        cmd = [
-            self.package_env_config["CMAKE_EXECUTABLE"],
+        cmd: list[str | Path] = [
+            self.config.cmake_executable,
             "-G",
             "Ninja",
         ]
@@ -533,18 +530,18 @@ class BuildPythonInstanceBase(ABC):
 
         cmd += [
             "-S",
-            str(self.package_env_config["IPP_SOURCE_DIR"] / "SuperbuildSupport"),
+            str(self.ipp_dir / "SuperbuildSupport"),
             "-B",
-            str(self.package_env_config["IPP_SUPERBUILD_BINARY_DIR"]),
+            str(self.config.ipp_superbuild_binary_dir),
         ]
 
         self.echo_check_call(cmd, check=True)
         # check=True so a failed superbuild stops here, not later in step 02.
         self.echo_check_call(
             [
-                self.package_env_config["CMAKE_EXECUTABLE"],
+                self.config.cmake_executable,
                 "--build",
-                str(self.package_env_config["IPP_SUPERBUILD_BINARY_DIR"]),
+                str(self.config.ipp_superbuild_binary_dir),
             ],
             check=True,
         )
@@ -588,12 +585,13 @@ class BuildPythonInstanceBase(ABC):
             Directory containing the built ``.whl`` files to install and
             verify.
         """
-        self._pip_uninstall_itk_wildcard(self.package_env_config["PYTHON_EXECUTABLE"])
-        checks = [
+        python = self.config.python_executable
+        self._pip_uninstall_itk_wildcard(python)
+        checks: list[tuple[str, list[str | Path]]] = [
             (
                 "pip install itk",
                 [
-                    self.package_env_config["PYTHON_EXECUTABLE"],
+                    python,
                     "-m",
                     "pip",
                     "install",
@@ -606,12 +604,12 @@ class BuildPythonInstanceBase(ABC):
             ),
             (
                 "import itk",
-                [self.package_env_config["PYTHON_EXECUTABLE"], "-c", "import itk;"],
+                [python, "-c", "import itk;"],
             ),
             (
                 "instantiate itk.Image",
                 [
-                    self.package_env_config["PYTHON_EXECUTABLE"],
+                    python,
                     "-c",
                     "import itk; image = itk.Image[itk.UC, 2].New()",
                 ],
@@ -619,7 +617,7 @@ class BuildPythonInstanceBase(ABC):
             (
                 "import itk with lazy loading disabled",
                 [
-                    self.package_env_config["PYTHON_EXECUTABLE"],
+                    python,
                     "-c",
                     "import itkConfig; itkConfig.LazyLoading=False; import itk;",
                 ],
@@ -627,13 +625,8 @@ class BuildPythonInstanceBase(ABC):
             (
                 "documentation tests",
                 [
-                    self.package_env_config["PYTHON_EXECUTABLE"],
-                    str(
-                        self.package_env_config["IPP_SOURCE_DIR"]
-                        / "docs"
-                        / "code"
-                        / "test.py"
-                    ),
+                    python,
+                    str(self.ipp_dir / "docs" / "code" / "test.py"),
                 ],
             ),
         ]
@@ -729,9 +722,9 @@ class BuildPythonInstanceBase(ABC):
         """Remove intermediate build artifacts, leaving ``dist/`` intact."""
         wheel_packaging.post_build_cleanup(
             build_dir_root=self.build_dir_root,
-            arch=self.package_env_config["ARCH"],
-            ipp_source_dir=Path(self.package_env_config["IPP_SOURCE_DIR"]),
-            module_preq=self.package_env_config.get("ITK_MODULE_PREQ")
+            arch=self.config.pixi_suffix,
+            ipp_source_dir=self.ipp_dir,
+            module_preq=self.config.itk_module_preq
             or os.environ.get("ITK_MODULE_PREQ", ""),
         )
 
@@ -760,15 +753,21 @@ class BuildPythonInstanceBase(ABC):
         return Path(self.build_dir_root) / "build" / "oneTBB-prefix"
 
     def _configure_tbb(self) -> None:
-        """Set ``USE_TBB`` and ``TBB_DIR`` from ``uses_tbb``."""
-        if self.uses_tbb:
-            self.package_env_config["USE_TBB"] = "ON"
-            self.package_env_config["TBB_DIR"] = str(
-                self._tbb_prefix / "lib" / "cmake" / "TBB"
-            )
-        else:
-            self.package_env_config["USE_TBB"] = "OFF"
-            self.package_env_config["TBB_DIR"] = "NOT_FOUND"
+        """Set ``tbb_dir`` from ``uses_tbb``."""
+        self.tbb_dir = (
+            self._tbb_prefix / "lib" / "cmake" / "TBB" if self.uses_tbb else None
+        )
+
+    def subprocess_environment(self) -> dict[str, str]:
+        """The build settings as environment variables, with this builder's own."""
+        return {
+            **self.config.to_environment(),
+            "IPP_SOURCE_DIR": str(self.ipp_dir),
+            "IPP_BuildWheelsSupport_DIR": str(self.ipp_dir / "BuildWheelsSupport"),
+            "USE_TBB": use_tbb_setting(self.tbb_dir),
+            "TBB_DIR": tbb_dir_setting(self.tbb_dir),
+            "BUILD_TYPE": BUILD_TYPE,
+        }
 
     def python_build_wheel_command(self, out_dir: Path, *settings: str) -> list[str]:
         """Return the ``python -m build`` command writing a wheel to *out_dir*.
@@ -777,7 +776,7 @@ class BuildPythonInstanceBase(ABC):
         generator choice; callers append CMake definitions and the source.
         """
         return [
-            str(self.package_env_config["PYTHON_EXECUTABLE"]),
+            str(self.config.python_executable),
             "-m",
             "build",
             "--verbose",
@@ -786,7 +785,7 @@ class BuildPythonInstanceBase(ABC):
             str(out_dir),
             "--no-isolation",
             "--skip-dependency-check",
-            f"--config-setting=cmake.build-type={self.package_env_config['BUILD_TYPE']}",
+            f"--config-setting=cmake.build-type={BUILD_TYPE}",
             *settings,
             *self.python_build_generator_args(),
         ]
@@ -842,14 +841,14 @@ class BuildPythonInstanceBase(ABC):
         pyproject_whl = module_pyproject.with_suffix(".toml.whl")
         deps_rewritten = False
         if module_pyproject.is_file():
-            itk_ver = self.package_env_config.get("ITK_PACKAGE_VERSION", "")
+            itk_ver = self.config.itk_package_version
             if itk_ver:
                 shutil.copy2(module_pyproject, pyproject_orig)
                 deps_rewritten = update_module_itk_deps(module_pyproject, itk_ver)
                 if not deps_rewritten:
                     pyproject_orig.unlink()
 
-        py_exe = str(self.package_env_config["PYTHON_EXECUTABLE"])  # Python3_EXECUTABLE
+        py_exe = str(self.config.python_executable)
 
         py_include = str(self.python_env.include_dir)
 
@@ -939,9 +938,9 @@ class BuildPythonInstanceBase(ABC):
             configure_one_pyproject_file(
                 str(self.ipp_dir / "scripts"),
                 PyprojectInputs(
-                    itk_source_dir=self.package_env_config["ITK_SOURCE_DIR"],
-                    itk_git_tag=self.package_env_config["ITK_GIT_TAG"],
-                    itk_package_version=self.package_env_config["ITK_PACKAGE_VERSION"],
+                    itk_source_dir=self.config.itk_source_dir,
+                    itk_git_tag=self.config.itk_git_tag,
+                    itk_package_version=self.config.itk_package_version,
                 ),
                 wheel_configbuild_dir_root,
                 wheel_name,
@@ -949,7 +948,7 @@ class BuildPythonInstanceBase(ABC):
 
             cmd = self.python_build_wheel_command(
                 self.build_dir_root / "dist",
-                f"--config-setting=cmake.source-dir={self.package_env_config['IPP_SOURCE_DIR'] / 'BuildWheelsSupport'}",
+                f"--config-setting=cmake.source-dir={self.ipp_dir / 'BuildWheelsSupport'}",
                 f"--config-setting=build-dir={wheel_configbuild_dir_root / 'build'}",
             )
             # Build scikit-build defines via builder
@@ -960,10 +959,10 @@ class BuildPythonInstanceBase(ABC):
             )
             scikitbuild_cmdline_args.update(
                 {
-                    "ITKPythonPackage_USE_TBB:BOOL": self.package_env_config["USE_TBB"],
+                    "ITKPythonPackage_USE_TBB:BOOL": use_tbb_setting(self.tbb_dir),
                     "ITKPythonPackage_ITK_BINARY_REUSE:BOOL": "ON",
                     "ITKPythonPackage_WHEEL_NAME:STRING": f"{wheel_name}",
-                    "DOXYGEN_EXECUTABLE:FILEPATH": f"{self.package_env_config['DOXYGEN_EXECUTABLE']}",
+                    "DOXYGEN_EXECUTABLE:FILEPATH": f"{self.config.doxygen_executable}",
                 }
             )
 
@@ -1003,8 +1002,8 @@ class BuildPythonInstanceBase(ABC):
         print("#")
 
         # Build ITK python
-        cmd = [
-            self.package_env_config["CMAKE_EXECUTABLE"],
+        cmd: list[str | Path] = [
+            self.config.cmake_executable,
             "-G",
             "Ninja",
         ]
@@ -1017,14 +1016,14 @@ class BuildPythonInstanceBase(ABC):
         cmd += defs.cmake_command_line_arguments()
         cmd += [
             "-S",
-            self.package_env_config["ITK_SOURCE_DIR"],
+            self.config.itk_source_dir,
             "-B",
             self.cmake_itk_source_build_configurations["ITK_BINARY_DIR:PATH"],
         ]
         self.echo_check_call(cmd, check=True)
         self.echo_check_call(
             [
-                self.package_env_config["NINJA_EXECUTABLE"],
+                self.config.ninja_executable,
                 f"-j{self.build_node_cpu_count}",
                 f"-l{self.build_load_limit}",
                 "-C",
@@ -1084,7 +1083,7 @@ class BuildPythonInstanceBase(ABC):
         print("#")
         self.echo_check_call(
             [
-                self.package_env_config["CMAKE_EXECUTABLE"],
+                self.config.cmake_executable,
                 "--install",
                 self.cmake_itk_source_build_configurations["ITK_BINARY_DIR:PATH"],
                 "--prefix",
@@ -1106,7 +1105,7 @@ class BuildPythonInstanceBase(ABC):
         return build_environment.echo_check_call(
             cmd,
             pixi_env_name=self.platform_env,
-            pixi_executable=self.package_env_config["PIXI_EXECUTABLE"],
+            pixi_executable=self.config.pixi_executable,
             run_dir=self.ipp_dir,
             use_pixi_env=use_pixi_env,
             env=env,

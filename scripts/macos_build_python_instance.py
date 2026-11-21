@@ -16,7 +16,7 @@ class MacOSBuildPythonInstance(PosixBuildPythonInstance):
     uses_tbb = False
 
     def _configure_toolchain(self) -> None:
-        macosx_target = self.package_env_config.get("MACOSX_DEPLOYMENT_TARGET", "")
+        macosx_target = self.config.macosx_deployment_target
         if macosx_target:
             self.cmake_compiler_configurations.set(
                 "CMAKE_OSX_DEPLOYMENT_TARGET:STRING", macosx_target
@@ -70,7 +70,7 @@ class MacOSBuildPythonInstance(PosixBuildPythonInstance):
             [
                 str(delocate_wheel),
                 "--require-archs",
-                self.package_env_config["ARCH"],
+                self.config.pixi_suffix,
                 str(filepath),
             ],
             check=True,
@@ -80,6 +80,4 @@ class MacOSBuildPythonInstance(PosixBuildPythonInstance):
         """Remove AppleDouble ``._*`` files using ``dot_clean`` if available."""
         # dot_clean may not be available; continue without it
         with contextlib.suppress(Exception):
-            self.echo_check_call(
-                ["dot_clean", str(self.package_env_config["IPP_SOURCE_DIR"])]
-            )
+            self.echo_check_call(["dot_clean", str(self.ipp_dir)])

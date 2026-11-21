@@ -4,6 +4,7 @@ import functools
 import subprocess
 from collections import OrderedDict
 from collections.abc import Callable
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -111,12 +112,11 @@ def _wire_run(
     builder.itk_module_deps = None
     builder.compiler_cache_commands = ([], [])
     builder.cmake_cmdline_definitions = CMakeArgumentBuilder()
-    builder.package_env_config.update(
-        {
-            "ITK_SOURCE_DIR": itk_source,
-            "ITK_GIT_TAG": "main",
-            "ITK_PACKAGE_VERSION": version,
-        }
+    builder.config = replace(
+        builder.config,
+        itk_source_dir=itk_source,
+        itk_git_tag="main",
+        itk_package_version=version,
     )
     ran: list[str] = []
     steps: OrderedDict[str, Callable[[], object]] = OrderedDict(

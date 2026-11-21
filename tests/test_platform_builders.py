@@ -1,6 +1,7 @@
 import os
 import zipfile
 from collections.abc import Callable, Mapping, Sequence
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -83,19 +84,18 @@ def test_linux_configure_toolchain_takes_the_triple_from_the_target(
             == triple
         )
         builder._configure_tbb()
-        assert builder.package_env_config["USE_TBB"] == "ON"
-        # One key, one type: TBB_DIR is a str on Linux as well as Windows.
-        assert isinstance(builder.package_env_config["TBB_DIR"], str)
+        env = builder.subprocess_environment()
+        assert env["USE_TBB"] == "ON"
+        assert env["TBB_DIR"].endswith("TBB")
 
 
 def test_windows_configure_tbb_sets_tbb_dir_as_str(
     windows_builder: WindowsBuildPythonInstance,
 ) -> None:
     windows_builder._configure_tbb()
-    assert windows_builder.package_env_config["USE_TBB"] == "ON"
-    tbb_dir = windows_builder.package_env_config["TBB_DIR"]
-    assert isinstance(tbb_dir, str)
-    assert tbb_dir.endswith("TBB")
+    env = windows_builder.subprocess_environment()
+    assert env["USE_TBB"] == "ON"
+    assert env["TBB_DIR"].endswith("TBB")
 
 
 def _make_wheel(path: Path, members: dict[str, str]) -> Path:
@@ -155,12 +155,9 @@ def _prepare_linux_fixup(
     tmp_path: Path,
     module_source_dir: Path | None = None,
 ) -> tuple[Path, Path]:
-    linux_builder.package_env_config.update(
-        {
-            "MANYLINUX_VERSION": "_2_28",
-            "PYTHON_EXECUTABLE": str(_make_build_env(tmp_path) / "bin" / "python"),
-            "IPP_SUPERBUILD_BINARY_DIR": tmp_path / "superbuild",
-        }
+    linux_builder.config = replace(
+        linux_builder.config,
+        python_executable=_make_build_env(tmp_path) / "bin" / "python",
     )
     linux_builder.module_source_dir = module_source_dir
     dist_dir = tmp_path / "dist"
@@ -262,8 +259,9 @@ def test_fixup_wheel_fails_loudly_when_the_build_env_lib_dir_is_absent(
 ) -> None:
     """Silently omitting the env lib dir is what reintroduced defect C."""
     wheel, _repaired = _prepare_linux_fixup(linux_builder, tmp_path)
-    linux_builder.package_env_config["PYTHON_EXECUTABLE"] = str(
-        tmp_path / "no-such-env" / "bin" / "python"
+    linux_builder.config = replace(
+        linux_builder.config,
+        python_executable=tmp_path / "no-such-env" / "bin" / "python",
     )
     with (
         patch.object(linux_builder, "echo_check_call", return_value=0),
@@ -274,7 +272,7 @@ def test_fixup_wheel_fails_loudly_when_the_build_env_lib_dir_is_absent(
 
 def test_posix_build_tarball_delegates(macos_builder: MacOSBuildPythonInstance) -> None:
     """The POSIX build_tarball delegates to wheel_packaging.create_posix_tarball."""
-    macos_builder.package_env_config["IPP_SOURCE_DIR"] = Path("/ipp")
+    macos_builder.ipp_dir = Path("/ipp")
     with patch.object(wheel_packaging, "create_posix_tarball") as created:
         macos_builder.build_tarball()
     created.assert_called_once()
@@ -305,7 +303,7 @@ def test_configure_toolchain_routes_arch_through_the_target(
     macos_builder: MacOSBuildPythonInstance,
 ) -> None:
     """macOS reads CMAKE_OSX_ARCHITECTURES from the type, not from ARCH."""
-    macos_builder.package_env_config = {"ARCH": "ignored-by-design"}
+    macos_builder.config = replace(macos_builder.config, arch=Arch.X86_64)
     macos_builder._configure_toolchain()
     assert (
         macos_builder.cmake_compiler_configurations.get(
@@ -327,7 +325,9 @@ def test_configure_toolchain_sets_python_host_platform_from_the_same_values(
     """
     monkeypatch.delenv("_PYTHON_HOST_PLATFORM", raising=False)
     monkeypatch.delenv("MACOSX_DEPLOYMENT_TARGET", raising=False)
-    macos_builder.package_env_config["MACOSX_DEPLOYMENT_TARGET"] = "99.5"
+    macos_builder.config = replace(
+        macos_builder.config, macosx_deployment_target="99.5"
+    )
     macos_builder._configure_toolchain()
     assert (
         os.environ["_PYTHON_HOST_PLATFORM"]
@@ -340,7 +340,7 @@ def test_configure_toolchain_leaves_python_host_platform_unset_without_a_target(
 ) -> None:
     """No macosx_target means no malformed 'macosx--<arch>' value."""
     monkeypatch.delenv("_PYTHON_HOST_PLATFORM", raising=False)
-    macos_builder.package_env_config.pop("MACOSX_DEPLOYMENT_TARGET", None)
+    macos_builder.config = replace(macos_builder.config, macosx_deployment_target=None)
     macos_builder._configure_toolchain()
     assert "_PYTHON_HOST_PLATFORM" not in os.environ
 
@@ -395,13 +395,7 @@ def _wire_itk_cplusplus(builder: BuildPythonInstanceBase, tmp_path: Path) -> Non
     builder.cmake_itk_source_build_configurations.set(
         "ITK_BINARY_DIR:PATH", str(tmp_path / "itk-bld")
     )
-    builder.package_env_config.update(
-        {
-            "CMAKE_EXECUTABLE": "cmake",
-            "NINJA_EXECUTABLE": "ninja",
-            "ITK_SOURCE_DIR": str(tmp_path / "ITK"),
-        }
-    )
+    builder.config = replace(builder.config, itk_source_dir=tmp_path / "ITK")
 
 
 @pytest.mark.parametrize("failing_tool", ["cmake", "ninja"])
@@ -424,16 +418,11 @@ def test_superbuild_support_components_raise_when_cmake_fails(
 ) -> None:
     """The superbuild configure/build pair must stop the run on failure."""
     linux_builder.cmake_cmdline_definitions = CMakeArgumentBuilder()
-    linux_builder.package_env_config.update(
-        {
-            "CMAKE_EXECUTABLE": "cmake",
-            "USE_TBB": "ON",
-            "ITK_SOURCE_DIR": str(tmp_path / "ITK"),
-            "ITK_GIT_TAG": "main",
-            "IPP_SOURCE_DIR": tmp_path / "ipp",
-            "IPP_SUPERBUILD_BINARY_DIR": tmp_path / "superbuild",
-        }
+    linux_builder.config = replace(
+        linux_builder.config, itk_source_dir=tmp_path / "ITK"
     )
+    linux_builder.tbb_dir = tmp_path / "tbb"
+    linux_builder.ipp_dir = tmp_path / "ipp"
     with (
         patch.object(
             linux_builder, "echo_check_call", side_effect=_checking_echo("cmake")
@@ -450,16 +439,11 @@ def test_superbuild_support_components_raise_when_the_build_fails(
     that never completes). That was recorded as a done step and surfaced
     later as a missing TBBConfig.cmake in step 02."""
     linux_builder.cmake_cmdline_definitions = CMakeArgumentBuilder()
-    linux_builder.package_env_config.update(
-        {
-            "CMAKE_EXECUTABLE": "cmake",
-            "USE_TBB": "ON",
-            "ITK_SOURCE_DIR": str(tmp_path / "ITK"),
-            "ITK_GIT_TAG": "main",
-            "IPP_SOURCE_DIR": tmp_path / "ipp",
-            "IPP_SUPERBUILD_BINARY_DIR": tmp_path / "superbuild",
-        }
+    linux_builder.config = replace(
+        linux_builder.config, itk_source_dir=tmp_path / "ITK"
     )
+    linux_builder.tbb_dir = tmp_path / "tbb"
+    linux_builder.ipp_dir = tmp_path / "ipp"
     with (
         patch.object(
             linux_builder, "echo_check_call", side_effect=_checking_echo("--build")
@@ -470,11 +454,9 @@ def test_superbuild_support_components_raise_when_the_build_fails(
 
 
 def _prepare_metawheel(linux_builder: LinuxBuildPythonInstance, tmp_path: Path) -> Path:
-    linux_builder.package_env_config.update(
-        {
-            "MANYLINUX_VERSION": "_2_28",
-            "PYTHON_EXECUTABLE": str(_make_build_env(tmp_path) / "bin" / "python"),
-        }
+    linux_builder.config = replace(
+        linux_builder.config,
+        python_executable=_make_build_env(tmp_path) / "bin" / "python",
     )
     dist_dir = tmp_path / "dist"
     dist_dir.mkdir(exist_ok=True)
@@ -650,13 +632,14 @@ def test_configure_tbb_per_platform(
     builder = request.getfixturevalue(builder_fixture)
     builder._configure_tbb()
     assert builder._tbb_prefix == builder.build_dir_root / "build" / "oneTBB-prefix"
-    assert builder.package_env_config["USE_TBB"] == use_tbb
+    env = builder.subprocess_environment()
+    assert env["USE_TBB"] == use_tbb
     expected = (
         str(builder.build_dir_root.joinpath(*tbb_dir_parts))
         if tbb_dir_parts
         else "NOT_FOUND"
     )
-    assert builder.package_env_config["TBB_DIR"] == expected
+    assert env["TBB_DIR"] == expected
 
 
 @pytest.mark.parametrize(
@@ -723,9 +706,6 @@ def test_only_windows_chooses_the_generator(
 def test_python_build_wheel_command_orders_settings_before_the_generator(
     windows_builder: WindowsBuildPythonInstance,
 ) -> None:
-    windows_builder.package_env_config.update(
-        {"PYTHON_EXECUTABLE": "python", "BUILD_TYPE": "Release"}
-    )
     cmd = windows_builder.python_build_wheel_command(Path("out"), "--config-setting=x")
     assert cmd[:3] == ["python", "-m", "build"]
     assert cmd[cmd.index("--outdir") + 1] == "out"

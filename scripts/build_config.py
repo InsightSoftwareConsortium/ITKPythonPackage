@@ -128,7 +128,7 @@ class BuildConfig:
         """
         manylinux_version = _manylinux_version(target, args.manylinux_version)
         macosx_deployment_target = _deployment_target(
-            target, args.macosx_deployment_target
+            target, getattr(args, "macosx_deployment_target", None)
         )
         return cls(
             itk_source_dir=_path("itk_source_dir", args.itk_source_dir),

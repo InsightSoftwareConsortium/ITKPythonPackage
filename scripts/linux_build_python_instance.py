@@ -55,7 +55,7 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
                 metawheel_dist.mkdir(parents=True, exist_ok=True)
                 self.echo_check_call(
                     [
-                        self.package_env_config["PYTHON_EXECUTABLE"],
+                        self.config.python_executable,
                         "-m",
                         "wheel",
                         "unpack",
@@ -82,7 +82,7 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
                 for fixed_dir in metawheel_dir.glob("itk-*"):
                     self.echo_check_call(
                         [
-                            self.package_env_config["PYTHON_EXECUTABLE"],
+                            self.config.python_executable,
                             "-m",
                             "wheel",
                             "pack",
@@ -117,14 +117,8 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
         Derived from ``PYTHON_EXECUTABLE`` (``<prefix>/bin/python``) so that
         it does not depend on ``CONDA_PREFIX`` being exported.
         """
-        python_executable = self.package_env_config.get("PYTHON_EXECUTABLE", "")
-        if not python_executable:
-            msg = (
-                "PYTHON_EXECUTABLE is unset; cannot locate the build "
-                "environment library directory for auditwheel"
-            )
-            raise RuntimeError(msg)
-        lib_dir = Path(python_executable).resolve().parent.parent / "lib"
+        python_executable = self.config.python_executable
+        lib_dir = python_executable.resolve().parent.parent / "lib"
         if not lib_dir.is_dir():
             msg = (
                 f"Build environment library directory {lib_dir} does not exist "
@@ -151,8 +145,8 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
         # Use auditwheel to repair wheels and set manylinux tags
         if self.builds_manylinux():
             output_dir = self._repair_output_dir(remote_module_wheel)
-            cmd = [
-                self.package_env_config["PYTHON_EXECUTABLE"],
+            cmd: list[str | Path] = [
+                self.config.python_executable,
                 "-m",
                 "auditwheel",
                 "repair",
@@ -164,7 +158,7 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
             cmd += [str(filepath), "-w", str(output_dir)]
             # Provide LD_LIBRARY_PATH for oneTBB and common system paths
             extra_lib = str(self._tbb_prefix / "lib")
-            env = {k: v for k, v in self.package_env_config.items() if v is not None}
+            env = self.subprocess_environment()
             env["LD_LIBRARY_PATH"] = ":".join(
                 entry
                 for entry in [

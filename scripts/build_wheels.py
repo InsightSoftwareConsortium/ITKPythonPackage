@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from compiler_cache import use_compiler_cache
+from build_config import BuildConfig
 from target_platform import (
     OS,
     TargetPlatform,
@@ -638,54 +638,26 @@ def pin_build_timestamps(args: argparse.Namespace, os_name: OS) -> None:
         os.environ["_LINK_"] = link_options
 
 
-def assemble_package_env_config(
+def assemble_build_config(
     args: argparse.Namespace,
     os_name: OS,
     target: TargetPlatform,
     pixi_executable: Path,
-) -> dict[str, str | Path | None]:
-    """Collect the configuration every builder reads, from the arguments and tools."""
-    package_env_config: dict[str, str | Path | None] = {}
-    package_env_config["ITK_SOURCE_DIR"] = Path(args.itk_source_dir)
-    package_env_config["IPP_SUPERBUILD_BINARY_DIR"] = (
-        args.build_dir_root / "build" / "ITK-support-bld"
-    )
-    package_env_config["OS_NAME"] = os_name.value
-    package_env_config["ARCH"] = target.pixi_suffix
-
-    module_no_cleanup = os.environ.get("ITK_MODULE_NO_CLEANUP", "1")
-    use_ccache = "ON" if use_compiler_cache(args.use_ccache, os.environ) else "OFF"
-
-    package_env_config["BUILD_DIR_ROOT"] = str(args.build_dir_root)
-    package_env_config["ITK_GIT_TAG"] = args.itk_git_tag
-    package_env_config["ITK_SOURCE_DIR"] = args.itk_source_dir
-    package_env_config["ITK_PACKAGE_VERSION"] = args.itk_package_version
-    package_env_config["MACOSX_DEPLOYMENT_TARGET"] = (
-        args.macosx_deployment_target if os_name is OS.DARWIN else None
-    )
-    package_env_config["ITK_MODULE_PREQ"] = args.itk_module_deps
-    package_env_config["ITK_MODULE_NO_CLEANUP"] = module_no_cleanup
-    package_env_config["USE_CCACHE"] = use_ccache
-    package_env_config["DEAD_STRIP"] = "ON" if args.dead_strip else "OFF"
-    package_env_config["PIXI_EXECUTABLE"] = pixi_executable
+) -> BuildConfig:
+    """Resolve the build tools and the target, then validate the configuration."""
     # Build tools come from the target environment, not the launching one, so a
     # stray same-named executable on PATH cannot be handed to CMake.
-    for config_key, tool_name in (
-        ("CMAKE_EXECUTABLE", "cmake"),
-        ("NINJA_EXECUTABLE", "ninja"),
-        ("DOXYGEN_EXECUTABLE", "doxygen"),
-        ("GIT_EXECUTABLE", "git"),
-    ):
-        package_env_config[config_key] = which_required_in_pixi_env(
-            tool_name, pixi_executable, args.platform_env
-        )
+    cmake, ninja, doxygen, git = (
+        which_required_in_pixi_env(tool_name, pixi_executable, args.platform_env)
+        for tool_name in ("cmake", "ninja", "doxygen", "git")
+    )
 
     if os.environ.get("PIXI_ENVIRONMENT_NAME") == args.platform_env:
         # A nested pixi run would overflow the cmd.exe line limit on Windows.
-        package_env_config["PYTHON_EXECUTABLE"] = sys.executable
+        python_executable = sys.executable
     else:
         cmd = [
-            package_env_config["PIXI_EXECUTABLE"],
+            pixi_executable,
             "run",
             "-e",
             args.platform_env,
@@ -700,21 +672,28 @@ def assemble_package_env_config(
                 f"{args.platform_env!r}: {python_probe.stderr}"
             )
             raise RuntimeError(msg)
-        package_env_config["PYTHON_EXECUTABLE"] = python_probe.stdout.strip()
+        python_executable = python_probe.stdout.strip()
 
     oci_exe = resolve_oci_exe(os.environ.copy())
-    package_env_config["OCI_EXE"] = oci_exe
-    del oci_exe
 
     if os_name is OS.LINUX:
-        configure_linux_target(args, package_env_config)
-    return package_env_config
+        target = configure_linux_target(args)
+    return BuildConfig.from_args_and_env(
+        args,
+        os.environ,
+        target=target,
+        pixi_executable=pixi_executable,
+        cmake_executable=cmake,
+        ninja_executable=ninja,
+        doxygen_executable=doxygen,
+        git_executable=git,
+        python_executable=python_executable,
+        oci_exe=oci_exe,
+    )
 
 
-def configure_linux_target(
-    args: argparse.Namespace, package_env_config: dict[str, str | Path | None]
-) -> None:
-    """Resolve the Linux target, adding the manylinux image when there is one."""
+def configure_linux_target(args: argparse.Namespace) -> TargetPlatform:
+    """Resolve the Linux target, refusing a manylinux one outside its container."""
     # A manylinux environment always means manylinux wheels.
     if not args.manylinux_version:
         args.manylinux_version = manylinux_version_from_platform_env(args.platform_env)
@@ -723,34 +702,28 @@ def configure_linux_target(
     if args.manylinux_version:
         os.environ["MANYLINUX_VERSION"] = args.manylinux_version
     target = TargetPlatform.detect(os.environ)
-    package_env_config["ARCH"] = target.pixi_suffix
-    if args.manylinux_version:
-        package_env_config["MANYLINUX_VERSION"] = args.manylinux_version
-        image = target.container_image
-        package_env_config["MANYLINUX_IMAGE_NAME"] = image.name
-        package_env_config["CONTAINER_SOURCE"] = image.reference
-        package_env_config["TARGET_ARCH"] = target.arch.value
-        if not in_manylinux_container(os.environ):
-            msg = (
-                f"ERROR: MANYLINUX_VERSION={args.manylinux_version} "
-                f"and TARGET_ARCH={target.arch.value} but not "
-                f"building in dockcross.\n"
-                f"  manylinux wheels are built inside the container; "
-                f"start it with:\n"
-                f"      ITK_SOURCE_DIR={args.itk_source_dir} "
-                f"ITK_GIT_TAG={args.itk_git_tag} "
-                f"ITK_PACKAGE_VERSION={args.itk_package_version} \\\n"
-                f"        bash scripts/dockcross-manylinux-build-wheels.sh\n"
-                f"  For wheels tied to this host instead, use "
-                f"--platform-env linux-py311."
-            )
-            raise RuntimeError(msg)
+    if args.manylinux_version and not in_manylinux_container(os.environ):
+        msg = (
+            f"ERROR: MANYLINUX_VERSION={args.manylinux_version} "
+            f"and TARGET_ARCH={target.arch.value} but not "
+            f"building in dockcross.\n"
+            f"  manylinux wheels are built inside the container; "
+            f"start it with:\n"
+            f"      ITK_SOURCE_DIR={args.itk_source_dir} "
+            f"ITK_GIT_TAG={args.itk_git_tag} "
+            f"ITK_PACKAGE_VERSION={args.itk_package_version} \\\n"
+            f"        bash scripts/dockcross-manylinux-build-wheels.sh\n"
+            f"  For wheels tied to this host instead, use "
+            f"--platform-env linux-py311."
+        )
+        raise RuntimeError(msg)
+    return target
 
 
 def make_builder(
     args: argparse.Namespace,
     os_name: OS,
-    package_env_config: dict[str, str | Path | None],
+    config: BuildConfig,
 ) -> "BuildPythonInstanceBase":
     """Construct the platform's builder."""
     # Platform-only options go to the one builder that takes them.
@@ -772,7 +745,7 @@ def make_builder(
     return builder_cls(
         platform_env=args.platform_env,
         build_dir_root=args.build_dir_root,
-        package_env_config=package_env_config,
+        config=config,
         cleanup=args.cleanup,
         build_itk_tarball_cache=args.build_itk_tarball_cache,
         cmake_options=args.cmake_options,
@@ -829,11 +802,9 @@ def build_wheels_main() -> None:
     pixi_executable = resolve_environment(args, ipp_dir, os_name)
     sync_itk_source_tree(args, ipp_dir)
     pin_build_timestamps(args, os_name)
-    package_env_config = assemble_package_env_config(
-        args, os_name, target, pixi_executable
-    )
+    config = assemble_build_config(args, os_name, target, pixi_executable)
     write_effective_command_line(parser, args)
-    builder = make_builder(args, os_name, package_env_config)
+    builder = make_builder(args, os_name, config)
     builder.run()
 
 

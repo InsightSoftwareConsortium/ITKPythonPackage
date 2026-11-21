@@ -1,8 +1,9 @@
-from collections.abc import Mapping
 from pathlib import Path
 from typing import TypeVar
 
+import build_python_instance_base
 import pytest
+from build_config import BuildConfig
 from build_environment import PythonEnvironment
 from build_python_instance_base import BuildPythonInstanceBase
 from cmake_argument_builder import CMakeArgumentBuilder
@@ -14,12 +15,36 @@ from windows_build_python_instance import WindowsBuildPythonInstance
 BuilderT = TypeVar("BuilderT", bound=BuildPythonInstanceBase)
 
 
+def make_config(root: Path, target: TargetPlatform) -> BuildConfig:
+    """A complete configuration for *target*, rooted at *root*."""
+    return BuildConfig(
+        itk_source_dir=root / "ITK",
+        build_dir_root=root,
+        os_name=target.os_name,
+        arch=target.arch,
+        itk_git_tag="main",
+        itk_package_version="6.0.0",
+        macosx_deployment_target="14.0" if target.os_name is OS.DARWIN else None,
+        itk_module_preq="",
+        itk_module_no_cleanup="1",
+        use_ccache=False,
+        dead_strip=False,
+        pixi_executable=Path("pixi"),
+        cmake_executable=Path("cmake"),
+        ninja_executable=Path("ninja"),
+        doxygen_executable=Path("doxygen"),
+        git_executable=Path("git"),
+        python_executable=Path("python"),
+        oci_exe="docker",
+        manylinux_version=target.manylinux_version or None,
+    )
+
+
 def _make_builder(
     cls: type[BuilderT],
     tmp_path: Path,
     platform_env: str,
     target: TargetPlatform,
-    package_env_config: Mapping[str, str],
 ) -> BuilderT:
     """Build an instance wired up enough to exercise its hooks.
 
@@ -31,7 +56,8 @@ def _make_builder(
     builder.build_dir_root = tmp_path
     builder.platform_env = platform_env
     builder.target = target
-    builder.package_env_config = dict(package_env_config)
+    builder.config = make_config(tmp_path, target)
+    builder.ipp_dir = Path(build_python_instance_base.__file__).parent.parent
     (tmp_path / "include").mkdir(exist_ok=True)
     builder.python_env = PythonEnvironment(
         root_dir=tmp_path,
@@ -53,7 +79,6 @@ def macos_builder(tmp_path: Path) -> MacOSBuildPythonInstance:
         tmp_path,
         "macosx-py311",
         TargetPlatform(OS.DARWIN, Arch.AARCH64),
-        {"ARCH": "arm64"},
     )
 
 
@@ -65,7 +90,6 @@ def linux_builder(tmp_path: Path) -> LinuxBuildPythonInstance:
         tmp_path,
         "manylinux228-py311",
         TargetPlatform(OS.LINUX, Arch.X86_64, "_2_28"),
-        {"ARCH": "x64"},
     )
 
 
@@ -77,7 +101,6 @@ def linux_aarch64_builder(tmp_path: Path) -> LinuxBuildPythonInstance:
         tmp_path,
         "manylinux228-py311",
         TargetPlatform(OS.LINUX, Arch.AARCH64, "_2_28"),
-        {"ARCH": "aarch64"},
     )
 
 
@@ -89,5 +112,4 @@ def windows_builder(tmp_path: Path) -> WindowsBuildPythonInstance:
         tmp_path,
         "windows-py311",
         TargetPlatform(OS.WINDOWS, Arch.X86_64),
-        {"ARCH": "x64"},
     )

@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import build_environment
 import wheel_packaging
 from build_environment import PythonEnvironment
@@ -14,8 +12,8 @@ class PosixBuildPythonInstance(BuildPythonInstanceBase):
         """Create a zstd-compressed tarball of the ITK build tree."""
         wheel_packaging.create_posix_tarball(
             build_dir_root=self.build_dir_root,
-            arch=self.package_env_config["ARCH"],
-            ipp_source_dir=self.package_env_config["IPP_SOURCE_DIR"],
+            arch=self.config.pixi_suffix,
+            ipp_source_dir=self.ipp_dir,
             platform_name=get_default_platform_build().split("-")[0],
             run=self.echo_check_call,
         )
@@ -26,5 +24,5 @@ class PosixBuildPythonInstance(BuildPythonInstanceBase):
         Shared by Linux and macOS; Windows uses its own path conventions.
         """
         return build_environment.find_unix_python_paths(
-            Path(self.package_env_config["PYTHON_EXECUTABLE"]).parent.parent
+            self.config.python_executable.parent.parent
         )

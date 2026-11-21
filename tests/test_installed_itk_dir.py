@@ -24,13 +24,6 @@ def _wire(
     builder.cmake_itk_source_build_configurations.set(
         "ITK_BINARY_DIR:PATH", (tmp_path / "build" / "ITK-bld").as_posix()
     )
-    builder.package_env_config.update(
-        {
-            "CMAKE_EXECUTABLE": "cmake",
-            "PYTHON_EXECUTABLE": "python",
-            "BUILD_TYPE": "Release",
-        }
-    )
     (tmp_path / "inc").mkdir(exist_ok=True)
     builder.python_env = replace(builder.python_env, include_dir=tmp_path / "inc")
     return builder
@@ -197,20 +190,13 @@ def test_module_against_a_missing_install_tree_fails_before_configuring(
 
 
 def test_the_itk_configure_asks_for_the_wrapping_development_files(
-    tmp_path: Path,
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
 ) -> None:
     """Every ITK build is configured so its tree can be installed for module
     use later; an ITK without the option just reports it unused."""
     from build_python_instance_base import itk_source_build_configuration
 
-    config = itk_source_build_configuration(
-        {
-            "ITK_SOURCE_DIR": tmp_path,
-            "DOXYGEN_EXECUTABLE": "doxygen",
-            "USE_TBB": "ON",
-            "TBB_DIR": str(tmp_path),
-        }
-    )
+    config = itk_source_build_configuration(linux_builder.config, tmp_path)
     assert config["ITK_INSTALL_WRAPPING_DEVELOPMENT_FILES:BOOL"] == "ON"
 
 
@@ -226,7 +212,7 @@ def test_module_pyproject_is_left_as_found(
 ) -> None:
     """No backup is left behind, whether or not the ITK pins were rewritten."""
     _wire(linux_builder, tmp_path, module_itk_dir="build")
-    linux_builder.package_env_config["ITK_PACKAGE_VERSION"] = "6.0.0"
+    linux_builder.config = replace(linux_builder.config, itk_package_version="6.0.0")
     module = tmp_path / "ITKFoo"
     module.mkdir()
     original = f'[project]\nname = "itk-foo"\ndependencies = {dependencies}\n'
