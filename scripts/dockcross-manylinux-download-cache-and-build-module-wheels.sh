@@ -31,8 +31,9 @@ download_script_dir=$(
 )
 # if not specified, use the current directory for MODULE_SRC_DIRECTORY
 MODULE_SRC_DIRECTORY=${MODULE_SRC_DIRECTORY:=${download_script_dir}}
-# if not specified then use the a dummy MODULE_DEPENDENCIES directory in the build dashboard
-MODULE_DEPS_DIR=${MODULE_DEPS_DIR:=${DASHBOARD_BUILD_DIRECTORY}/MODULE_DEPENDENCIES}
+# if not specified, keep module dependencies beside the extracted ITK cache
+MODULE_DEPS_DIR=${MODULE_DEPS_DIR:=${download_script_dir}/MODULE_DEPENDENCIES}
+mkdir -p "${MODULE_DEPS_DIR}"
 # -----------------------------------------------------------------------
 # Script argument parsing
 #
