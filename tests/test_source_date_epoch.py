@@ -7,21 +7,21 @@ import pytest
 from build_wheels import itk_commit_time, source_date_epoch
 
 
-def test_the_itk_commit_time_is_used():
+def test_the_itk_commit_time_is_used() -> None:
     assert source_date_epoch({}, "1763600000\n") == "1763600000"
 
 
-def test_a_value_the_caller_set_wins():
+def test_a_value_the_caller_set_wins() -> None:
     env = {"SOURCE_DATE_EPOCH": "1700000000"}
     assert source_date_epoch(env, "1763600000") == "1700000000"
 
 
-def test_an_empty_caller_value_is_ignored():
+def test_an_empty_caller_value_is_ignored() -> None:
     assert source_date_epoch({"SOURCE_DATE_EPOCH": ""}, "1763600000") == "1763600000"
 
 
 @pytest.mark.parametrize("commit_time", [None, "", "  ", "not-a-time"])
-def test_without_a_commit_time_nothing_is_set(commit_time):
+def test_without_a_commit_time_nothing_is_set(commit_time: str | None) -> None:
     assert source_date_epoch({}, commit_time) is None
 
 
@@ -29,7 +29,9 @@ def _git(repo: Path, *args: str) -> None:
     subprocess.run(["git", *args], cwd=repo, check=True, capture_output=True)
 
 
-def test_the_commit_time_comes_from_the_requested_revision(tmp_path, monkeypatch):
+def test_the_commit_time_comes_from_the_requested_revision(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     for name in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("GIT_COMMITTER_DATE", "@1700000000 +0000")
@@ -51,7 +53,9 @@ def test_the_commit_time_comes_from_the_requested_revision(tmp_path, monkeypatch
     assert source_date_epoch({}, itk_commit_time(tmp_path, "v1")) == "1700000000"
 
 
-def test_a_tree_inside_another_repository_has_no_commit_time(tmp_path, monkeypatch):
+def test_a_tree_inside_another_repository_has_no_commit_time(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     for name in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"):
         monkeypatch.delenv(name, raising=False)
     _git(tmp_path, "init", "-q")
