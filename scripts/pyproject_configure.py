@@ -31,17 +31,17 @@ def parameter_option(key: str, option: str) -> int:
     Returns
     -------
     int or bool
-        The option value from ``PARAMETER_OPTIONS`` if defined,
-        otherwise the default from ``PARAMETER_OPTION_DEFAULTS``.
+        The option value from ``parameter_options`` if defined,
+        otherwise the default from ``parameter_option_defaults``.
     """
-    PARAMETER_OPTION_DEFAULTS = {
+    parameter_option_defaults = {
         "indent": 0,
         "newline_if_set": False,
         "newline_indent": 0,
         "remove_line_if_empty": False,
     }
 
-    PARAMETER_OPTIONS = {
+    parameter_options = {
         "PYPROJECT_PY_MODULES": {
             "indent": 8,
             "newline_if_set": True,
@@ -50,10 +50,10 @@ def parameter_option(key: str, option: str) -> int:
         "PYPROJECT_DEPENDENCIES": {"indent": 8, "remove_line_if_empty": True},
     }
 
-    default = PARAMETER_OPTION_DEFAULTS[option]
-    if key not in PARAMETER_OPTIONS:
+    default = parameter_option_defaults[option]
+    if key not in parameter_options:
         return default
-    return PARAMETER_OPTIONS[key].get(option, default)
+    return parameter_options[key].get(option, default)
 
 
 def list_to_str(list_: Iterable[str], newline: bool = True) -> str:
@@ -140,7 +140,7 @@ def from_group_to_wheel(group: str) -> str:
 def update_wheel_pyproject_toml_parameters(
     base_params: dict[str, Any],
     package_env_config: dict[str, Any],
-    SCRIPT_NAME: str,
+    script_name: str,
     wheel_names: list[str],
     wheel_dependencies: dict[str, Any],
 ):
@@ -154,7 +154,7 @@ def update_wheel_pyproject_toml_parameters(
         Shared base parameters common to all wheels.
     package_env_config : dict
         Build environment configuration (ITK paths, versions, etc.).
-    SCRIPT_NAME : str
+    script_name : str
         Name of the calling script, embedded in the generator field.
     wheel_names : list[str]
         Ordered list of wheel package names to generate parameters for.
@@ -166,12 +166,12 @@ def update_wheel_pyproject_toml_parameters(
     dict[str, dict]
         ``{wheel_name: parameters_dict}`` for each wheel.
     """
-    PYPROJECT_PY_PARAMETERS = {}
+    pyproject_py_parameters = {}
     for wheel_name in wheel_names:
         params = dict(base_params)
 
         # generator
-        params["PYPROJECT_GENERATOR"] = f"python {SCRIPT_NAME} '{wheel_name}'"
+        params["PYPROJECT_GENERATOR"] = f"python {script_name} '{wheel_name}'"
 
         # name
         if wheel_name == "itk-meta":
@@ -207,17 +207,17 @@ def update_wheel_pyproject_toml_parameters(
 
         params["PYPROJECT_DEPENDENCIES"] = list_to_str(wheel_depends)
 
-        PYPROJECT_PY_PARAMETERS[wheel_name] = params
+        pyproject_py_parameters[wheel_name] = params
 
-    return PYPROJECT_PY_PARAMETERS
+    return pyproject_py_parameters
 
 
-def get_wheel_names(IPP_BuildWheelsSupport_DIR: str | Path):
+def get_wheel_names(build_wheels_support_dir: str | Path):
     """Read the ordered list of wheel names from ``WHEEL_NAMES.txt``.
 
     Parameters
     ----------
-    IPP_BuildWheelsSupport_DIR : str
+    build_wheels_support_dir : str
         Directory containing ``WHEEL_NAMES.txt``.
 
     Returns
@@ -225,7 +225,7 @@ def get_wheel_names(IPP_BuildWheelsSupport_DIR: str | Path):
     list[str]
         Stripped wheel names, one per line.
     """
-    with (Path(IPP_BuildWheelsSupport_DIR) / "WHEEL_NAMES.txt").open() as _file:
+    with (Path(build_wheels_support_dir) / "WHEEL_NAMES.txt").open() as _file:
         return [wheel_name.strip() for wheel_name in _file]
 
 
@@ -241,13 +241,13 @@ def get_py_api() -> str:
 
 
 def get_wheel_dependencies(
-    SCRIPT_DIR: str | Path, version: str, wheel_names: list[str]
+    script_dir: str | Path, version: str, wheel_names: list[str]
 ):
     """Parse ITK CMake files to build a wheel dependency graph.
 
     Parameters
     ----------
-    SCRIPT_DIR : str
+    script_dir : str
         Path to the ``scripts/`` directory.
     version : str
         PEP 440 version string pinned in each dependency.
@@ -265,7 +265,7 @@ def get_wheel_dependencies(
     )
     pattern = re.compile(regex_group_depends)
     with (
-        Path(SCRIPT_DIR) / ".." / "cmake" / "ITKPythonPackage_BuildWheels.cmake"
+        Path(script_dir) / ".." / "cmake" / "ITKPythonPackage_BuildWheels.cmake"
     ).open() as file_:
         for line in file_:
             match = re.search(pattern, line)
@@ -287,7 +287,7 @@ def get_wheel_dependencies(
 
 
 def build_base_pyproject_parameters(
-    package_env_config: dict[str, Any], SCRIPT_NAME: str, itk_package_version: str
+    package_env_config: dict[str, Any], script_name: str, itk_package_version: str
 ):
     """Return the base ``pyproject.toml`` template parameters for ITK.
 
@@ -295,7 +295,7 @@ def build_base_pyproject_parameters(
     ----------
     package_env_config : dict
         Build environment configuration.
-    SCRIPT_NAME : str
+    script_name : str
         Name of the calling script.
     itk_package_version : str
         PEP 440 version string for the ITK packages.
@@ -306,18 +306,18 @@ def build_base_pyproject_parameters(
         Base parameter mapping shared across all wheel configurations.
     """
     # The string is written into pyproject.toml; keep its separators unchanged.
-    ITK_SOURCE_README: str = os.path.join(  # noqa: PTH118
+    itk_source_readme: str = os.path.join(  # noqa: PTH118
         package_env_config["ITK_SOURCE_DIR"], "README.md"
     )
     return {
-        "PYPROJECT_GENERATOR": f"python {SCRIPT_NAME} 'itk'",
+        "PYPROJECT_GENERATOR": f"python {script_name} 'itk'",
         "PYPROJECT_NAME": r"itk",
         "PYPROJECT_VERSION": itk_package_version,
         "PYPROJECT_CMAKE_ARGS": r"",
         "PYPROJECT_PY_API": get_py_api(),
         "PYPROJECT_PLATLIB": r"true",
         "ITK_SOURCE_DIR": package_env_config["ITK_SOURCE_DIR"],
-        "ITK_SOURCE_README": ITK_SOURCE_README,
+        "ITK_SOURCE_README": itk_source_readme,
         "PYPROJECT_PY_MODULES": list_to_str(
             [
                 "itkBase",
@@ -340,7 +340,7 @@ def build_base_pyproject_parameters(
 
 def main() -> None:
     # Parse arguments
-    SCRIPT_DIR = Path(__file__).parent
+    script_dir = Path(__file__).parent
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="""CLI allowing to configure ``pyproject.toml`` found in the `` ITKPythonPackage ``
@@ -380,12 +380,12 @@ Accepted values for `wheel_name` are ``itk`` and all values read from
         "--output-dir",
         type=str,
         help="Output directory for configured 'pyproject.toml'",
-        default=str((Path(SCRIPT_DIR) / "..").resolve()),
+        default=str((Path(script_dir) / "..").resolve()),
     )
     parser.add_argument(
         "--build-dir-root",
         type=str,
-        default=f"{SCRIPT_DIR}/../",
+        default=f"{script_dir}/../",
         help="The root of the build resources.",
     )
     args = parser.parse_args()
@@ -393,18 +393,18 @@ Accepted values for `wheel_name` are ``itk`` and all values read from
     package_env_config = read_env_file(args.env_file, args.build_dir_root)
 
     configure_one_pyproject_file(
-        SCRIPT_DIR, package_env_config, args.output_dir, args.wheel_name
+        script_dir, package_env_config, args.output_dir, args.wheel_name
     )
 
 
 def configure_one_pyproject_file(
-    SCRIPT_DIR: str | Path, package_env_config, output_dir, wheel_name: str = "itk"
+    script_dir: str | Path, package_env_config, output_dir, wheel_name: str = "itk"
 ):
     """Generate a configured ``pyproject.toml`` for a single wheel.
 
     Parameters
     ----------
-    SCRIPT_DIR : str or Path
+    script_dir : str or Path
         Path to the ``scripts/`` directory containing templates.
     package_env_config : dict
         Build environment configuration.
@@ -414,53 +414,53 @@ def configure_one_pyproject_file(
         Which wheel to configure (default ``'itk'``).
     """
     # Version needs to be python PEP 440 compliant (no leading v)
-    PEP440_VERSION: str = package_env_config["ITK_PACKAGE_VERSION"].removeprefix("v")
+    pep440_version: str = package_env_config["ITK_PACKAGE_VERSION"].removeprefix("v")
     try:
         Version(
-            PEP440_VERSION
+            pep440_version
         )  # Raise InvalidVersion exception if not PEP 440 compliant
     except ValueError:
-        print(f"Invalid PEP 440 version: {PEP440_VERSION}")
+        print(f"Invalid PEP 440 version: {pep440_version}")
         sys.exit(1)
 
     # Resolve script information locally
 
-    IPP_BuildWheelsSupport_DIR = Path(SCRIPT_DIR) / ".." / "BuildWheelsSupport"
-    SCRIPT_NAME = Path(__file__).name
+    build_wheels_support_dir = Path(script_dir) / ".." / "BuildWheelsSupport"
+    script_name = Path(__file__).name
     # Write itkVersion.py file to report ITK version in python.
-    write_itkVersion_py(Path(output_dir) / "itkVersion.py", PEP440_VERSION)
+    write_itkVersion_py(Path(output_dir) / "itkVersion.py", pep440_version)
     # Copy LICENSE file needed for each wheel
-    shutil.copy(Path(IPP_BuildWheelsSupport_DIR) / "LICENSE", output_dir)
+    shutil.copy(Path(build_wheels_support_dir) / "LICENSE", output_dir)
 
     base_params = build_base_pyproject_parameters(
-        package_env_config, SCRIPT_NAME, PEP440_VERSION
+        package_env_config, script_name, pep440_version
     )
 
-    wheel_names = get_wheel_names(IPP_BuildWheelsSupport_DIR)
+    wheel_names = get_wheel_names(build_wheels_support_dir)
     wheel_dependencies = get_wheel_dependencies(
-        SCRIPT_DIR, base_params["PYPROJECT_VERSION"], wheel_names
+        script_dir, base_params["PYPROJECT_VERSION"], wheel_names
     )
 
-    PYPROJECT_PY_PARAMETERS = {"itk": dict(base_params)}
-    PYPROJECT_PY_PARAMETERS.update(
+    pyproject_py_parameters = {"itk": dict(base_params)}
+    pyproject_py_parameters.update(
         update_wheel_pyproject_toml_parameters(
             base_params,
             package_env_config,
-            SCRIPT_NAME,
+            script_name,
             wheel_names,
             wheel_dependencies,
         )
     )
 
-    if wheel_name not in PYPROJECT_PY_PARAMETERS:
+    if wheel_name not in pyproject_py_parameters:
         print(f"Unknown wheel name '{wheel_name}'")
         sys.exit(1)
 
     # Configure 'pyproject.toml'
     output_file = Path(output_dir) / "pyproject.toml"
     print(f"Generating: {output_file}")
-    template = Path(SCRIPT_DIR) / "pyproject.toml.in"
-    configure(template, PYPROJECT_PY_PARAMETERS[wheel_name], output_file)
+    template = Path(script_dir) / "pyproject.toml.in"
+    configure(template, pyproject_py_parameters[wheel_name], output_file)
 
 
 def write_itkVersion_py(filename: str | Path, itk_package_version: str):
