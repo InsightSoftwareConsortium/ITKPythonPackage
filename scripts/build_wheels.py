@@ -28,6 +28,10 @@ if TYPE_CHECKING:
     from build_python_instance_base import BuildPythonInstanceBase
 
 
+# A short root keeps Windows build paths under the 260-character limit.
+WINDOWS_BUILD_DIR_ROOT = Path("C:/") / "BDR"
+
+
 def remotemodulebuildandtestaction() -> dict[str, str]:
     """Collect GitHub Actions environment variables for remote module builds.
 
@@ -389,7 +393,7 @@ def build_wheels_main() -> None:
     default_build_dir_root = (
         ipp_dir.parent / "ITKPythonPackage-build"
         if os_name is not OS.WINDOWS
-        else Path("C:/") / "BDR"
+        else WINDOWS_BUILD_DIR_ROOT
     )
     parser.add_argument(
         "--build-dir-root",
@@ -422,7 +426,7 @@ def build_wheels_main() -> None:
     default_itk_source_dir = (
         ipp_dir.parent / "ITKPythonPackage-build" / "ITK"
         if os_name is not OS.WINDOWS
-        else Path("C:/") / "BDR" / "ITK"
+        else WINDOWS_BUILD_DIR_ROOT / "ITK"
     )
     parser.add_argument(
         "--itk-source-dir",

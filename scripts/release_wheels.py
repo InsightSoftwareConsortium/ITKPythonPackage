@@ -38,7 +38,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from build_wheels import source_date_epoch
+from build_wheels import WINDOWS_BUILD_DIR_ROOT, source_date_epoch
 from target_platform import OS, Arch, arch_from_machine, os_from_system
 
 IPP_DIR = Path(__file__).resolve().parent.parent
@@ -200,7 +200,7 @@ def package_version(itk_ref: str, ref_is_tag: bool, version: str | None) -> str:
 def native_build_root() -> Path:
     """``build_wheels.py``'s default build root on this host."""
     if os_from_system(platform.system()) is OS.WINDOWS:
-        return Path("C:/") / "BDR"
+        return WINDOWS_BUILD_DIR_ROOT
     return IPP_DIR.parent / "ITKPythonPackage-build"
 
 
