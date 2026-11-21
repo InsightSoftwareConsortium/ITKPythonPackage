@@ -845,23 +845,7 @@ class BuildPythonInstanceBase(ABC):
 
         py_exe = str(self.package_env_config["PYTHON_EXECUTABLE"])  # Python3_EXECUTABLE
 
-        # Compute Python include directory (Python3_INCLUDE_DIR)
         py_include = str(self.python_env.include_dir)
-        if not py_include:
-            try:
-                py_include = (
-                    subprocess.check_output(
-                        [
-                            py_exe,
-                            "-c",
-                            "import sysconfig; print(sysconfig.get_paths()['include'])",
-                        ],
-                        text=True,
-                    ).strip()
-                    or ""
-                )
-            except Exception:
-                py_include = ""
 
         # ITK_DIR for the external module: the install tree when asked for,
         # otherwise the configured ITK build tree.
@@ -889,8 +873,7 @@ class BuildPythonInstanceBase(ABC):
         defs.set("PY_SITE_PACKAGES_PATH:PATH", ".")
         defs.set("BUILD_TESTING:BOOL", "OFF")
         defs.set("Python3_EXECUTABLE:FILEPATH", py_exe)
-        if py_include:
-            defs.set("Python3_INCLUDE_DIR:PATH", py_include)
+        defs.set("Python3_INCLUDE_DIR:PATH", py_include)
 
         # Pass Python library paths when explicitly known (Windows)
         if self.python_env.library is not None:
