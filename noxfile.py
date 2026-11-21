@@ -2,7 +2,7 @@
 # /// script
 # dependencies = ["nox>=2025.10.16"]
 # ///
-"""Developer tasks. Wheel builds stay pixi tasks (``pixi run build-itk-wheels``)."""
+"""Developer tasks. Wheel builds stay pixi tasks (``pixi run -e <env> build-itk-wheels``)."""
 
 from __future__ import annotations
 

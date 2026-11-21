@@ -78,7 +78,8 @@ uvx nox -s docs -- --serve
 
 Arguments after `--` go to the underlying tool, for example
 `uvx nox -s tests-3.12 -- -k configure`. Wheel builds are not nox
-sessions; use `pixi run build-itk-wheels`.
+sessions; use `pixi run -e <platform-env> build-itk-wheels`, naming the
+environment as AGENTS.md describes.
 
 ## Submitting a Pull Request
 

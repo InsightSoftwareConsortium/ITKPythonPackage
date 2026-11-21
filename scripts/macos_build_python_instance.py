@@ -10,7 +10,7 @@ class MacOSBuildPythonInstance(PosixBuildPythonInstance):
     """macOS-specific wheel builder.
 
     Handles macOS deployment target and architecture settings, and repairs
-    every wheel with ``delocate`` on both x86_64 and arm64.
+    every wheel with ``delocate`` for arm64.
     """
 
     uses_tbb = False

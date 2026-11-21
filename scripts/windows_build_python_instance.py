@@ -237,10 +237,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         python_library = env_root / "libs" / f"python{xy_lib_ver}.lib"
 
         # Stable ABI library (python3.lib) - for Development.SABIModule
-        if python_minor >= 11:
-            python_sabi_library = env_root / "libs" / f"python{python_major}.lib"
-        else:
-            python_sabi_library = python_library
+        python_sabi_library = env_root / "libs" / f"python{python_major}.lib"
 
         self.venv_info_dict = {
             "python_include_dir": python_include_dir,  # .../windows-py311/include

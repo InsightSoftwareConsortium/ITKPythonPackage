@@ -13,9 +13,9 @@
 #     or positionally:
 #     > windows-download-cache-and-build-module-wheels.ps1 11
 #
-# -setup_options         pyproject.toml options forwarded to the build script.
-#     For instance, to exclude a library during packaging:
-#     > ... -setup_options "--exclude-libs nvcuda.dll"
+# -setup_options         build_wheels.py options, space-separated.
+#     For instance, to let delvewheel find libraries in another directory:
+#     > ... -setup_options "--lib-paths C:\CUDA\bin"
 #
 # -cmake_options         CMake options passed to pyproject.toml for project configuration.
 #     For instance:
