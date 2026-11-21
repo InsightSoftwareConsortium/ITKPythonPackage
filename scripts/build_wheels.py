@@ -695,17 +695,16 @@ def build_wheels_main() -> None:
     package_env_config["OCI_EXE"] = oci_exe
     del oci_exe
 
-    platform = str(package_env_config["OS_NAME"]).lower()
     builder_cls: type[BuildPythonInstanceBase]
-    if platform == "windows":
+    if os_name is OS.WINDOWS:
         from windows_build_python_instance import WindowsBuildPythonInstance
 
         builder_cls = WindowsBuildPythonInstance
-    elif platform in ("darwin", "mac", "macos", "macosx", "osx"):
+    elif os_name is OS.DARWIN:
         from macos_build_python_instance import MacOSBuildPythonInstance
 
         builder_cls = MacOSBuildPythonInstance
-    elif platform == "linux":
+    else:
         from linux_build_python_instance import LinuxBuildPythonInstance
 
         # A manylinux environment always means manylinux wheels.
@@ -742,9 +741,6 @@ def build_wheels_main() -> None:
                 raise RuntimeError(msg)
 
         builder_cls = LinuxBuildPythonInstance
-    else:
-        msg = f"Unknown platform {platform}"
-        raise ValueError(msg)
 
     print("=" * 80)
     print("=" * 80)
