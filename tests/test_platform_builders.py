@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
+import wheel_packaging
 from build_python_instance_base import BuildPythonInstanceBase
 from cmake_argument_builder import CMakeArgumentBuilder
 from linux_build_python_instance import LinuxBuildPythonInstance
@@ -264,8 +265,8 @@ def test_fixup_wheel_fails_loudly_when_the_build_env_lib_dir_is_absent(
 
 
 def test_posix_build_tarball_delegates(macos_builder):
-    """The POSIX build_tarball delegates to create_posix_tarball."""
-    with patch.object(macos_builder, "create_posix_tarball") as created:
+    """The POSIX build_tarball delegates to wheel_packaging.create_posix_tarball."""
+    with patch.object(wheel_packaging, "create_posix_tarball") as created:
         macos_builder.build_tarball()
     created.assert_called_once()
 

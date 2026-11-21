@@ -10,18 +10,7 @@ class PosixBuildPythonInstance(BuildPythonInstanceBase):
 
     def build_tarball(self) -> None:
         """Create a zstd-compressed tarball of the ITK build tree."""
-        self.create_posix_tarball()
-
-    def create_posix_tarball(self) -> None:
-        """Create a compressed tarball of the ITK Python build tree."""
         wheel_packaging.create_posix_tarball(self)
-
-    def find_unix_exectable_paths(
-        self,
-        venv_dir: Path,
-    ) -> tuple[str, str, str, str, str]:
-        """Delegate to the module-level implementation."""
-        return build_environment.find_unix_exectable_paths(venv_dir)
 
     def venv_paths(self) -> None:
         """Populate ``venv_info_dict`` from the pixi-managed Python interpreter.
@@ -37,7 +26,7 @@ class PosixBuildPythonInstance(BuildPythonInstanceBase):
             python_library,
             venv_bin_path,
             venv_base_dir,
-        ) = self.find_unix_exectable_paths(primary_python_base_dir)
+        ) = build_environment.find_unix_exectable_paths(primary_python_base_dir)
         self.venv_info_dict = {
             "python_executable": python_executable,
             "python_include_dir": python_include_dir,
