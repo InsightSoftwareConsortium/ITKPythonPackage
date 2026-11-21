@@ -15,10 +15,12 @@ class _FakeGit:
         self.failing = failing
         self.head = head
         self.calls: list[list[str]] = []
+        self.envs: list[dict[str, str] | None] = []
 
     def __call__(self, cmd, cwd=None, env=None, check=False):
         cmd = [str(c) for c in cmd]
         self.calls.append(cmd)
+        self.envs.append(env)
         name = " ".join(cmd[1:3])
         failed = any(name.startswith(f) for f in self.failing)
         stdout = self.head if cmd[1:3] == ["rev-parse", "HEAD"] else ""
@@ -67,6 +69,32 @@ def test_a_failed_fetch_is_survived_when_the_revision_is_present(tmp_path, monke
 def test_a_failed_checkout_keeps_the_commit_already_checked_out(tmp_path, monkeypatch):
     git = _FakeGit(failing={"checkout"}, head="deadbeef")
     assert _sync(monkeypatch, tmp_path, git) == "deadbeef"
+
+
+def test_every_git_call_stops_at_the_itk_tree(tmp_path, monkeypatch):
+    """A cache extracted inside a module checkout must not act on that checkout."""
+    git = _FakeGit(failing={"checkout"})
+    _sync(monkeypatch, tmp_path, git)
+    ceiling = str(tmp_path.resolve().parent)
+    assert git.envs
+    assert all(env and env["GIT_CEILING_DIRECTORIES"] == ceiling for env in git.envs)
+
+
+def test_a_tree_inside_another_repository_is_not_a_repository(tmp_path):
+    """The real git honors the ceiling for a tree nested in a module checkout."""
+    module = tmp_path / "module"
+    source = module / "ITKPythonPackage-build" / "ITK"
+    source.mkdir(parents=True)
+    subprocess.run(["git", "init", "-q", str(module)], check=True)
+    probe = subprocess.run(
+        ["git", "rev-parse", "--git-dir"],
+        cwd=source,
+        env=build_wheels.itk_git_env(source),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert probe.returncode != 0
 
 
 def test_empty_git_directory_is_not_a_repository(tmp_path):

@@ -84,8 +84,16 @@ def remotemodulebuildandtestaction() -> dict[str, str]:
     return {key: os.environ.get(key, default) for key, default in env_defaults.items()}
 
 
+def itk_git_env(itk_source_dir: Path) -> dict[str, str]:
+    """Return an environment in which git cannot see a repository enclosing the ITK tree."""
+    env = os.environ.copy()
+    env["GIT_CEILING_DIRECTORIES"] = str(Path(itk_source_dir).resolve().parent)
+    return env
+
+
 def sync_itk_source(itk_source_dir: Path, itk_git_tag: str) -> str:
     """Bring the ITK source tree to *itk_git_tag* and return the revision in use."""
+    git_env = itk_git_env(itk_source_dir)
     # A tree restored from a build cache has no usable repository: the cache
     # excludes .git contents but keeps the directory, so ask git rather than
     # testing the path. Its sources already match the prebuilt binaries, so
@@ -94,7 +102,7 @@ def sync_itk_source(itk_source_dir: Path, itk_git_tag: str) -> str:
         run_commandLine_subprocess(
             ["git", "rev-parse", "--git-dir"],
             cwd=itk_source_dir,
-            env=os.environ.copy(),
+            env=git_env,
         ).returncode
         == 0
     )
@@ -108,7 +116,7 @@ def sync_itk_source(itk_source_dir: Path, itk_git_tag: str) -> str:
         fetch_result = run_commandLine_subprocess(
             ["git", "fetch", "--tags", "origin"],
             cwd=itk_source_dir,
-            env=os.environ.copy(),
+            env=git_env,
         )
         if fetch_result.returncode != 0:
             # Only fatal when the requested revision is not already present.
@@ -121,7 +129,7 @@ def sync_itk_source(itk_source_dir: Path, itk_git_tag: str) -> str:
                     f"{itk_git_tag}^{{commit}}",
                 ],
                 cwd=itk_source_dir,
-                env=os.environ.copy(),
+                env=git_env,
             )
             if have_revision.returncode != 0:
                 msg = (
@@ -136,14 +144,14 @@ def sync_itk_source(itk_source_dir: Path, itk_git_tag: str) -> str:
         checkout_result = run_commandLine_subprocess(
             ["git", "checkout", itk_git_tag],
             cwd=itk_source_dir,
-            env=os.environ.copy(),
+            env=git_env,
         )
         if checkout_result.returncode != 0:
             # Keep the checked-out commit: a cache-restored tree must match its binaries.
             head_result = run_commandLine_subprocess(
                 ["git", "rev-parse", "HEAD"],
                 cwd=itk_source_dir,
-                env=os.environ.copy(),
+                env=git_env,
             )
             resolved = head_result.stdout.strip() if head_result.returncode == 0 else ""
             print(
@@ -190,13 +198,10 @@ def windows_link_options(os_name: str, link_options: str | None) -> str | None:
 
 def itk_commit_time(itk_source_dir: Path, itk_git_tag: str) -> str | None:
     """Return the committer time of *itk_git_tag*, or None without a repository."""
-    env = os.environ.copy()
-    # A cache-restored tree must not borrow the time of an enclosing repository.
-    env["GIT_CEILING_DIRECTORIES"] = str(Path(itk_source_dir).resolve().parent)
     result = run_commandLine_subprocess(
         ["git", "log", "-1", "--format=%ct", itk_git_tag],
         cwd=itk_source_dir,
-        env=env,
+        env=itk_git_env(itk_source_dir),
     )
     return result.stdout if result.returncode == 0 else None
 
