@@ -199,6 +199,7 @@ module = [
   "tests.conftest",
   "tests.test_build_environment",
   "tests.test_build_inputs",
+  "tests.test_build_jobs",
 ]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true

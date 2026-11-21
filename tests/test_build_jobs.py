@@ -14,60 +14,60 @@ from build_jobs import (
 )
 
 
-def test_jobs_are_bounded_by_memory_not_just_cpus():
+def test_jobs_are_bounded_by_memory_not_just_cpus() -> None:
     """16 threads on 32 GB must not yield -j16: that is 2 GB/job and thrashes."""
     assert compute_build_jobs(16, 32.0, env={}) == 12
 
 
-def test_jobs_are_bounded_by_cpus_when_memory_is_plentiful():
+def test_jobs_are_bounded_by_cpus_when_memory_is_plentiful() -> None:
     assert compute_build_jobs(8, 256.0, env={}) == 8
 
 
-def test_unknown_memory_falls_back_to_cpu_count():
+def test_unknown_memory_falls_back_to_cpu_count() -> None:
     """Historical behavior when RAM cannot be determined."""
     assert compute_build_jobs(12, None, env={}) == 12
     assert compute_build_jobs(12, 0, env={}) == 12
 
 
-def test_jobs_never_drop_below_one():
+def test_jobs_never_drop_below_one() -> None:
     assert compute_build_jobs(16, 1.0, env={}) == 1
     assert compute_build_jobs(None, None, env={}) == 1
 
 
-def test_env_override_replaces_the_computation():
+def test_env_override_replaces_the_computation() -> None:
     assert compute_build_jobs(16, 32.0, env={"ITK_BUILD_JOBS": "3"}) == 3
     assert compute_build_jobs(16, 32.0, env={"ITK_BUILD_JOBS": " 5 "}) == 5
 
 
-def test_env_override_is_clamped_to_one():
+def test_env_override_is_clamped_to_one() -> None:
     assert compute_build_jobs(16, 32.0, env={"ITK_BUILD_JOBS": "0"}) == 1
 
 
-def test_gb_per_job_is_the_documented_default():
+def test_gb_per_job_is_the_documented_default() -> None:
     assert DEFAULT_GB_PER_JOB == 2.5
     assert compute_build_jobs(64, 40.0, env={}) == 16
 
 
-def test_physical_memory_is_plausible_on_the_host():
+def test_physical_memory_is_plausible_on_the_host() -> None:
     """Runs for real on every platform the suite runs on."""
     gb = physical_memory_gb()
     assert gb is None or 0.5 < gb < 65536
 
 
-def test_load_limit_is_the_thread_count_not_the_job_count():
+def test_load_limit_is_the_thread_count_not_the_job_count() -> None:
     """-l is a CPU budget. Tying it to the memory-derived -j throttled a
     16-thread box to one compiler at a time (ninja honors -l on Windows)."""
     assert compute_load_limit(16, env={}) == 16
     assert compute_load_limit(16, env={}) != compute_build_jobs(16, 32.0, env={})
 
 
-def test_load_limit_override_and_floor():
+def test_load_limit_override_and_floor() -> None:
     assert compute_load_limit(16, env={"ITK_BUILD_LOAD_LIMIT": "12"}) == 12
     assert compute_load_limit(16, env={"ITK_BUILD_LOAD_LIMIT": "0"}) == 1
     assert compute_load_limit(None, env={}) == 1
 
 
-def test_budget_reproduces_the_measured_optimum():
+def test_budget_reproduces_the_measured_optimum() -> None:
     """The calibration point: 16 threads, 31.8 GiB -> -j12.
 
     Measured 2026-09-19: -j12 finished with 5.75 GB free at peak and was
@@ -77,12 +77,12 @@ def test_budget_reproduces_the_measured_optimum():
     assert compute_build_jobs(16, 31.8, env={}) == 12
 
 
-def test_budget_floors_rather_than_rounds_up():
+def test_budget_floors_rather_than_rounds_up() -> None:
     """32.4 GiB / 2.5 = 12.96: rounding would give 13, one past the tested point."""
     assert compute_build_jobs(16, 32.4, env={}) == 12
 
 
-def test_the_killed_configuration_is_not_reproduced():
+def test_the_killed_configuration_is_not_reproduced() -> None:
     """2 GB/job is cpu_count on this box, i.e. the setting that was being killed."""
     assert compute_build_jobs(16, 31.8, gb_per_job=2.0, env={}) == 15
     assert compute_build_jobs(16, 31.8, env={}) < 15
@@ -122,18 +122,20 @@ def _linux_host_with(
     monkeypatch.setattr(Path, "open", _fake_open(cgroup_files))
 
 
-def test_cgroup_v2_limit_caps_reported_memory(monkeypatch):
+def test_cgroup_v2_limit_caps_reported_memory(monkeypatch: pytest.MonkeyPatch) -> None:
     """A capped container must not size the build from the host's RAM."""
     _linux_host_with(monkeypatch, 24.0, {"/sys/fs/cgroup/memory.max": str(4 * 1024**3)})
     assert build_jobs.physical_memory_gb() == pytest.approx(4.0)
 
 
-def test_cgroup_unlimited_falls_back_to_host(monkeypatch):
+def test_cgroup_unlimited_falls_back_to_host(monkeypatch: pytest.MonkeyPatch) -> None:
     _linux_host_with(monkeypatch, 24.0, {"/sys/fs/cgroup/memory.max": "max"})
     assert build_jobs.physical_memory_gb() == pytest.approx(24.0)
 
 
-def test_cgroup_v1_sentinel_treated_as_unlimited(monkeypatch):
+def test_cgroup_v1_sentinel_treated_as_unlimited(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _linux_host_with(
         monkeypatch,
         24.0,
@@ -142,6 +144,6 @@ def test_cgroup_v1_sentinel_treated_as_unlimited(monkeypatch):
     assert build_jobs.physical_memory_gb() == pytest.approx(24.0)
 
 
-def test_no_cgroup_files_uses_host_memory(monkeypatch):
+def test_no_cgroup_files_uses_host_memory(monkeypatch: pytest.MonkeyPatch) -> None:
     _linux_host_with(monkeypatch, 24.0, {})
     assert build_jobs.physical_memory_gb() == pytest.approx(24.0)
