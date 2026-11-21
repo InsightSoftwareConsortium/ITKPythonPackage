@@ -46,7 +46,7 @@ def _make_builder(
 
 
 @pytest.fixture
-def macos_builder(tmp_path):
+def macos_builder(tmp_path: Path) -> MacOSBuildPythonInstance:
     """A macOS builder wired up enough to exercise its hooks."""
     return _make_builder(
         MacOSBuildPythonInstance,
@@ -58,7 +58,7 @@ def macos_builder(tmp_path):
 
 
 @pytest.fixture
-def linux_builder(tmp_path):
+def linux_builder(tmp_path: Path) -> LinuxBuildPythonInstance:
     """A manylinux x86_64 builder."""
     return _make_builder(
         LinuxBuildPythonInstance,
@@ -70,7 +70,7 @@ def linux_builder(tmp_path):
 
 
 @pytest.fixture
-def linux_aarch64_builder(tmp_path):
+def linux_aarch64_builder(tmp_path: Path) -> LinuxBuildPythonInstance:
     """A manylinux aarch64 builder, covering the cross-build triple."""
     return _make_builder(
         LinuxBuildPythonInstance,
@@ -82,7 +82,7 @@ def linux_aarch64_builder(tmp_path):
 
 
 @pytest.fixture
-def windows_builder(tmp_path):
+def windows_builder(tmp_path: Path) -> WindowsBuildPythonInstance:
     """A Windows x86_64 builder."""
     return _make_builder(
         WindowsBuildPythonInstance,
