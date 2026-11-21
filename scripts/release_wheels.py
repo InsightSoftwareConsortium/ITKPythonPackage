@@ -45,16 +45,6 @@ IPP_DIR = Path(__file__).resolve().parent.parent
 ITK_REPOSITORY = "https://github.com/InsightSoftwareConsortium/ITK.git"
 FETCHED_BRANCHES = "refs/remotes/release-source"
 
-TARGETS = ("windows-x64", "macos-arm64", "manylinux-x64", "manylinux-aarch64")
-NATIVE_PIXI_ENV = {"windows-x64": "windows-py311", "macos-arm64": "macosx-py311"}
-CONTAINER_ARCH = {"manylinux-x64": "x64", "manylinux-aarch64": "aarch64"}
-WHEEL_GLOB = {
-    "windows-x64": "itk*-win_amd64.whl",
-    "macos-arm64": "itk*-macosx_*_arm64.whl",
-    "manylinux-x64": "itk*-manylinux_*_x86_64.whl",
-    "manylinux-aarch64": "itk*-manylinux_*_aarch64.whl",
-}
-
 _PEP440_RELEASE = re.compile(r"^\d+(\.\d+)*((a|b|rc)\d+)?(\.post\d+)?(\.dev\d+)?$")
 
 
@@ -87,6 +77,54 @@ class Host:
         return cls(os_from_system(system), arch, f"{system} {shown}")
 
 
+@dataclass(frozen=True)
+class ReleaseTarget:
+    """One wheel platform: built natively with pixi, or in a manylinux container."""
+
+    name: str
+    wheel_glob: str
+    pixi_env: str | None = None
+    container_arch: Arch | None = None
+    native_host: Host | None = None
+
+    @property
+    def in_container(self) -> bool:
+        return self.container_arch is not None
+
+
+RELEASE_TARGETS: dict[str, ReleaseTarget] = {
+    target.name: target
+    for target in (
+        ReleaseTarget(
+            "windows-x64",
+            "itk*-win_amd64.whl",
+            pixi_env="windows-py311",
+            native_host=Host(OS.WINDOWS, Arch.X86_64),
+        ),
+        ReleaseTarget(
+            "macos-arm64",
+            "itk*-macosx_*_arm64.whl",
+            pixi_env="macosx-py311",
+            native_host=Host(OS.DARWIN, Arch.AARCH64),
+        ),
+        ReleaseTarget(
+            "manylinux-x64",
+            "itk*-manylinux_*_x86_64.whl",
+            container_arch=Arch.X86_64,
+        ),
+        ReleaseTarget(
+            "manylinux-aarch64",
+            "itk*-manylinux_*_aarch64.whl",
+            container_arch=Arch.AARCH64,
+        ),
+    )
+}
+TARGETS = tuple(RELEASE_TARGETS)
+
+# TARGET_ARCH and the container build directories spell the architecture so.
+_CONTAINER_ARCH_SPELLING = {Arch.X86_64: "x64", Arch.AARCH64: "aarch64"}
+
+
 @dataclass
 class Step:
     """One wheel build: a command, its environment additions and its output."""
@@ -114,24 +152,26 @@ def default_targets(host: Host) -> list[str]:
 
 def unbuildable_reason(target: str, host: Host) -> str | None:
     """Why *host* cannot build *target*, or None when it can."""
-    if target in CONTAINER_ARCH:
+    release_target = RELEASE_TARGETS[target]
+    if release_target.in_container:
         if host.system is OS.WINDOWS:
             return "manylinux wheels are built with docker from Linux or macOS"
         return None
-    if target == "macos-arm64" and host != Host(OS.DARWIN, Arch.AARCH64):
+    native_host = release_target.native_host
+    if native_host is None or host == native_host:
+        return None
+    if native_host.system is OS.DARWIN:
         return (
             "macOS wheels need an Apple Silicon Mac: the build uses Apple's "
             "SDK and tools, and the import test runs the wheels"
         )
-    if target == "windows-x64" and host != Host(OS.WINDOWS, Arch.X86_64):
-        return "Windows wheels need a Windows x64 host"
-    return None
+    return "Windows wheels need a Windows x64 host"
 
 
 def select_targets(requested: list[str] | None, host: Host) -> list[str]:
     targets = requested or default_targets(host)
     for target in targets:
-        if target not in TARGETS:
+        if target not in RELEASE_TARGETS:
             msg = f"Unknown target {target!r}; choose from {', '.join(TARGETS)}."
             raise SystemExit(msg)
         reason = unbuildable_reason(target, host)
@@ -164,10 +204,11 @@ def native_build_root() -> Path:
     return IPP_DIR.parent / "ITKPythonPackage-build"
 
 
-def container_build_root(arch: str) -> Path:
+def container_build_root(arch: Arch) -> Path:
     """Host directory that the manylinux container builds *arch* wheels in."""
     manylinux = os.environ.get("MANYLINUX_VERSION") or "_2_28"
-    return IPP_DIR.parent / f"ITKPythonPackage-manylinux{manylinux}-{arch}-build"
+    spelling = _CONTAINER_ARCH_SPELLING[arch]
+    return IPP_DIR.parent / f"ITKPythonPackage-manylinux{manylinux}-{spelling}-build"
 
 
 def _git(*args: str, cwd: Path, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -258,8 +299,9 @@ def plan(
     """The build of each target, in order."""
     steps = []
     for target in targets:
-        if target in NATIVE_PIXI_ENV:
-            env_name = NATIVE_PIXI_ENV[target]
+        release_target = RELEASE_TARGETS[target]
+        if release_target.pixi_env is not None:
+            env_name = release_target.pixi_env
             steps.append(
                 Step(
                     target,
@@ -287,6 +329,8 @@ def plan(
                 )
             )
         else:
+            arch = release_target.container_arch
+            assert arch is not None
             steps.append(
                 Step(
                     target,
@@ -301,13 +345,13 @@ def plan(
                         "ITK_SOURCE_DIR": str(itk_source),
                         "ITK_GIT_TAG": commit,
                         "ITK_PACKAGE_VERSION": version,
-                        "TARGET_ARCH": CONTAINER_ARCH[target],
+                        "TARGET_ARCH": _CONTAINER_ARCH_SPELLING[arch],
                         # Docker Desktop and docker-group users need no sudo.
                         "NO_SUDO": os.environ.get("NO_SUDO", "1"),
                         "USE_CCACHE": "1",
                         "BUILD_WHEELS_EXTRA_FLAGS": "--build-itk-tarball-cache",
                     },
-                    dist_dir=container_build_root(CONTAINER_ARCH[target]) / "dist",
+                    dist_dir=container_build_root(arch) / "dist",
                 )
             )
     if epoch:
@@ -322,7 +366,7 @@ def built_wheels(step: Step) -> list[Path]:
     Wheels of earlier runs are moved to a subdirectory before the wheel
     build, so they are not listed.
     """
-    return sorted(step.dist_dir.glob(WHEEL_GLOB[step.target]))
+    return sorted(step.dist_dir.glob(RELEASE_TARGETS[step.target].wheel_glob))
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -364,9 +408,10 @@ def main(argv: list[str] | None = None) -> int:
         pixi = "pixi"
         epoch = source_date_epoch(os.environ, None)
     else:
-        if any(t in CONTAINER_ARCH for t in targets):
+        if any(RELEASE_TARGETS[t].in_container for t in targets):
             _container_engine()
-        pixi = _pixi() if any(t in NATIVE_PIXI_ENV for t in targets) else "pixi"
+        native = any(RELEASE_TARGETS[t].pixi_env is not None for t in targets)
+        pixi = _pixi() if native else "pixi"
         commit, ref_is_tag = prepare_itk_source(
             itk_source, args.itk_repository, args.itk_ref
         )

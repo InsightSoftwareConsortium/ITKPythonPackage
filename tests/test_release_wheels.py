@@ -242,3 +242,40 @@ def test_the_summary_lists_this_runs_wheels_only(tmp_path):
     current.write_bytes(b"")
     step = rw.Step("macos-arm64", [], dist_dir=dist)
     assert rw.built_wheels(step) == [current]
+
+
+def test_every_target_is_either_native_or_in_a_container():
+    for name, target in rw.RELEASE_TARGETS.items():
+        assert target.name == name
+        assert (target.pixi_env is not None) == (target.native_host is not None)
+        assert target.in_container == (target.pixi_env is None)
+
+
+def test_container_targets_spell_the_architecture_for_the_scripts():
+    assert rw.RELEASE_TARGETS["manylinux-x64"].container_arch is Arch.X86_64
+    assert rw.RELEASE_TARGETS["manylinux-aarch64"].container_arch is Arch.AARCH64
+    assert rw.TARGETS == (
+        "windows-x64",
+        "macos-arm64",
+        "manylinux-x64",
+        "manylinux-aarch64",
+    )
+
+
+@pytest.mark.parametrize(
+    ("target", "host", "reason"),
+    [
+        ("macos-arm64", LINUX_X64, "macOS wheels need an Apple Silicon Mac"),
+        ("windows-x64", MAC_ARM64, "Windows wheels need a Windows x64 host"),
+        ("manylinux-x64", WINDOWS_X64, "manylinux wheels are built with docker"),
+        ("manylinux-x64", MAC_ARM64, None),
+        ("macos-arm64", MAC_ARM64, None),
+    ],
+)
+def test_unbuildable_reason_reads_the_native_host(target, host, reason):
+    found = rw.unbuildable_reason(target, host)
+    if reason is None:
+        assert found is None
+    else:
+        assert found is not None
+        assert found.startswith(reason)
