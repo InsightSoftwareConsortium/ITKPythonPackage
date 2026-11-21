@@ -14,7 +14,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from wheel_builder_utils import run_commandLine_subprocess
+from wheel_builder_utils import HOST_SYSTEM_ENVIRONMENT_NAME, run_commandLine_subprocess
 
 
 def get_pixi_environment_name(platform_env: str) -> str:
@@ -74,8 +74,10 @@ def echo_check_call(
     # already-activated PATH. On Windows each activation adds ~2.4 kB, and the
     # second one overflows the cmd.exe 8191-character line limit, failing with
     # "The input line is too long." Running in-process is equivalent here.
-    already_in_pixi_env = os.environ.get("PIXI_ENVIRONMENT_NAME") == pixi_env_name
-    if pixi_env_name and use_pixi_env and not already_in_pixi_env:
+    active_env = os.environ.get("PIXI_ENVIRONMENT_NAME")
+    already_in_pixi_env = active_env == pixi_env_name
+    host_system = active_env == HOST_SYSTEM_ENVIRONMENT_NAME
+    if pixi_env_name and use_pixi_env and not (already_in_pixi_env or host_system):
         pixi_run_preamble = [
             str(pixi_executable),
             "run",

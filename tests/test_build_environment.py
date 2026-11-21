@@ -1,4 +1,5 @@
 import shutil
+import subprocess
 import sys
 
 import build_environment
@@ -32,6 +33,29 @@ def test_echo_check_call_raises_when_check_is_forwarded():
             use_pixi_env=False,
             check=True,
         )
+
+
+@pytest.mark.parametrize(
+    ("active", "wrapped"),
+    [("hostsystem", False), ("macosx-py311", False), ("default", True)],
+)
+def test_pixi_run_preamble_only_outside_the_target_and_hostsystem(
+    monkeypatch, active, wrapped
+):
+    """hostsystem runs tools from PATH, as AGENTS.md documents."""
+    monkeypatch.setenv("PIXI_ENVIRONMENT_NAME", active)
+    seen = {}
+
+    def fake_run(cmd, **kwargs):
+        seen["cmd"] = cmd
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(build_environment, "run_commandLine_subprocess", fake_run)
+    build_environment.echo_check_call(
+        ["cmake", "--version"], pixi_env_name="macosx-py311", pixi_executable="pixi"
+    )
+    assert (seen["cmd"][:2] == ["pixi", "run"]) is wrapped
+    assert seen["cmd"][-2:] == ["cmake", "--version"]
 
 
 def test_get_pixi_environment_name_is_the_platform_env():
