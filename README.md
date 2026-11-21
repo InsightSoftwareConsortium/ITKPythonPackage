@@ -83,6 +83,44 @@ cd ITKPythonPackage
 
 ---
 
+### Building ITK release wheels
+
+One command builds every release wheel the machine can build:
+
+```bash
+pixi run release-wheels v6.0b03
+```
+
+For a branch or commit, also give the package version:
+
+```bash
+pixi run release-wheels 2385a1b5d9 6.0b3
+```
+
+| Machine       | Wheels it builds                         |
+| ------------- | ---------------------------------------- |
+| Windows x64   | Windows x64                              |
+| macOS arm64   | macOS arm64, then Linux aarch64 (Docker) |
+| Linux x64     | Linux x86_64 (Docker)                    |
+| Linux aarch64 | Linux aarch64 (Docker)                   |
+
+Running the same command on a Windows PC, a Linux x64 machine and an Apple
+Silicon Mac produces every supported wheel. macOS wheels need a Mac; a Linux
+machine cannot build them, not even in Docker. `--targets` builds a subset,
+for example `--targets manylinux-aarch64` on a Linux x64 machine (slow,
+emulated). `--itk-repository` fetches the ref from a fork, and `--dry-run`
+prints the builds without running them.
+
+The script keeps its own ITK clone in `../ITKPythonPackage-build/ITK`
+(`C:\BDR\ITK` on Windows) and refuses one with uncommitted changes. Wheels
+and the POSIX ITKPythonBuilds tarball caches land in that build directory's
+`dist` (the Windows `.zip` sits in the build directory itself), or in
+`../ITKPythonPackage-manylinux_2_28-<arch>-build/dist` for Linux wheels. A
+branch or commit without a package version gets a `git describe` version,
+which is for testing only.
+
+---
+
 ### Building Remote Module Wheels
 
 > [!IMPORTANT]
