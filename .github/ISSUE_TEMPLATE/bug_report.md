@@ -15,7 +15,6 @@ assignees: ""
 
 ## Steps to Reproduce
 
-
 ## Expected Behavior
 
 <!-- What should happen. -->
@@ -28,6 +27,7 @@ assignees: ""
 <summary>Log output</summary>
 
 ```
+
 ```
 
 </details>

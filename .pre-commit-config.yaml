@@ -1,4 +1,121 @@
+# Pre-commit configuration for ITKPythonPackage
+# Run `pre-commit install` to install git hooks locally
+# Run `pre-commit run --all-files` to check all files
+# Run `pre-commit autoupdate` to update hook versions
+
+# Exclude generated/vendored directories from all hooks
+exclude: ^(\.pixi/|build/|docs/data/|pixi\.lock$)
+
 repos:
+  # General file hygiene
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        stages: [pre-commit]
+      - id: end-of-file-fixer
+        stages: [pre-commit]
+      - id: check-yaml
+        stages: [pre-commit]
+      - id: check-toml
+        stages: [pre-commit]
+      - id: check-merge-conflict
+        stages: [pre-commit]
+      - id: check-added-large-files
+        args: [--maxkb=500]
+        stages: [pre-commit]
+      # Enforce LF line endings everywhere except Windows PowerShell scripts
+      - id: mixed-line-ending
+        args: [--fix=lf]
+        exclude: \.ps1$
+        stages: [pre-commit]
+
+  # Python: linting, import sorting, and formatting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.6
+    hooks:
+      - id: ruff-check
+        exclude: ^docs/
+        args: [--fix, --show-fixes]
+        stages: [pre-commit]
+      - id: ruff-format
+        exclude: ^docs/
+        stages: [pre-commit]
+
+  # Python: type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v2.4.1
+    hooks:
+      - id: mypy
+        pass_filenames: false
+        additional_dependencies: [pytest, hypothesis]
+        stages: [pre-commit]
+
+  # Spelling
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.3
+    hooks:
+      - id: codespell
+        stages: [pre-commit]
+
+  # reStructuredText and Python pattern checks
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+      - id: rst-backticks
+        stages: [pre-commit]
+      - id: rst-directive-colons
+        stages: [pre-commit]
+      - id: rst-inline-touching-normal
+        stages: [pre-commit]
+
+  # Python code blocks in the reStructuredText docs; ruff formats the rest
+  - repo: https://github.com/adamchainz/blacken-docs
+    rev: 1.20.0
+    hooks:
+      - id: blacken-docs
+        files: ^docs/.*\.rst$
+        additional_dependencies: [black==24.10.0]
+        stages: [pre-commit]
+
+  # Markdown: formatting
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.10.1
+    hooks:
+      - id: prettier
+        types_or: [markdown]
+        stages: [pre-commit]
+
+  # GitHub Actions: security audit
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.32.0
+    hooks:
+      - id: zizmor
+        stages: [pre-commit]
+
+  # Shell: linting
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        stages: [pre-commit]
+
+  # Shell: formatting
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.12.0-2
+    hooks:
+      - id: shfmt
+        args: [-i, "2", -w]
+        stages: [pre-commit]
+
+  # TOML: formatting
+  - repo: https://github.com/ComPWA/taplo-pre-commit
+    rev: v0.9.3
+    hooks:
+      - id: taplo-format
+        stages: [pre-commit]
+
+  # ITK commit message hooks (matching ITK/Utilities/Hooks/)
   - repo: local
     hooks:
       - id: local-prepare-commit-msg
@@ -11,3 +128,8 @@ repos:
         entry: 'python3 Utilities/Hooks/kw-commit-msg.py'
         language: system
         stages: [commit-msg]
+
+ci:
+  autoupdate_commit_msg: "COMP: Update pre-commit hooks"
+  autofix_commit_msg: "STYLE: Apply pre-commit fixes"
+  autoupdate_schedule: monthly

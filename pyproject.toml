@@ -1,0 +1,185 @@
+# Root-level pyproject.toml — developer tooling configuration only.
+# This file configures linters/formatters for the ITKPythonPackage build scripts.
+# It does NOT define a Python package; wheel-specific pyproject.toml files are
+# generated dynamically by scripts/pyproject_configure.py into build subdirectories.
+
+[dependency-groups]
+dev = ["pytest>=8", "hypothesis>=6"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+show-fixes = true
+extend-exclude = ["docs"] # example snippets, excluded from pre-commit too
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+# E/F/W: pycodestyle and pyflakes; I: isort; UP: pyupgrade; B: flake8-bugbear
+select = ["E", "F", "I", "UP", "B", "W"]
+extend-select = [
+  # Rules adopted one per commit, named so each stays enforced.
+  "ARG005",  # unused-lambda-argument
+  "EM101",   # raw-string-in-exception
+  "EM102",   # f-string-in-exception
+  "EXE001",  # shebang-not-executable
+  "FURB110", # if-exp-instead-of-or-operator
+  "FURB129", # readlines-in-for
+  "ISC001",  # single-line-implicit-string-concatenation
+  "ISC003",  # explicit-string-concatenation
+  "PLR1711", # useless-return
+  "PLR5501", # collapsible-else-if
+  "PLW1510", # subprocess-run-without-check
+  "PLW2901", # redefined-loop-name
+  "PTH100",  # os-path-abspath
+  "PTH118",  # os-path-join
+  "PTH119",  # os-path-basename
+  "PTH120",  # os-path-dirname
+  "PTH123",  # builtin-open
+  "RET504",  # unnecessary-assign
+  "RET505",  # superfluous-else-return
+  "RUF002",  # ambiguous-unicode-character-docstring
+  "RUF005",  # collection-literal-concatenation
+  "RUF010",  # explicit-f-string-type-conversion
+  "RUF013",  # implicit-optional
+  "RUF036",  # none-not-at-end-of-union
+  "RUF043",  # pytest-raises-ambiguous-pattern
+  "RUF059",  # unused-unpacked-variable
+  "RUF100",  # unused-noqa
+  "SIM105",  # suppressible-exception
+  "SIM108",  # if-else-block-instead-of-if-exp
+  "SIM115",  # open-file-with-context-handler
+  "SIM117",  # multiple-with-statements
+  "SIM118",  # in-dict-keys
+  "SIM910",  # dict-get-with-none-default
+  "TC003",   # typing-only-standard-library-import
+  "TRY003",  # raise-vanilla-args
+  "TRY300",  # try-consider-else
+  # Rule families recommended by the Scientific Python guide.
+  "ARG",  # flake8-unused-arguments
+  "C4",   # flake8-comprehensions
+  "EM",   # flake8-errmsg
+  "EXE",  # flake8-executable
+  "FURB", # refurb
+  "G",    # flake8-logging-format
+  "ICN",  # flake8-import-conventions
+  "ISC",  # flake8-implicit-str-concat
+  "LOG",  # flake8-logging
+  "NPY",  # NumPy specific rules
+  "PD",   # pandas-vet
+  "PERF", # perflint
+  "PGH",  # pygrep-hooks
+  "PL",   # pylint
+  "PT",   # flake8-pytest-style
+  "PTH",  # flake8-use-pathlib
+  "PYI",  # flake8-pyi
+  "Q",    # flake8-quotes
+  "RET",  # flake8-return
+  "RSE",  # flake8-raise
+  "RUF",  # Ruff-specific
+  "SIM",  # flake8-simplify
+  "SLOT", # flake8-slots
+  "T10",  # flake8-debugger
+  "T20",  # flake8-print
+  "TC",   # flake8-type-checking
+  "TRY",  # tryceratops
+]
+ignore = [
+  # Accepted: not required by the Scientific Python guide.
+  "E501",    # line-too-long: ruff format owns line length
+  "PLR09",   # too-many-*: build drivers take many options by design
+  "PLR2004", # magic-value-comparison
+  "T201",    # `print` found: printing is these build scripts' output
+  "PLC0415", # import-outside-top-level: per-platform builders and patched test modules load lazily
+  # Parked so the rule list could be adopted with lint passing.
+  # Each is removed by the commit that fixes it.
+  # Parked by decision: fixing them changes signatures. Six are overrides of
+  # shared method signatures, one is a public function's argument, and 45
+  # are test fakes that mirror the function they patch.
+  "ARG001", # unused-function-argument (44)
+  "ARG002", # unused-method-argument (8)
+]
+
+[tool.commitizen]
+name = "cz_customize"
+
+[tool.commitizen.customize]
+message_template = "{{change_type}}: {{message}}"
+example = "ENH: Add support for Python 3.12"
+schema = "<type>: <description>"
+schema_pattern = "(BUG|COMP|DOC|ENH|PERF|STYLE): [A-Z].*"
+bump_pattern = "^(ENH|BUG|COMP|PERF)"
+bump_map = { "ENH" = "MINOR", "BUG" = "PATCH", "COMP" = "PATCH", "PERF" = "PATCH" }
+commit_parser = "^(?P<change_type>BUG|COMP|DOC|ENH|PERF|STYLE): (?P<message>.*)"
+changelog_pattern = "^(BUG|COMP|DOC|ENH|PERF|STYLE)?(!)?"
+change_type_map = { "ENH" = "Enhancements", "BUG" = "Bug Fixes", "COMP" = "Build Fixes", "DOC" = "Documentation", "PERF" = "Performance", "STYLE" = "Style" }
+change_type_order = [
+  "Enhancements",
+  "Bug Fixes",
+  "Build Fixes",
+  "Performance",
+  "Documentation",
+  "Style",
+]
+info = """
+ITK commit message convention: PREFIX: Description
+
+Valid prefixes:
+  BUG:   a bug fix
+  COMP:  a compilation/build fix
+  DOC:   documentation changes
+  ENH:   new feature or enhancement
+  PERF:  performance improvement
+  STYLE: code style/formatting (no logic change)
+"""
+
+[[tool.commitizen.customize.questions]]
+type = "list"
+name = "change_type"
+message = "Select the type of change:"
+choices = [
+  { value = "ENH", name = "ENH:   A new feature or enhancement", key = "e" },
+  { value = "BUG", name = "BUG:   A bug fix", key = "b" },
+  { value = "COMP", name = "COMP:  A compilation/build fix", key = "c" },
+  { value = "DOC", name = "DOC:   Documentation changes", key = "d" },
+  { value = "PERF", name = "PERF:  A performance improvement", key = "p" },
+  { value = "STYLE", name = "STYLE: Code style/formatting (no logic change)", key = "s" },
+]
+
+[[tool.commitizen.customize.questions]]
+type = "input"
+name = "message"
+message = "Commit description (start with capital letter):"
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
+xfail_strict = true
+filterwarnings = ["error"]
+log_level = "INFO"
+pythonpath = ["scripts"]
+testpaths = ["tests"]
+
+[tool.repo-review.ignore]
+PP002 = "Root pyproject.toml configures tooling only; wheels are generated from scripts/pyproject.toml.in"
+PP003 = "Root pyproject.toml configures tooling only; wheels are generated from scripts/pyproject.toml.in"
+
+[tool.codespell]
+# DEPENDEES is a CMake ExternalProject keyword; Nd is a Unicode category name.
+ignore-words-list = "dependees,nd"
+
+[tool.mypy]
+files = ["scripts", "tests"]
+mypy_path = ["scripts"]
+explicit_package_bases = true
+python_version = "3.11"
+# Check every host as the Linux CI does; platform branches differ otherwise.
+platform = "linux"
+warn_unused_configs = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+strict = true
+# Unannotated functions are still checked (check_untyped_defs, part of strict).
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+warn_unreachable = true
