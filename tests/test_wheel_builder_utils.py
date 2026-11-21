@@ -37,7 +37,7 @@ def test_compute_itk_package_version_refuses_an_unusable_describe(tmp_path):
         patch.object(wheel_builder_utils, "run_commandLine_subprocess", fake_run),
         pytest.raises(RuntimeError, match="no usable version"),
     ):
-        compute_itk_package_version(tmp_path, "v6.0.0", None, {})
+        compute_itk_package_version(tmp_path, "v6.0.0", {})
 
 
 def test_compute_itk_package_version_refuses_a_zero_version(tmp_path):
@@ -57,7 +57,7 @@ def test_compute_itk_package_version_refuses_a_zero_version(tmp_path):
         patch.object(wheel_builder_utils, "run_commandLine_subprocess", fake_run),
         pytest.raises(RuntimeError, match=r"0\.0\.0"),
     ):
-        compute_itk_package_version(tmp_path, "v6.0.0", None, {})
+        compute_itk_package_version(tmp_path, "v6.0.0", {})
 
 
 def test_compute_itk_package_version_keeps_head_on_failed_checkout(tmp_path):
@@ -83,7 +83,7 @@ def test_compute_itk_package_version_keeps_head_on_failed_checkout(tmp_path):
         return _completed(0)
 
     with patch.object(wheel_builder_utils, "run_commandLine_subprocess", fake_run):
-        version = compute_itk_package_version(tmp_path, "v9.9.9", None, {})
+        version = compute_itk_package_version(tmp_path, "v9.9.9", {})
 
     assert checked_out == ["v9.9.9"]
     assert version.startswith("6.0")
@@ -99,4 +99,4 @@ def test_compute_itk_package_version_raises_when_fetch_fails(tmp_path):
         patch.object(wheel_builder_utils, "run_commandLine_subprocess", fake_run),
         pytest.raises(RuntimeError, match="git fetch"),
     ):
-        compute_itk_package_version(tmp_path, "v6.0.0", None, {})
+        compute_itk_package_version(tmp_path, "v6.0.0", {})

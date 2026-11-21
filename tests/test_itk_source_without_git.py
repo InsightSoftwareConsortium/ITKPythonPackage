@@ -150,4 +150,4 @@ def test_version_derivation_explains_a_cache_tree(tmp_path, monkeypatch):
         wheel_builder_utils, "run_commandLine_subprocess", not_a_repository
     )
     with pytest.raises(RuntimeError, match="Pass --itk-package-version"):
-        wheel_builder_utils.compute_itk_package_version(tmp_path, "v6.0.0", None, {})
+        wheel_builder_utils.compute_itk_package_version(tmp_path, "v6.0.0", {})

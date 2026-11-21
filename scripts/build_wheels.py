@@ -622,7 +622,7 @@ def build_wheels_main() -> None:
     # any other value is used as given, as a cache-restored tree has no repository.
     if derives_package_version(args.itk_package_version):
         args.itk_package_version = compute_itk_package_version(
-            args.itk_source_dir, args.itk_git_tag, pixi_executable, os.environ
+            args.itk_source_dir, args.itk_git_tag, os.environ
         )
 
     # Every wheel writer and repair tool stamps zip entries with this time.

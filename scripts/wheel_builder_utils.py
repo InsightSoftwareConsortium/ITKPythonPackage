@@ -426,9 +426,7 @@ def git_describe_to_pep440(desc: str) -> str:
     return semver_format
 
 
-def compute_itk_package_version(
-    itk_dir: Path, itk_git_tag: str, pixi_exec_path, env
-) -> str:
+def compute_itk_package_version(itk_dir: Path, itk_git_tag: str, env) -> str:
     """Compute a PEP 440 version string for the ITK package.
 
     Fetches tags, checks out *itk_git_tag*, and runs
@@ -441,8 +439,6 @@ def compute_itk_package_version(
         Path to the ITK source repository.
     itk_git_tag : str
         Git tag, branch, or commit to check out before describing.
-    pixi_exec_path : Path or str
-        Path to the pixi executable (unused but kept for API compat).
     env : dict
         Environment variables passed to Git subprocesses.
 
