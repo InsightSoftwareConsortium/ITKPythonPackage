@@ -5,7 +5,7 @@ from collections.abc import Mapping
 from pathlib import Path
 
 import pytest
-from BuildManager import BuildManager
+from build_manager import BuildManager
 
 STEPS = ["01_superbuild", "02_build_itk", "03_build_wheels"]
 INPUTS = {"itk_commit": "a" * 40, "package_version": "6.0b3", "fingerprint": "f1"}

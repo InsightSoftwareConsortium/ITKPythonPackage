@@ -20,7 +20,7 @@ from build_inputs import (
     resolved_itk_commit,
 )
 from build_jobs import compute_build_jobs, compute_load_limit, physical_memory_gb
-from BuildManager import BuildManager
+from build_manager import BuildManager
 from cmake_argument_builder import CMakeArgumentBuilder, definitions_from_cmake_options
 from compiler_cache import (
     compiler_cache_definitions,
