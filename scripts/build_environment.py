@@ -121,7 +121,7 @@ def echo_check_call(
     return cmd_return_status
 
 
-def find_unix_exectable_paths(venv_dir: Path) -> PythonEnvironment:
+def find_unix_python_paths(venv_dir: Path) -> PythonEnvironment:
     """Resolve Python interpreter and virtualenv paths on Unix.
 
     Parameters

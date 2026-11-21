@@ -25,6 +25,6 @@ class PosixBuildPythonInstance(BuildPythonInstanceBase):
 
         Shared by Linux and macOS; Windows uses its own path conventions.
         """
-        return build_environment.find_unix_exectable_paths(
+        return build_environment.find_unix_python_paths(
             Path(self.package_env_config["PYTHON_EXECUTABLE"]).parent.parent
         )

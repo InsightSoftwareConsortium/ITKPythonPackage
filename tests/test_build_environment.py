@@ -59,18 +59,18 @@ def test_pixi_run_preamble_only_outside_the_target_and_hostsystem(
     assert seen["cmd"][-2:] == ["cmake", "--version"]
 
 
-def test_find_unix_exectable_paths_raises_when_interpreter_absent(tmp_path):
+def test_find_unix_python_paths_raises_when_interpreter_absent(tmp_path):
     with pytest.raises(FileNotFoundError):
-        build_environment.find_unix_exectable_paths(tmp_path)
+        build_environment.find_unix_python_paths(tmp_path)
 
 
-def test_find_unix_exectable_paths_resolves_a_venv_layout(tmp_path):
+def test_find_unix_python_paths_resolves_a_venv_layout(tmp_path):
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     # A real venv symlinks its interpreter, but creating a symlink needs
     # SeCreateSymbolicLinkPrivilege off a POSIX box (Developer Mode or an
     # elevated shell), so an unprivileged run raises WinError 1314. Copy the
-    # interpreter instead: find_unix_exectable_paths() runs it to read
+    # interpreter instead: find_unix_python_paths() runs it to read
     # sysconfig, so the stand-in has to be executable, and a copied
     # interpreter still is even without the .exe suffix.
     try:
@@ -78,7 +78,7 @@ def test_find_unix_exectable_paths_resolves_a_venv_layout(tmp_path):
     except (OSError, NotImplementedError):
         shutil.copy2(sys.executable, bin_dir / "python")
 
-    env = build_environment.find_unix_exectable_paths(tmp_path)
+    env = build_environment.find_unix_python_paths(tmp_path)
 
     assert env.executable == bin_dir / "python"
     assert env.bin_path == bin_dir
