@@ -1,12 +1,30 @@
 """Tests for where the Windows builder writes repaired wheels and what it archives."""
 
 import zipfile
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from windows_build_python_instance import WindowsBuildPythonInstance
+
+
+def _fake_delvewheel(wheel: Path) -> tuple[Callable[..., int], list[Path]]:
+    """A delvewheel stand-in that writes the repaired *wheel* into its ``-w`` dir.
+
+    Returns the stand-in and the list of output directories it was given.
+    """
+    out_dirs: list[Path] = []
+
+    def fake_repair(cmd: Sequence[object], *args: object, **kwargs: object) -> int:
+        rendered = [str(c) for c in cmd]
+        out_dir = Path(rendered[rendered.index("-w") + 1])
+        out_dirs.append(out_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / wheel.name).write_bytes(b"repaired")
+        return 0
+
+    return fake_repair, out_dirs
 
 
 def test_remote_module_repaired_wheel_lands_in_the_module_dist(
@@ -25,22 +43,13 @@ def test_remote_module_repaired_wheel_lands_in_the_module_dist(
     wheel = main_dist / "biocell-1.0.0-cp311-abi3-win_amd64.whl"
     wheel.touch()
 
-    captured = {}
-
-    def fake_repair(cmd, *args, **kwargs) -> int:
-        rendered = [str(c) for c in cmd]
-        out_dir = Path(rendered[rendered.index("-w") + 1])
-        captured["out_dir"] = out_dir
-        out_dir.mkdir(parents=True, exist_ok=True)
-        (out_dir / wheel.name).touch()
-        return 0
-
+    fake_repair, out_dirs = _fake_delvewheel(wheel)
     with patch.object(windows_builder, "echo_check_call", side_effect=fake_repair):
         windows_builder.fixup_wheel(
             str(wheel), lib_paths="C:/tbb/bin", remote_module_wheel=True
         )
 
-    assert captured["out_dir"].parent == expected_dir
+    assert out_dirs[0].parent == expected_dir
     assert (expected_dir / wheel.name).exists()
 
 
@@ -52,20 +61,11 @@ def test_non_remote_repaired_wheel_lands_in_the_build_dist(tmp_path, windows_bui
     wheel = main_dist / "itk_core-6.0.0-cp311-abi3-win_amd64.whl"
     wheel.touch()
 
-    captured = {}
-
-    def fake_repair(cmd, *args, **kwargs) -> int:
-        rendered = [str(c) for c in cmd]
-        out_dir = Path(rendered[rendered.index("-w") + 1])
-        captured["out_dir"] = out_dir
-        out_dir.mkdir(parents=True, exist_ok=True)
-        (out_dir / wheel.name).touch()
-        return 0
-
+    fake_repair, out_dirs = _fake_delvewheel(wheel)
     with patch.object(windows_builder, "echo_check_call", side_effect=fake_repair):
         windows_builder.fixup_wheel(str(wheel), lib_paths="C:/tbb/bin")
 
-    assert captured["out_dir"].parent == main_dist
+    assert out_dirs[0].parent == main_dist
     assert not (windows_builder.module_source_dir / "dist").exists()
 
 
@@ -94,13 +94,7 @@ def test_repaired_wheel_replaces_the_input_in_place(windows_builder):
     wheel = main_dist / "itk_core-6.0.0-cp311-abi3-win_amd64.whl"
     wheel.write_bytes(b"unrepaired")
 
-    def fake_repair(cmd, *args, **kwargs) -> int:
-        rendered = [str(c) for c in cmd]
-        out_dir = Path(rendered[rendered.index("-w") + 1])
-        out_dir.mkdir(parents=True, exist_ok=True)
-        (out_dir / wheel.name).write_bytes(b"repaired")
-        return 0
-
+    fake_repair, _ = _fake_delvewheel(wheel)
     with patch.object(windows_builder, "echo_check_call", side_effect=fake_repair):
         windows_builder.fixup_wheel(str(wheel))
 

@@ -196,13 +196,7 @@ def test_fixup_wheel_removes_original_only_after_verified_repair(
     tmp_path, linux_builder
 ):
     wheel, repaired = _prepare_linux_fixup(linux_builder, tmp_path)
-
-    def fake_repair(cmd, env=None):
-        repaired.touch()
-        return 0
-
-    with patch.object(linux_builder, "echo_check_call", side_effect=fake_repair):
-        linux_builder.fixup_wheel(str(wheel))
+    _capture_repair_env(linux_builder, wheel, repaired)
     assert not wheel.exists()
     assert repaired.exists()
 
