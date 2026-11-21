@@ -61,7 +61,7 @@ for py_indicator in "${PY_ENVS_ARRAY[@]}"; do
       --platform-env "${PIXI_ENV}" \
       "${BUILD_WHEELS_EXTRA_FLAGS_ARRAY[@]}" \
       --module-source-dir "${CONTAINER_MODULE_SRC_DIRECTORY}" \
-      --module-dependencies-root-dir "${CONTAINER_MODULES_ROOT_DIRECTORY}" \
+      --module-dependencies-root-dir "${MODULE_DEPS_DIR}" \
       --itk-module-deps "${ITK_MODULE_PREQ}" \
       --no-build-itk-tarball-cache \
       --build-dir-root "${CONTAINER_PACKAGE_BUILD_DIR}" \
