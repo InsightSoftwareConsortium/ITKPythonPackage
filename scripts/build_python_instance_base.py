@@ -768,6 +768,27 @@ class BuildPythonInstanceBase(ABC):
             self.package_env_config["USE_TBB"] = "OFF"
             self.package_env_config["TBB_DIR"] = "NOT_FOUND"
 
+    def python_build_wheel_command(self, out_dir: Path, *settings: str) -> list[str]:
+        """Return the ``python -m build`` command writing a wheel to *out_dir*.
+
+        *settings* are extra ``--config-setting`` arguments placed before the
+        generator choice; callers append CMake definitions and the source.
+        """
+        return [
+            str(self.package_env_config["PYTHON_EXECUTABLE"]),
+            "-m",
+            "build",
+            "--verbose",
+            "--wheel",
+            "--outdir",
+            str(out_dir),
+            "--no-isolation",
+            "--skip-dependency-check",
+            f"--config-setting=cmake.build-type={self.package_env_config['BUILD_TYPE']}",
+            *settings,
+            *self.python_build_generator_args(),
+        ]
+
     def python_build_generator_args(self) -> list[str]:
         """Extra ``python -m build`` settings choosing the CMake generator."""
         return []
@@ -858,21 +879,7 @@ class BuildPythonInstanceBase(ABC):
 
         wheel_py_api = STABLE_ABI_TAG
 
-        # Base build command
-        cmd = [
-            py_exe,
-            "-m",
-            "build",
-            "--verbose",
-            "--wheel",
-            "--outdir",
-            str(out_dir),
-            "--no-isolation",
-            "--skip-dependency-check",
-            f"--config-setting=cmake.build-type={self.package_env_config['BUILD_TYPE']}",
-        ]
-
-        cmd += self.python_build_generator_args()
+        cmd = self.python_build_wheel_command(out_dir)
 
         # Collect scikit-build CMake definitions
         defs = CMakeArgumentBuilder()
@@ -951,22 +958,11 @@ class BuildPythonInstanceBase(ABC):
                 wheel_name,
             )
 
-            # Generate wheel using
-            cmd = [
-                str(self.package_env_config["PYTHON_EXECUTABLE"]),
-                "-m",
-                "build",
-                "--verbose",
-                "--wheel",
-                "--outdir",
-                str(self.build_dir_root / "dist"),
-                "--no-isolation",
-                "--skip-dependency-check",
-                f"--config-setting=cmake.build-type={self.package_env_config['BUILD_TYPE']}",
+            cmd = self.python_build_wheel_command(
+                self.build_dir_root / "dist",
                 f"--config-setting=cmake.source-dir={self.package_env_config['IPP_SOURCE_DIR'] / 'BuildWheelsSupport'}",
                 f"--config-setting=build-dir={wheel_configbuild_dir_root / 'build'}",
-            ]
-            cmd += self.python_build_generator_args()
+            )
             # Build scikit-build defines via builder
             scikitbuild_cmdline_args = CMakeArgumentBuilder()
             scikitbuild_cmdline_args.update(self.cmake_compiler_configurations.items())

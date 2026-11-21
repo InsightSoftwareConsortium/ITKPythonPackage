@@ -670,3 +670,19 @@ def test_only_a_manylinux_target_is_repaired(linux_builder):
 def test_only_windows_chooses_the_generator(request, builder_fixture, expected):
     builder = request.getfixturevalue(builder_fixture)
     assert builder.python_build_generator_args() == expected
+
+
+def test_python_build_wheel_command_orders_settings_before_the_generator(
+    windows_builder,
+):
+    windows_builder.package_env_config.update(
+        {"PYTHON_EXECUTABLE": "python", "BUILD_TYPE": "Release"}
+    )
+    cmd = windows_builder.python_build_wheel_command(Path("out"), "--config-setting=x")
+    assert cmd[:3] == ["python", "-m", "build"]
+    assert cmd[cmd.index("--outdir") + 1] == "out"
+    assert cmd[-3:] == [
+        "--config-setting=cmake.build-type=Release",
+        "--config-setting=x",
+        "--config-setting=cmake.args=-GNinja",
+    ]
