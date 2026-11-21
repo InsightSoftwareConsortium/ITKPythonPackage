@@ -494,9 +494,9 @@ class BuildPythonInstanceBase(ABC):
 
     def build_superbuild_support_components(self):
         """Configure and build the superbuild support components (ITK source, TBB)."""
-        cmake_superbuild_argumets = CMakeArgumentBuilder()
-        cmake_superbuild_argumets.update(self.cmake_compiler_configurations.items())
-        cmake_superbuild_argumets.update(
+        cmake_superbuild_arguments = CMakeArgumentBuilder()
+        cmake_superbuild_arguments.update(self.cmake_compiler_configurations.items())
+        cmake_superbuild_arguments.update(
             {
                 "ITKPythonPackage_USE_TBB:BOOL": self.package_env_config["USE_TBB"],
                 "ITK_SOURCE_DIR:PATH": f"{self.package_env_config['ITK_SOURCE_DIR']}",
@@ -504,7 +504,7 @@ class BuildPythonInstanceBase(ABC):
             }
         )
         # Command-line definitions go last so they override the defaults above.
-        cmake_superbuild_argumets.update(self.cmake_cmdline_definitions.items())
+        cmake_superbuild_arguments.update(self.cmake_cmdline_definitions.items())
 
         cmd = [
             self.package_env_config["CMAKE_EXECUTABLE"],
@@ -512,7 +512,7 @@ class BuildPythonInstanceBase(ABC):
             "Ninja",
         ]
 
-        cmd += cmake_superbuild_argumets.getCMakeCommandLineArguments()
+        cmd += cmake_superbuild_arguments.getCMakeCommandLineArguments()
 
         cmd += [
             "-S",
