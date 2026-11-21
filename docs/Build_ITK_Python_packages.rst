@@ -358,7 +358,7 @@ Publishing Wheels to PyPI
 The ``publish-wheels`` task validates wheel metadata with ``twine check`` and
 then uploads all ``.whl`` files from a ``dist/`` directory.
 
-**Authentication** — set environment variables or configure ``~/.pypirc``
+**Authentication**: set environment variables or configure ``~/.pypirc``
 (see ``.pypirc.example`` in the repository root):
 
 .. code-block:: bash
@@ -405,7 +405,7 @@ The ``publish-tarball-cache`` task uploads ``.tar.zst`` (POSIX) and ``.zip``
 `ITKPythonBuilds <https://github.com/InsightSoftwareConsortium/ITKPythonBuilds>`_
 repository.
 
-**Authentication** — set the ``GH_TOKEN`` environment variable or run
+**Authentication**: set the ``GH_TOKEN`` environment variable or run
 ``gh auth login`` beforehand.
 
 .. code-block:: bash

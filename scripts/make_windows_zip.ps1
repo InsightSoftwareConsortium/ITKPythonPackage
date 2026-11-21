@@ -4,7 +4,7 @@
 # This is the Windows PowerShell equivalent of make_tarballs.sh.
 # POSIX shell is not supported for this workflow on Windows.
 #
-# This script builds the ITK core cache only — it has no knowledge of
+# This script builds the ITK core cache only; it has no knowledge of
 # external modules. Module-specific flags (--module-source-dir,
 # --module-dependencies-root-dir, --itk-module-deps, --lib-paths) are
 # intentionally absent; they belong only in the module wheel build script.
@@ -48,7 +48,7 @@ if (-not $pyenvs -or $pyenvs.Count -eq 0) {
 }
 echo "Building for python environments: $($pyenvs -join ', ')"
 
-# Resolve ITK_GIT_TAG — loud warning if unset, matching bash behavior
+# Resolve ITK_GIT_TAG, with a loud warning if unset, matching bash behavior
 $DEFAULT_ITK_GIT_TAG = "main"
 if (-not $env:ITK_GIT_TAG) {
   $warningLine = "===== WARNING: ITK_GIT_TAG not set, so defaulting to $DEFAULT_ITK_GIT_TAG"

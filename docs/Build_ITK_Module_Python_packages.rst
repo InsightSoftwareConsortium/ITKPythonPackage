@@ -86,11 +86,11 @@ Requires Docker. Produces ``manylinux_2_28`` portable wheels.
 .. code-block:: bash
 
    cd ~/ITKMyModule
-   # First build — downloads ITK cache, then builds module wheels
+   # First build: downloads ITK cache, then builds module wheels
    export MODULE_SRC_DIRECTORY=/path/to/module
    bash ITKPythonPackage/scripts/dockcross-manylinux-download-cache-and-build-module-wheels.sh cp311
 
-   # Subsequent builds — reuses the downloaded cache
+   # Subsequent builds: reuses the downloaded cache
    bash ITKPythonPackage/scripts/dockcross-manylinux-build-module-wheels.sh cp311
 
 Omit the Python version argument to build all supported versions (cp311):

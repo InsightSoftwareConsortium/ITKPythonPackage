@@ -108,7 +108,7 @@ def test_fixup_wheel_skips_wheel_with_no_binaries(tmp_path, macos_builder):
         tmp_path / "itk-6.0.0-py3-none-any.whl", {"itk/__init__.py": ""}
     )
     # fixup_wheel calls remove_apple_double_files first, which itself
-    # calls echo_check_call — patch it out so the assertion below is
+    # calls echo_check_call; patch it out so the assertion below is
     # about delocate and nothing else.
     with (
         patch.object(macos_builder, "remove_apple_double_files"),
@@ -366,7 +366,7 @@ def _checking_echo(failing_tool: str):
     """A stand-in with build_environment.echo_check_call's semantics.
 
     It returns a non-zero status for *failing_tool* and raises only when
-    the caller forwarded ``check=True`` — so a call site that omits the
+    the caller forwarded ``check=True``, so a call site that omits the
     flag sees the failure silently, exactly as production would.
     """
 

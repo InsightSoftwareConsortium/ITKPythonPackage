@@ -42,10 +42,10 @@ def remotemodulebuildandtestaction() -> dict[str, str]:
         PEP 440 version string for ITK packages.
         GitHub Action source: ``inputs.itk-wheel-tag``.
         Default ``"auto"`` triggers automatic version computation.
-    ITKPYTHONPACKAGE_TAG : str  (not used — GitHub Actions scripts only)
+    ITKPYTHONPACKAGE_TAG : str  (not used; GitHub Actions scripts only)
         Git tag for ITKPythonPackage checkout.
         GitHub Action source: ``inputs.itk-python-package-tag``.
-    ITKPYTHONPACKAGE_ORG : str  (not used — GitHub Actions scripts only)
+    ITKPYTHONPACKAGE_ORG : str  (not used; GitHub Actions scripts only)
         GitHub organization owning ITKPythonPackage.
         GitHub Action source: ``inputs.itk-python-package-org``.
     ITK_MODULE_PREQ : str  (active)
@@ -54,13 +54,13 @@ def remotemodulebuildandtestaction() -> dict[str, str]:
     CMAKE_OPTIONS : str  (active)
         Extra options forwarded to CMake.
         GitHub Action source: ``inputs.cmake-options``.
-    MANYLINUX_PLATFORM : str  (not used — computed internally)
+    MANYLINUX_PLATFORM : str  (not used; computed internally)
         Full manylinux platform string (e.g. ``"manylinux_2_28-x64"``).
         GitHub Action source: ``matrix.manylinux-platform``.
     MANYLINUX_VERSION : str  (active)
         Manylinux specification (e.g. ``"_2_28"``).  Historically
         computed as the first part of ``MANYLINUX_PLATFORM``.
-    TARGET_ARCH : str  (not used — computed internally)
+    TARGET_ARCH : str  (not used; computed internally)
         Target architecture (e.g. ``"x64"``).  Historically computed
         as the second part of ``MANYLINUX_PLATFORM``.
     MACOSX_DEPLOYMENT_TARGET : str  (active)

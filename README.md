@@ -319,7 +319,7 @@ If you have a local ITK with custom patches, a bug fix not yet released, or you'
 
 Pass `--itk-source-dir` pointing to your local ITK clone. `build_wheels.py` will build ITK from that source instead of re-cloning.
 
-#### manylinux — building ITK from source
+#### manylinux: building ITK from source
 
 manylinux wheels are built inside the manylinux container, which
 `dockcross-manylinux-build-wheels.sh` starts before it runs
@@ -353,7 +353,7 @@ Key environment variables:
 | `IMAGE_TAG`           | `20260203-3dfb3ff` (dockcross) or `2025.08.12-1` (quay manylinux) | Container image tag; the default depends on `CONTAINER_SOURCE` |
 | `CONTAINER_DNS`       | unset (container runtime default)                                 | DNS servers for the build container, space- or comma-separated |
 
-#### Linux/macOS/Windows — building ITK from source
+#### Linux/macOS/Windows: building ITK from source
 
 Use `build_wheels.py` directly with `--itk-source-dir`:
 

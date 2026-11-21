@@ -1,4 +1,4 @@
-# Root-level pyproject.toml — developer tooling configuration only.
+# Root-level pyproject.toml: developer tooling configuration only.
 # This file configures linters/formatters for the ITKPythonPackage build scripts.
 # It does NOT define a Python package; wheel-specific pyproject.toml files are
 # generated dynamically by scripts/pyproject_configure.py into build subdirectories.

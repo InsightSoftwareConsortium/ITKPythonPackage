@@ -68,7 +68,7 @@ Four things are being asked for: a local macOS build, custom compiler
 flags, a non-default deployment target, and ITK source from an unmerged
 pull request. Do them in this order.
 
-**Step 1 — get the PR source.** The build script runs `git fetch --tags
+**Step 1: get the PR source.** The build script runs `git fetch --tags
 origin` and then `git checkout <tag>`. It does **not** fetch
 `pull/N/head` refs, so a pull request ref must be fetched by hand first.
 
@@ -79,7 +79,7 @@ git -C "$ITK_SRC" checkout pr-6875
 git -C "$ITK_SRC" rev-parse --short HEAD     # record this
 ```
 
-**Step 2 — build.** Positional arguments after the flags are passed
+**Step 2: build.** Positional arguments after the flags are passed
 through to CMake verbatim.
 
 ```bash
@@ -95,7 +95,7 @@ pixi run -e macosx-py311 python scripts/build_wheels.py \
     -DCMAKE_CXX_FLAGS:STRING="-mtune=native -march=native"
 ```
 
-**Step 3 — verify you built what was asked for.** A failed checkout in
+**Step 3: verify you built what was asked for.** A failed checkout in
 step 1 prints a warning and keeps whatever commit was already there, so
 confirm the source and the resulting tag rather than assuming:
 
@@ -192,11 +192,11 @@ not a real flag; do not invent one.
 | `--module-dependencies-root-dir PATH` | Where module deps are cloned      |
 | `--itk-module-deps SPEC`              | `gitorg/repo@tag:gitorg/repo@tag` |
 
-**Toggles** — each has a `--no-` counterpart:
+**Toggles**: each has a `--no-` counterpart:
 `--build-itk-tarball-cache`, `--use-ccache`, `--dead-strip` (Linux and
 macOS, on by default), `--skip-itk-build`, `--skip-itk-wheel-build`. Also `--cleanup`.
 
-**Positional** — CMake definitions after the flags go to CMake unchanged,
+**Positional**: CMake definitions after the flags go to CMake unchanged,
 for example `-DBUILD_SHARED_LIBS:BOOL=OFF`. These override defaults.
 Anything that is not a `-D<KEY>=<VALUE>` definition is refused.
 

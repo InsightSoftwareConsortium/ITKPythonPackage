@@ -18,7 +18,7 @@ def update_module_itk_deps(pyproject_path: Path, itk_version: str) -> bool:
     The rewrite is idempotent: applying it twice yields the same file
     as applying it once.
 
-    .. note:: Strategy 1 (build-time rewrite) — interim solution.
+    .. note:: Strategy 1 (build-time rewrite): interim solution.
 
        This approach rewrites the module's pyproject.toml on disk,
        builds the wheel, then restores the original. It works today
@@ -34,7 +34,7 @@ def update_module_itk_deps(pyproject_path: Path, itk_version: str) -> bool:
           ``tool.scikit-build.metadata.<field>.provider``).
 
        2. The provider inspects the build environment at wheel-build
-          time to discover the ITK version — either from the
+          time to discover the ITK version, either from the
           ``ITK_PACKAGE_VERSION`` env var (set by this build system),
           from ``ITKConfig.cmake`` on ``CMAKE_PREFIX_PATH``, or from
           an already-installed ``itk-core`` package.
@@ -98,7 +98,7 @@ def update_module_itk_deps(pyproject_path: Path, itk_version: str) -> bool:
     # Only rewrite ITK *base* sub-packages whose versions are tied to
     # the ITK release.  Remote module cross-deps (e.g.
     # itk-meshtopolydata == 0.12.*) are versioned independently and
-    # must NOT be rewritten — flag them for manual review instead.
+    # must NOT be rewritten; flag them for manual review instead.
     _ITK_BASE_PACKAGES = (
         "itk-core",
         "itk-numerics",
@@ -130,7 +130,7 @@ def update_module_itk_deps(pyproject_path: Path, itk_version: str) -> bool:
         if pkg not in _ITK_BASE_PACKAGES:
             print(
                 f"  WARNING: {pyproject_path.name} pins remote module "
-                f"cross-dep {m.group(0)} — review manually"
+                f"cross-dep {m.group(0)}: review manually"
             )
 
     # Pin >= MAJOR.MINOR.0b1 of the ITK linked against (b1 so the series' pre-releases
