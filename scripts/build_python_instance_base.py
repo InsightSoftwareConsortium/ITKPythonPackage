@@ -265,7 +265,6 @@ class BuildPythonInstanceBase(ABC):
 
         self.cleanup = cleanup
         self.build_itk_tarball_cache = build_itk_tarball_cache
-        self.cmake_options = cmake_options
         self.windows_extra_lib_paths = windows_extra_lib_paths
         self.dist_dir = dist_dir
         # Needed for processing remote modules and their dependencies
