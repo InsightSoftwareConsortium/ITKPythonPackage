@@ -1,6 +1,7 @@
 """Build tools must resolve inside the target pixi environment."""
 
 import subprocess
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 import pytest
@@ -10,11 +11,18 @@ from wheel_builder_utils import (
 )
 
 
-def test_resolves_inside_target_env_not_launching_path(monkeypatch):
+def test_resolves_inside_target_env_not_launching_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("PIXI_ENVIRONMENT_NAME", "default")
     seen = {}
 
-    def fake_run(cmd, cwd=None, env=None, check=False):
+    def fake_run(
+        cmd: Sequence[str | Path],
+        cwd: Path | None = None,
+        env: Mapping[str, str] | None = None,
+        check: bool = False,
+    ) -> subprocess.CompletedProcess[str]:
         seen["cmd"] = [str(part) for part in cmd]
         return subprocess.CompletedProcess(
             cmd, 0, "/envs/windows-py311/bin/doxygen\n", ""
@@ -29,13 +37,17 @@ def test_resolves_inside_target_env_not_launching_path(monkeypatch):
     assert seen["cmd"][:4] == [str(Path("/bin/pixi")), "run", "-e", "windows-py311"]
 
 
-def test_uses_current_env_when_already_inside_it(monkeypatch):
+def test_uses_current_env_when_already_inside_it(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("PIXI_ENVIRONMENT_NAME", "windows-py311")
     monkeypatch.setattr(
         "wheel_builder_utils.which", lambda _: Path("/envs/windows-py311/bin/cmake")
     )
 
-    def explode(*_args, **_kwargs):  # nesting pixi run would overflow cmd.exe
+    def explode(
+        *_args: object, **_kwargs: object
+    ) -> None:  # nesting pixi run would overflow cmd.exe
         msg = "must not nest a second pixi run"
         raise AssertionError(msg)
 
@@ -46,7 +58,7 @@ def test_uses_current_env_when_already_inside_it(monkeypatch):
     ) == Path("/envs/windows-py311/bin/cmake")
 
 
-def test_missing_tool_in_target_env_raises(monkeypatch):
+def test_missing_tool_in_target_env_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("PIXI_ENVIRONMENT_NAME", "default")
     monkeypatch.setattr(
         "wheel_builder_utils.run_command",
@@ -58,7 +70,9 @@ def test_missing_tool_in_target_env_raises(monkeypatch):
         which_required_in_pixi_env("doxygen", Path("/bin/pixi"), "windows-py311")
 
 
-def test_wrong_environment_aborts_with_the_env_name(monkeypatch, capsys):
+def test_wrong_environment_aborts_with_the_env_name(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     monkeypatch.setenv("PIXI_ENVIRONMENT_NAME", "default")
     with pytest.raises(SystemExit) as excinfo:
         abort_if_wrong_pixi_environment("windows-py311")
@@ -68,29 +82,33 @@ def test_wrong_environment_aborts_with_the_env_name(monkeypatch, capsys):
     assert "pixi run -e windows-py311" in message
 
 
-def test_no_pixi_environment_also_aborts(monkeypatch):
+def test_no_pixi_environment_also_aborts(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("PIXI_ENVIRONMENT_NAME", raising=False)
     with pytest.raises(SystemExit):
         abort_if_wrong_pixi_environment("linux-py311")
 
 
-def test_correct_environment_is_silent(monkeypatch):
+def test_correct_environment_is_silent(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("PIXI_ENVIRONMENT_NAME", "linux-py311")
     abort_if_wrong_pixi_environment("linux-py311")
 
 
-def test_hostsystem_opts_out_of_the_environment_guard(monkeypatch):
+def test_hostsystem_opts_out_of_the_environment_guard(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("PIXI_ENVIRONMENT_NAME", "hostsystem")
     abort_if_wrong_pixi_environment("macosx-py311")
 
 
-def test_hostsystem_resolves_tools_from_host_path(monkeypatch):
+def test_hostsystem_resolves_tools_from_host_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("PIXI_ENVIRONMENT_NAME", "hostsystem")
     monkeypatch.setattr(
         "wheel_builder_utils.which", lambda _: Path("/usr/local/bin/doxygen")
     )
 
-    def explode(*_args, **_kwargs):
+    def explode(*_args: object, **_kwargs: object) -> None:
         msg = "hostsystem must not probe a pixi environment"
         raise AssertionError(msg)
 
@@ -101,7 +119,9 @@ def test_hostsystem_resolves_tools_from_host_path(monkeypatch):
     ) == Path("/usr/local/bin/doxygen")
 
 
-def test_wrong_environment_message_mentions_hostsystem(monkeypatch):
+def test_wrong_environment_message_mentions_hostsystem(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("PIXI_ENVIRONMENT_NAME", "default")
     with pytest.raises(SystemExit) as excinfo:
         abort_if_wrong_pixi_environment("macosx-py311")
