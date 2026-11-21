@@ -22,9 +22,7 @@ def test_build_dir_suffix_is_the_documented_token_per_platform():
     expected = {
         (OS.LINUX, Arch.X86_64): "x64",
         (OS.LINUX, Arch.AARCH64): "aarch64",
-        (OS.LINUX, Arch.I686): "x86",
         (OS.DARWIN, Arch.AARCH64): "arm64",
-        (OS.DARWIN, Arch.X86_64): "x86_64",
         (OS.WINDOWS, Arch.X86_64): "x64",
     }
     for (os_name, arch), token in expected.items():

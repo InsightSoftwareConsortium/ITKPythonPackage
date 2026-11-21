@@ -23,7 +23,6 @@ class Arch(Enum):
 
     X86_64 = "x86_64"
     AARCH64 = "aarch64"
-    I686 = "i686"
 
 
 class OS(Enum):
@@ -40,8 +39,6 @@ _MACHINE_ALIASES: dict[str, Arch] = {
     "x64": Arch.X86_64,
     "aarch64": Arch.AARCH64,
     "arm64": Arch.AARCH64,
-    "i686": Arch.I686,
-    "i386": Arch.I686,
 }
 
 # (arch, manylinux_version) -> container image tag
@@ -56,9 +53,7 @@ _MANYLINUX_IMAGE_TAGS: dict[tuple[Arch, str], str] = {
 _PIXI_SUFFIX: dict[tuple[OS, Arch], str] = {
     (OS.LINUX, Arch.X86_64): "x64",
     (OS.LINUX, Arch.AARCH64): "aarch64",
-    (OS.LINUX, Arch.I686): "x86",
     (OS.DARWIN, Arch.AARCH64): "arm64",
-    (OS.DARWIN, Arch.X86_64): "x86_64",
     (OS.WINDOWS, Arch.X86_64): "x64",
 }
 

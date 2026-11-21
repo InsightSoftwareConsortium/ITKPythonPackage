@@ -76,7 +76,7 @@ def test_unknown_manylinux_version_raises():
 
 def test_unsupported_os_arch_combination_raises():
     with pytest.raises(ValueError, match="Unsupported combination"):
-        TargetPlatform(OS.DARWIN, Arch.I686)
+        TargetPlatform(OS.DARWIN, Arch.X86_64)
 
 
 def test_manylinux_on_non_linux_raises():

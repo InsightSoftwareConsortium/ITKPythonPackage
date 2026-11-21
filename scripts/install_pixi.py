@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 import os
+import platform
 from pathlib import Path
 
-from target_platform import OS, TargetPlatform
+from target_platform import OS, os_from_system
 from wheel_builder_utils import run_commandLine_subprocess
 
 
@@ -115,7 +116,10 @@ def install_pixi_tools(platform_env: str = "default"):
         Pixi environment name to install (default ``'default'``).
     """
     _ipp_dir_path: Path = Path(__file__).resolve().parent.parent
-    os_name = TargetPlatform.detect(os.environ, manylinux_version="").os_name
+    os_name = os_from_system(platform.system())
+    if os_name is None:
+        msg = f"Unsupported operating system {platform.system()!r}"
+        raise ValueError(msg)
     binary_ext: str = ".exe" if os_name is OS.WINDOWS else ""
 
     pixi_home: Path = (
