@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 
 from compiler_cache import use_compiler_cache
 from target_platform import (
-    Arch,
     TargetPlatform,
     manylinux_version_from_platform_env,
 )
@@ -200,6 +199,11 @@ def itk_commit_time(itk_source_dir: Path, itk_git_tag: str) -> str | None:
         env=env,
     )
     return result.stdout if result.returncode == 0 else None
+
+
+def in_manylinux_container(env: "Mapping[str, str]") -> bool:
+    """True inside a dockcross image (CROSS_TRIPLE) or a pypa one (AUDITWHEEL_PLAT)."""
+    return bool(env.get("CROSS_TRIPLE") or env.get("AUDITWHEEL_PLAT"))
 
 
 def in_pixi_env() -> bool:
@@ -738,10 +742,7 @@ def build_wheels_main() -> None:
             package_env_config["MANYLINUX_IMAGE_NAME"] = image.name
             package_env_config["CONTAINER_SOURCE"] = image.reference
             package_env_config["TARGET_ARCH"] = target.arch.value
-            if (
-                os.environ.get("CROSS_TRIPLE") is None
-                and target.arch is not Arch.AARCH64
-            ):
+            if not in_manylinux_container(os.environ):
                 msg = (
                     f"ERROR: MANYLINUX_VERSION={args.manylinux_version} "
                     f"and TARGET_ARCH={target.arch.value} but not "

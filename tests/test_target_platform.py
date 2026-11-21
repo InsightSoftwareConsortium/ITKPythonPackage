@@ -5,7 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from build_wheels import remotemodulebuildandtestaction
+from build_wheels import in_manylinux_container, remotemodulebuildandtestaction
 from hypothesis import given
 from hypothesis import strategies as st
 from target_platform import (
@@ -237,3 +237,17 @@ def test_pixi_macos_system_requirement_matches_the_deployment_target():
 )
 def test_manylinux_version_is_implied_by_the_platform_env(platform_env, expected):
     assert manylinux_version_from_platform_env(platform_env) == expected
+
+
+@pytest.mark.parametrize(
+    ("env", "inside"),
+    [
+        ({}, False),
+        ({"CROSS_TRIPLE": "x86_64-linux-gnu"}, True),
+        ({"AUDITWHEEL_PLAT": "manylinux_2_28_aarch64"}, True),
+        ({"CROSS_TRIPLE": "", "AUDITWHEEL_PLAT": ""}, False),
+    ],
+)
+def test_both_manylinux_images_count_as_the_container(env, inside):
+    """The aarch64 build uses a pypa image, which has no CROSS_TRIPLE."""
+    assert in_manylinux_container(env) is inside
