@@ -3,6 +3,7 @@ import os
 import re
 import shutil
 import tomllib
+from collections.abc import Iterable
 from pathlib import Path
 
 
@@ -123,6 +124,23 @@ def update_module_itk_deps(pyproject_path: Path, itk_version: str) -> bool:
     return changed
 
 
+def copy_files(
+    sources: Iterable[Path], destination: Path, source_root: Path | None = None
+) -> None:
+    """Copy each regular file in *sources* into *destination*.
+
+    A file keeps its path relative to *source_root*, or only its name
+    when *source_root* is None.
+    """
+    for src in sources:
+        if src.is_file():
+            relative = src.relative_to(source_root) if source_root else Path(src.name)
+            dst = destination / relative
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            with contextlib.suppress(Exception):
+                shutil.copy2(src, dst)
+
+
 def build_module_dependencies(context) -> None:
     """
     Build prerequisite ITK external modules, mirroring the behavior of
@@ -229,31 +247,15 @@ def build_module_dependencies(context) -> None:
         # 1) Top-level include/* -> include/
         dep_include = dependent_module_clone_dir / "include"
         if dep_include.exists():
-            for src in dep_include.rglob("*"):
-                if src.is_file():
-                    rel = src.relative_to(dep_include)
-                    dst = include_dir / rel
-                    dst.parent.mkdir(parents=True, exist_ok=True)
-                    with contextlib.suppress(Exception):
-                        shutil.copy2(src, dst)
+            copy_files(dep_include.rglob("*"), include_dir, dep_include)
 
         # 2) Any */build/*/include/* -> include/
         for sub in dependent_module_clone_dir.rglob("*build*/**/include"):
             if sub.is_dir():
-                for src in sub.rglob("*"):
-                    if src.is_file():
-                        rel = src.relative_to(sub)
-                        dst = include_dir / rel
-                        dst.parent.mkdir(parents=True, exist_ok=True)
-                        with contextlib.suppress(Exception):
-                            shutil.copy2(src, dst)
+                copy_files(sub.rglob("*"), include_dir, sub)
 
         # 3) Wrapping templates (*.in, *.init) -> wrapping/
         dep_wrapping = dependent_module_clone_dir / "wrapping"
         if dep_wrapping.exists():
             for pattern in ("*.in", "*.init"):
-                for src in dep_wrapping.rglob(pattern):
-                    if src.is_file():
-                        dst = wrapping_dir / src.name
-                        with contextlib.suppress(Exception):
-                            shutil.copy2(src, dst)
+                copy_files(dep_wrapping.rglob(pattern), wrapping_dir)

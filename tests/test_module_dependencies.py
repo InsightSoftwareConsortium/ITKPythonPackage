@@ -5,7 +5,11 @@ from pathlib import Path
 import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
-from module_dependencies import build_module_dependencies, update_module_itk_deps
+from module_dependencies import (
+    build_module_dependencies,
+    copy_files,
+    update_module_itk_deps,
+)
 
 METAPACKAGE = """\
 [project]
@@ -144,3 +148,17 @@ def test_dependency_git_failures_stop_the_build(tmp_path, failing):
     context = _DepContext(tmp_path, "InsightSoftwareConsortium/ITKFoo@v1.2.3", failing)
     with pytest.raises(RuntimeError):
         build_module_dependencies(context)
+
+
+def test_copy_files_places_each_file_where_asked(tmp_path):
+    src_root = tmp_path / "src"
+    (src_root / "sub").mkdir(parents=True)
+    (src_root / "a.h").write_text("a")
+    (src_root / "sub" / "b.h").write_text("b")
+    dst_root = tmp_path / "dst"
+    copy_files(src_root.rglob("*"), dst_root, src_root)
+    assert (dst_root / "a.h").read_text() == "a"
+    assert (dst_root / "sub" / "b.h").read_text() == "b"
+    flat = tmp_path / "flat"
+    copy_files(src_root.rglob("*.h"), flat)
+    assert sorted(p.name for p in flat.iterdir()) == ["a.h", "b.h"]
