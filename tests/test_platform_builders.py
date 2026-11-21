@@ -572,3 +572,27 @@ def test_check_wheel_sizes_rejects_a_wheel_over_the_pypi_limit(tmp_path, linux_b
         f.truncate(PYPI_MAX_WHEEL_BYTES + 1)
     with pytest.raises(RuntimeError, match="itk_filtering"):
         linux_builder.check_wheel_sizes(tmp_path)
+
+
+def test_repair_output_dir_picks_the_module_or_main_dist(tmp_path, linux_builder):
+    linux_builder.module_source_dir = tmp_path / "module"
+    assert linux_builder._repair_output_dir(False) == tmp_path / "dist"
+    assert linux_builder._repair_output_dir(True) == tmp_path / "module" / "dist"
+
+
+def test_require_repaired_raises_on_status_or_missing_output(tmp_path, windows_builder):
+    source = tmp_path / "itk_core-6.0.0-cp311-abi3-win_amd64.whl"
+    expected = tmp_path / "dist" / source.name
+    with pytest.raises(
+        RuntimeError,
+        match=r"^delvewheel repair failed for itk_core-6\.0\.0-cp311-abi3-win_amd64"
+        r"\.whl \(exit status 0, expected output shown-here\)$",
+    ):
+        windows_builder._require_repaired(
+            "delvewheel", source, 0, expected, "shown-here"
+        )
+    expected.parent.mkdir()
+    expected.touch()
+    with pytest.raises(RuntimeError, match="exit status 2"):
+        windows_builder._require_repaired("delvewheel", source, 2, expected, "x")
+    windows_builder._require_repaired("delvewheel", source, 0, expected, "x")

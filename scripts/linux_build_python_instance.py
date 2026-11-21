@@ -166,6 +166,7 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
         # Use auditwheel to repair wheels and set manylinux tags
         manylinux_ver = self.package_env_config.get("MANYLINUX_VERSION", "")
         if len(manylinux_ver) > 1:
+            output_dir = self._repair_output_dir(remote_module_wheel)
             cmd = [
                 self.package_env_config["PYTHON_EXECUTABLE"],
                 "-m",
@@ -176,15 +177,7 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
                 "--plat",
                 self.target.wheel_plat_tag,
             ]
-            cmd += [
-                str(filepath),
-                "-w",
-                (
-                    str(self.module_dist_dir())
-                    if remote_module_wheel
-                    else str(self.build_dir_root / "dist")
-                ),
-            ]
+            cmd += [str(filepath), "-w", str(output_dir)]
             # Provide LD_LIBRARY_PATH for oneTBB and common system paths
             extra_lib = str(
                 self.package_env_config["IPP_SUPERBUILD_BINARY_DIR"].parent
@@ -208,23 +201,17 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
             repair_status = self.echo_check_call(cmd, env=env)
 
             filepath_obj = Path(filepath)
-            output_dir = (
-                self.module_dist_dir()
-                if remote_module_wheel
-                else self.build_dir_root / "dist"
-            )
             stem_prefix = "-".join(filepath_obj.stem.split("-")[:-1])
             repaired_wheel = (
                 output_dir / f"{stem_prefix}-{self.target.wheel_plat_tag}.whl"
             )
-
-            if repair_status != 0 or not repaired_wheel.exists():
-                msg = (
-                    f"auditwheel repair failed for {filepath_obj.name} "
-                    f"(exit status {repair_status}, expected output "
-                    f"{repaired_wheel.name})"
-                )
-                raise RuntimeError(msg)
+            self._require_repaired(
+                "auditwheel",
+                filepath_obj,
+                repair_status,
+                repaired_wheel,
+                repaired_wheel.name,
+            )
 
             # Remove the original linux_*.whl now that the repair is verified.
             if (

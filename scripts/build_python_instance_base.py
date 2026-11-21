@@ -578,6 +578,25 @@ class BuildPythonInstanceBase(ABC):
         """Return the remote module's ``dist/`` directory."""
         return self.required_module_source_dir() / "dist"
 
+    def _repair_output_dir(self, remote_module_wheel: bool) -> Path:
+        """Return where a repaired wheel goes: the module's or the main ``dist/``."""
+        return (
+            self.module_dist_dir()
+            if remote_module_wheel
+            else self.build_dir_root / "dist"
+        )
+
+    def _require_repaired(
+        self, tool: str, source: Path, status: int, expected: Path, shown: str
+    ) -> None:
+        """Raise unless *tool* exited 0 and wrote the *expected* wheel."""
+        if status != 0 or not expected.exists():
+            msg = (
+                f"{tool} repair failed for {source.name} "
+                f"(exit status {status}, expected output {shown})"
+            )
+            raise RuntimeError(msg)
+
     def fixup_wheels(self, lib_paths: str = ""):
         """Apply platform-specific fixups to ``itk_core`` wheels for TBB linkage."""
         # TBB library fix-up (applies to itk_core wheel)

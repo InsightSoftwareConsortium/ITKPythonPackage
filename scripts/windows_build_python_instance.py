@@ -62,11 +62,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         print(f"Library paths for fixup: {lib_paths}")
 
         # A repaired module wheel replaces the unrepaired one in the module's dist/.
-        output_dir = (
-            self.module_dist_dir()
-            if remote_module_wheel
-            else self.build_dir_root / "dist"
-        )
+        output_dir = self._repair_output_dir(remote_module_wheel)
         delve_wheel = "delvewheel.exe"
         cmd = [
             str(delve_wheel),
@@ -82,13 +78,13 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         repair_status = self.echo_check_call(cmd)
 
         repaired_wheel = output_dir / Path(filepath).name
-        if repair_status != 0 or not repaired_wheel.exists():
-            msg = (
-                f"delvewheel repair failed for {Path(filepath).name} "
-                f"(exit status {repair_status}, expected output "
-                f"{repaired_wheel})"
-            )
-            raise RuntimeError(msg)
+        self._require_repaired(
+            "delvewheel",
+            Path(filepath),
+            repair_status,
+            repaired_wheel,
+            str(repaired_wheel),
+        )
 
     def build_tarball(self) -> None:
         r"""Create an archive of the ITK Python package build tree (Windows).
