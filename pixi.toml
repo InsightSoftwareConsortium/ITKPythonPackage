@@ -104,7 +104,6 @@ delocate = "*"
 ccache = ">=4.10,<5"
 cxx-compiler = "==1.10.0" # XCode 16.0 before castxml required updates
 c-compiler = "==1.10.0"   # XCode 16.0 before castxml required updates
-#libhwloc = "*" # Needed for tbb
 
 [feature.windows-build]
 platforms = ["win-64"]
@@ -117,23 +116,10 @@ sccache = ">=0.10,<1"
 
 [feature.windows-build.pypi-dependencies]
 delvewheel = "*"
-# windows = "*"
 
 [feature.py311]
 [feature.py311.dependencies]
 python = ">=3.11,<3.12"
-
-#[feature.py312]
-#[feature.py312.dependencies]
-#python = ">=3.12,<3.13"
-#
-#[feature.py313]
-#[feature.py313.dependencies]
-#python = ">=3.13,<3.14"
-#
-#[feature.py314]
-#[feature.py314.dependencies]
-#python = ">=3.14,<3.15"
 
 ########################################
 # Publishing feature (no compilers needed)

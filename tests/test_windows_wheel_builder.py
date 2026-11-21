@@ -1,9 +1,4 @@
-"""Regression tests for the Windows wheel builder's fragile details.
-
-Each test here pins a defect that shipped once: a repaired remote-module
-wheel written to the wrong ``dist/``, and a 7-Zip invocation whose ``-r``
-turned every archive argument into a recursive pattern.
-"""
+"""Tests for where the Windows builder writes repaired wheels and what it archives."""
 
 import zipfile
 from collections.abc import Sequence

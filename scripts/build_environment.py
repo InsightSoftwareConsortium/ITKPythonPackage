@@ -68,11 +68,7 @@ def echo_check_call(
             }
         )
 
-    # When this process is already running inside the requested environment,
-    # a further ``pixi run`` re-prepends that environment's directories to an
-    # already-activated PATH. On Windows each activation adds ~2.4 kB, and the
-    # second one overflows the cmd.exe 8191-character line limit, failing with
-    # "The input line is too long." Running in-process is equivalent here.
+    # A nested pixi run would overflow the cmd.exe line limit on Windows.
     active_env = os.environ.get("PIXI_ENVIRONMENT_NAME")
     already_in_pixi_env = active_env == pixi_env_name
     host_system = active_env == HOST_SYSTEM_ENVIRONMENT_NAME
@@ -85,7 +81,6 @@ def echo_check_call(
             "--",
         ]
 
-    # convert all items to strings (i.e. Path() to str)
     cmd_strs = pixi_run_preamble + [str(c) for c in cmd]
     display_cmd = " ".join(cmd_strs)
     print(f">>Start Running: cd {run_dir} && {display_cmd}")
@@ -154,7 +149,6 @@ def find_unix_exectable_paths(
     # modern CMake with Python3 can infer the library from executable; leave empty
     python_library = ""
 
-    # Update PATH
     venv_bin_path = venv_dir / "bin"
     return (
         str(python_executable),

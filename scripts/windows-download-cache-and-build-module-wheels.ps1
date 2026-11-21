@@ -82,7 +82,7 @@ $MODULE_SRC_DIRECTORY = if ($env:MODULE_SRC_DIRECTORY) {
 echo "MODULE_SRC_DIRECTORY: $MODULE_SRC_DIRECTORY"
 
 $ITK_PACKAGE_VERSION   = $env:ITK_PACKAGE_VERSION
-# For backwards compatibility when the ITK_GIT_TAG was required to match the ITK_PACKAGE_VERSION
+# ITK_GIT_TAG defaults to the package version
 $ITK_GIT_TAG           = if ($env:ITK_GIT_TAG) { $env:ITK_GIT_TAG } else { $ITK_PACKAGE_VERSION }
 $ITKPYTHONPACKAGE_ORG  = if ($env:ITKPYTHONPACKAGE_ORG) { $env:ITKPYTHONPACKAGE_ORG } else { "InsightSoftwareConsortium" }
 $ITKPYTHONPACKAGE_TAG  = if ($env:ITKPYTHONPACKAGE_TAG)  { $env:ITKPYTHONPACKAGE_TAG  } else { "" }
@@ -233,7 +233,6 @@ $buildDirRoot  = $DASHBOARD_BUILD_DIRECTORY
 $itkSourceDir  = "$DASHBOARD_BUILD_DIRECTORY\ITK"
 $moduleDepsDir = "$DASHBOARD_BUILD_DIRECTORY\MDEPS"
 
-# Instead of building a string and using iex, build an argument array
 $buildArgs = @(
   "run", "-e", $platformEnv,
   "python", $buildScript,

@@ -115,10 +115,7 @@ def post_build_cleanup(builder) -> None:
 
 
 def create_posix_tarball(builder) -> None:
-    """Create a compressed tarball of the ITK Python build tree.
-
-    Mirrors the historical scripts/*-build-tarball.sh behavior:
-    - zstd compress with options (-10 -T6 --long=31)
+    """Create a zstd-compressed tarball of the ITK Python build tree.
 
     Warns if directory structure doesn't match expected layout for GitHub Actions.
     """
@@ -134,20 +131,15 @@ def create_posix_tarball(builder) -> None:
     itk_resources_build_dir: Path = builder.build_dir_root
     ipp_source_dir: Path = builder.package_env_config["IPP_SOURCE_DIR"]
 
-    # Validate directory structure and determine tarball strategy
     issues = []
 
-    # Try to use relative paths first
     try:
         rel_build = itk_resources_build_dir.relative_to(itk_packaging_reference_dir)
         rel_ipp = ipp_source_dir.relative_to(itk_packaging_reference_dir)
     except ValueError:
-        # Fall back to absolute paths
         rel_build = itk_resources_build_dir
         rel_ipp = ipp_source_dir
-        itk_packaging_reference_dir = Path(
-            "/"
-        )  # Tar from root when using absolute paths
+        itk_packaging_reference_dir = Path("/")
 
     if itk_resources_build_dir.parent != ipp_source_dir.parent:
         issues.append("Build and source dirs are not siblings")
@@ -157,7 +149,6 @@ def create_posix_tarball(builder) -> None:
             f"Source dir is '{ipp_source_dir.name}', expected 'ITKPythonPackage'"
         )
 
-    # Issue consolidated warning for compatibility issues
     if issues:
         print("\n" + "=" * 70)
         print("WARNING: Tarball will NOT be compatible with GitHub Actions")
@@ -172,7 +163,6 @@ def create_posix_tarball(builder) -> None:
         print("\nTarball will be created for local reuse but may not work in CI/CD.")
         print("=" * 70 + "\n")
 
-    # Build tarball include paths
     tarball_include_paths = [
         str(rel_build),
         str(rel_ipp),
@@ -185,7 +175,6 @@ def create_posix_tarball(builder) -> None:
         print(f"Removing existing zstd tarball {zst_path}")
         zst_path.unlink()
 
-    # Create tarball
     builder.echo_check_call(
         [
             "tar",
@@ -194,15 +183,13 @@ def create_posix_tarball(builder) -> None:
             "-cf",
             str(tar_path),
             "--exclude=*.o",
-            "--exclude=*.whl",  # Do not include built wheels
-            "--exclude=*/dist/*",  # Do not include the dist whl output directory
-            "--exclude=*/wheelbuilds/*",  # Do not include the wheelbuild support directory
-            "--exclude=*/__pycache__/*",  # Do not include __pycache__
-            "--exclude=install_manifest_*.txt",  # Do not include install manifest files
-            "--exclude=._*",  # Exclude mac dot files
-            # Exclude the directory itself, not just its contents: a surviving
-            # empty .git makes git report "not a repository" rather than the
-            # absence a consumer can detect by looking.
+            "--exclude=*.whl",
+            "--exclude=*/dist/*",
+            "--exclude=*/wheelbuilds/*",
+            "--exclude=*/__pycache__/*",
+            "--exclude=install_manifest_*.txt",
+            "--exclude=._*",
+            # The whole directory: an empty .git still makes git error out.
             "--exclude=*/.git",
             "--exclude=*/.idea/*",
             "--exclude=*/.pixi/*",
@@ -216,7 +203,6 @@ def create_posix_tarball(builder) -> None:
         msg = f"tar produced no usable archive at {tar_path}"
         raise RuntimeError(msg)
 
-    # Compress with zstd
     builder.echo_check_call(
         [
             "zstd",

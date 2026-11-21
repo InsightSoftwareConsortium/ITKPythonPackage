@@ -35,7 +35,7 @@
 #   - https://quay.io/organization/pypa (ARM architecture)
 #
 # `ITK_MODULE_PREQ`: Prerequisite ITK modules that must be built before the requested module.
-#   See notes in `dockcross-manylinux-build-module-deps.sh`.
+#   Colon-delimited, for example `<org>/<repo>@<tag>:<org>/<repo>@<tag>`.
 #
 # `ITK_MODULE_NO_CLEANUP`: Option to skip cleanup steps.
 #
@@ -86,7 +86,7 @@ fi
 ITKPYTHONPACKAGE_ORG=${ITKPYTHONPACKAGE_ORG:-InsightSoftwareConsortium}
 ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG:-main}
 
-# For backwards compatibility
+# ITK_GIT_TAG defaults to the package version
 ITK_GIT_TAG=${ITK_GIT_TAG:-${ITK_PACKAGE_VERSION}}
 
 # Required environment variables

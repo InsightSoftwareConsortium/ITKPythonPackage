@@ -62,7 +62,7 @@ if [ -z "${ITK_PACKAGE_VERSION}" ]; then
   exit 1
 fi
 
-# For backwards compatibility when the ITK_GIT_TAG was required to match the ITK_PACKAGE_VERSION
+# ITK_GIT_TAG defaults to the package version
 ITK_GIT_TAG=${ITK_GIT_TAG:=${ITK_PACKAGE_VERSION}}
 
 DASHBOARD_BUILD_DIRECTORY=${DASHBOARD_BUILD_DIRECTORY:=/Users/svc-dashboard/D/P}
@@ -168,5 +168,4 @@ for py_indicator in "$@"; do
     --skip-itk-build \
     --skip-itk-wheel-build \
     ${CMAKE_OPTIONS:+-- ${CMAKE_OPTIONS}}
-  #Let this be automatically selected --macosx-deployment-target 10.7 \
 done

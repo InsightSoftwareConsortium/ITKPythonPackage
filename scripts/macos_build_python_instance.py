@@ -23,9 +23,7 @@ class MacOSBuildPythonInstance(PosixBuildPythonInstance):
             )
             # scikit-build-core reads this, not the CMake variable.
             os.environ["MACOSX_DEPLOYMENT_TARGET"] = macosx_target
-            # sysconfig reports the interpreter's own build target and ignores
-            # MACOSX_DEPLOYMENT_TARGET, so without this the wheel tag would not
-            # match the compiled binaries.
+            # sysconfig ignores MACOSX_DEPLOYMENT_TARGET when it names the wheel tag.
             os.environ["_PYTHON_HOST_PLATFORM"] = (
                 f"macosx-{macosx_target}-{self.target.cmake_osx_arch}"
             )
@@ -63,7 +61,7 @@ class MacOSBuildPythonInstance(PosixBuildPythonInstance):
             print(f"Skipping delocate for {Path(filepath).name}: no compiled binaries")
             return
 
-        # arm64 needs this too: the pixi toolchain links @rpath/libc++ that only exists on the build host.
+        # The pixi toolchain links @rpath/libc++, which exists only on the build host.
         venv_bin_path = self.venv_info_dict.get("venv_bin_path", None)
         if venv_bin_path:
             delocate_listdeps = f"{venv_bin_path}/delocate-listdeps"

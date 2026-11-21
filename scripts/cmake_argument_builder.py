@@ -27,8 +27,8 @@ class CMakeArgumentBuilder:
     >>> builder.getCMakeCommandLineArguments()
     ["-DCMAKE_BUILD_TYPE:STRING='Release'", "-DCMAKE_OSX_ARCHITECTURES:STRING='arm64'"]
     >>> builder.getPythonBuildCommandLineArguments()
-    ['--config-setting=cmake.define.CMAKE_BUILD_TYPE:STRING=Release',
-     '--config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING=arm64']
+    ["--config-setting=cmake.define.CMAKE_BUILD_TYPE:STRING='Release'",
+     "--config-setting=cmake.define.CMAKE_OSX_ARCHITECTURES:STRING='arm64'"]
     """
 
     def __init__(self, initial: Mapping[str, str] | None = None) -> None:

@@ -11,8 +11,6 @@ import re
 import shutil
 import subprocess
 import sys
-
-# from contextlib import contextmanager
 from collections.abc import Sequence
 from functools import wraps
 from os import chdir as os_chdir

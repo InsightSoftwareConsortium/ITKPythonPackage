@@ -88,7 +88,6 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             ``dist/`` directory instead of the main build ``dist/``,
             matching the Linux builder.
         """
-        # Windows fixup_wheel
         lib_paths = lib_paths.strip()
         lib_paths = lib_paths + ";" if lib_paths else ""
         print(f"Library paths for fixup: {lib_paths}")
@@ -125,22 +124,11 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         shutil.rmtree(staging_dir, ignore_errors=True)
 
     def build_tarball(self) -> None:
-        r"""Create an archive of the ITK Python package build tree (Windows).
+        """Archive the ITK source, build tree, and IPP into ``ITKPythonBuilds-windows.zip``.
 
-        Mirrors scripts/windows-build-tarball.ps1 behavior:
-        - Use 7-Zip, when present, to archive the full IPP tree into
-          ITKPythonBuilds-windows.zip at the parent directory of IPP (e.g., C:\P)
-        - Fallback to Python's zip archive creation if 7-Zip is unavailable
-
-        Note: the historical shell script cleared ``IPP/dist`` first, because
-        ``dist`` then lived inside the IPP tree being archived and stale wheels
-        would have been baked into the cache. ``dist`` is now
-        ``<build_dir_root>/dist`` and is *not* one of the archived roots, so
-        clearing it only destroys the wheels this build just produced,
-        repaired and import-tested, while still reporting success.
+        Uses 7-Zip when present and a Python zip of the same content
+        otherwise. ``dist/`` is not archived, so the wheels survive.
         """
-
-        # out_zip = self.build_dir_root / "build" / "ITKPythonBuilds-windows.zip"
         out_zip = self.build_dir_root / "ITKPythonBuilds-windows.zip"
         archive_roots = [
             self.build_dir_root / "ITK",
@@ -148,7 +136,6 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             self.ipp_dir,
         ]
 
-        # 1) Try to use 7-Zip if available
         seven_zip_candidates = [
             Path(r"C:\\7-Zip\\7z.exe"),
             Path(r"C:\\Program Files\\7-Zip\\7z.exe"),
@@ -162,14 +149,12 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                 break
 
         if seven_zip is None:
-            # Try PATH lookup using where/which behavior from shutil
             found = shutil.which("7z.exe") or shutil.which("7z")
             if found:
                 seven_zip = Path(found)
 
         if seven_zip is not None:
-            # No -r: under -r 7-Zip matches names recursively and would sweep nested
-            # build/ trees (a remote module's) into the cache; -xr! stays recursive.
+            # No -r: it would match build/ recursively and sweep in a module's tree.
             cmd = [
                 str(seven_zip),
                 "a",
@@ -182,7 +167,6 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             if return_status == 0:
                 return
 
-        # 2) Fallback: a zip of the same roots and exclusions
         if out_zip.exists():
             with contextlib.suppress(Exception):
                 out_zip.unlink()
@@ -211,19 +195,11 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                 return None
             return 3, int(m.group("minor"))
 
-        # Get the python executable path
         python_exe = Path(self.package_env_config["PYTHON_EXECUTABLE"])
 
-        # For the pixi environment structure:
-        # python.exe is at: <env>/python.exe
-        # Headers are at: <env>/include/
-        # Libraries are at: <env>/libs/
-        env_root = python_exe.parent  # C:/BDR/IPP/.pixi/envs/windows-py311
-
-        venv_bin_path = env_root  # Where python.exe is
+        env_root = python_exe.parent
+        venv_bin_path = env_root
         venv_base_dir = env_root
-
-        # Python development files are directly under env root
         python_include_dir = env_root / "include"
 
         python_version = get_python_version(self.platform_env)
@@ -240,10 +216,10 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         python_sabi_library = env_root / "libs" / f"python{python_major}.lib"
 
         self.venv_info_dict = {
-            "python_include_dir": python_include_dir,  # .../windows-py311/include
-            "python_library": python_library,  # .../windows-py311/libs/python311.lib
-            "python_sabi_library": python_sabi_library,  # .../windows-py311/libs/python3.lib
-            "venv_bin_path": venv_bin_path,  # .../windows-py311
-            "venv_base_dir": venv_base_dir,  # .../windows-py311
-            "python_root_dir": env_root,  # .../windows-py311
+            "python_include_dir": python_include_dir,
+            "python_library": python_library,
+            "python_sabi_library": python_sabi_library,
+            "venv_bin_path": venv_bin_path,
+            "venv_base_dir": venv_base_dir,
+            "python_root_dir": env_root,
         }

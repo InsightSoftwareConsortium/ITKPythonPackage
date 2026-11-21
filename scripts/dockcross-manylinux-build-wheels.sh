@@ -29,7 +29,7 @@ for cand in nerdctl docker podman; do
 done
 echo "FOUND OCI_EXE=$(which "${OCI_EXE}")"
 
-#For backwards compatibility when the ITK_GIT_TAG was required to match the ITK_PACKAGE_VERSION
+# ITK_GIT_TAG defaults to the package version
 ITK_GIT_TAG=${ITK_GIT_TAG:=${ITK_PACKAGE_VERSION:-main}}
 MANYLINUX_VERSION=${MANYLINUX_VERSION:=_2_28}
 if [ -z "${TARGET_ARCH}" ]; then

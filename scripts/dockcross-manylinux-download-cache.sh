@@ -78,7 +78,7 @@ if [[ -z ${unzstd_exe} ]]; then
   exit 255
 fi
 
-# Expect unzstd > v1.3.2, see discussion in `dockcross-manylinux-build-tarball.sh`
+# --long=31 needs unzstd 1.3.2 or newer
 ${unzstd_exe} --version
 
 # -----------------------------------------------------------------------

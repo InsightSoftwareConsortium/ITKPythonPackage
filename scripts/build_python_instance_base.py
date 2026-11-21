@@ -126,12 +126,7 @@ def itk_source_build_configuration(
         "ITK_DEFAULT_THREADER:STRING": "Pool",
         "ITK_WRAP_PYTHON:BOOL": "ON",
         "ITK_WRAP_DOC:BOOL": "ON",
-        # Install the module build files and wrapping infrastructure
-        # so a remote module can be configured against the install
-        # tree (module_itk_dir="install"). Only an ITK that carries
-        # that support honors it; elsewhere CMake reports the
-        # variable as unused and the build is unchanged. Set for every
-        # build so a cached build tree can be installed later.
+        # Set for every build so a cached tree can later be installed for module_itk_dir="install".
         "ITK_INSTALL_WRAPPING_DEVELOPMENT_FILES:BOOL": "ON",
         "DOXYGEN_EXECUTABLE:FILEPATH": f"{package_env_config['DOXYGEN_EXECUTABLE']}",
         "Module_ITKTBB:BOOL": package_env_config["USE_TBB"],
@@ -251,14 +246,7 @@ class BuildPythonInstanceBase(ABC):
         self.target: TargetPlatform = TargetPlatform.detect(self.package_env_config)
 
         # declare this dict before self.prepare_build_env() or dict will be empty in later functions
-        self.venv_info_dict: dict[str, Any] = {
-            # Filled in for each platform and each pyenvs
-            # "python_executable": None,
-            # "python_include_dir": None,
-            # "python_library": None,
-            # "venv_bin_path": None,
-            # "venv_base_dir": None,
-        }
+        self.venv_info_dict: dict[str, Any] = {}
 
         with (IPP_BuildWheelsSupport_DIR / "WHEEL_NAMES.txt").open(
             encoding="utf-8"
@@ -351,9 +339,7 @@ class BuildPythonInstanceBase(ABC):
 
     def update_venv_itk_build_configurations(self) -> None:
         """Set ``Python3_ROOT_DIR`` in ITK build configurations from venv info."""
-        # Python3_EXECUTABLE, Python3_INCLUDE_DIR, and Python3_LIBRARY are validated
-        # and resolved by find_package(Python3) in cmake/ITKPythonPackage_SuperBuild.cmake
-        # when not already defined. Python3_ROOT_DIR is set here to guide that search.
+        # Guides ITK's find_package(Python3) to the build environment's interpreter.
         self.cmake_itk_source_build_configurations.set(
             "Python3_ROOT_DIR:PATH", f"{self.venv_info_dict['python_root_dir']}"
         )
@@ -404,10 +390,7 @@ class BuildPythonInstanceBase(ABC):
             )
 
         if self.module_source_dir is not None:
-            # A module built against an *installed* ITK needs the install
-            # tree to exist first. The step is registered (or recorded as
-            # skipped) only when a module is being built, since nothing else
-            # consumes the install tree.
+            # Only a module build consumes the install tree.
             if self.module_itk_dir == "install":
                 python_package_build_steps["06_install_wrapped_itk_cplusplus"] = (
                     self.install_wrapped_itk_cplusplus
@@ -521,13 +504,8 @@ class BuildPythonInstanceBase(ABC):
 
     def build_superbuild_support_components(self):
         """Configure and build the superbuild support components (ITK source, TBB)."""
-        # -----------------------------------------------------------------------
-        # Build required components (optional local ITK source, TBB builds) used to populate the archive cache
-
-        # Build up definitions using the builder
         cmake_superbuild_argumets = CMakeArgumentBuilder()
         cmake_superbuild_argumets.update(self.cmake_compiler_configurations.items())
-        # Add superbuild-specific flags
         cmake_superbuild_argumets.update(
             {
                 "ITKPythonPackage_USE_TBB:BOOL": self.package_env_config["USE_TBB"],
@@ -535,7 +513,7 @@ class BuildPythonInstanceBase(ABC):
                 "ITK_GIT_TAG:STRING": f"{self.package_env_config['ITK_GIT_TAG']}",
             }
         )
-        # Start from any platform/user-provided defaults
+        # Command-line definitions go last so they override the defaults above.
         cmake_superbuild_argumets.update(self.cmake_cmdline_definitions.items())
 
         cmd = [
@@ -843,7 +821,6 @@ class BuildPythonInstanceBase(ABC):
                 if not deps_rewritten:
                     pyproject_orig.unlink()
 
-        # Ensure venv tools are first in PATH
         py_exe = str(self.package_env_config["PYTHON_EXECUTABLE"])  # Python3_EXECUTABLE
 
         # Compute Python include directory (Python3_INCLUDE_DIR)

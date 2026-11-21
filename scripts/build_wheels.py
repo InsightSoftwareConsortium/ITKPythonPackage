@@ -34,7 +34,7 @@ def remotemodulebuildandtestaction() -> dict[str, str]:
     ``ITKRemoteModuleBuildTestPackageAction`` GitHub Action.  Variables
     marked *active* are read from the environment with a default
     fallback; those marked *not used* are documented here for
-    cross-reference but are no longer consumed at runtime.
+    cross-reference and are not read by this script.
 
     Environment Variables
     ---------------------
@@ -58,11 +58,9 @@ def remotemodulebuildandtestaction() -> dict[str, str]:
         Full manylinux platform string (e.g. ``"manylinux_2_28-x64"``).
         GitHub Action source: ``matrix.manylinux-platform``.
     MANYLINUX_VERSION : str  (active)
-        Manylinux specification (e.g. ``"_2_28"``).  Historically
-        computed as the first part of ``MANYLINUX_PLATFORM``.
+        Manylinux specification (e.g. ``"_2_28"``).
     TARGET_ARCH : str  (not used; computed internally)
-        Target architecture (e.g. ``"x64"``).  Historically computed
-        as the second part of ``MANYLINUX_PLATFORM``.
+        Target architecture (e.g. ``"x64"``).
     MACOSX_DEPLOYMENT_TARGET : str  (active)
         Minimum macOS version for wheel compatibility.
         GitHub Action source: ``inputs.macosx-deployment-target``.
@@ -94,10 +92,7 @@ def itk_git_env(itk_source_dir: Path) -> dict[str, str]:
 def sync_itk_source(itk_source_dir: Path, itk_git_tag: str) -> str:
     """Bring the ITK source tree to *itk_git_tag* and return the revision in use."""
     git_env = itk_git_env(itk_source_dir)
-    # A tree restored from a build cache has no usable repository: the cache
-    # excludes .git contents but keeps the directory, so ask git rather than
-    # testing the path. Its sources already match the prebuilt binaries, so
-    # there is nothing to fetch.
+    # A cache-restored tree keeps an empty .git, so ask git; its sources already match the binaries.
     itk_source_is_repository = (
         run_commandLine_subprocess(
             ["git", "rev-parse", "--git-dir"],
@@ -371,8 +366,8 @@ def build_wheels_main() -> None:
         default=remote_module_build_dict["ITK_MODULE_PREQ"],
         help="Colon-delimited list of a remote modules dependencies.\n"
         "'gitorg/repo@tag:gitorg/repo@tag:gitorg/repo@tag'\n"
-        "These are set in ITKRemoteModuleBuildTestPackageAction:itk-module-deps github actions."
-        "and were historically set as an environment variable ITK_MODULE_PREQ.",
+        "These are set in ITKRemoteModuleBuildTestPackageAction:itk-module-deps github actions.\n"
+        "The default comes from the ITK_MODULE_PREQ environment variable.",
     )
 
     parser.add_argument(
@@ -423,7 +418,6 @@ def build_wheels_main() -> None:
         """,
     )
 
-    # set the default build_dir_root to a very short path on Windows to avoid path too long errors
     default_itk_source_dir = (
         ipp_dir.parent / "ITKPythonPackage-build" / "ITK"
         if os_name != "windows"
@@ -562,23 +556,18 @@ def build_wheels_main() -> None:
 
     abort_if_wrong_pixi_environment(args.platform_env)
 
-    # Dependencies are cloned here. A caller that names module dependencies but
-    # leaves this empty would otherwise reach the clone step with None, so
-    # derive it from the build root rather than failing there.
+    # Never None, so a build naming module dependencies always has a clone root.
     args.module_dependencies_root_dir = module_dependencies_root(
         args.build_dir_root, args.module_dependencies_root_dir
     )
 
-    # Historical dist_dir name for compatibility with ITKRemoteModuleBuildTestPackageAction
     _ipp_dir_path: Path = Path(__file__).resolve().parent.parent
     dist_dir: Path = Path(args.build_dir_root) / "dist"
 
-    # Platform detection
     binary_ext: str = ".exe" if os_name == "windows" else ""
     env_bin_dir: str = "Scripts" if os_name == "windows" else "bin"
 
     env_path = _ipp_dir_path / ".pixi" / "envs" / args.platform_env
-    # multiple locations the executables can be at on Windows
     env_subdirs = (
         [env_bin_dir, "Library/bin"] if os_name == "windows" else [env_bin_dir]
     )
@@ -607,8 +596,6 @@ def build_wheels_main() -> None:
 
     package_env_config["OS_NAME"] = os_name
     package_env_config["ARCH"] = target.pixi_suffix
-
-    # ITK repo handling
 
     if not Path(args.itk_source_dir).exists():
         args.itk_source_dir.parent.mkdir(parents=True, exist_ok=True)
@@ -653,8 +640,6 @@ def build_wheels_main() -> None:
     if link_options:
         os.environ["_LINK_"] = link_options
 
-    # ITKPythonPackage origin/tag
-    # ITK_MODULE_NO_CLEANUP, USE_CCACHE
     module_no_cleanup = os.environ.get("ITK_MODULE_NO_CLEANUP", "1")
     use_ccache = "ON" if use_compiler_cache(args.use_ccache, os.environ) else "OFF"
 
@@ -684,14 +669,8 @@ def build_wheels_main() -> None:
             tool_name, pixi_executable, args.platform_env
         )
 
-    # reliably find the python interpreter in pixi
     if os.environ.get("PIXI_ENVIRONMENT_NAME") == args.platform_env:
-        # Already running inside the requested environment: the entry points
-        # invoke this script via ``pixi run -e <env> python build_wheels.py``,
-        # so sys.executable is the interpreter being probed for. Nesting a
-        # second ``pixi run`` re-prepends the environment's directories to an
-        # already-activated PATH, which on Windows overflows the cmd.exe
-        # 8191-character line limit ("The input line is too long").
+        # A nested pixi run would overflow the cmd.exe line limit on Windows.
         package_env_config["PYTHON_EXECUTABLE"] = sys.executable
     else:
         cmd = [
@@ -716,7 +695,6 @@ def build_wheels_main() -> None:
     package_env_config["OCI_EXE"] = oci_exe
     del oci_exe
 
-    # -------------
     platform = str(package_env_config["OS_NAME"]).lower()
     builder_cls: type[BuildPythonInstanceBase]
     if platform == "windows":
@@ -788,7 +766,6 @@ def build_wheels_main() -> None:
     print("=" * 80)
     print("=" * 80)
     print(f"Building wheels for platform: {args.platform_env}")
-    # Pass helper function callables and dist dir to avoid circular imports
     builder = builder_cls(
         platform_env=args.platform_env,
         build_dir_root=args.build_dir_root,
