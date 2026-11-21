@@ -744,10 +744,7 @@ class BuildPythonInstanceBase(ABC):
         itk_binary_build_name = (
             self.build_dir_root
             / "build"
-            / (
-                f"ITK-{self.platform_env}-{self.platform_env}"
-                f"_{self.target.build_dir_suffix}"
-            )
+            / (f"ITK-{self.platform_env}-{self.platform_env}_{self.target.pixi_suffix}")
         )
         self.cmake_itk_source_build_configurations.set(
             "ITK_BINARY_DIR:PATH", itk_binary_build_name.as_posix()

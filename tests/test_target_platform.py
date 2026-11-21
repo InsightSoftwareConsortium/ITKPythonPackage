@@ -62,7 +62,6 @@ def test_translations(key):
     plat = TargetPlatform(os_name=os_name, arch=arch, manylinux_version=manylinux)
     assert plat.pixi_suffix == pixi
     assert plat.wheel_plat_tag == tag
-    assert plat.build_dir_suffix == pixi
     if triple is not None:
         assert plat.linux_triple == triple
     if osx is not None:

@@ -135,11 +135,6 @@ class TargetPlatform:
         return _PIXI_SUFFIX[(self.os_name, self.arch)]
 
     @property
-    def build_dir_suffix(self) -> str:
-        """Trailing token of ``ITK-<env>-<pixi>_<arch>`` build dirs."""
-        return self.pixi_suffix
-
-    @property
     def linux_triple(self) -> str:
         if self.os_name is not OS.LINUX:
             msg = "linux_triple is only defined on linux"

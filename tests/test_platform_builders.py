@@ -12,12 +12,10 @@ from linux_build_python_instance import LinuxBuildPythonInstance
 from target_platform import OS, Arch, TargetPlatform, host_arch
 
 
-def test_build_dir_suffix_is_the_documented_token_per_platform():
+def test_pixi_suffix_is_the_documented_build_dir_token_per_platform():
     """Spell out the ``_{arch}`` token of ``ITK-<env>-<pixi>_<arch>``.
 
-    Literal expectations, so a change to the mapping fails here. Comparing
-    ``build_dir_suffix`` against ``pixi_suffix`` would not: the former is
-    defined as ``return self.pixi_suffix``.
+    Literal expectations, so a change to the mapping fails here.
     """
     expected = {
         (OS.LINUX, Arch.X86_64): "x64",
@@ -26,7 +24,7 @@ def test_build_dir_suffix_is_the_documented_token_per_platform():
         (OS.WINDOWS, Arch.X86_64): "x64",
     }
     for (os_name, arch), token in expected.items():
-        assert TargetPlatform(os_name, arch).build_dir_suffix == token
+        assert TargetPlatform(os_name, arch).pixi_suffix == token
 
 
 @pytest.mark.parametrize(

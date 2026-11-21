@@ -229,17 +229,6 @@ def get_wheel_names(build_wheels_support_dir: str | Path):
         return [wheel_name.strip() for wheel_name in _file]
 
 
-def get_py_api() -> str:
-    """Return the pinned stable-ABI tag.
-
-    Returns
-    -------
-    str
-        ``STABLE_ABI_TAG``.
-    """
-    return STABLE_ABI_TAG
-
-
 def get_wheel_dependencies(
     script_dir: str | Path, version: str, wheel_names: list[str]
 ):
@@ -314,7 +303,7 @@ def build_base_pyproject_parameters(
         "PYPROJECT_NAME": r"itk",
         "PYPROJECT_VERSION": itk_package_version,
         "PYPROJECT_CMAKE_ARGS": r"",
-        "PYPROJECT_PY_API": get_py_api(),
+        "PYPROJECT_PY_API": STABLE_ABI_TAG,
         "PYPROJECT_PLATLIB": r"true",
         "ITK_SOURCE_DIR": package_env_config["ITK_SOURCE_DIR"],
         "ITK_SOURCE_README": itk_source_readme,

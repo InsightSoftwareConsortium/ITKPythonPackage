@@ -6,18 +6,21 @@ from unittest.mock import patch
 
 import pytest
 from build_python_instance_base import verify_stable_abi_wheels
-from pyproject_configure import STABLE_ABI_TAG, get_py_api
+from pyproject_configure import STABLE_ABI_TAG, build_base_pyproject_parameters
 
 
 def test_stable_abi_tag_is_cp311():
     assert STABLE_ABI_TAG == "cp311"
 
 
-def test_get_py_api_ignores_the_running_interpreter():
+def test_py_api_ignores_the_running_interpreter():
     """One cp311-abi3 wheel per platform, whatever python drives the build."""
     fake = SimpleNamespace(major=3, minor=14)
     with patch.object(sys, "version_info", fake):
-        assert get_py_api() == "cp311"
+        params = build_base_pyproject_parameters(
+            {"ITK_SOURCE_DIR": "ITK"}, "pyproject_configure.py", "6.0.0"
+        )
+    assert params["PYPROJECT_PY_API"] == "cp311"
 
 
 def test_a_cp312_abi3_wheel_is_rejected(tmp_path):
