@@ -218,6 +218,7 @@ module = [
   "tests.test_stable_abi",
   "tests.test_target_platform",
   "tests.test_tool_resolution_env",
+  "tests.test_wheel_builder_utils",
 ]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
