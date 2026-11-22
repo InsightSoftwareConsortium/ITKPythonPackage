@@ -48,15 +48,124 @@ Use this when you intend to build against a system compiler or a
 locally built tool. It is an escape hatch, not the normal path: nothing
 is pinned, so reproducibility is yours to manage.
 
-## Release wheels
+## Release wheels: building every PyPI wheel
 
-For a release, `pixi run release-wheels <itk-ref> [<package-version>]`
-(`scripts/release_wheels.py`) builds every wheel the host can build: the
-native wheels through `build_wheels.py` in the matching pixi environment,
-and the manylinux ones through `scripts/dockcross-manylinux-build-wheels.sh`.
-Use it rather than assembling those commands by hand; run it on Windows x64,
-Linux x64 and macOS arm64 to cover every platform. A Linux host cannot
-build macOS wheels.
+A release publishes 8 wheels for each of 4 targets, 32 in all. No single
+machine builds every target, so a full set takes three hosts, each with
+pixi and Git 2.x (see docs/Prerequisites.rst):
+
+| Target              | Build host                            |
+| ------------------- | ------------------------------------- |
+| `macos-arm64`       | Apple Silicon Mac                     |
+| `manylinux-aarch64` | the same Mac, or a Linux aarch64 host |
+| `manylinux-x64`     | Linux x86_64                          |
+| `windows-x64`       | Windows x64                           |
+
+The manylinux targets also need Docker, and Windows needs the Visual Studio
+2022 C++ build tools.
+
+On each host, from a clone of this repository:
+
+```bash
+pixi run release-wheels <itk-ref> <package-version> --dry-run   # the plan
+pixi run release-wheels <itk-ref> <package-version>
+pixi run release-wheels <itk-ref> <package-version> --targets manylinux-aarch64
+```
+
+`release-wheels` picks the targets the host can build (`--targets` narrows
+them), fetches the ITK ref, and sets `SOURCE_DATE_EPOCH` from the ITK commit
+so a rebuild of the same commit is byte-comparable. Each build uses the
+compiler cache, runs the import test, and fails if a wheel is over PyPI's
+100 MB limit. The wheels land in:
+
+| Target    | Wheels                                                  |
+| --------- | ------------------------------------------------------- |
+| macOS     | `../ITKPythonPackage-build/dist/`                       |
+| Windows   | `C:\BDR\dist\`                                          |
+| manylinux | `../ITKPythonPackage-manylinux_2_28-<arch>-build/dist/` |
+
+### Keeping rebuilds fast
+
+- **Keep the compiler cache between releases.** A warm cache serves
+  nearly every compile. The defaults are ccache's own directory natively,
+  sccache's on Windows, and `~/.cache/itk-ccache-manylinux<version>-<arch>`
+  for the containers; set `CCACHE_DIR`, `SCCACHE_DIR`, or
+  `ITK_CONTAINER_CCACHE_DIR` to move them.
+- **Build from the same directories every time.** The native caches hash
+  the absolute paths in each compile command, so a build from another clone
+  or build root misses them: a fresh macOS clone in a new directory got 0%
+  hits, and a Windows build outside `C:\BDR` got 36%, against 99.9% for a
+  rebuild in place. Keep one clone per release host and the default build
+  roots (`C:\BDR` is also short, which MSVC needs). The manylinux builds
+  are not affected, because the container always mounts the checkout at
+  the same path.
+- **A busy shared host slows the build even with idle cores.** ninja's
+  load limit (`ITK_BUILD_LOAD_LIMIT`, default the hardware thread count)
+  holds back new jobs while the load average is above it. Set it higher on a
+  host whose load comes from other users.
+
+Before uploading, copy every host's `dist/*.whl` into one place and check
+the set: 8 wheels per target, each named `*-cp311-abi3-<platform>.whl`, one
+version throughout.
+
+### Uploading to TestPyPI first
+
+Upload the full set to TestPyPI and install it from there before anything
+goes to PyPI. A file can be uploaded only once, on TestPyPI as on PyPI, so
+use a fresh development version (for example `6.0b3.dev1`) for each trial.
+
+1. **Get access.** TestPyPI accounts are separate from PyPI and GitHub.
+   Enable two-factor authentication, then ask an owner of the `itk` and
+   `itk-*` projects at https://test.pypi.org/project/itk/ to add you as a
+   maintainer; accept the invitations. A missing invitation shows as
+   `403 Forbidden` on that project's first wheel.
+2. **Make a token** with scope "Entire account" at
+   https://test.pypi.org/manage/account/token/ (a token for one project
+   cannot upload the others or create a new one).
+3. **Put it in `~/.pypirc`**, readable only by you, with `testpypi` listed
+   in `index-servers` (twine ignores sections the list does not name):
+
+   ```ini
+   [distutils]
+   index-servers =
+     pypi
+     testpypi
+
+   [testpypi]
+   repository = https://test.pypi.org/legacy/
+   username = __token__
+   password = pypi-...
+   ```
+
+4. **Upload** each target's wheels; `--skip-existing` makes a retry safe:
+
+   ```bash
+   pixi run -e publish publish-wheels --dist-directory <dist> \
+       --repository testpypi --skip-existing
+   ```
+
+5. **Install and test on each platform** in a clean environment. New
+   files can take several minutes to reach every TestPyPI mirror; until
+   then pip reports "No matching distribution" for some of them. Take the
+   `itk*` packages from TestPyPI without dependencies and everything else
+   from PyPI, because TestPyPI holds unrelated test uploads of packages
+   such as numpy:
+
+   ```bash
+   python -m venv /tmp/itk-testpypi && . /tmp/itk-testpypi/bin/activate
+   python -m pip install --no-deps --index-url https://test.pypi.org/simple/ \
+       itk==<version> itk-core==<version> itk-numerics==<version> \
+       itk-io==<version> itk-filtering==<version> \
+       itk-filtering-extra==<version> itk-registration==<version> \
+       itk-segmentation==<version>
+   python -m pip install numpy
+   python -m pip check
+   python -c "import itk; print(itk.Version.GetITKVersion())"
+   ```
+
+   Run it with the oldest and newest supported Python (3.11 and the
+   latest), on each of macOS arm64, Linux x86_64, Linux aarch64, and
+   Windows x64.
 
 ## Worked example
 
