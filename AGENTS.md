@@ -91,14 +91,14 @@ compiler cache, runs the import test, and fails if a wheel is over PyPI's
   sccache's on Windows, and `~/.cache/itk-ccache-manylinux<version>-<arch>`
   for the containers; set `CCACHE_DIR`, `SCCACHE_DIR`, or
   `ITK_CONTAINER_CCACHE_DIR` to move them.
-- **Build from the same directories every time.** The native caches hash
-  the absolute paths in each compile command, so a build from another clone
-  or build root misses them: a fresh macOS clone in a new directory got 0%
-  hits, and a Windows build outside `C:\BDR` got 36%, against 99.9% for a
-  rebuild in place. Keep one clone per release host and the default build
-  roots (`C:\BDR` is also short, which MSVC needs). The manylinux builds
-  are not affected, because the container always mounts the checkout at
-  the same path.
+- **A cache serves any clone and build root.** The build sets
+  `CCACHE_BASEDIR` (the common parent of the checkout, the build root, and
+  the ITK source) or `SCCACHE_BASEDIRS` (each of them), so paths are hashed
+  relative to them. Building ITKCommon from a second directory hit 99.9%
+  with them and 0% (ccache) or 55% (sccache) without. Set either variable
+  yourself to override it. With ccache, `__FILE__` in the wheels is then a
+  relative path; an sccache hit keeps the paths of the build that filled
+  the cache.
 - **A busy shared host slows the build even with idle cores.** ninja's
   load limit (`ITK_BUILD_LOAD_LIMIT`, default the hardware thread count)
   holds back new jobs while the load average is above it. Set it higher on a

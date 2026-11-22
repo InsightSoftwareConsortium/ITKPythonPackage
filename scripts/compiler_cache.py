@@ -7,15 +7,16 @@ only, never the wheels.
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from target_platform import OS
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
-    from pathlib import Path
+    from collections.abc import Iterable, Mapping
 
 # A wrapped ITK build overflows ccache's 5 GB default and evicts its own objects.
 DEFAULT_MAX_SIZE = "30G"
@@ -25,6 +26,10 @@ _SIZE_VARIABLE = {"ccache": "CCACHE_MAXSIZE", "sccache": "SCCACHE_CACHE_SIZE"}
 # 0 keeps one sccache server for the whole build; an idle restart zeroes its statistics.
 _SCCACHE_IDLE_TIMEOUT = "SCCACHE_IDLE_TIMEOUT"
 
+
+# Paths under these directories are hashed relative to them, so a cache filled
+# from one checkout or build root hits from another.
+_BASE_DIR_VARIABLE = {"ccache": "CCACHE_BASEDIR", "sccache": "SCCACHE_BASEDIRS"}
 
 _TRUE_VALUES = ("1", "ON", "TRUE", "YES")
 
@@ -56,11 +61,39 @@ def compiler_cache_definitions(tool: str, launcher: Path | str) -> dict[str, str
     }
 
 
-def compiler_cache_environment(tool: str, env: Mapping[str, str]) -> dict[str, str]:
-    """Return environment settings to add for *tool*; a value in *env* wins."""
+def compiler_cache_base_dirs(tool: str, roots: Iterable[Path | str]) -> str | None:
+    """Return *tool*'s base directory setting: ccache's common parent, sccache's list.
+
+    None without roots, or when the common parent is a filesystem root.
+    """
+    paths = sorted({Path(os.path.abspath(root)) for root in roots})  # noqa: PTH100
+    if not paths:
+        return None
+    if tool == "sccache":
+        # Longest first, so a nested root is matched before its parent.
+        by_depth = sorted(paths, key=lambda path: len(str(path)), reverse=True)
+        return os.pathsep.join(str(path) for path in by_depth)
+    try:
+        common = Path(os.path.commonpath(paths))
+    except ValueError:  # different drives
+        return None
+    return None if common == Path(common.anchor) else str(common)
+
+
+def compiler_cache_environment(
+    tool: str, env: Mapping[str, str], roots: Iterable[Path | str] = ()
+) -> dict[str, str]:
+    """Return environment settings to add for *tool*; a value in *env* wins.
+
+    *roots* are the directories whose paths reach the compiler: the
+    checkout, the build root, and the ITK source.
+    """
     added = {_SIZE_VARIABLE[tool]: DEFAULT_MAX_SIZE}
     if tool == "sccache":
         added[_SCCACHE_IDLE_TIMEOUT] = "0"
+    base_dirs = compiler_cache_base_dirs(tool, roots)
+    if base_dirs is not None:
+        added[_BASE_DIR_VARIABLE[tool]] = base_dirs
     return {name: value for name, value in added.items() if not env.get(name)}
 
 

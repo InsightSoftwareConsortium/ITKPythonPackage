@@ -316,7 +316,10 @@ class BuildPythonInstanceBase(ABC):
             os.environ.update(
                 compiler_cache_size_setting(cache_tool, cache_exe, os.environ)
             )
-            os.environ.update(compiler_cache_environment(cache_tool, os.environ))
+            cache_roots = (self.ipp_dir, self.build_dir_root, config.itk_source_dir)
+            os.environ.update(
+                compiler_cache_environment(cache_tool, os.environ, cache_roots)
+            )
             self.compiler_cache_commands = compiler_cache_session(
                 cache_tool,
                 cache_exe,

@@ -1,11 +1,13 @@
 """The compiler cache each platform builds through."""
 
+import os
 from pathlib import Path
 
 import pytest
 from compiler_cache import (
     DEFAULT_MAX_SIZE,
     ccache_size_bytes,
+    compiler_cache_base_dirs,
     compiler_cache_definitions,
     compiler_cache_environment,
     compiler_cache_max_size,
@@ -65,6 +67,39 @@ def test_the_sccache_server_never_idles_out_during_a_build() -> None:
 def test_an_idle_timeout_the_caller_chose_is_kept() -> None:
     env = {"SCCACHE_IDLE_TIMEOUT": "3600"}
     assert "SCCACHE_IDLE_TIMEOUT" not in compiler_cache_environment("sccache", env)
+
+
+def test_ccache_hashes_paths_below_the_common_parent(tmp_path: Path) -> None:
+    """A cache filled from one checkout and build root hits from another."""
+    roots = [tmp_path / "ITKPythonPackage", tmp_path / "ITKPythonPackage-build"]
+    env = compiler_cache_environment("ccache", {}, roots)
+    assert env["CCACHE_BASEDIR"] == str(tmp_path)
+
+
+def test_sccache_lists_every_root_longest_first(tmp_path: Path) -> None:
+    roots = [tmp_path, tmp_path / "IPP", tmp_path / "BDR-build", tmp_path / "IPP"]
+    env = compiler_cache_environment("sccache", {}, roots)
+    assert env["SCCACHE_BASEDIRS"] == os.pathsep.join(
+        [str(tmp_path / "BDR-build"), str(tmp_path / "IPP"), str(tmp_path)]
+    )
+
+
+@pytest.mark.parametrize("tool", ["ccache", "sccache"])
+def test_a_base_dir_the_caller_chose_is_kept(tool: str, tmp_path: Path) -> None:
+    env = {"CCACHE_BASEDIR": "/x", "SCCACHE_BASEDIRS": "/x"}
+    added = compiler_cache_environment(tool, env, [tmp_path])
+    assert not {"CCACHE_BASEDIR", "SCCACHE_BASEDIRS"} & added.keys()
+
+
+def test_no_base_dir_without_roots() -> None:
+    assert compiler_cache_base_dirs("ccache", []) is None
+    assert compiler_cache_base_dirs("sccache", []) is None
+
+
+def test_ccache_never_takes_a_filesystem_root_as_base_dir(tmp_path: Path) -> None:
+    """Every absolute path would be rewritten, toolchain headers included."""
+    anchor = Path(tmp_path.anchor)
+    assert compiler_cache_base_dirs("ccache", [anchor / "a", anchor / "b"]) is None
 
 
 def test_ccache_gets_no_sccache_settings() -> None:
