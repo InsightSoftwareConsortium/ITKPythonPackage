@@ -3,6 +3,7 @@ import copy
 import os
 import shutil
 import subprocess
+import tempfile
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from collections.abc import Callable, Mapping, Sequence
@@ -877,7 +878,9 @@ class BuildPythonInstanceBase(ABC):
 
         wheel_py_api = STABLE_ABI_TAG
 
-        cmd = self.python_build_wheel_command(out_dir)
+        # A fresh directory keeps wheels left in dist/ out of verification and repair.
+        fresh_dir = Path(tempfile.mkdtemp(prefix=".build-", dir=out_dir))
+        cmd = self.python_build_wheel_command(fresh_dir)
 
         # Collect scikit-build CMake definitions
         defs = CMakeArgumentBuilder()
@@ -915,12 +918,16 @@ class BuildPythonInstanceBase(ABC):
         try:
             self.echo_check_call(cmd, check=True)
 
-            built_wheels = verify_stable_abi_wheels(out_dir, wheel_py_api)
+            built_wheels = [
+                wheel.replace(out_dir / wheel.name)
+                for wheel in verify_stable_abi_wheels(fresh_dir, wheel_py_api)
+            ]
 
             # Repair the module wheels (auditwheel, delocate, or delvewheel).
             for wheel in built_wheels:
                 self.fixup_module_wheel(str(wheel))
         finally:
+            shutil.rmtree(fresh_dir, ignore_errors=True)
             # Restore original pyproject.toml so the working tree stays clean
             if deps_rewritten and pyproject_orig.is_file():
                 shutil.copy2(module_pyproject, pyproject_whl)
