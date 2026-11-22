@@ -94,13 +94,30 @@ fi
 tarball_arch="-$(arch)"
 TARBALL_NAME="ITKPythonBuilds-macosx${tarball_arch}.tar"
 
+# GitHub release downloads sometimes end prematurely; retry, and never keep a partial file.
+download_with_retry() {
+  local url=$1 output=$2 attempt max_attempts=5
+  for ((attempt = 1; attempt <= max_attempts; attempt++)); do
+    if curl -fL --connect-timeout 30 -o "${output}.part" "${url}"; then
+      mv "${output}.part" "${output}"
+      return 0
+    fi
+    rm -f "${output}.part"
+    echo "Download attempt ${attempt} of ${max_attempts} failed: ${url}"
+    if ((attempt < max_attempts)); then
+      sleep $((attempt * 10))
+    fi
+  done
+  return 1
+}
+
 if [[ ! -f ${TARBALL_NAME}.zst ]]; then
   echo "Local ITK cache tarball file not found..."
   # Fetch ITKPythonBuilds archive containing ITK build artifacts
   echo "Fetching https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION}/ITKPythonBuilds-macosx${tarball_arch}.tar.zst"
-  if ! curl -L "https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION}/ITKPythonBuilds-macosx${tarball_arch}.tar.zst" -O; then
+  if ! download_with_retry "https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION}/${TARBALL_NAME}.zst" "${TARBALL_NAME}.zst"; then
     echo "FAILED Download:"
-    echo "curl -L https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION}/${TARBALL_NAME}.zst -O"
+    echo "curl -fL https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION}/${TARBALL_NAME}.zst -O"
     exit 1
   fi
 fi

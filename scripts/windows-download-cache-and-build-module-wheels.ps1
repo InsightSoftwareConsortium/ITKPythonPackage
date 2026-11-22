@@ -163,14 +163,33 @@ if (Test-Path $localZipName) {
 } else {
   echo "Downloading $zipDownloadUrl ..."
 
-  # Try   first (faster, resumable), fall back to Invoke-WebRequest
+  # Try aria2c first (faster, resumable), fall back to Invoke-WebRequest
   $aria2Path = Get-Command aria2c -ErrorAction SilentlyContinue
-  if ($aria2Path) {
-    echo "  Using aria2c for download..."
-    & aria2c -c --file-allocation=none -s 10 -x 10 -o $localZipName $zipDownloadUrl
-  } else {
-    echo "  Using Invoke-WebRequest for download..."
-    Invoke-WebRequest -Uri $zipDownloadUrl -OutFile $localZipName
+  # GitHub release downloads sometimes end prematurely; retry, and never keep a partial file.
+  $partialZipName = "$localZipName.part"
+  Remove-Item -Force -ErrorAction SilentlyContinue $partialZipName, "$partialZipName.aria2"
+  $maxAttempts = 5
+  for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+    try {
+      if ($aria2Path) {
+        echo "  Using aria2c for download (attempt $attempt of $maxAttempts)..."
+        & aria2c -c --file-allocation=none -s 10 -x 10 -o $partialZipName $zipDownloadUrl
+        if ($LASTEXITCODE -ne 0) {
+          throw "aria2c exited with code $LASTEXITCODE"
+        }
+      } else {
+        echo "  Using Invoke-WebRequest for download (attempt $attempt of $maxAttempts)..."
+        Invoke-WebRequest -Uri $zipDownloadUrl -OutFile $partialZipName -ErrorAction Stop
+      }
+      Move-Item -Force $partialZipName $localZipName
+      break
+    } catch {
+      echo "  Download attempt $attempt of $maxAttempts failed: $($_.Exception.Message)"
+      if ($attempt -eq $maxAttempts) {
+        throw "Failed to download $zipDownloadUrl after $maxAttempts attempts"
+      }
+      Start-Sleep -Seconds (10 * $attempt)
+    }
   }
 }
 
