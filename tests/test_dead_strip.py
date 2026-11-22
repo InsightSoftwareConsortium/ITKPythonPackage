@@ -1,12 +1,12 @@
 import pytest
 from cmake_argument_builder import CMakeArgumentBuilder
+from compiler_flags import user_flag_key
 from dead_strip import (
     DARWIN_MODULE_FLAGS,
     LINKER_FLAGS,
     PYTHON_MODULE_EXPORTS,
     SECTION_FLAGS,
     dead_strip_cmake_definitions,
-    user_flag_key,
 )
 from target_platform import OS
 

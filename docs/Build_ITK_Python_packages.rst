@@ -37,7 +37,10 @@ build interrupted part-way through can be resumed by re-running the same command
 The log also records the build's inputs: the ITK commit, the package version,
 a fingerprint of the build scripts, CMake settings, and ``pixi.lock``, and for a
 remote module its git commit and uncommitted changes. When any of them differs
-from the recorded run, every step runs again.
+from the recorded run, every step runs again. ``CFLAGS`` and ``CXXFLAGS``
+(and ``LDFLAGS`` on Linux and macOS) reach CMake as ``CMAKE_*_FLAGS``
+definitions, so they are among those settings, and changing them reconfigures
+the existing build tree.
 
 Wheels already in ``dist/`` when the wheel step starts are moved to
 ``dist/earlier-wheels/<YYYYmmdd_HHMMSS>/``, so ``dist/`` holds only this run's

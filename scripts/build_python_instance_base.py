@@ -31,7 +31,8 @@ from compiler_cache import (
     compiler_cache_size_setting,
     compiler_cache_tool,
 )
-from dead_strip import dead_strip_cmake_definitions, user_flag_key
+from compiler_flags import user_flag_key
+from dead_strip import dead_strip_cmake_definitions
 from module_dependencies import build_module_dependencies, update_module_itk_deps
 from pyproject_configure import (
     STABLE_ABI_TAG,

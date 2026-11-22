@@ -27,6 +27,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from compiler_flags import environment_flag
 from target_platform import OS
 
 if TYPE_CHECKING:
@@ -42,25 +43,6 @@ PYTHON_MODULE_EXPORTS = (
     / "BuildWheelsSupport"
     / "python_module_exports.map"
 )
-
-# CMake variable -> environment variable CMake would otherwise read it from.
-_FLAG_SOURCES = {
-    "CMAKE_C_FLAGS": "CFLAGS",
-    "CMAKE_CXX_FLAGS": "CXXFLAGS",
-    "CMAKE_SHARED_LINKER_FLAGS": "LDFLAGS",
-    "CMAKE_MODULE_LINKER_FLAGS": "LDFLAGS",
-    "CMAKE_EXE_LINKER_FLAGS": "LDFLAGS",
-}
-
-
-def user_flag_key(
-    user_defs: Mapping[str, str] | CMakeArgumentBuilder, cmake_var: str
-) -> str | None:
-    """Return the key under which *user_defs* sets *cmake_var*, typed or not."""
-    for key in (f"{cmake_var}:STRING", cmake_var):
-        if key in user_defs:
-            return key
-    return None
 
 
 def dead_strip_cmake_definitions(
@@ -78,12 +60,8 @@ def dead_strip_cmake_definitions(
         return {}
     user_defs = user_defs or {}
 
-    def base(cmake_var: str) -> str:
-        key = user_flag_key(user_defs, cmake_var)
-        return user_defs[key] if key else env.get(_FLAG_SOURCES[cmake_var], "")
-
     def joined(cmake_var: str, extra: str) -> str:
-        return f"{base(cmake_var)} {extra}".strip()
+        return f"{environment_flag(cmake_var, env, user_defs)} {extra}".strip()
 
     if os_name is OS.DARWIN:
         return {

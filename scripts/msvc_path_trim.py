@@ -15,7 +15,7 @@ from __future__ import annotations
 from pathlib import Path, PureWindowsPath
 from typing import TYPE_CHECKING
 
-from dead_strip import user_flag_key
+from compiler_flags import FLAG_SOURCES, user_flag_key
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
@@ -27,7 +27,6 @@ MSVC_DEFAULT_FLAGS = {
     "CMAKE_C_FLAGS": "/DWIN32 /D_WINDOWS",
     "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
 }
-_FLAG_SOURCES = {"CMAKE_C_FLAGS": "CFLAGS", "CMAKE_CXX_FLAGS": "CXXFLAGS"}
 
 
 def msvc_trim_prefixes(roots: Iterable[Path | str]) -> list[str]:
@@ -63,7 +62,7 @@ def msvc_trim_definitions(
         if key:
             base = user_defs[key]
         else:
-            base = f"{env.get(_FLAG_SOURCES[cmake_var], '')} {default}".strip()
+            base = f"{env.get(FLAG_SOURCES[cmake_var], '')} {default}".strip()
         if "d1trimfile:" not in base:
             definitions[f"{cmake_var}:STRING"] = f"{base} {trims}"
     return definitions

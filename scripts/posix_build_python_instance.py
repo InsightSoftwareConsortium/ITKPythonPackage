@@ -1,12 +1,24 @@
+import os
+from collections.abc import Sequence
+from pathlib import Path
+
 import build_environment
 import wheel_packaging
 from build_environment import PythonEnvironment
 from build_python_instance_base import BuildPythonInstanceBase
+from cmake_argument_builder import CMakeArgumentBuilder
+from compiler_flags import environment_flag_definitions
 from wheel_builder_utils import get_default_platform_build
 
 
 class PosixBuildPythonInstance(BuildPythonInstanceBase):
     """Behavior shared by the Linux and macOS builders."""
+
+    def compiler_flag_definitions(
+        self, user_defs: CMakeArgumentBuilder, compile_roots: Sequence[Path]
+    ) -> dict[str, str]:
+        """Pass CFLAGS, CXXFLAGS, and LDFLAGS so a reused tree follows them."""
+        return environment_flag_definitions(os.environ, user_defs)
 
     def build_tarball(self) -> None:
         """Create a zstd-compressed tarball of the ITK build tree."""
