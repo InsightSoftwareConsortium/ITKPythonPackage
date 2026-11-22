@@ -6,7 +6,11 @@ from pathlib import Path
 
 import pyproject_configure
 import pytest
-from pyproject_configure import PyprojectInputs
+from pyproject_configure import (
+    PYPI_DESCRIPTION,
+    PyprojectInputs,
+    build_base_pyproject_parameters,
+)
 
 
 def test_a_backslash_in_a_value_is_escaped_exactly_once(tmp_path: Path) -> None:
@@ -71,3 +75,12 @@ def test_the_command_line_names_missing_settings(
     )
     with pytest.raises(KeyError, match="ITK_SOURCE_DIR, ITK_GIT_TAG"):
         pyproject_configure.main()
+
+
+def test_the_wheels_describe_themselves_with_the_pypi_description() -> None:
+    params = build_base_pyproject_parameters(
+        PyprojectInputs("ITK", "main", "6.0.0"), "pyproject_configure.py", "6.0.0"
+    )
+    readme = Path(params["PYPROJECT_README"])
+    assert readme == PYPI_DESCRIPTION
+    assert readme.is_file()

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import argparse
-import os
 import re
 import shutil
 import sys
@@ -15,6 +14,9 @@ from wheel_builder_utils import read_env_file
 # One cp311-abi3 wheel per platform, installable on 3.11 and newer. Pinned
 # rather than derived from the interpreter running this driver.
 STABLE_ABI_TAG = "cp311"
+
+# The PyPI project page of every ITK wheel; ITK's README.md is written for GitHub.
+PYPI_DESCRIPTION = Path(__file__).resolve().parent / "pypi_description.md"
 
 
 @dataclass(frozen=True)
@@ -319,10 +321,6 @@ def build_base_pyproject_parameters(
     dict[str, str]
         Base parameter mapping shared across all wheel configurations.
     """
-    # The string is written into pyproject.toml; keep its separators unchanged.
-    itk_source_readme: str = os.path.join(  # noqa: PTH118
-        inputs.itk_source_dir, "README.md"
-    )
     return {
         "PYPROJECT_GENERATOR": f"python {script_name} 'itk'",
         "PYPROJECT_NAME": r"itk",
@@ -331,7 +329,7 @@ def build_base_pyproject_parameters(
         "PYPROJECT_PY_API": STABLE_ABI_TAG,
         "PYPROJECT_PLATLIB": r"true",
         "ITK_SOURCE_DIR": str(inputs.itk_source_dir),
-        "ITK_SOURCE_README": itk_source_readme,
+        "PYPROJECT_README": str(PYPI_DESCRIPTION),
         "PYPROJECT_PY_MODULES": list_to_str(
             [
                 "itkBase",
