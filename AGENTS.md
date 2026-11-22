@@ -96,9 +96,10 @@ compiler cache, runs the import test, and fails if a wheel is over PyPI's
   the ITK source) or `SCCACHE_BASEDIRS` (each of them), so paths are hashed
   relative to them. Building ITKCommon from a second directory hit 99.9%
   with them and 0% (ccache) or 55% (sccache) without. Set either variable
-  yourself to override it. With ccache, `__FILE__` in the wheels is then a
-  relative path; an sccache hit keeps the paths of the build that filled
-  the cache.
+  yourself to override it. `__FILE__` in the wheels is a relative path:
+  ccache passes relative paths to the compiler, and on Windows the build
+  adds `-d1trimfile:` for each of those directories to `CMAKE_C_FLAGS` and
+  `CMAKE_CXX_FLAGS`.
 - **A busy shared host slows the build even with idle cores.** ninja's
   load limit (`ITK_BUILD_LOAD_LIMIT`, default the hardware thread count)
   holds back new jobs while the load average is above it. Set it higher on a

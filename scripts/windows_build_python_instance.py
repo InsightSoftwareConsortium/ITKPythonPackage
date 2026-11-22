@@ -4,11 +4,14 @@ import os
 import re
 import shutil
 import zipfile
+from collections.abc import Sequence
 from pathlib import Path, PurePath
 from typing import Any
 
 from build_environment import PythonEnvironment
 from build_python_instance_base import BuildPythonInstanceBase
+from cmake_argument_builder import CMakeArgumentBuilder
+from msvc_path_trim import msvc_trim_definitions
 
 ARCHIVE_EXCLUDES = (
     "*.o",
@@ -62,6 +65,12 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
 
     def _configure_toolchain(self) -> None:
         """Windows needs no toolchain values beyond the shared TBB settings."""
+
+    def compiler_flag_definitions(
+        self, user_defs: CMakeArgumentBuilder, compile_roots: Sequence[Path]
+    ) -> dict[str, str]:
+        """Trim the build directories from ``__FILE__``."""
+        return msvc_trim_definitions(os.environ, user_defs, compile_roots)
 
     def python_build_generator_args(self) -> list[str]:
         """Build wheels with Ninja, as ITK itself is built."""

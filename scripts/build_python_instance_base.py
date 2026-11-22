@@ -304,6 +304,7 @@ class BuildPythonInstanceBase(ABC):
             [],
             [],
         )
+        compile_roots = (self.ipp_dir, self.build_dir_root, config.itk_source_dir)
         if config.use_ccache:
             cache_tool = compiler_cache_tool(self.target.os_name)
             cache_exe: Path | None = which(cache_tool)
@@ -316,9 +317,8 @@ class BuildPythonInstanceBase(ABC):
             os.environ.update(
                 compiler_cache_size_setting(cache_tool, cache_exe, os.environ)
             )
-            cache_roots = (self.ipp_dir, self.build_dir_root, config.itk_source_dir)
             os.environ.update(
-                compiler_cache_environment(cache_tool, os.environ, cache_roots)
+                compiler_cache_environment(cache_tool, os.environ, compile_roots)
             )
             self.compiler_cache_commands = compiler_cache_session(
                 cache_tool,
@@ -326,17 +326,18 @@ class BuildPythonInstanceBase(ABC):
                 compiler_cache_max_size(cache_tool, os.environ),
             )
 
+        user_defs = self.cmake_cmdline_definitions
+        flag_defs = self.compiler_flag_definitions(user_defs, compile_roots)
         if config.dead_strip:
-            user_defs = self.cmake_cmdline_definitions
-            dead_strip_defs = dead_strip_cmake_definitions(
-                self.target.os_name, os.environ, user_defs
+            flag_defs.update(
+                dead_strip_cmake_definitions(self.target.os_name, os.environ, user_defs)
             )
-            self.cmake_compiler_configurations.update(dead_strip_defs)
-            # Command-line definitions are applied last, so carry the merged value there.
-            for key, value in dead_strip_defs.items():
-                user_key = user_flag_key(user_defs, key.split(":")[0])
-                if user_key:
-                    user_defs.set(user_key, value)
+        self.cmake_compiler_configurations.update(flag_defs)
+        # Command-line definitions are applied last, so carry the merged value there.
+        for key, value in flag_defs.items():
+            user_key = user_flag_key(user_defs, key.split(":")[0])
+            if user_key:
+                user_defs.set(user_key, value)
 
         self.cmake_itk_source_build_configurations.update(
             itk_source_build_configuration(config, self.tbb_dir)
@@ -800,6 +801,12 @@ class BuildPythonInstanceBase(ABC):
     def python_build_generator_args(self) -> list[str]:
         """Extra ``python -m build`` settings choosing the CMake generator."""
         return []
+
+    def compiler_flag_definitions(
+        self, user_defs: CMakeArgumentBuilder, compile_roots: Sequence[Path]
+    ) -> dict[str, str]:
+        """Return the ``CMAKE_<LANG>_FLAGS`` definitions this platform adds."""
+        return {}
 
     @abstractmethod
     def _configure_toolchain(self) -> None:  # pragma: no cover - abstract
