@@ -10,6 +10,7 @@ from cmake_argument_builder import CMakeArgumentBuilder
 from linux_build_python_instance import LinuxBuildPythonInstance
 from macos_build_python_instance import MacOSBuildPythonInstance
 from target_platform import OS, Arch, TargetPlatform
+from wheel_profile import ITK6_PROFILE
 from windows_build_python_instance import WindowsBuildPythonInstance
 
 BuilderT = TypeVar("BuilderT", bound=BuildPythonInstanceBase)
@@ -66,6 +67,7 @@ def _make_builder(
     )
     builder.cmake_compiler_configurations = CMakeArgumentBuilder()
     builder.cmake_itk_source_build_configurations = CMakeArgumentBuilder()
+    builder.wheel_profile = ITK6_PROFILE
     return builder
 
 

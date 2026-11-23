@@ -53,6 +53,7 @@ from wheel_builder_utils import (
     remove_tree,
     which,
 )
+from wheel_profile import WheelProfile, wheel_profile
 
 
 def verify_stable_abi_wheels(out_dir: Path, py_api: str) -> list[Path]:
@@ -78,53 +79,6 @@ BUILD_TYPE = "Release"
 
 # PyPI rejects larger files.
 PYPI_MAX_WHEEL_BYTES: int = 100 * 1000 * 1000
-
-# ITK modules ingested from remote modules. ITK excludes them from its default
-# build; the wheels ship them. Override one with -DModule_<name>:BOOL=OFF.
-ITK_INGESTED_REMOTE_MODULES: tuple[str, ...] = (
-    "AdaptiveDenoising",
-    "AnisotropicDiffusionLBR",
-    "BoneEnhancement",
-    "BoneMorphometry",
-    "BSplineGradient",
-    "Cuberille",
-    "FastBilateral",
-    "FixedPointInverseDisplacementField",
-    "Fpfh",
-    "GenericLabelInterpolator",
-    "GrowCut",
-    "HigherOrderAccurateGradient",
-    "IOFDF",
-    "IOMeshMZ3",
-    "IOMeshSTL",
-    "IOMeshSWC",
-    "IOScanco",
-    "IOTransformDCMTK",
-    "IsotropicWavelets",
-    "LabelErodeDilate",
-    "MGHIO",
-    "MeshNoise",
-    "MeshToPolyData",
-    "MinimalPathExtraction",
-    "Montage",
-    "MorphologicalContourInterpolation",
-    "MultipleImageIterator",
-    "ParabolicMorphology",
-    "PhaseSymmetry",
-    "PolarTransform",
-    "PrincipalComponentsAnalysis",
-    "RANSAC",
-    "RLEImage",
-    "SmoothingRecursiveYvvGaussianFilter",
-    "SplitComponents",
-    "Strain",
-    "SubdivisionQuadEdgeMeshFilter",
-    "TextureFeatures",
-    "Thickness3D",
-    "TotalVariation",
-    "TwoProjectionRegistration",
-    "VariationalRegistration",
-)
 
 
 def use_tbb_setting(tbb_dir: Path | None) -> str:
@@ -283,10 +237,8 @@ class BuildPythonInstanceBase(ABC):
         self.config = config
         self.target: TargetPlatform = TargetPlatform.detect(config.to_environment())
 
-        with (self.ipp_dir / "BuildWheelsSupport" / "WHEEL_NAMES.txt").open(
-            encoding="utf-8"
-        ) as content:
-            self.wheel_names = [wheel_name.strip() for wheel_name in content]
+        self.wheel_profile: WheelProfile = wheel_profile(config.itk_source_dir)
+        self.wheel_names = self.wheel_profile.wheel_names()
 
         self.cleanup = cleanup
         self.build_itk_tarball_cache = build_itk_tarball_cache
@@ -364,7 +316,10 @@ class BuildPythonInstanceBase(ABC):
     def enable_ingested_remote_modules(self) -> None:
         """Turn on the ingested remote modules in the ITK build configuration."""
         self.cmake_itk_source_build_configurations.update(
-            {f"Module_{module}:BOOL": "ON" for module in ITK_INGESTED_REMOTE_MODULES}
+            {
+                f"Module_{module}:BOOL": "ON"
+                for module in self.wheel_profile.ingested_remote_modules
+            }
         )
 
     def update_venv_itk_build_configurations(self) -> None:
@@ -867,7 +822,7 @@ class BuildPythonInstanceBase(ABC):
             msg = (
                 f"Wheels over the {PYPI_MAX_WHEEL_BYTES / 1e6:.0f} MB PyPI "
                 f"limit: {'; '.join(oversized)}. Move modules to another "
-                f"wheel in cmake/ITKPythonPackage_BuildWheels.cmake."
+                f"wheel in BuildWheelsSupport/{self.wheel_profile.name}/wheel_groups.cmake."
             )
             raise RuntimeError(msg)
 
@@ -966,7 +921,7 @@ class BuildPythonInstanceBase(ABC):
                 )
 
     def build_itk_python_wheels(self) -> None:
-        """Build all ITK Python wheels listed in ``WHEEL_NAMES.txt``."""
+        """Build every ITK Python wheel of the wheel profile."""
         earlier = wheel_packaging.move_earlier_wheels(
             self.build_dir_root / "dist", datetime.now().strftime("%Y%m%d_%H%M%S")
         )
@@ -1010,6 +965,7 @@ class BuildPythonInstanceBase(ABC):
                     "ITKPythonPackage_USE_TBB:BOOL": use_tbb_setting(self.tbb_dir),
                     "ITKPythonPackage_ITK_BINARY_REUSE:BOOL": "ON",
                     "ITKPythonPackage_WHEEL_NAME:STRING": f"{wheel_name}",
+                    "ITKPythonPackage_WHEEL_PROFILE:STRING": self.wheel_profile.name,
                     "DOXYGEN_EXECUTABLE:FILEPATH": f"{self.config.doxygen_executable}",
                 }
             )

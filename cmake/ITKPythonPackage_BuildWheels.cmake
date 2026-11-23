@@ -8,6 +8,9 @@
 if(NOT DEFINED ITKPythonPackage_WHEEL_NAME)
     message(FATAL_ERROR "ITKPythonPackage_WHEEL_NAME must be defined")
 endif()
+if(NOT DEFINED ITKPythonPackage_WHEEL_PROFILE)
+    message(FATAL_ERROR "ITKPythonPackage_WHEEL_PROFILE must be defined")
+endif()
 
 message(
     STATUS
@@ -40,55 +43,14 @@ message(STATUS "${msg} - done [${ITK_WHEEL_GROUP}]")
 
 # List of ITK wheel groups
 set(ITK_WHEEL_GROUPS "")
-file(STRINGS "${CMAKE_SOURCE_DIR}/WHEEL_NAMES.txt" ITK_WHEELS REGEX "^itk-.+")
+set(ipp_wheel_profile_dir "${CMAKE_SOURCE_DIR}/${ITKPythonPackage_WHEEL_PROFILE}")
+file(STRINGS "${ipp_wheel_profile_dir}/WHEEL_NAMES.txt" ITK_WHEELS REGEX "^itk-.+")
 foreach(wheel_name IN LISTS ITK_WHEELS)
     ipp_wheel_to_group(${wheel_name} group)
     list(APPEND ITK_WHEEL_GROUPS ${group})
 endforeach()
 
-# Define below a reasonable dependency graph for ITK groups
-set(ITK_GROUP_Core_DEPENDS)
-set(ITK_GROUP_IO_DEPENDS Numerics)
-set(ITK_GROUP_Numerics_DEPENDS Core)
-set(ITK_GROUP_Filtering_DEPENDS Numerics)
-set(ITK_GROUP_Filtering-extra_DEPENDS Filtering)
-set(ITK_GROUP_Segmentation_DEPENDS Filtering)
-set(ITK_GROUP_Registration_DEPENDS Filtering)
-set(ITK_GROUP_Video_DEPENDS Core)
-
-# Modules packaged in a wheel other than the one their group and dependees
-# select. No wheel may exceed the 100 MB PyPI limit on any platform; move
-# modules here to rebalance.
-set(ITK_WHEEL_Core_MODULE_OVERRIDES ITKBridgeNumPy ITKVTK)
-set(ITK_WHEEL_Filtering-extra_MODULE_OVERRIDES
-    AdaptiveDenoising
-    AnisotropicDiffusionLBR
-    BoneEnhancement
-    BoneMorphometry
-    BSplineGradient
-    Cuberille
-    FastBilateral
-    FixedPointInverseDisplacementField
-    GenericLabelInterpolator
-    HigherOrderAccurateGradient
-    IsotropicWavelets
-    LabelErodeDilate
-    MeshNoise
-    MeshToPolyData
-    MinimalPathExtraction
-    MorphologicalContourInterpolation
-    ParabolicMorphology
-    PhaseSymmetry
-    PolarTransform
-    RLEImage
-    SmoothingRecursiveYvvGaussianFilter
-    SplitComponents
-    Strain
-    SubdivisionQuadEdgeMeshFilter
-    TextureFeatures
-    Thickness3D
-    TotalVariation
-)
+include("${ipp_wheel_profile_dir}/wheel_groups.cmake")
 
 # ITK is needed to retrieve ITK module information
 set(ITK_DIR ${ITK_BINARY_DIR})

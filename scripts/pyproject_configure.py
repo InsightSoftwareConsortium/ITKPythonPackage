@@ -10,6 +10,7 @@ from pathlib import Path
 
 from packaging.version import Version
 from wheel_builder_utils import read_env_file
+from wheel_profile import wheel_profile
 
 # One cp311-abi3 wheel per platform, installable on 3.11 and newer. Pinned
 # rather than derived from the interpreter running this driver.
@@ -168,6 +169,7 @@ def update_wheel_pyproject_toml_parameters(
     script_name: str,
     wheel_names: list[str],
     wheel_dependencies: Mapping[str, list[str]],
+    wheel_profile_name: str,
 ) -> dict[str, dict[str, str]]:
     """Build a mapping of wheel name to ``pyproject.toml`` template parameters.
 
@@ -185,6 +187,8 @@ def update_wheel_pyproject_toml_parameters(
         Ordered list of wheel package names to generate parameters for.
     wheel_dependencies : dict[str, list[str]]
         Mapping from wheel name to its dependency list.
+    wheel_profile_name : str
+        The wheel profile, ``BuildWheelsSupport/<name>``, CMake reads.
 
     Returns
     -------
@@ -217,6 +221,7 @@ def update_wheel_pyproject_toml_parameters(
                 "-DITK_WRAP_IMAGE_DIMS:STRING=2;3;4",
                 "-DITK_WRAP_DOC:BOOL=ON",
                 f"-DITKPythonPackage_WHEEL_NAME:STRING={wheel_name}",
+                f"-DITKPythonPackage_WHEEL_PROFILE:STRING={wheel_profile_name}",
             ],
             True,
         )
@@ -237,32 +242,15 @@ def update_wheel_pyproject_toml_parameters(
     return pyproject_py_parameters
 
 
-def get_wheel_names(build_wheels_support_dir: str | Path) -> list[str]:
-    """Read the ordered list of wheel names from ``WHEEL_NAMES.txt``.
-
-    Parameters
-    ----------
-    build_wheels_support_dir : str
-        Directory containing ``WHEEL_NAMES.txt``.
-
-    Returns
-    -------
-    list[str]
-        Stripped wheel names, one per line.
-    """
-    with (Path(build_wheels_support_dir) / "WHEEL_NAMES.txt").open() as _file:
-        return [wheel_name.strip() for wheel_name in _file]
-
-
 def get_wheel_dependencies(
-    script_dir: str | Path, version: str, wheel_names: list[str]
+    wheel_groups_file: str | Path, version: str, wheel_names: list[str]
 ) -> dict[str, list[str]]:
-    """Parse ITK CMake files to build a wheel dependency graph.
+    """Parse a wheel profile's group dependencies into a wheel dependency graph.
 
     Parameters
     ----------
-    script_dir : str
-        Path to the ``scripts/`` directory.
+    wheel_groups_file : str or Path
+        The profile's ``wheel_groups.cmake``.
     version : str
         PEP 440 version string pinned in each dependency.
     wheel_names : list[str]
@@ -278,9 +266,7 @@ def get_wheel_dependencies(
         r"set\s*\(\s*ITK\_GROUP\_([a-zA-Z0-9\_\-]+)\_DEPENDS\s*([a-zA-Z0-9\_\-\s]*)\s*"
     )
     pattern = re.compile(regex_group_depends)
-    with (
-        Path(script_dir) / ".." / "cmake" / "ITKPythonPackage_BuildWheels.cmake"
-    ).open() as file_:
+    with Path(wheel_groups_file).open() as file_:
         for line in file_:
             match = re.search(pattern, line)
             if not match:
@@ -378,7 +364,7 @@ Usage::
                             (default: /work)
 
 Accepted values for `wheel_name` are ``itk`` and all values read from
-``WHEEL_NAMES.txt``.
+the wheel profile's ``WHEEL_NAMES.txt``.
 """,
     )
     parser.add_argument("wheel_name")
@@ -449,9 +435,10 @@ def configure_one_pyproject_file(
 
     base_params = build_base_pyproject_parameters(inputs, script_name, pep440_version)
 
-    wheel_names = get_wheel_names(build_wheels_support_dir)
+    profile = wheel_profile(inputs.itk_source_dir)
+    wheel_names = profile.wheel_names()
     wheel_dependencies = get_wheel_dependencies(
-        script_dir, base_params["PYPROJECT_VERSION"], wheel_names
+        profile.wheel_groups_file, base_params["PYPROJECT_VERSION"], wheel_names
     )
 
     pyproject_py_parameters = {"itk": dict(base_params)}
@@ -462,6 +449,7 @@ def configure_one_pyproject_file(
             script_name,
             wheel_names,
             wheel_dependencies,
+            profile.name,
         )
     )
 

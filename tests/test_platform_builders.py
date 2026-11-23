@@ -591,7 +591,7 @@ def test_windows_lib_paths_are_split_on_semicolons(
 def test_ingested_remote_modules_are_enabled_and_can_be_overridden(
     linux_builder: LinuxBuildPythonInstance,
 ) -> None:
-    from build_python_instance_base import ITK_INGESTED_REMOTE_MODULES
+    from wheel_profile import ITK_INGESTED_REMOTE_MODULES
 
     linux_builder.enable_ingested_remote_modules()
     defs = CMakeArgumentBuilder()
@@ -794,3 +794,33 @@ def test_fixup_wheel_fails_when_delocate_is_missing(
         macos_builder.fixup_wheel(str(wheel))
     flat = " ".join(str(a) for c in called.call_args_list for a in c.args[0])
     assert "delocate" not in flat
+
+
+@pytest.mark.parametrize(
+    "builder_name", ["linux_builder", "macos_builder", "windows_builder"]
+)
+def test_every_itk_wheel_configure_names_its_wheel_profile(
+    builder_name: str, request: pytest.FixtureRequest, tmp_path: Path
+) -> None:
+    """Windows replaces the pyproject's cmake.args, so the profile must be a define."""
+    builder = request.getfixturevalue(builder_name)
+    builder.cleanup = False
+    builder.wheel_names = ["itk-core"]
+    builder.cmake_cmdline_definitions = CMakeArgumentBuilder()
+    builder.cmake_itk_source_build_configurations.set(
+        "ITK_BINARY_DIR:PATH", str(tmp_path / "itk-bld")
+    )
+    calls: list[str] = []
+
+    def record(cmd: list[object], *args: object, **kwargs: object) -> int:
+        calls.append(" ".join(str(c) for c in cmd))
+        return 0
+
+    with (
+        patch("build_python_instance_base.configure_one_pyproject_file"),
+        patch.object(builder, "echo_check_call", side_effect=record),
+    ):
+        builder.build_itk_python_wheels()
+    assert len(calls) == 1
+    assert "cmake.define.ITKPythonPackage_WHEEL_PROFILE:STRING" in calls[0]
+    assert builder.wheel_profile.name in calls[0]
