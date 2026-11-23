@@ -132,7 +132,8 @@ if [[ ! -f ${local_compress_tarball_name} ]]; then
   aria2c -c --file-allocation=none -d "$(dirname "${local_compress_tarball_name}")" -o "$(basename "${local_compress_tarball_name}")" -s 10 -x 10 "https://github.com/InsightSoftwareConsortium/ITKPythonBuilds/releases/download/${ITK_PACKAGE_VERSION}/ITKPythonBuilds-macosx${tarball_arch}.tar.zst"
 fi
 local_tarball_name=${DASHBOARD_BUILD_DIRECTORY}/ITKPythonBuilds-macosx${tarball_arch}.tar
-unzstd --long=31 "${local_compress_tarball_name}" -o "${local_tarball_name}"
+# Through stdin, so a symlinked archive is read rather than skipped.
+unzstd --long=31 -c <"${local_compress_tarball_name}" >"${local_tarball_name}"
 # Find GNU tar (gtar from pixi or brew) for reliable extraction
 if command -v gtar >/dev/null 2>&1; then
   TAR_CMD=gtar

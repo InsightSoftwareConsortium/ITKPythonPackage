@@ -115,7 +115,8 @@ if [[ ! -f ./${TARBALL_NAME}.zst ]]; then
   echo "ERROR: can not find required binary './${TARBALL_NAME}.zst'"
   exit 255
 fi
-"${unzstd_exe}" --long=31 "./${TARBALL_NAME}.zst" -o "${TARBALL_NAME}"
+# Through stdin, so a symlinked archive is read rather than skipped.
+"${unzstd_exe}" --long=31 -c <"./${TARBALL_NAME}.zst" >"${TARBALL_NAME}"
 
 current_dir=$(pwd)
 echo "Extracting all cache files from ${TARBALL_NAME} in ${current_dir}"
