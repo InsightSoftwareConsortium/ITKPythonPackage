@@ -20,6 +20,10 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
         """True when the wheels are repaired and tagged for manylinux."""
         return bool(self.target.manylinux_version)
 
+    def caps_lto_jobs(self) -> bool:
+        """The manylinux images link with GCC, whose ``-flto=auto`` uses every thread."""
+        return self.builds_manylinux()
+
     def _configure_toolchain(self) -> None:
         self.cmake_compiler_configurations.set(
             "CMAKE_CXX_COMPILER_TARGET:STRING", self.target.linux_triple

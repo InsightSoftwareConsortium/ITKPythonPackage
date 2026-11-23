@@ -137,6 +137,12 @@ DOCKER_ARGS+=" -e CMAKE_OPTIONS='${CMAKE_OPTIONS}' "
 if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
   DOCKER_ARGS+=" -e SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH} "
 fi
+# Build parallelism overrides read by scripts/build_jobs.py inside the container.
+for _var in ITK_BUILD_JOBS ITK_BUILD_LOAD_LIMIT ITK_BUILD_LINK_JOBS; do
+  if [ -n "${!_var:-}" ]; then
+    DOCKER_ARGS+=" -e ${_var}=${!_var} "
+  fi
+done
 
 # Mount shared libraries if LD_LIBRARY_PATH is set
 if [[ -n ${LD_LIBRARY_PATH} ]]; then

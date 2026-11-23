@@ -109,6 +109,12 @@ fi
 if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
   DOCKER_ARGS+=" -e SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH} "
 fi
+# Build parallelism overrides read by scripts/build_jobs.py inside the container.
+for _var in ITK_BUILD_JOBS ITK_BUILD_LOAD_LIMIT ITK_BUILD_LINK_JOBS; do
+  if [ -n "${!_var:-}" ]; then
+    DOCKER_ARGS+=" -e ${_var}=${!_var} "
+  fi
+done
 
 # To build tarballs in manylinux, use 'export BUILD_WHEELS_EXTRA_FLAGS=" --build-itk-tarball-cache "'
 BUILD_WHEELS_EXTRA_FLAGS=${BUILD_WHEELS_EXTRA_FLAGS:=""} # No tarball by default

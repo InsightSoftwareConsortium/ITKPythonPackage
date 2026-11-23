@@ -250,6 +250,10 @@ useful in CI pipelines:
      - total ninja jobs; default bounded by CPU count and physical memory
    * - ``ITK_BUILD_LOAD_LIMIT``
      - ninja ``-l`` load limit; default the hardware thread count
+   * - ``ITK_BUILD_LINK_JOBS``
+     - concurrent link steps (a Ninja job pool); default the job count
+       divided by 4, bounded by 8 GB of RAM per link. On manylinux each
+       link's LTO is capped at ``-flto=<jobs / links>``. ``0`` disables both
    * - ``SOURCE_DATE_EPOCH``
      - timestamp written into the wheels' zip entries; default the ITK
        commit's committer time, so rebuilds of a commit are byte-comparable.

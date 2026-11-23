@@ -21,7 +21,15 @@ from build_inputs import (
     module_source_state,
     resolved_itk_commit,
 )
-from build_jobs import compute_build_jobs, compute_load_limit, physical_memory_gb
+from build_jobs import (
+    compute_build_jobs,
+    compute_link_jobs,
+    compute_load_limit,
+    compute_lto_jobs,
+    job_pool_definitions,
+    lto_jobs_definitions,
+    physical_memory_gb,
+)
 from build_manager import BuildManager
 from cmake_argument_builder import CMakeArgumentBuilder, definitions_from_cmake_options
 from compiler_cache import (
@@ -249,6 +257,9 @@ class BuildPythonInstanceBase(ABC):
         )
         # -l follows the thread count; -l<jobs> would throttle ninja when jobs < threads.
         self.build_load_limit: int = compute_load_limit(os.cpu_count())
+        self.build_link_jobs: int = compute_link_jobs(
+            self.build_node_cpu_count, self.build_node_memory_gb
+        )
         _mem = (
             f"{self.build_node_memory_gb:.1f} GB"
             if self.build_node_memory_gb
@@ -256,7 +267,7 @@ class BuildPythonInstanceBase(ABC):
         )
         print(
             f"# Build parallelism: -j{self.build_node_cpu_count} "
-            f"-l{self.build_load_limit} "
+            f"-l{self.build_load_limit} link pool {self.build_link_jobs} "
             f"(cpus={os.cpu_count()}, ram={_mem})"
         )
         self.platform_env = platform_env
@@ -334,7 +345,11 @@ class BuildPythonInstanceBase(ABC):
             flag_defs.update(
                 dead_strip_cmake_definitions(self.target.os_name, os.environ, user_defs)
             )
+        flag_defs.update(self.lto_link_definitions(flag_defs))
         self.cmake_compiler_configurations.update(flag_defs)
+        self.cmake_compiler_configurations.update(
+            job_pool_definitions(self.build_node_cpu_count, self.build_link_jobs)
+        )
         # Command-line definitions are applied last, so carry the merged value there.
         for key, value in flag_defs.items():
             user_key = user_flag_key(user_defs, key.split(":")[0])
@@ -809,6 +824,19 @@ class BuildPythonInstanceBase(ABC):
     ) -> dict[str, str]:
         """Return the ``CMAKE_<LANG>_FLAGS`` definitions this platform adds."""
         return {}
+
+    def caps_lto_jobs(self) -> bool:
+        """True when the toolchain takes GCC's ``-flto=<n>`` at link time."""
+        return False
+
+    def lto_link_definitions(self, flag_defs: Mapping[str, str]) -> dict[str, str]:
+        """Linker flags that cap each link's LTRANS processes, when capped at all."""
+        if self.build_link_jobs <= 0 or not self.caps_lto_jobs():
+            return {}
+        return lto_jobs_definitions(
+            compute_lto_jobs(self.build_node_cpu_count, self.build_link_jobs),
+            flag_defs,
+        )
 
     @abstractmethod
     def _configure_toolchain(self) -> None:  # pragma: no cover - abstract

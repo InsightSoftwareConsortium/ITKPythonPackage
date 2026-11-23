@@ -104,6 +104,12 @@ compiler cache, runs the import test, and fails if a wheel is over PyPI's
   load limit (`ITK_BUILD_LOAD_LIMIT`, default the hardware thread count)
   holds back new jobs while the load average is above it. Set it higher on a
   host whose load comes from other users.
+- **Links run in their own Ninja pool.** Each wrapper module links with
+  GCC LTO, whose `-flto=auto` starts one process per thread in every link.
+  `ITK_BUILD_LINK_JOBS` (default jobs / 4, at most one per 8 GB) bounds the
+  concurrent links, and on manylinux each link gets `-flto=<jobs / links>`;
+  `0` turns both off. The manylinux scripts forward `ITK_BUILD_JOBS`,
+  `ITK_BUILD_LOAD_LIMIT`, and `ITK_BUILD_LINK_JOBS` into the container.
 
 Before uploading, copy every host's `dist/*.whl` into one place and check
 the set: 8 wheels per target, each named `*-cp311-abi3-<platform>.whl`, one

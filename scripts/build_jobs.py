@@ -6,18 +6,21 @@ little RAM per hardware thread. Sixteen concurrent ``cl.exe`` instances on a
 and the result is swapping or an out-of-memory kill rather than a faster
 build. Bounding jobs by physical memory keeps the machine out of that regime.
 
-Two environment overrides exist so CI can tune without a code change:
+Link steps get their own Ninja job pool. ITK links each Python wrapper module
+with link-time optimization, and GCC's ``-flto=auto`` starts one LTRANS
+process per hardware thread in every link, so a link phase with tens of
+modules ready at once runs hundreds of processes regardless of ``-j``. The
+link pool bounds the concurrent links, and on manylinux each link's LTRANS
+processes are capped so that the links together use about the job count.
+
+Environment overrides, so CI can tune without a code change:
 
 ``ITK_BUILD_JOBS``
     Total ninja jobs. Replaces the computed value entirely.
 ``ITK_BUILD_LOAD_LIMIT``
     Value for ninja ``-l``; defaults to the hardware thread count.
-
-There is deliberately no separate link pool. On this build links are not
-the memory pressure: link.exe peaked at 1.45 GB (one module; the median
-output is 3 MB), the whole link phase is ~1.3 min of an ~80 min step, and
-it overlaps the compile tail. The compilers are the constraint, and the
-memory-bounded job count already limits them.
+``ITK_BUILD_LINK_JOBS``
+    Concurrent link steps. ``0`` disables the link pool and the LTRANS cap.
 """
 
 from __future__ import annotations
@@ -33,6 +36,10 @@ if TYPE_CHECKING:
 
 #: RAM budgeted per concurrent compile job, measured on ITK 6 wrapping with MSVC.
 DEFAULT_GB_PER_JOB = 2.5
+#: LTRANS processes per link, so a large module still links in parallel.
+DEFAULT_LTO_JOBS_PER_LINK = 4
+#: RAM budgeted per concurrent link, measured on ITK 6 wrapping with GCC LTO.
+DEFAULT_GB_PER_LINK = 8.0
 
 
 def _cgroup_memory_limit_gb() -> float | None:
@@ -148,3 +155,62 @@ def compute_load_limit(
     if override:
         return max(1, int(override))
     return max(1, int(cpu_count or 1))
+
+
+def compute_link_jobs(
+    build_jobs: int,
+    memory_gb: float | None,
+    *,
+    lto_jobs_per_link: int = DEFAULT_LTO_JOBS_PER_LINK,
+    gb_per_link: float = DEFAULT_GB_PER_LINK,
+    env: Mapping[str, str] | None = None,
+) -> int:
+    """Size of the Ninja ``link`` pool; ``0`` means no link pool.
+
+    The job count divided among links of *lto_jobs_per_link* processes each,
+    further bounded by what RAM affords. ``ITK_BUILD_LINK_JOBS`` in *env*
+    overrides the computation.
+    """
+    env = os.environ if env is None else env
+    override = env.get("ITK_BUILD_LINK_JOBS", "").strip()
+    if override:
+        return max(0, int(override))
+    links = max(1, build_jobs // max(1, lto_jobs_per_link))
+    if memory_gb is not None and memory_gb > 0:
+        links = min(links, max(1, int(memory_gb // gb_per_link)))
+    return links
+
+
+def compute_lto_jobs(build_jobs: int, link_jobs: int) -> int:
+    """LTRANS processes per link, so that *link_jobs* links use *build_jobs*."""
+    return max(1, build_jobs // max(1, link_jobs))
+
+
+def job_pool_definitions(build_jobs: int, link_jobs: int) -> dict[str, str]:
+    """CMake definitions for Ninja ``compile`` and ``link`` job pools.
+
+    Other generators ignore them. A *link_jobs* of ``0`` returns none.
+    """
+    if link_jobs <= 0:
+        return {}
+    return {
+        "CMAKE_JOB_POOLS:STRING": f"compile={build_jobs};link={link_jobs}",
+        "CMAKE_JOB_POOL_COMPILE:STRING": "compile",
+        "CMAKE_JOB_POOL_LINK:STRING": "link",
+    }
+
+
+def lto_jobs_definitions(lto_jobs: int, flag_defs: Mapping[str, str]) -> dict[str, str]:
+    """Append ``-flto=<lto_jobs>`` to the shared and module linker flags.
+
+    CMake puts the IPO compile options, including GCC's ``-flto=auto``,
+    before the linker flags on the link line, and GCC honors the last
+    ``-flto=``. A value that already names ``-flto=`` is left as given.
+    """
+    out: dict[str, str] = {}
+    for var in ("CMAKE_SHARED_LINKER_FLAGS", "CMAKE_MODULE_LINKER_FLAGS"):
+        key = f"{var}:STRING"
+        value = flag_defs.get(key, "")
+        if "-flto=" not in value:
+            out[key] = f"{value} -flto={lto_jobs}".strip()
+    return out
