@@ -61,6 +61,7 @@ platforms = ["linux-64", "linux-aarch64"]
 auditwheel = "*"
 ccache = ">=4.10,<5"
 patchelf = "*"       # Needed for auditwheel
+texlive-core = "*"   # bibtex, for Doxygen \cite in wrapping docstrings
 wheel = "*"
 
 [feature.manylinux-common-build.pypi-dependencies]
@@ -76,6 +77,7 @@ libhwloc = "*"            # Needed for tbb
 auditwheel = "*"
 ccache = ">=4.10,<5"
 patchelf = "*"            # Needed for auditwheel
+texlive-core = "*"        # bibtex, for Doxygen \cite in wrapping docstrings
 wheel = "*"
 
 [feature.manylinux228-build]
@@ -104,6 +106,7 @@ delocate = "*"
 ccache = ">=4.10,<5"
 cxx-compiler = "==1.10.0" # XCode 16.0 before castxml required updates
 c-compiler = "==1.10.0"   # XCode 16.0 before castxml required updates
+texlive-core = "*"        # bibtex, for Doxygen \cite in wrapping docstrings
 
 [feature.windows-build]
 platforms = ["win-64"]
