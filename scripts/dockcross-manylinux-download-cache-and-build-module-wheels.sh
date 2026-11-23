@@ -47,33 +47,55 @@ usage() {
   exit 2
 }
 
-PARSED_ARGS=$(getopt -a -n dockcross-manylinux-download-cache-and-build-module-wheels \
-  -o hc:x: --long help,cmake_options:,exclude_libs: -- "$@")
-eval set -- "$PARSED_ARGS"
+option_value() {
+  if [ $# -lt 2 ]; then
+    echo "Option $1 needs a value."
+    usage
+  fi
+}
 
-while :; do
+# Parsed by hand: BSD getopt on macOS has no long options. Options may follow
+# the Python versions, as GNU getopt allowed.
+python_versions=()
+while [ $# -gt 0 ]; do
   case "$1" in
-  -h | --help)
+  -h | --help | -help)
     usage
     ;;
-  -c | --cmake_options)
+  -c | --cmake_options | -cmake_options)
+    option_value "$@"
     export CMAKE_OPTIONS="$2"
     shift 2
     ;;
-  -x | --exclude_libs)
+  --cmake_options=* | -cmake_options=*)
+    export CMAKE_OPTIONS="${1#*=}"
+    shift
+    ;;
+  -x | --exclude_libs | -exclude_libs)
+    option_value "$@"
     echo "WARNING: --exclude_libs '$2' is ignored; no library is excluded from the wheel repair."
     shift 2
     ;;
+  --exclude_libs=* | -exclude_libs=*)
+    echo "WARNING: --exclude_libs '${1#*=}' is ignored; no library is excluded from the wheel repair."
+    shift
+    ;;
   --)
     shift
+    python_versions+=("$@")
     break
     ;;
-  *)
+  -*)
     echo "Unexpected option: $1."
     usage
     ;;
+  *)
+    python_versions+=("$1")
+    shift
+    ;;
   esac
 done
+set -- "${python_versions[@]}"
 
 # The ITKPythonBuilds cache layout must match these scripts, so there is no default release.
 if [ -z "${ITK_PACKAGE_VERSION}" ]; then
