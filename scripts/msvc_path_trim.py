@@ -1,6 +1,6 @@
 """Keep the build directories out of the ``__FILE__`` strings MSVC compiles.
 
-``-d1trimfile:<root>\\`` makes ``__FILE__`` relative to the checkout, the
+``-d1trimfile:<root>/`` makes ``__FILE__`` relative to the checkout, the
 build root, and the ITK source. With ``SCCACHE_BASEDIRS`` a build hits
 objects another directory compiled, so without the trim the wheels would
 name that other build's directories.
@@ -30,13 +30,17 @@ MSVC_DEFAULT_FLAGS = {
 
 
 def msvc_trim_prefixes(roots: Iterable[Path | str]) -> list[str]:
-    """Return each root as an absolute ``X:\\dir\\`` prefix, longest first."""
+    """Return each root as an absolute ``X:/dir/`` prefix, longest first.
+
+    MSVC matches the prefix with either slash. A backslash would be read as an
+    escape where CMake writes the flags into a package config, as DCMTK does.
+    """
     prefixes = set()
     for root in roots:
         path = PureWindowsPath(root)
         if not path.is_absolute():
             path = PureWindowsPath(Path(root).resolve())
-        prefixes.add(str(path).rstrip("\\") + "\\")
+        prefixes.add(path.as_posix().rstrip("/") + "/")
     # CMake splits flags on spaces, so a root containing one cannot be passed.
     return sorted((p for p in prefixes if " " not in p), key=len, reverse=True)
 
