@@ -133,7 +133,6 @@ fi
 
 # Environment variables for the container
 DOCKER_ARGS+=" -e PYTHONUNBUFFERED=1 "
-DOCKER_ARGS+=" -e CMAKE_OPTIONS='${CMAKE_OPTIONS}' "
 if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
   DOCKER_ARGS+=" -e SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH} "
 fi
@@ -188,6 +187,7 @@ if [[ "${TARGET_ARCH}" == "aarch64" ]]; then
       -e ITKPYTHONPACKAGE_ORG=\"${ITKPYTHONPACKAGE_ORG}\" \
       -e ITKPYTHONPACKAGE_TAG=\"${ITKPYTHONPACKAGE_TAG}\" \
       -e BUILD_WHEELS_EXTRA_FLAGS=\"${BUILD_WHEELS_EXTRA_FLAGS}\" \
+      -e CMAKE_OPTIONS=\"${CMAKE_OPTIONS}\" \
       ${CONTAINER_SOURCE} \
       /bin/bash -x ${CONTAINER_PACKAGE_SCRIPTS_DIR}/scripts/docker_build_environment_driver.sh"
 else
@@ -212,6 +212,7 @@ else
       ITKPYTHONPACKAGE_ORG=\"${ITKPYTHONPACKAGE_ORG}\" \
       ITKPYTHONPACKAGE_TAG=\"${ITKPYTHONPACKAGE_TAG}\" \
       BUILD_WHEELS_EXTRA_FLAGS=\"${BUILD_WHEELS_EXTRA_FLAGS}\" \
+      CMAKE_OPTIONS=\"${CMAKE_OPTIONS}\" \
       /bin/bash -x ${CONTAINER_PACKAGE_SCRIPTS_DIR}/scripts/docker_build_environment_driver.sh"
 fi
 
