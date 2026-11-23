@@ -1,4 +1,4 @@
-"""CMAKE_OPTIONS reaches the module build container as one intact value."""
+"""What the Linux module script hands to the container runtime."""
 
 import os
 import shutil
@@ -42,6 +42,8 @@ def _run(tmp_path: Path, arch: str, cmake_options: str) -> list[str]:
         "MODULE_DEPS_DIR": str(tmp_path / "deps"),
         "CMAKE_OPTIONS": cmake_options,
     }
+    if "CONTAINER_DNS" in os.environ:
+        env["CONTAINER_DNS"] = os.environ["CONTAINER_DNS"]
     result = subprocess.run(
         ["bash", str(ipp / "scripts" / "dockcross-manylinux-build-module-wheels.sh")],
         env=env,
@@ -63,3 +65,21 @@ def test_cmake_options_arrive_unquoted_and_unsplit(
     args = _run(tmp_path, arch, cmake_options)
     assert f"CMAKE_OPTIONS={cmake_options}" in args
     assert not any("CMAKE_OPTIONS='" in a for a in args)
+
+
+@pytest.mark.parametrize("arch", ["x64", "aarch64"])
+def test_container_dns_replaces_host_networking(
+    tmp_path: Path, arch: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("CONTAINER_DNS", "10.0.0.1,10.0.0.2")
+    args = " ".join(_run(tmp_path, arch, ""))
+    assert "--dns 10.0.0.1" in args
+    assert "--dns 10.0.0.2" in args
+    assert "--network=host" not in args
+
+
+@pytest.mark.parametrize("arch", ["x64", "aarch64"])
+def test_host_networking_without_container_dns(tmp_path: Path, arch: str) -> None:
+    args = " ".join(_run(tmp_path, arch, ""))
+    assert "--network=host" in args
+    assert "--dns" not in args

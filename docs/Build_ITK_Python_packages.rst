@@ -237,8 +237,8 @@ useful in CI pipelines:
    * - ``CONTAINER_DNS``
      - DNS servers (space- or comma-separated) passed as ``--dns`` to the
        manylinux build container, for hosts whose containers cannot resolve
-       names; unset leaves the runtime default. Read only by
-       ``dockcross-manylinux-build-wheels.sh``, not the module scripts
+       names; unset leaves the runtime default. In the module build it
+       replaces ``--network=host``, which Docker cannot combine with ``--dns``
    * - ``USE_COMPILER_CACHE`` (or ``USE_CCACHE``)
      - ``--use-compiler-cache``; ``USE_COMPILER_CACHE`` wins when both are set
    * - ``CCACHE_MAXSIZE`` (``SCCACHE_CACHE_SIZE`` on Windows)

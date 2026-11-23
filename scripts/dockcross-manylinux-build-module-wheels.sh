@@ -121,7 +121,16 @@ CONTAINER_MODULE_DIR=${CONTAINER_WORK_DIR}/$(basename "${MODULE_SRC_DIRECTORY}")
 CONTAINER_MODULE_DEPS_DIR=${CONTAINER_WORK_DIR}/$(basename "${MODULE_DEPS_DIR}")
 
 # Build docker arguments
-DOCKER_ARGS=" --network=host "
+# Docker cannot combine --dns with --network=host; CONTAINER_DNS (space- or
+# comma-separated) is for hosts whose containers cannot reach the default resolver.
+if [ -n "${CONTAINER_DNS:-}" ]; then
+  DOCKER_ARGS=""
+  for _dns in ${CONTAINER_DNS//,/ }; do
+    DOCKER_ARGS+=" --dns ${_dns} "
+  done
+else
+  DOCKER_ARGS=" --network=host "
+fi
 DOCKER_ARGS+=" -v ${HOST_PACKAGE_BUILD_DIR}:${CONTAINER_PACKAGE_BUILD_DIR} "
 DOCKER_ARGS+=" -v ${HOST_PACKAGE_SCRIPTS_DIR}:${CONTAINER_PACKAGE_SCRIPTS_DIR} "
 DOCKER_ARGS+=" -v ${MODULE_SRC_DIRECTORY}:${CONTAINER_MODULE_DIR} "
