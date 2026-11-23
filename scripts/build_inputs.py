@@ -84,7 +84,7 @@ MODULE_STATE_SKIP: frozenset[str] = frozenset(
         "MODULE_DEPENDENCIES",
         "__pycache__",
         "pyproject.toml.orig",
-        "pyproject.toml.whl",
+        "pyproject.toml.built",
     }
 )
 

@@ -835,7 +835,7 @@ class BuildPythonInstanceBase(ABC):
         # Pin ITK dependencies to the version being built; the backup restores the file.
         module_pyproject = self.module_source_dir / "pyproject.toml"
         pyproject_orig = module_pyproject.with_suffix(".toml.orig")
-        pyproject_whl = module_pyproject.with_suffix(".toml.whl")
+        pyproject_built = module_pyproject.with_suffix(".toml.built")
         deps_rewritten = False
         if module_pyproject.is_file():
             itk_ver = self.config.itk_package_version
@@ -913,11 +913,11 @@ class BuildPythonInstanceBase(ABC):
             shutil.rmtree(fresh_dir, ignore_errors=True)
             # Restore original pyproject.toml so the working tree stays clean
             if deps_rewritten and pyproject_orig.is_file():
-                shutil.copy2(module_pyproject, pyproject_whl)
+                shutil.copy2(module_pyproject, pyproject_built)
                 shutil.move(str(pyproject_orig), str(module_pyproject))
                 print(
                     f"Restored {module_pyproject} "
-                    f"(modified version saved as {pyproject_whl.name})"
+                    f"(modified version saved as {pyproject_built.name})"
                 )
 
     def build_itk_python_wheels(self) -> None:

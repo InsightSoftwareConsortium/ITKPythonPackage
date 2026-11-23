@@ -201,7 +201,7 @@ def test_module_state_ignores_what_the_module_build_writes(module_source: Path) 
     before = module_source_state(module_source)
     (module_source / "dist").mkdir()
     (module_source / "dist" / "itk_foo-1.0-cp311-abi3-linux_x86_64.whl").write_text("")
-    (module_source / "pyproject.toml.whl").write_text("")
+    (module_source / "pyproject.toml.built").write_text("")
     assert module_source_state(module_source) == before
 
 

@@ -220,4 +220,4 @@ def test_module_pyproject_is_left_as_found(
     _module_configure_defines(linux_builder, tmp_path)
     assert (module / "pyproject.toml").read_text() == original
     assert not (module / "pyproject.toml.orig").exists()
-    assert (module / "pyproject.toml.whl").exists() is rewritten
+    assert (module / "pyproject.toml.built").exists() is rewritten
