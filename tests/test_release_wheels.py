@@ -263,6 +263,20 @@ def test_the_summary_lists_this_runs_wheels_only(tmp_path: Path) -> None:
     assert rw.built_wheels(step) == [current]
 
 
+@pytest.mark.parametrize(
+    ("returncode", "wheels", "reason"),
+    [
+        (0, [Path("itk_core.whl")], None),
+        (2, [Path("itk_core.whl")], "exit 2"),
+        (0, [], "no wheels"),
+    ],
+)
+def test_a_target_fails_on_error_or_without_wheels(
+    returncode: int, wheels: list[Path], reason: str | None
+) -> None:
+    assert rw.failure_reason(returncode, wheels) == reason
+
+
 def test_every_target_is_either_native_or_in_a_container() -> None:
     for name, target in rw.RELEASE_TARGETS.items():
         assert target.name == name

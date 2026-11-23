@@ -369,6 +369,15 @@ def built_wheels(step: Step) -> list[Path]:
     return sorted(step.dist_dir.glob(RELEASE_TARGETS[step.target].wheel_glob))
 
 
+def failure_reason(returncode: int, wheels: list[Path]) -> str | None:
+    """Why a target failed, or None when it exited cleanly and left wheels."""
+    if returncode != 0:
+        return f"exit {returncode}"
+    if not wheels:
+        return "no wheels"
+    return None
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=__doc__.split("\n\n")[0],
@@ -434,12 +443,14 @@ def main(argv: list[str] | None = None) -> int:
         result = subprocess.run(
             step.command, cwd=IPP_DIR, env={**os.environ, **step.env}, check=False
         )
-        if result.returncode != 0:
+        wheels = built_wheels(step)
+        reason = failure_reason(result.returncode, wheels)
+        if reason:
             failed.append(step.target)
-            print(f"=== {step.target} FAILED (exit {result.returncode})", flush=True)
+            print(f"=== {step.target} FAILED ({reason})", flush=True)
             continue
         print(f"=== {step.target} wheels in {step.dist_dir}:", flush=True)
-        for wheel in built_wheels(step):
+        for wheel in wheels:
             print(f"    {wheel.name}  {wheel.stat().st_size / 1e6:.1f} MB")
 
     if failed:
