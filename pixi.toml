@@ -61,6 +61,7 @@ platforms = ["linux-64", "linux-aarch64"]
 auditwheel = "*"
 ccache = ">=4.10,<5"
 patchelf = "*"       # Needed for auditwheel
+perl = "*"           # Doxygen runs bibtex through a Perl script needing open.pm
 texlive-core = "*"   # bibtex, for Doxygen \cite in wrapping docstrings
 wheel = "*"
 
@@ -77,6 +78,7 @@ libhwloc = "*"            # Needed for tbb
 auditwheel = "*"
 ccache = ">=4.10,<5"
 patchelf = "*"            # Needed for auditwheel
+perl = "*"                # Doxygen runs bibtex through a Perl script needing open.pm
 texlive-core = "*"        # bibtex, for Doxygen \cite in wrapping docstrings
 wheel = "*"
 
