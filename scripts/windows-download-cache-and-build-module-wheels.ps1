@@ -203,6 +203,10 @@ echo "Extracting archive to $DASHBOARD_BUILD_DIRECTORY ..."
 # Use 7-Zip to extract (matches the format it was created in)
 $sevenZipPath = "C:\Program Files\7-Zip\7z.exe"
 if (-not (Test-Path $sevenZipPath)) {
+    $found7z = Get-Command 7z -ErrorAction SilentlyContinue
+    if ($found7z) { $sevenZipPath = $found7z.Source }
+}
+if (-not (Test-Path $sevenZipPath)) {
     Write-Error "7-Zip not found at $sevenZipPath. Please install 7-Zip."
     exit 1
 }
