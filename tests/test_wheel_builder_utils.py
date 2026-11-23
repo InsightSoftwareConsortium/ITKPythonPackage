@@ -1,6 +1,7 @@
 """Failure handling in the process helpers the build driver relies on."""
 
 import subprocess
+import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from unittest.mock import patch
@@ -128,3 +129,12 @@ def test_compute_itk_package_version_raises_when_fetch_fails(tmp_path: Path) -> 
         pytest.raises(RuntimeError, match="git fetch"),
     ):
         compute_itk_package_version(tmp_path, "v6.0.0", {})
+
+
+def test_streamed_output_is_also_returned(capsys: pytest.CaptureFixture[str]) -> None:
+    result = wheel_builder_utils.run_command(
+        [sys.executable, "-c", "print('line one'); print('line two')"], stream=True
+    )
+    assert result.returncode == 0
+    assert result.stdout.splitlines() == ["line one", "line two"]
+    assert "line one\nline two\n" in capsys.readouterr().out

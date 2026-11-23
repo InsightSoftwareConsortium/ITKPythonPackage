@@ -37,6 +37,25 @@ def test_echo_check_call_raises_when_check_is_forwarded() -> None:
         )
 
 
+def test_echo_check_call_prints_output_as_the_command_runs(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Each line reaches stdout while the command runs, stderr included."""
+    script = (
+        "import sys, time\n"
+        "print('[1/2] first', flush=True)\n"
+        "time.sleep(0.2)\n"
+        "print('[2/2] second', file=sys.stderr, flush=True)\n"
+    )
+    rc = build_environment.echo_check_call(
+        [sys.executable, "-c", script], use_pixi_env=False
+    )
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert out.index("[1/2] first") < out.index("[2/2] second")
+    assert out.index("[2/2] second") < out.index("<<Finished Running")
+
+
 @pytest.mark.parametrize(
     ("active", "wrapped"),
     [("hostsystem", False), ("macosx-py311", False), ("default", True)],
