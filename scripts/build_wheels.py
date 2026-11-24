@@ -356,6 +356,9 @@ def build_argument_parser(os_name: OS, ipp_dir: Path) -> argparse.ArgumentParser
         ),
     )
     _cmake_options_default = remote_module_build_dict["CMAKE_OPTIONS"]
+    if os_name is OS.WINDOWS:
+        # shlex takes a backslash for an escape; keep those of Windows paths.
+        _cmake_options_default = _cmake_options_default.replace("\\", "\\\\")
     parser.add_argument(
         "cmake_options",
         nargs="*",

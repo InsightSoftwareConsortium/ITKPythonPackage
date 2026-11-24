@@ -89,3 +89,11 @@ def test_the_default_platform_env_is_the_active_manylinux_environment(
     monkeypatch.setenv("PIXI_ENVIRONMENT_NAME", "manylinux228-py311")
     args = build_argument_parser(OS.LINUX, Path("IPP")).parse_args([])
     assert args.platform_env == "manylinux228-py311"
+
+
+def test_windows_cmake_options_keep_their_backslashes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("CMAKE_OPTIONS", r'-DA_DIR=C:\deps\a "-DB_DIR=C:\b c"')
+    args = build_argument_parser(OS.WINDOWS, Path("IPP")).parse_args([])
+    assert args.cmake_options == [r"-DA_DIR=C:\deps\a", r"-DB_DIR=C:\b c"]
