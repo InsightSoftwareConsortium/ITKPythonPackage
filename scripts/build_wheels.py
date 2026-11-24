@@ -623,7 +623,7 @@ def sync_itk_source_tree(args: argparse.Namespace, ipp_dir: Path) -> None:
     # any other value is used as given, as a cache-restored tree has no repository.
     if derives_package_version(args.itk_package_version):
         args.itk_package_version = compute_itk_package_version(
-            args.itk_source_dir, args.itk_git_tag, os.environ
+            args.itk_source_dir, args.itk_git_tag, itk_git_env(args.itk_source_dir)
         )
 
 
