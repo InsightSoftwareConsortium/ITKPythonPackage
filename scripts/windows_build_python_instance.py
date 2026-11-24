@@ -28,6 +28,13 @@ ARCHIVE_EXCLUDES = (
     "*.pdb",
 )
 
+#: Where ``build_tarball`` looks for 7-Zip before ``PATH``.
+SEVEN_ZIP_CANDIDATES = (
+    Path(r"C:\7-Zip\7z.exe"),
+    Path(r"C:\Program Files\7-Zip\7z.exe"),
+    Path(r"C:\Program Files (x86)\7-Zip\7z.exe"),
+)
+
 
 def _archive_excluded(relative: PurePath) -> bool:
     """Return True when *relative* matches an ``ARCHIVE_EXCLUDES`` pattern."""
@@ -191,14 +198,8 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             self.ipp_dir,
         ]
 
-        seven_zip_candidates = [
-            Path(r"C:\7-Zip\7z.exe"),
-            Path(r"C:\Program Files\7-Zip\7z.exe"),
-            Path(r"C:\Program Files (x86)\7-Zip\7z.exe"),
-        ]
-
         seven_zip = None
-        for cand in seven_zip_candidates:
+        for cand in SEVEN_ZIP_CANDIDATES:
             if cand.exists():
                 seven_zip = cand
                 break

@@ -285,6 +285,7 @@ def test_zip_fallback_archives_the_seven_zip_roots(
         path.write_text("x")
 
     with (
+        patch("windows_build_python_instance.SEVEN_ZIP_CANDIDATES", ()),
         patch("windows_build_python_instance.shutil.which", return_value=None),
         patch.object(windows_builder, "echo_check_call") as call,
     ):
