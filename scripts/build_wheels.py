@@ -310,9 +310,14 @@ def build_argument_parser(os_name: OS, ipp_dir: Path) -> argparse.ArgumentParser
     parser = argparse.ArgumentParser(
         description="Driver script to build ITK Python wheels."
     )
+    # The environment guard requires the active pixi environment itself, which
+    # get_default_platform_build renames for manylinux.
+    default_env = os.environ.get("PIXI_ENVIRONMENT_NAME", "")
+    if "-" not in default_env:
+        default_env = get_default_platform_build("py311")
     parser.add_argument(
         "--platform-env",
-        default=get_default_platform_build("py311"),
+        default=default_env,
         help=(
             """A platform environment name or path:
                linux-py311,

@@ -1,9 +1,11 @@
 import argparse
 from collections.abc import Sequence
+from pathlib import Path
 
 import pytest
-from build_wheels import parse_args_with_cmake_defines
+from build_wheels import build_argument_parser, parse_args_with_cmake_defines
 from cmake_argument_builder import definitions_from_cmake_options
+from target_platform import OS
 
 
 def _parser(default: Sequence[str] = ()) -> argparse.ArgumentParser:
@@ -78,3 +80,12 @@ def test_options_that_are_not_definitions_are_refused(option: str) -> None:
     """Anything but a ``-D<KEY>=<VALUE>`` definition is an error."""
     with pytest.raises(ValueError, match="not a -D<KEY>=<VALUE> definition"):
         definitions_from_cmake_options(["-DA:BOOL=ON", option])
+
+
+def test_the_default_platform_env_is_the_active_manylinux_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The environment guard requires exactly the active environment."""
+    monkeypatch.setenv("PIXI_ENVIRONMENT_NAME", "manylinux228-py311")
+    args = build_argument_parser(OS.LINUX, Path("IPP")).parse_args([])
+    assert args.platform_env == "manylinux228-py311"
