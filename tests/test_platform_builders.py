@@ -254,6 +254,23 @@ def _capture_repair_env(
     return captured_env
 
 
+def test_excluded_libraries_go_to_auditwheel_exclude(
+    tmp_path: Path, linux_builder: LinuxBuildPythonInstance
+) -> None:
+    linux_builder.exclude_libs = ["libcuda.so.1;libnvrtc.so.12"]
+    wheel, repaired = _prepare_linux_fixup(linux_builder, tmp_path)
+    commands: list[list[str]] = []
+
+    def fake_repair(cmd: Sequence[str | Path], env: Mapping[str, str]) -> int:
+        commands.append([str(c) for c in cmd])
+        repaired.touch()
+        return 0
+
+    with patch.object(linux_builder, "echo_check_call", side_effect=fake_repair):
+        linux_builder.fixup_wheel(str(wheel))
+    assert " --exclude libcuda.so.1 --exclude libnvrtc.so.12 " in " ".join(commands[0])
+
+
 def test_fixup_wheel_ld_library_path_starts_with_the_build_env_lib_dir(
     tmp_path: Path,
     linux_builder: LinuxBuildPythonInstance,

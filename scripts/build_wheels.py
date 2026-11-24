@@ -346,7 +346,8 @@ def build_argument_parser(os_name: OS, ipp_dir: Path) -> argparse.ArgumentParser
         nargs=1,
         default="",
         help=(
-            'Windows only: semicolon-delimited DLL names delvewheel must not bundle, e.g. "nvcuda.dll"'
+            "Windows and Linux: semicolon-delimited library names delvewheel or "
+            'auditwheel must not bundle, e.g. "nvcuda.dll" or "libcuda.so.1"'
         ),
     )
     _cmake_options_default = remote_module_build_dict["CMAKE_OPTIONS"]
@@ -751,7 +752,9 @@ def make_builder(
     else:
         from linux_build_python_instance import LinuxBuildPythonInstance
 
-        builder_cls = LinuxBuildPythonInstance
+        builder_cls = functools.partial(
+            LinuxBuildPythonInstance, exclude_libs=args.exclude_libs
+        )
     return builder_cls(
         platform_env=args.platform_env,
         build_dir_root=args.build_dir_root,

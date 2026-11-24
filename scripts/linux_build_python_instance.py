@@ -2,6 +2,7 @@ import contextlib
 import os
 import shutil
 from pathlib import Path
+from typing import Any
 
 from posix_build_python_instance import PosixBuildPythonInstance
 from wheel_builder_utils import (
@@ -15,6 +16,14 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
     Handles manylinux container builds, ``auditwheel`` wheel repair, and
     Linux-specific compiler/target triple configuration.
     """
+
+    #: ``--exclude-libs``: libraries ``auditwheel`` must not bundle.
+    exclude_libs: list[str] | str = ""
+
+    def __init__(self, *, exclude_libs: list[str] | str = "", **kwargs: Any) -> None:
+        """Take ``--exclude-libs``; the rest are the base's."""
+        super().__init__(**kwargs)
+        self.exclude_libs = exclude_libs
 
     def builds_manylinux(self) -> bool:
         """True when the wheels are repaired and tagged for manylinux."""
@@ -157,6 +166,12 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
                 "--plat",
                 self.target.wheel_plat_tag,
             ]
+            excludes = self.exclude_libs
+            if isinstance(excludes, list):
+                excludes = ";".join(excludes)
+            for lib in excludes.split(";"):
+                if lib:
+                    cmd += ["--exclude", lib]
             cmd += [str(filepath), "-w", str(output_dir)]
             # Provide LD_LIBRARY_PATH for oneTBB and common system paths
             extra_lib = str(self._tbb_prefix / "lib")
