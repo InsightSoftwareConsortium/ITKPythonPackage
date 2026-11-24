@@ -116,7 +116,7 @@ ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG:-main}
 # Download and extract cache
 
 echo "Fetching https://raw.githubusercontent.com/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage/${ITKPYTHONPACKAGE_TAG}/scripts/dockcross-manylinux-download-cache.sh"
-curl -L "https://raw.githubusercontent.com/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage/${ITKPYTHONPACKAGE_TAG}/scripts/dockcross-manylinux-download-cache.sh" -O
+curl -fL "https://raw.githubusercontent.com/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage/${ITKPYTHONPACKAGE_TAG}/scripts/dockcross-manylinux-download-cache.sh" -O || exit 1
 chmod u+x dockcross-manylinux-download-cache.sh
 _download_cmd="ITK_GIT_TAG=${ITK_GIT_TAG} \
     ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION} \
@@ -127,7 +127,7 @@ _download_cmd="ITK_GIT_TAG=${ITK_GIT_TAG} \
     bash -x \
     ${download_script_dir}/dockcross-manylinux-download-cache.sh $1"
 echo "Running: ${_download_cmd}"
-eval "${_download_cmd}"
+eval "${_download_cmd}" || exit 1
 
 #NOTE: in this scenario, untarred_ipp_dir is extracted from tarball
 #      during ${download_script_dir}/dockcross-manylinux-download-cache.sh
