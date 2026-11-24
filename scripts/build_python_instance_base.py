@@ -406,7 +406,7 @@ class BuildPythonInstanceBase(ABC):
         python_package_build_steps = self.build_step_table()
 
         self.dist_dir.mkdir(parents=True, exist_ok=True)
-        build_report_fn: Path = self.dist_dir / f"build_log_{self.platform_env}.json"
+        build_report_fn: Path = self.build_report_path()
         build_manager: BuildManager = BuildManager(
             build_report_fn,
             list(python_package_build_steps.keys()),
@@ -429,6 +429,13 @@ class BuildPythonInstanceBase(ABC):
             # Statistics are informational: a failure here must not mask the build's.
             for cmd in cache_after:
                 self.echo_check_call(cmd, use_pixi_env=False)
+
+    def build_report_path(self) -> Path:
+        """Return the step report; each module's is apart from the ITK build's."""
+        name = f"build_log_{self.platform_env}"
+        if self.module_source_dir is not None:
+            name += f"_{Path(self.module_source_dir).name}"
+        return self.dist_dir / f"{name}.json"
 
     def build_dependency_module(self, module_source_dir: Path) -> None:
         """Build the wheel of a dependency module with a copy of this builder."""

@@ -32,7 +32,8 @@ seven sequential steps:
 6. *(optional)* Build a remote module against the ITK build
 7. *(optional)* Create a reusable ITK build tarball cache
 
-Step state is persisted to ``<build-dir-root>/dist/build_log_<platform-env>.json`` so that a
+Step state is persisted to ``<build-dir-root>/dist/build_log_<platform-env>.json``, or
+``build_log_<platform-env>_<module>.json`` for a remote module, so that a
 build interrupted part-way through can be resumed by re-running the same command.
 The log also records the build's inputs: the ITK commit, the package version,
 a fingerprint of the build scripts, CMake settings, and ``pixi.lock``, and for a

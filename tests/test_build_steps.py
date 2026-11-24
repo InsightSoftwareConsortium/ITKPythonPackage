@@ -150,3 +150,16 @@ def test_skip_steps_renames_only_the_named_steps_in_place() -> None:
     assert list(skipped) == ["01_a", "02_b_skipped"]
     assert skipped["01_a"] is first
     assert skipped["02_b_skipped"]() is None
+
+
+def test_a_module_build_keeps_its_own_step_report(
+    linux_builder: LinuxBuildPythonInstance,
+) -> None:
+    """A module's inputs differ from ITK's, so a shared report reran every step."""
+    builder = _configure(linux_builder)
+    builder.dist_dir = Path("dist")
+    assert builder.build_report_path().name == "build_log_manylinux228-py311.json"
+    builder.module_source_dir = Path("modules") / "BioCell"
+    assert (
+        builder.build_report_path().name == "build_log_manylinux228-py311_BioCell.json"
+    )
