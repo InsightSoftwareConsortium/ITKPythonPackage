@@ -192,9 +192,9 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         ]
 
         seven_zip_candidates = [
-            Path(r"C:\\7-Zip\\7z.exe"),
-            Path(r"C:\\Program Files\\7-Zip\\7z.exe"),
-            Path(r"C:\\Program Files (x86)\\7-Zip\\7z.exe"),
+            Path(r"C:\7-Zip\7z.exe"),
+            Path(r"C:\Program Files\7-Zip\7z.exe"),
+            Path(r"C:\Program Files (x86)\7-Zip\7z.exe"),
         ]
 
         seven_zip = None
