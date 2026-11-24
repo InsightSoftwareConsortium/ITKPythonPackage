@@ -210,6 +210,8 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                 seven_zip = Path(found)
 
         if seven_zip is not None:
+            # "7z a" adds to an existing archive, keeping files since deleted.
+            out_zip.unlink(missing_ok=True)
             # No -r: it would match build/ recursively and sweep in a module's tree.
             cmd = [
                 str(seven_zip),

@@ -263,6 +263,15 @@ def test_seven_zip_archives_absolute_roots_not_bare_names(
     assert str(windows_builder.ipp_dir) in cmd
 
 
+def test_seven_zip_starts_a_new_archive(
+    tmp_path: Path, windows_builder: WindowsBuildPythonInstance
+) -> None:
+    stale = windows_builder.build_dir_root / "ITKPythonBuilds-windows.zip"
+    stale.write_text("an archive from an earlier build")
+    _run_build_tarball(windows_builder, tmp_path)
+    assert not stale.exists()
+
+
 def test_zip_fallback_archives_the_seven_zip_roots(
     tmp_path: Path, windows_builder: WindowsBuildPythonInstance
 ) -> None:
