@@ -187,6 +187,21 @@ def test_a_new_package_version_runs_every_step_again(
     assert ran == ["01_superbuild", "02_build_itk", "03_build_wheels"]
 
 
+def test_new_wheel_repair_options_run_every_step_again(
+    monkeypatch: pytest.MonkeyPatch,
+    linux_builder: LinuxBuildPythonInstance,
+    tmp_path: Path,
+    ipp_dir: Path,
+    itk_source: Path,
+) -> None:
+    _wire_run(monkeypatch, linux_builder, tmp_path, ipp_dir, itk_source)
+    linux_builder.run()
+    linux_builder.exclude_libs = ["libcuda.so.1"]
+    ran = _wire_run(monkeypatch, linux_builder, tmp_path, ipp_dir, itk_source)
+    linux_builder.run()
+    assert ran == ["01_superbuild", "02_build_itk", "03_build_wheels"]
+
+
 @pytest.fixture
 def module_source(tmp_path: Path) -> Path:
     module = tmp_path / "ITKFoo"

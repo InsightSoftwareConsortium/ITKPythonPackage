@@ -456,10 +456,18 @@ class BuildPythonInstanceBase(ABC):
             settings.update({f"{group}:{k}": str(v) for k, v in definitions.items()})
         for key in ("USE_CCACHE", "MANYLINUX_VERSION", "CONTAINER_SOURCE"):
             settings[key] = cfg.get(key, "")
+        # The platform builders' wheel repair options.
+        for option in (
+            "windows_extra_lib_paths",
+            "windows_exclude_libs",
+            "exclude_libs",
+        ):
+            settings[option] = str(getattr(self, option, ""))
         git = str(self.config.git_executable)
         module_state = None
         if self.module_source_dir is not None:
             settings["itk_module_deps"] = str(self.itk_module_deps or "")
+            settings["module_itk_dir"] = self.module_itk_dir
             module_state = module_source_state(Path(self.module_source_dir), git)
         return build_inputs(
             itk_commit=resolved_itk_commit(
