@@ -53,6 +53,21 @@ def test_a_branch_name_resolves_to_the_commit_it_builds(itk_source: Path) -> Non
     assert resolved_itk_commit(itk_source, "main") == after != before
 
 
+def test_uncommitted_itk_changes_change_the_commit(itk_source: Path) -> None:
+    """A build of edited sources must not reuse the build of the commit."""
+    commit = resolved_itk_commit(itk_source, "main")
+    new_file = itk_source / "itkNew.h"
+    new_file.write_text("// new\n")
+    untracked = resolved_itk_commit(itk_source, "main")
+    _git(itk_source, "add", "itkNew.h")
+    staged = resolved_itk_commit(itk_source, "main")
+    new_file.write_text("// edited\n")
+    edited = resolved_itk_commit(itk_source, "main")
+    assert "+" not in commit
+    assert len({commit, untracked, staged, edited}) == 4
+    assert all(r.startswith(f"{commit}+") for r in (untracked, staged, edited))
+
+
 def test_a_tree_without_a_repository_reports_the_requested_revision(
     tmp_path: Path,
 ) -> None:
