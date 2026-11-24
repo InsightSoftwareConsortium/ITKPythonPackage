@@ -41,10 +41,9 @@ def test_remote_module_repaired_wheel_lands_in_the_module_dist(
     expected_dir = windows_builder.module_source_dir / "dist"
     main_dist = windows_builder.build_dir_root / "dist"
     main_dist.mkdir(parents=True, exist_ok=True)
-    wheel = main_dist / "biocell-1.0.0-cp311-abi3-win_amd64.whl"
-    wheel.touch()
+    wheel = _module_wheel(main_dist)
 
-    fake_repair, out_dirs = _fake_delvewheel(wheel)
+    fake_repair, out_dirs = _fake_module_delvewheel()
     with patch.object(windows_builder, "echo_check_call", side_effect=fake_repair):
         windows_builder.fixup_wheel(
             str(wheel), lib_paths="C:/tbb/bin", remote_module_wheel=True
@@ -52,6 +51,71 @@ def test_remote_module_repaired_wheel_lands_in_the_module_dist(
 
     assert out_dirs[0].parent == expected_dir
     assert (expected_dir / wheel.name).exists()
+
+
+def _module_wheel(dist: Path, own_init: str | None = None) -> Path:
+    """A minimal itk-biocell wheel, optionally shipping its own module init."""
+    dist.mkdir(parents=True, exist_ok=True)
+    wheel = dist / "itk_biocell-1.0.0-cp311-abi3-win_amd64.whl"
+    info = "itk_biocell-1.0.0.dist-info"
+    members = {
+        "itk/_BioCellPython.pyd": "binary",
+        f"{info}/METADATA": "Metadata-Version: 2.1\nName: itk-biocell\nVersion: 1.0.0\n",
+    }
+    if own_init is not None:
+        members["itk/__init_biocell__.py"] = own_init
+    members[f"{info}/RECORD"] = "".join(f"{n},sha256=x,1\n" for n in members) + (
+        f"{info}/RECORD,,\n"
+    )
+    with zipfile.ZipFile(wheel, "w") as zf:
+        for name, text in members.items():
+            zf.writestr(name, text)
+    return wheel
+
+
+def _fake_module_delvewheel() -> tuple[Callable[..., int], list[Path]]:
+    """delvewheel's effect on a module wheel: its DLL setup goes into itk/__init__.py."""
+    out_dirs: list[Path] = []
+
+    def fake_repair(cmd: Sequence[object], *args: object, **kwargs: object) -> int:
+        rendered = [str(c) for c in cmd]
+        out_dir = Path(rendered[rendered.index("-w") + 1])
+        out_dirs.append(out_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        source = Path(rendered[-1])
+        with zipfile.ZipFile(source) as zf:
+            members = {n: zf.read(n) for n in zf.namelist()}
+        patched = members.get("itk/__init__.py", b"") + b"# delvewheel DLL setup\n"
+        members["itk/__init__.py"] = patched
+        with zipfile.ZipFile(out_dir / source.name, "w") as zf:
+            for name, data in members.items():
+                zf.writestr(name, data)
+        return 0
+
+    return fake_repair, out_dirs
+
+
+@pytest.mark.parametrize("own_init", [None, "print('biocell')\n"])
+def test_a_module_wheel_never_ships_itk_init(
+    tmp_path: Path, windows_builder: WindowsBuildPythonInstance, own_init: str | None
+) -> None:
+    """Installing it would replace itk-core's itk/__init__.py."""
+    windows_builder.module_source_dir = tmp_path / "BioCell"
+    wheel = _module_wheel(windows_builder.build_dir_root / "dist", own_init)
+    fake_repair, _ = _fake_module_delvewheel()
+    with patch.object(windows_builder, "echo_check_call", side_effect=fake_repair):
+        windows_builder.fixup_wheel(str(wheel), remote_module_wheel=True)
+
+    repaired = windows_builder.module_source_dir / "dist" / wheel.name
+    with zipfile.ZipFile(repaired) as zf:
+        names = zf.namelist()
+        init = zf.read("itk/__init_biocell__.py").decode()
+        record = zf.read("itk_biocell-1.0.0.dist-info/RECORD").decode()
+    assert "itk/__init__.py" not in names
+    assert init.endswith("# delvewheel DLL setup\n")
+    assert init.startswith(own_init or "#")
+    if own_init is not None:
+        assert "itk/__init_biocell__.py," in record
 
 
 def test_non_remote_repaired_wheel_lands_in_the_build_dist(

@@ -11,6 +11,7 @@ from typing import Any
 from build_environment import PythonEnvironment
 from build_python_instance_base import BuildPythonInstanceBase
 from cmake_argument_builder import CMakeArgumentBuilder
+from module_wheel_init import ITK_INIT, module_init_name, rename_wheel_member
 from msvc_path_trim import msvc_trim_definitions
 
 ARCHIVE_EXCLUDES = (
@@ -132,6 +133,10 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         # would be indistinguishable from the unrepaired wheel.
         staging_dir = output_dir / "delvewheel-repaired"
         shutil.rmtree(staging_dir, ignore_errors=True)
+        if remote_module_wheel:
+            module_init = module_init_name(Path(filepath))
+            # delvewheel patches an existing itk/__init__.py rather than adding one.
+            rename_wheel_member(Path(filepath), module_init, ITK_INIT)
         delve_wheel = "delvewheel.exe"
         cmd = [
             str(delve_wheel),
@@ -155,6 +160,8 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             repaired_wheel,
             str(repaired_wheel),
         )
+        if remote_module_wheel:
+            rename_wheel_member(repaired_wheel, ITK_INIT, module_init)
         repaired_wheel.replace(output_dir / repaired_wheel.name)
         shutil.rmtree(staging_dir, ignore_errors=True)
 
