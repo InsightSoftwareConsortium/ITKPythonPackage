@@ -42,8 +42,9 @@ def _run(tmp_path: Path, arch: str, cmake_options: str) -> list[str]:
         "MODULE_DEPS_DIR": str(tmp_path / "deps"),
         "CMAKE_OPTIONS": cmake_options,
     }
-    if "CONTAINER_DNS" in os.environ:
-        env["CONTAINER_DNS"] = os.environ["CONTAINER_DNS"]
+    for name in ("CONTAINER_DNS", "LD_LIBRARY_PATH"):
+        if name in os.environ:
+            env[name] = os.environ[name]
     result = subprocess.run(
         ["bash", str(ipp / "scripts" / "dockcross-manylinux-build-module-wheels.sh")],
         env=env,
@@ -83,3 +84,15 @@ def test_host_networking_without_container_dns(tmp_path: Path, arch: str) -> Non
     args = " ".join(_run(tmp_path, arch, ""))
     assert "--network=host" in args
     assert "--dns" not in args
+
+
+@pytest.mark.skipif(os.name == "nt", reason="a drive letter's colon splits the path")
+@pytest.mark.parametrize("arch", ["x64", "aarch64"])
+def test_ld_library_path_reaches_the_container(
+    tmp_path: Path, arch: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    libs = tmp_path / "cuda-lib64"
+    libs.mkdir()
+    monkeypatch.setenv("LD_LIBRARY_PATH", str(libs))
+    args = " ".join(_run(tmp_path, arch, ""))
+    assert "-e LD_LIBRARY_PATH=/usr/lib64/cuda-lib64:" in args
