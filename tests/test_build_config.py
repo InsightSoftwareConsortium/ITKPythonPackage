@@ -50,28 +50,33 @@ def _config(
     return _build(target, env or {}, _args(**overrides))
 
 
+def _host_path(path: str) -> str:
+    """*path* as the host writes it: with backslashes on Windows."""
+    return str(Path(path))
+
+
 COMMON_TAIL = [
     ("ITK_MODULE_PREQ", ""),
     ("ITK_MODULE_NO_CLEANUP", "1"),
     ("USE_CCACHE", "OFF"),
     ("DEAD_STRIP", "ON"),
-    ("PIXI_EXECUTABLE", "/px/pixi"),
-    ("CMAKE_EXECUTABLE", "/env/bin/cmake"),
-    ("NINJA_EXECUTABLE", "/env/bin/ninja"),
-    ("DOXYGEN_EXECUTABLE", "/env/bin/doxygen"),
-    ("GIT_EXECUTABLE", "/env/bin/git"),
-    ("PYTHON_EXECUTABLE", "/env/bin/python"),
+    ("PIXI_EXECUTABLE", _host_path("/px/pixi")),
+    ("CMAKE_EXECUTABLE", _host_path("/env/bin/cmake")),
+    ("NINJA_EXECUTABLE", _host_path("/env/bin/ninja")),
+    ("DOXYGEN_EXECUTABLE", _host_path("/env/bin/doxygen")),
+    ("GIT_EXECUTABLE", _host_path("/env/bin/git")),
+    ("PYTHON_EXECUTABLE", _host_path("/env/bin/python")),
     ("OCI_EXE", "docker"),
 ]
 
 
 def _head(os_name: str, arch: str) -> list[tuple[str, str]]:
     return [
-        ("ITK_SOURCE_DIR", "/bdr/ITK"),
-        ("IPP_SUPERBUILD_BINARY_DIR", "/bdr/build/ITK-support-bld"),
+        ("ITK_SOURCE_DIR", _host_path("/bdr/ITK")),
+        ("IPP_SUPERBUILD_BINARY_DIR", _host_path("/bdr/build/ITK-support-bld")),
         ("OS_NAME", os_name),
         ("ARCH", arch),
-        ("BUILD_DIR_ROOT", "/bdr"),
+        ("BUILD_DIR_ROOT", _host_path("/bdr")),
         ("ITK_GIT_TAG", "v6.0b02"),
         ("ITK_PACKAGE_VERSION", "6.0.0b2"),
     ]

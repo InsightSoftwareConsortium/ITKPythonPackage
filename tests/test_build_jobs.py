@@ -92,7 +92,7 @@ def _fake_open(mapping: Mapping[str, str]) -> Callable[..., IO[str]]:
     real_open = Path.open
 
     def fake(path: Path, *args: Any, **kwargs: Any) -> IO[str]:
-        key = str(path)
+        key = path.as_posix()
         if key in mapping:
             import io
 
