@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 import build_environment
+import wheel_dependency_audit
 import wheel_packaging
 from build_config import BuildConfig
 from build_environment import PythonEnvironment
@@ -809,6 +810,7 @@ class BuildPythonInstanceBase(ABC):
     def final_import_test(self) -> None:  # pragma: no cover
         """Install and smoke-test the built wheels."""
         self.check_wheel_sizes(self.dist_dir)
+        wheel_dependency_audit.check([self.dist_dir], self.wheel_names)
         self.final_wheel_import_test(installed_dist_dir=self.dist_dir)
 
     def check_wheel_sizes(self, dist_dir: Path) -> None:

@@ -347,8 +347,11 @@ from `CMake/itkVersion.cmake` in the ITK source
 | `itk6`  | 6+  | 8      | enabled          |
 | `itk5`  | 5.4 | 7      | none             |
 
-`itk5` reproduces the 5.4 wheel layout: no `itk-filtering-extra`, and
-`itk-io` depends on `itk-core`. ITK 6 wheels are unchanged by it.
+`itk5` reproduces the 5.4 wheel layout: no `itk-filtering-extra`.
+
+Before the import test, `scripts/wheel_dependency_audit.py` reads each
+wheel's `itk/Configuration/*Config.py` `depends` tuples and fails the
+build when a wheel uses a module from a wheel it does not require.
 
 ## Build steps and what skipping them means
 
