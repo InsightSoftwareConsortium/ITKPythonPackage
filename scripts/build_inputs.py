@@ -151,14 +151,7 @@ def module_source_state(module_dir: Path, git: str = "git") -> str:
             check=False,
         )
         if head.returncode == 0:
-            diff = subprocess.run(
-                [git, "diff", "HEAD", "--binary"],
-                cwd=module_dir,
-                env=env,
-                capture_output=True,
-                check=True,
-            )
-            changes = hashlib.sha256(diff.stdout).hexdigest()
+            changes = uncommitted_changes(module_dir, git, env, MODULE_STATE_SKIP)
             return f"{head.stdout.decode().strip()}+{changes}"
     except (OSError, subprocess.CalledProcessError):
         pass

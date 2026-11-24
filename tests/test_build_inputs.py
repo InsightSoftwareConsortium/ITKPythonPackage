@@ -212,6 +212,13 @@ def test_module_state_follows_commits_and_uncommitted_edits(
     assert committed not in (first, edited)
 
 
+def test_a_new_module_file_changes_the_module_state(module_source: Path) -> None:
+    before = module_source_state(module_source)
+    (module_source / "include").mkdir()
+    (module_source / "include" / "itkNew.h").write_text("int a;\n")
+    assert module_source_state(module_source) != before
+
+
 def test_module_state_ignores_what_the_module_build_writes(module_source: Path) -> None:
     before = module_source_state(module_source)
     (module_source / "dist").mkdir()
