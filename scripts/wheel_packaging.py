@@ -82,7 +82,9 @@ def post_build_cleanup(
 
     # 2) standard build directories
     for rel in ("ITKPythonPackage", "tools", "_skbuild", "build"):
-        rm(base / rel)
+        # A build root inside the checkout, such as <ipp>/build, holds dist/.
+        if not build_dir_root.resolve().is_relative_to((base / rel).resolve()):
+            rm(base / rel)
 
     # 3) egg-info folders at top-level
     for p in base.glob("*.egg-info"):

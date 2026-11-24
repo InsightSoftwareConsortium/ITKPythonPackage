@@ -37,6 +37,15 @@ def _run_cleanup(build_root: Path, arch: str) -> set[str]:
     return survivors
 
 
+def test_cleanup_keeps_a_build_root_inside_the_checkout(tmp_path: Path) -> None:
+    """--build-dir-root <ipp>/build must not lose its wheels."""
+    build_root = tmp_path / "build"
+    (build_root / "dist").mkdir(parents=True)
+    (build_root / "dist" / "itk_core-6.0.0-cp311-abi3.whl").touch()
+    post_build_cleanup(build_root, "x64", tmp_path, "")
+    assert (build_root / "dist" / "itk_core-6.0.0-cp311-abi3.whl").exists()
+
+
 def test_cleanup_selects_build_dirs_and_archives(tmp_path: Path) -> None:
     (tmp_path / "build").mkdir()
     (tmp_path / "dist").mkdir()
