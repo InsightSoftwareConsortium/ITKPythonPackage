@@ -291,6 +291,11 @@ class BuildPythonInstanceBase(ABC):
                 cache_exe,
                 compiler_cache_max_size(cache_tool, os.environ),
             )
+        elif not self.skip_itk_build:
+            # A reused ITK build tree keeps the launcher an earlier build cached.
+            self.cmake_compiler_configurations.update(
+                compiler_cache_definitions("", "")
+            )
 
         user_defs = self.cmake_cmdline_definitions
         flag_defs = self.compiler_flag_definitions(user_defs, compile_roots)
