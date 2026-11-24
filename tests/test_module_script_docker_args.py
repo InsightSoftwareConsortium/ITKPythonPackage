@@ -7,9 +7,11 @@ from pathlib import Path
 
 import pytest
 
+from tests.bash import BASH
+
 SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 
-pytestmark = pytest.mark.skipif(shutil.which("bash") is None, reason="needs bash")
+pytestmark = pytest.mark.skipif(not BASH, reason="needs bash")
 
 # Records each argument on its own line. Asked for the dockcross runner
 # (``run --rm <image>``), it prints a runner that records its arguments too.
@@ -46,7 +48,7 @@ def _run(tmp_path: Path, arch: str, cmake_options: str) -> list[str]:
         if name in os.environ:
             env[name] = os.environ[name]
     result = subprocess.run(
-        ["bash", str(ipp / "scripts" / "dockcross-manylinux-build-module-wheels.sh")],
+        [BASH, str(ipp / "scripts" / "dockcross-manylinux-build-module-wheels.sh")],
         env=env,
         capture_output=True,
         text=True,

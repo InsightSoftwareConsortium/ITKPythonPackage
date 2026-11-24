@@ -1,11 +1,12 @@
 """Argument parsing of the Linux module script, which also runs on macOS."""
 
 import os
-import shutil
 import subprocess
 from pathlib import Path
 
 import pytest
+
+from tests.bash import BASH
 
 SCRIPT = (
     Path(__file__).resolve().parent.parent
@@ -13,7 +14,7 @@ SCRIPT = (
     / "dockcross-manylinux-download-cache-and-build-module-wheels.sh"
 )
 
-pytestmark = pytest.mark.skipif(shutil.which("bash") is None, reason="needs bash")
+pytestmark = pytest.mark.skipif(not BASH, reason="needs bash")
 
 
 def _run(tmp_path: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -28,7 +29,7 @@ def _run(tmp_path: Path, *args: str) -> subprocess.CompletedProcess[str]:
         "MODULE_DEPS_DIR": str(tmp_path / "deps"),
     }
     return subprocess.run(
-        ["bash", str(SCRIPT), *args],
+        [BASH, str(SCRIPT), *args],
         env=env,
         capture_output=True,
         text=True,
