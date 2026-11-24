@@ -1,6 +1,6 @@
 # Define below a reasonable dependency graph for ITK groups
 set(ITK_GROUP_Core_DEPENDS)
-set(ITK_GROUP_IO_DEPENDS Core)
+set(ITK_GROUP_IO_DEPENDS Numerics)
 set(ITK_GROUP_Numerics_DEPENDS Core)
 set(ITK_GROUP_Filtering_DEPENDS Numerics)
 set(ITK_GROUP_Segmentation_DEPENDS Filtering)

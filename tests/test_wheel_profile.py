@@ -82,16 +82,12 @@ def test_only_itk6_turns_on_ingested_remote_modules() -> None:
     assert "Montage" in ITK6_PROFILE.ingested_remote_modules
 
 
-@pytest.mark.parametrize(
-    ("profile", "io_depends"),
-    [(ITK5_PROFILE, ["itk-core==5.4.8"]), (ITK6_PROFILE, ["itk-numerics==5.4.8"])],
-)
-def test_io_depends_on_the_group_the_profile_names(
-    profile: WheelProfile, io_depends: list[str]
-) -> None:
+@pytest.mark.parametrize("profile", [ITK5_PROFILE, ITK6_PROFILE])
+def test_io_depends_on_numerics(profile: WheelProfile) -> None:
+    # Transform I/O imports ITKDisplacementField, which ships in itk-numerics.
     names = profile.wheel_names()
     depends = get_wheel_dependencies(profile.wheel_groups_file, "5.4.8", names)
-    assert depends["itk-io"] == io_depends
+    assert depends["itk-io"] == ["itk-numerics==5.4.8"]
     for name in names:
         assert name in depends
 
