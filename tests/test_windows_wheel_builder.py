@@ -118,6 +118,17 @@ def test_a_module_wheel_never_ships_itk_init(
         assert "itk/__init_biocell__.py," in record
 
 
+def test_a_module_wheel_is_repaired_with_lib_paths_and_onetbb(
+    windows_builder: WindowsBuildPythonInstance,
+) -> None:
+    """delvewheel looks for a module's DLLs where it looks for itk-core's."""
+    windows_builder.windows_extra_lib_paths = ["C:/CUDA/bin"]
+    with patch.object(windows_builder, "fixup_wheel") as fixup:
+        windows_builder.fixup_module_wheel("module.whl")
+    tbb_bin = str(windows_builder.build_dir_root / "build" / "oneTBB-prefix" / "bin")
+    assert fixup.call_args.args[1] == f"C:/CUDA/bin;{tbb_bin}"
+
+
 def test_non_remote_repaired_wheel_lands_in_the_build_dist(
     tmp_path: Path, windows_builder: WindowsBuildPythonInstance
 ) -> None:

@@ -757,7 +757,8 @@ def test_module_wheels_are_repaired_into_the_module_dist(
     for builder in (linux_builder, windows_builder):
         with patch.object(builder, "fixup_wheel") as fixed:
             builder.fixup_module_wheel("mod.whl")
-        fixed.assert_called_once_with("mod.whl", remote_module_wheel=True)
+        assert fixed.call_args.args[0] == "mod.whl"
+        assert fixed.call_args.kwargs == {"remote_module_wheel": True}
 
 
 def test_macos_repairs_module_wheels_in_place(
