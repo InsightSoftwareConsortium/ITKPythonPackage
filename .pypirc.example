@@ -1,0 +1,23 @@
+# .pypirc.example -- DO NOT commit real credentials
+# Copy to ~/.pypirc and fill in your token.
+#
+# Generate a token at: https://pypi.org/manage/account/token/
+# For TestPyPI:        https://test.pypi.org/manage/account/token/
+#
+# Alternatively, set environment variables:
+#   TWINE_USERNAME=__token__
+#   TWINE_PASSWORD=pypi-<your-token>
+
+[distutils]
+index-servers =
+    pypi
+    testpypi
+
+[pypi]
+username = __token__
+password = pypi-YOUR-TOKEN-HERE
+
+[testpypi]
+repository = https://test.pypi.org/legacy/
+username = __token__
+password = pypi-YOUR-TOKEN-HERE

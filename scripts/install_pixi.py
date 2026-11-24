@@ -1,0 +1,156 @@
+#!/usr/bin/env python3
+
+import os
+import platform
+from pathlib import Path
+
+from target_platform import OS, os_from_system
+from wheel_builder_utils import run_command
+
+
+def download_and_install_pixi(
+    binary_ext: str, os_name: OS, pixi_home: Path, platform_env: str = "default"
+) -> Path:
+    """Download pixi (if not already present) and install a platform environment.
+
+    Parameters
+    ----------
+    binary_ext : str
+        Executable extension (``'.exe'`` on Windows, ``''`` elsewhere).
+    os_name : str
+        Operating system name (``'windows'``, ``'linux'``, ``'darwin'``).
+    pixi_home : Path
+        Directory where pixi is (or will be) installed.
+    platform_env : str, optional
+        Pixi environment name to install (default ``'default'``).
+
+    Returns
+    -------
+    pixi_exec_path : Path
+        Path to the pixi executable.
+
+    Raises
+    ------
+    RuntimeError
+        If the download, installation, or environment setup fails.
+    """
+    pixi_bin_name: str = "pixi" + binary_ext
+    # Attempt to find an existing pixi binary on the system first (cross-platform)
+    pixi_exec_path: Path = Path(pixi_home) / "bin" / pixi_bin_name
+
+    pixi_install_env = os.environ.copy()
+    pixi_install_env["PIXI_NO_PATH_UPDATE"] = "1"
+    pixi_install_env["PIXI_HOME"] = str(pixi_home)
+
+    # If not found, we will install into the local build .pixi
+    if pixi_exec_path.is_file():
+        print(f"Previous install of pixi will be used {pixi_exec_path}.")
+    elif os_name is OS.WINDOWS:
+        # Use PowerShell to install pixi on Windows
+        result = run_command(
+            [
+                "powershell",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                "irm -UseBasicParsing https://pixi.sh/install.ps1 | iex",
+            ],
+            env=pixi_install_env,
+        )
+        if result.returncode != 0:
+            msg = f"Failed to install pixi: {result.stderr}"
+            raise RuntimeError(msg)
+    else:
+        pixi_install_script: Path = pixi_home / "pixi_install.sh"
+        result = run_command(
+            [
+                "curl",
+                "-fsSL",
+                "https://pixi.sh/install.sh",
+                "-o",
+                str(pixi_install_script),
+            ]
+        )
+        if result.returncode != 0:
+            msg = f"Failed to download {pixi_install_script}: {result.stderr}"
+            raise RuntimeError(msg)
+        result = run_command(
+            [
+                "/bin/sh",
+                str(pixi_install_script),
+            ],
+            env=pixi_install_env,
+        )
+        if result.returncode != 0:
+            msg = f"Failed to install pixi: {result.stderr}"
+            raise RuntimeError(msg)
+        del pixi_install_script
+
+    if not pixi_exec_path.exists():
+        msg = f"Failed to install {pixi_exec_path} pixi into {pixi_exec_path}"
+        raise RuntimeError(msg)
+    # Now install the desired platform
+    if (pixi_home.parent / "pixi.toml").exists():
+        result = run_command(
+            [pixi_exec_path, "install", "--environment", platform_env],
+            cwd=pixi_home.parent,
+            env=pixi_install_env,
+        )
+        if result.returncode != 0:
+            msg = f"Failed to install environment {platform_env}: {result.stderr}"
+            raise RuntimeError(msg)
+    else:
+        print(
+            f"pixi.toml not found {pixi_home.parent / 'pixi.toml'}, skipping environment install."
+        )
+    return pixi_exec_path
+
+
+def install_pixi_tools(platform_env: str = "default") -> None:
+    """High-level helper: detect the platform, install pixi, and set up *platform_env*.
+
+    Parameters
+    ----------
+    platform_env : str, optional
+        Pixi environment name to install (default ``'default'``).
+    """
+    _ipp_dir_path: Path = Path(__file__).resolve().parent.parent
+    os_name = os_from_system(platform.system())
+    if os_name is None:
+        msg = f"Unsupported operating system {platform.system()!r}"
+        raise ValueError(msg)
+    binary_ext: str = ".exe" if os_name is OS.WINDOWS else ""
+
+    pixi_home: Path = (
+        Path(os.environ["PIXI_HOME"])
+        if "PIXI_HOME" in os.environ
+        else _ipp_dir_path / ".pixi"
+    )
+    pixi_home.mkdir(parents=True, exist_ok=True)
+    pixi_exec_path = Path(
+        download_and_install_pixi(binary_ext, os_name, pixi_home, platform_env)
+    )
+    print(f"Installed pixi locally to {pixi_home} with binary of {pixi_exec_path}")
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Driver script to build ITK Python wheels."
+    )
+    parser.add_argument(
+        "--platform-env",
+        default="default",
+        help=(
+            """A platform environment name or path:
+               linux-py311,
+               manylinux228-py311,
+               windows-py311,
+               macosx-py311
+            """
+        ),
+    )
+    args = parser.parse_args()
+    install_pixi_tools(args.platform_env)

@@ -59,7 +59,16 @@ add_test(["FilterParameters.py", baseline_image])
 
 # Run test MixingITKAndNumPy.py
 output_image = os.path.join(temp_folder, "filtered_image.png")
-add_test(["MixingITKAndNumPy.py", baseline_image, output_image])
+# dict(image) also reads the deprecated bare spatial keys
+add_test(
+    [
+        "-W",
+        "ignore:itk.Image[:DeprecationWarning",
+        "MixingITKAndNumPy.py",
+        baseline_image,
+        output_image,
+    ]
+)
 cleanup([output_image])
 
 # Must be last

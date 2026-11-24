@@ -1,0 +1,29 @@
+/* -- ITKPythonPackage custom styles (pydata-sphinx-theme) -- */
+
+/* Sidebar brand text */
+.navbar-brand p {
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+/* Better code block styling */
+.highlight pre {
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+/* Admonition tweaks */
+.admonition {
+  border-radius: 6px;
+  font-size: 0.92rem;
+}
+
+/* Quick-links card grid on index */
+.sd-card {
+  border-radius: 8px;
+  transition: box-shadow 0.2s ease;
+}
+
+.sd-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
