@@ -83,8 +83,19 @@ DOCKER_ARGS="  -v ${HOST_PACKAGE_BUILD_DIR}:${CONTAINER_PACKAGE_BUILD_DIR} "
 DOCKER_ARGS+=" -v ${HOST_PACKAGE_SCRIPTS_DIR}:${CONTAINER_PACKAGE_SCRIPTS_DIR} "
 # pixi environments cannot be moved, so the container keeps its own .pixi
 # rather than reusing one created at the host path of this checkout.
-HOST_CONTAINER_PIXI_DIR=${HOST_PACKAGE_BUILD_DIR}/.pixi
-mkdir -p "${HOST_CONTAINER_PIXI_DIR}" "${HOST_PACKAGE_SCRIPTS_DIR}/.pixi"
+mkdir -p "${HOST_PACKAGE_SCRIPTS_DIR}/.pixi"
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  # macOS bind mounts are case-insensitive, and conda packages such as ncurses
+  # ship files differing only in case; keep the container's .pixi in a volume.
+  HOST_CONTAINER_PIXI_DIR=itk-pixi-manylinux${MANYLINUX_VERSION}-${TARGET_ARCH}
+  "$OCI_EXE" volume create "${HOST_CONTAINER_PIXI_DIR}" >/dev/null
+  # dockcross runs as the host user; a new volume is owned by root.
+  "$OCI_EXE" run --rm -v "${HOST_CONTAINER_PIXI_DIR}:/pixi" "${CONTAINER_SOURCE}" \
+    chown "$(id -u):$(id -g)" /pixi
+else
+  HOST_CONTAINER_PIXI_DIR=${HOST_PACKAGE_BUILD_DIR}/.pixi
+  mkdir -p "${HOST_CONTAINER_PIXI_DIR}"
+fi
 DOCKER_ARGS+=" -v ${HOST_CONTAINER_PIXI_DIR}:${CONTAINER_PACKAGE_SCRIPTS_DIR}/.pixi "
 if [ "${ITK_SOURCE_DIR}" != "" ]; then
   DOCKER_ARGS+=" -v${ITK_SOURCE_DIR}:${CONTAINER_ITK_SOURCE_DIR} "

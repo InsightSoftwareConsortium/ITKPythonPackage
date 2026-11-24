@@ -43,7 +43,10 @@ for py_indicator in "${PY_ENVS_ARRAY[@]}"; do
   export PATH="${PIXI_HOME}/bin:${PATH}"
   # The container user may lack a writable home for pixi's default cache.
   export PIXI_CACHE_DIR=${PIXI_CACHE_DIR:-${PIXI_HOME}/cache}
-  python3.12 "${CONTAINER_PACKAGE_SCRIPTS_DIR}/scripts/install_pixi.py" --platform-env "${PIXI_ENV}"
+  if ! python3.12 "${CONTAINER_PACKAGE_SCRIPTS_DIR}/scripts/install_pixi.py" --platform-env "${PIXI_ENV}"; then
+    echo "ERROR: pixi environment ${PIXI_ENV} failed to install"
+    exit 1
+  fi
 
   cd "${CONTAINER_PACKAGE_SCRIPTS_DIR}" || exit
   if [ -n "${MODULE_SRC_DIRECTORY}" ]; then
