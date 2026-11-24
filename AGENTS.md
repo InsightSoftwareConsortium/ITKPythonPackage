@@ -84,6 +84,10 @@ compiler cache, runs the import test, and fails if a wheel is over PyPI's
 | Windows   | `C:\BDR\dist\`                                          |
 | manylinux | `../ITKPythonPackage-manylinux_2_28-<arch>-build/dist/` |
 
+`--build-root <dir>` moves the native build (macOS or Windows) and its ITK
+clone; give each checkout on one Windows machine its own short root, since
+a CMake cache made from another checkout fails to configure.
+
 ### Keeping rebuilds fast
 
 - **Keep the compiler cache between releases.** A warm cache serves

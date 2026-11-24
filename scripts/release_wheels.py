@@ -197,8 +197,10 @@ def package_version(itk_ref: str, ref_is_tag: bool, version: str | None) -> str:
     return bare
 
 
-def native_build_root() -> Path:
-    """``build_wheels.py``'s default build root on this host."""
+def native_build_root(override: Path | None = None) -> Path:
+    """The native build root: *override*, else ``build_wheels.py``'s default."""
+    if override is not None:
+        return override
     if os_from_system(platform.system()) is OS.WINDOWS:
         return WINDOWS_BUILD_DIR_ROOT
     return IPP_DIR.parent / "ITKPythonPackage-build"
@@ -295,8 +297,10 @@ def plan(
     version: str,
     pixi: str = "pixi",
     epoch: str | None = None,
+    build_root: Path | None = None,
 ) -> list[Step]:
     """The build of each target, in order."""
+    native_root = native_build_root(build_root)
     steps = []
     for target in targets:
         release_target = RELEASE_TARGETS[target]
@@ -315,7 +319,7 @@ def plan(
                         "--platform-env",
                         env_name,
                         "--build-dir-root",
-                        str(native_build_root()),
+                        str(native_root),
                         "--itk-source-dir",
                         str(itk_source),
                         "--itk-git-tag",
@@ -325,7 +329,7 @@ def plan(
                         "--build-itk-tarball-cache",
                         "--use-compiler-cache",
                     ],
-                    dist_dir=native_build_root() / "dist",
+                    dist_dir=native_root / "dist",
                 )
             )
         else:
@@ -400,6 +404,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="repository to fetch the ITK ref from (default: %(default)s)",
     )
     parser.add_argument(
+        "--build-root",
+        type=Path,
+        help=(
+            "build root of the native (Windows or macOS) build and its ITK "
+            "checkout; default C:\\BDR on Windows, ../ITKPythonPackage-build "
+            "elsewhere. Give each checkout its own, short on Windows."
+        ),
+    )
+    parser.add_argument(
         "--dry-run", action="store_true", help="print the builds and stop"
     )
     return parser.parse_args(argv)
@@ -409,7 +422,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     host = Host.detect()
     targets = select_targets(args.targets, host)
-    itk_source = native_build_root() / "ITK"
+    itk_source = native_build_root(args.build_root) / "ITK"
 
     if args.dry_run:
         commit = args.itk_ref
@@ -435,7 +448,9 @@ def main(argv: list[str] | None = None) -> int:
     print(f"ITK {args.itk_ref} = {commit}; package version {version}", flush=True)
 
     failed = []
-    for step in plan(targets, itk_source, commit, version, pixi, epoch):
+    for step in plan(
+        targets, itk_source, commit, version, pixi, epoch, args.build_root
+    ):
         env_text = " ".join(f"{k}={v}" for k, v in step.env.items())
         print(f"\n=== {step.target}: {env_text} {' '.join(step.command)}", flush=True)
         if args.dry_run:

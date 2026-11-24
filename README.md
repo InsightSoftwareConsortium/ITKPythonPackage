@@ -112,7 +112,9 @@ emulated). `--itk-repository` fetches the ref from a fork, and `--dry-run`
 prints the builds without running them.
 
 The script keeps its own ITK clone in `../ITKPythonPackage-build/ITK`
-(`C:\BDR\ITK` on Windows) and refuses one with uncommitted changes. Wheels
+(`C:\BDR\ITK` on Windows) and refuses one with uncommitted changes.
+`--build-root <dir>` moves the native build and that clone, for example to
+run a second checkout on the same Windows machine (keep the path short). Wheels
 and the POSIX ITKPythonBuilds tarball caches land in that build directory's
 `dist` (the Windows `.zip` sits in the build directory itself), or in
 `../ITKPythonPackage-manylinux_2_28-<arch>-build/dist` for Linux wheels. A

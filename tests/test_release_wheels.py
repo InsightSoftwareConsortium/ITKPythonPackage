@@ -314,3 +314,30 @@ def test_unbuildable_reason_reads_the_native_host(
     else:
         assert found is not None
         assert found.startswith(reason)
+
+
+def test_build_root_moves_the_native_build_and_its_itk_checkout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "B312"
+    (step,) = rw.plan(["windows-x64"], root / "ITK", "abc123", "6.0b3", build_root=root)
+    cmd = step.command
+    assert cmd[cmd.index("--build-dir-root") + 1] == str(root)
+    assert cmd[cmd.index("--itk-source-dir") + 1] == str(root / "ITK")
+    assert step.dist_dir == root / "dist"
+
+
+def test_without_build_root_the_default_is_kept() -> None:
+    assert rw.native_build_root(None) == rw.native_build_root()
+    assert rw.native_build_root(Path("C:/B2")) == Path("C:/B2")
+
+
+def test_dry_run_with_build_root_prints_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(rw.Host, "detect", staticmethod(lambda: WINDOWS_X64))
+    root = tmp_path / "B312"
+    assert rw.main(["--dry-run", "--build-root", str(root), "abc123"]) == 0
+    out = capsys.readouterr().out
+    assert f"--build-dir-root {root} " in out
+    assert f"--itk-source-dir {root / 'ITK'} " in out
