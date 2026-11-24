@@ -435,8 +435,11 @@ def compute_itk_package_version(
         env=env,
     )
     if fetch_result.returncode != 0:
-        msg = f"git fetch --tags failed in {itk_dir}: {fetch_result.stderr}"
-        raise RuntimeError(msg)
+        # Offline, the local tags still describe the revision sync_itk_source found.
+        print(
+            f"WARNING: git fetch --tags failed in {itk_dir}; describing the "
+            f"version with the local tags: {fetch_result.stderr}"
+        )
     checkout_result = run_command(
         ["git", "checkout", itk_git_tag],
         cwd=itk_dir,
