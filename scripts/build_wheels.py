@@ -17,6 +17,7 @@ from wheel_builder_utils import (
     abort_if_wrong_pixi_environment,
     compute_itk_package_version,
     get_default_platform_build,
+    is_platform_env,
     resolve_oci_exe,
     run_command,
     which_required,
@@ -313,7 +314,7 @@ def build_argument_parser(os_name: OS, ipp_dir: Path) -> argparse.ArgumentParser
     # The environment guard requires the active pixi environment itself, which
     # get_default_platform_build renames for manylinux.
     default_env = os.environ.get("PIXI_ENVIRONMENT_NAME", "")
-    if "-" not in default_env:
+    if not is_platform_env(default_env):
         default_env = get_default_platform_build("py311")
     parser.add_argument(
         "--platform-env",

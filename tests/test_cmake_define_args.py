@@ -107,3 +107,13 @@ def test_repeated_library_options_all_reach_the_builder() -> None:
     )
     assert semicolon_joined(args.exclude_libs) == ["libcuda.so.1;libnvrtc.so.12"]
     assert semicolon_joined(args.lib_paths) == []
+
+
+@pytest.mark.parametrize("active", ["dev", "dev-docs", "default", ""])
+def test_an_active_environment_that_builds_nothing_is_not_the_default(
+    monkeypatch: pytest.MonkeyPatch, active: str
+) -> None:
+    monkeypatch.setenv("PIXI_ENVIRONMENT_NAME", active)
+    args = build_argument_parser(OS.LINUX, Path("IPP")).parse_args([])
+    assert args.platform_env != active
+    assert args.platform_env.endswith("-py311")

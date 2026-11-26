@@ -516,6 +516,15 @@ def resolve_oci_exe(env: dict[str, str]) -> str:
     return "docker"
 
 
+#: A pixi environment that builds wheels, such as ``manylinux228-py311``.
+PLATFORM_ENV_NAME = re.compile(r"(linux|manylinux\d+|macosx|windows)-py\d+")
+
+
+def is_platform_env(name: str) -> bool:
+    """True when *name* is a pixi environment that builds wheels."""
+    return PLATFORM_ENV_NAME.fullmatch(name) is not None
+
+
 def get_default_platform_build(default_python_version: str = "py311") -> str:
     """Return a default ``<platform>-<python>`` build identifier.
 
@@ -534,7 +543,7 @@ def get_default_platform_build(default_python_version: str = "py311") -> str:
         A string like ``'manylinux_2_28-py311'`` or ``'macosx-py311'``.
     """
     from_pixi = os.environ.get("PIXI_ENVIRONMENT_NAME", None)
-    if from_pixi and "-" in from_pixi:
+    if from_pixi and is_platform_env(from_pixi):
         manylinux_pixi_to_pattern_renaming: dict[str, str] = {
             "manylinux228": "manylinux_2_28",
             "manylinux234": "manylinux_2_34",
