@@ -153,12 +153,13 @@ for _var in ITK_BUILD_JOBS ITK_BUILD_LOAD_LIMIT ITK_BUILD_LINK_JOBS; do
 done
 
 # Mount shared libraries if LD_LIBRARY_PATH is set
+DOCKER_LD_LIBRARY_PATH=""
 if [[ -n ${LD_LIBRARY_PATH} ]]; then
   for libpath in ${LD_LIBRARY_PATH//:/ }; do
     DOCKER_LIBRARY_PATH="/usr/lib64/$(basename -- "${libpath}")"
     DOCKER_ARGS+=" -v ${libpath}:${DOCKER_LIBRARY_PATH}"
     if test -d "${libpath}"; then
-      DOCKER_LD_LIBRARY_PATH+="${DOCKER_LIBRARY_PATH}:${DOCKER_LD_LIBRARY_PATH}"
+      DOCKER_LD_LIBRARY_PATH="${DOCKER_LD_LIBRARY_PATH:+${DOCKER_LD_LIBRARY_PATH}:}${DOCKER_LIBRARY_PATH}"
     fi
   done
 fi

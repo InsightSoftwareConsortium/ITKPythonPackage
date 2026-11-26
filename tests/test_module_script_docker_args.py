@@ -1,6 +1,7 @@
 """What the Linux module script hands to the container runtime."""
 
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -93,8 +94,12 @@ def test_host_networking_without_container_dns(tmp_path: Path, arch: str) -> Non
 def test_ld_library_path_reaches_the_container(
     tmp_path: Path, arch: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    libs = tmp_path / "cuda-lib64"
-    libs.mkdir()
-    monkeypatch.setenv("LD_LIBRARY_PATH", str(libs))
+    cuda = tmp_path / "cuda-lib64"
+    cudnn = tmp_path / "cudnn-lib"
+    cuda.mkdir()
+    cudnn.mkdir()
+    monkeypatch.setenv("LD_LIBRARY_PATH", f"{cuda}:{cudnn}:")
     args = " ".join(_run(tmp_path, arch, ""))
-    assert "-e LD_LIBRARY_PATH=/usr/lib64/cuda-lib64:" in args
+    passed = re.search(r"-e LD_LIBRARY_PATH=(\S+)", args)
+    assert passed is not None
+    assert passed[1] == "/usr/lib64/cuda-lib64:/usr/lib64/cudnn-lib"
