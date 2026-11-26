@@ -27,6 +27,7 @@ ARCHIVE_EXCLUDES = (
     "castxml_inputs",
     "Wrapping/Modules",
     "*.pdb",
+    "*.log",
 )
 
 #: Where ``build_tarball`` looks for 7-Zip before ``PATH``.
@@ -220,8 +221,11 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                 str(out_zip),
                 *map(str, archive_roots),
             ]
+            # -ssw: also read files another process holds open for writing.
+            cmd += ["-ssw"]
             cmd += ["-xr!" + pattern.replace("/", "\\") for pattern in ARCHIVE_EXCLUDES]
             return_status: int = self.echo_check_call(cmd)
+            # Any warning (exit 1) may mean a file is missing, so fall back.
             if return_status == 0:
                 return
 
