@@ -7,6 +7,7 @@ from typing import Any
 from posix_build_python_instance import PosixBuildPythonInstance
 from wheel_builder_utils import (
     remove_tree,
+    split_semicolon_list,
 )
 
 
@@ -166,12 +167,8 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
                 "--plat",
                 self.target.wheel_plat_tag,
             ]
-            excludes = self.exclude_libs
-            if isinstance(excludes, list):
-                excludes = ";".join(excludes)
-            for lib in excludes.split(";"):
-                if lib:
-                    cmd += ["--exclude", lib]
+            for lib in split_semicolon_list(self.exclude_libs):
+                cmd += ["--exclude", lib]
             cmd += [str(filepath), "-w", str(output_dir)]
             # Provide LD_LIBRARY_PATH for oneTBB and common system paths
             extra_lib = str(self._tbb_prefix / "lib")

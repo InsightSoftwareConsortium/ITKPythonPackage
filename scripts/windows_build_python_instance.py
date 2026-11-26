@@ -13,6 +13,7 @@ from build_python_instance_base import BuildPythonInstanceBase
 from cmake_argument_builder import CMakeArgumentBuilder
 from module_wheel_init import ITK_INIT, module_init_name, rename_wheel_member
 from msvc_path_trim import msvc_trim_definitions
+from wheel_builder_utils import split_semicolon_list
 
 ARCHIVE_EXCLUDES = (
     "*.o",
@@ -92,18 +93,9 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
 
     def _delvewheel_lib_paths(self) -> str:
         """Return the ``--lib-paths`` directories and oneTBB's, semicolon-delimited."""
-        # append the oneTBB-prefix\\bin directory for fixing wheels built with local oneTBB
-        search_lib_paths = (
-            [
-                s
-                for s in str(self.windows_extra_lib_paths[0]).rstrip(";").split(";")
-                if s
-            ]
-            if self.windows_extra_lib_paths
-            else []
-        )
+        search_lib_paths = split_semicolon_list(self.windows_extra_lib_paths)
         search_lib_paths.append(str(self._tbb_prefix / "bin"))
-        return ";".join(map(str, search_lib_paths))
+        return ";".join(search_lib_paths)
 
     def fixup_wheels(self, lib_paths: str = "") -> None:
         """Repair the ``itk_core`` wheels, which link oneTBB."""
@@ -179,10 +171,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
 
     def _no_dll_arguments(self) -> list[str]:
         """Return ``--no-dll`` with the ``--exclude-libs`` value, if one was given."""
-        excludes = self.windows_exclude_libs
-        if isinstance(excludes, list):
-            excludes = ";".join(excludes)
-        excludes = excludes.strip(";")
+        excludes = ";".join(split_semicolon_list(self.windows_exclude_libs))
         return ["--no-dll", excludes] if excludes else []
 
     def build_tarball(self) -> None:

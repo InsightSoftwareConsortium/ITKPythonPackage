@@ -19,6 +19,22 @@ def _completed(
     )
 
 
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("", []),
+        ([], []),
+        ("nvcuda.dll", ["nvcuda.dll"]),
+        ("C:/CUDA/bin", ["C:/CUDA/bin"]),
+        (["a.dll;b.dll;"], ["a.dll", "b.dll"]),
+        (["a.dll", "b.dll"], ["a.dll", "b.dll"]),
+        ("a.dll; ;b.dll", ["a.dll", "b.dll"]),
+    ],
+)
+def test_split_semicolon_list(value: Sequence[str] | str, expected: list[str]) -> None:
+    assert wheel_builder_utils.split_semicolon_list(value) == expected
+
+
 def test_which_required_raises_for_a_missing_executable() -> None:
     """A missing tool must not become the string 'None' in an argv list."""
     with pytest.raises(RuntimeError, match="MISSING"):

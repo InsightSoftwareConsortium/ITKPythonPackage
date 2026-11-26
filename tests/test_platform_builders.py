@@ -605,6 +605,13 @@ def test_windows_lib_paths_are_split_on_semicolons(
     assert not any(len(e) == 1 for e in entries)
 
 
+def test_windows_lib_paths_given_as_a_string_keep_whole_directories(
+    windows_builder: WindowsBuildPythonInstance,
+) -> None:
+    windows_builder.windows_extra_lib_paths = "C:/CUDA/bin"
+    assert windows_builder._delvewheel_lib_paths().split(";")[0] == "C:/CUDA/bin"
+
+
 def test_ingested_remote_modules_are_enabled_and_can_be_overridden(
     linux_builder: LinuxBuildPythonInstance,
 ) -> None:
