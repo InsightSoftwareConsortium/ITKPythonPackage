@@ -108,7 +108,7 @@ ITK_GIT_TAG=${ITK_GIT_TAG:=${ITK_PACKAGE_VERSION}}
 # Set default values
 MANYLINUX_VERSION=${MANYLINUX_VERSION:-_2_28}
 TARGET_ARCH=${TARGET_ARCH:-x64}
-# ITKPythonBuilds has caches for manylinux_2_28 only; manylinux2014 is no longer built.
+# ITKPythonBuilds publishes caches for manylinux_2_28 only.
 if [ "${MANYLINUX_VERSION}" != "_2_28" ]; then
   echo "ERROR: MANYLINUX_VERSION=${MANYLINUX_VERSION} is not built; module wheels are manylinux_2_28 only."
   exit 1
