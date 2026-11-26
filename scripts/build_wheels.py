@@ -340,19 +340,21 @@ def build_argument_parser(os_name: OS, ipp_dir: Path) -> argparse.ArgumentParser
     )
     parser.add_argument(
         "--lib-paths",
-        nargs=1,
-        default="",
+        action="append",
+        default=[],
         help=(
-            "Windows only: semicolon-delimited library directories for delvewheel to include in module wheel"
+            "Windows only: semicolon-delimited library directories for delvewheel "
+            "to include in module wheel; may be repeated"
         ),
     )
     parser.add_argument(
         "--exclude-libs",
-        nargs=1,
-        default="",
+        action="append",
+        default=[],
         help=(
             "Windows and Linux: semicolon-delimited library names delvewheel or "
-            'auditwheel must not bundle, e.g. "nvcuda.dll" or "libcuda.so.1"'
+            'auditwheel must not bundle, e.g. "nvcuda.dll" or "libcuda.so.1"; '
+            "may be repeated"
         ),
     )
     _cmake_options_default = remote_module_build_dict["CMAKE_OPTIONS"]
@@ -737,6 +739,11 @@ def configure_linux_target(args: argparse.Namespace) -> TargetPlatform:
     return target
 
 
+def semicolon_joined(values: list[str]) -> list[str]:
+    """Join a repeated option into the one-element list the builders take."""
+    return [";".join(values)] if values else []
+
+
 def make_builder(
     args: argparse.Namespace,
     os_name: OS,
@@ -750,8 +757,8 @@ def make_builder(
 
         builder_cls = functools.partial(
             WindowsBuildPythonInstance,
-            windows_extra_lib_paths=args.lib_paths,
-            windows_exclude_libs=args.exclude_libs,
+            windows_extra_lib_paths=semicolon_joined(args.lib_paths),
+            windows_exclude_libs=semicolon_joined(args.exclude_libs),
         )
     elif os_name is OS.DARWIN:
         from macos_build_python_instance import MacOSBuildPythonInstance
@@ -761,7 +768,7 @@ def make_builder(
         from linux_build_python_instance import LinuxBuildPythonInstance
 
         builder_cls = functools.partial(
-            LinuxBuildPythonInstance, exclude_libs=args.exclude_libs
+            LinuxBuildPythonInstance, exclude_libs=semicolon_joined(args.exclude_libs)
         )
     return builder_cls(
         platform_env=args.platform_env,

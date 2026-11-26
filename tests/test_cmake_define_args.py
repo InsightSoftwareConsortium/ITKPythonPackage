@@ -97,3 +97,13 @@ def test_windows_cmake_options_keep_their_backslashes(
     monkeypatch.setenv("CMAKE_OPTIONS", r'-DA_DIR=C:\deps\a "-DB_DIR=C:\b c"')
     args = build_argument_parser(OS.WINDOWS, Path("IPP")).parse_args([])
     assert args.cmake_options == [r"-DA_DIR=C:\deps\a", r"-DB_DIR=C:\b c"]
+
+
+def test_repeated_library_options_all_reach_the_builder() -> None:
+    from build_wheels import semicolon_joined
+
+    args = build_argument_parser(OS.LINUX, Path("IPP")).parse_args(
+        ["--exclude-libs", "libcuda.so.1", "--exclude-libs", "libnvrtc.so.12"]
+    )
+    assert semicolon_joined(args.exclude_libs) == ["libcuda.so.1;libnvrtc.so.12"]
+    assert semicolon_joined(args.lib_paths) == []
