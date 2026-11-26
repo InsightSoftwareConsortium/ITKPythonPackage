@@ -849,3 +849,21 @@ def test_every_itk_wheel_configure_names_its_wheel_profile(
     assert len(calls) == 1
     assert "cmake.define.ITKPythonPackage_WHEEL_PROFILE:STRING" in calls[0]
     assert builder.wheel_profile.name in calls[0]
+
+
+def test_each_platform_reports_its_own_wheel_repair_settings(
+    linux_builder: LinuxBuildPythonInstance,
+    macos_builder: MacOSBuildPythonInstance,
+    windows_builder: WindowsBuildPythonInstance,
+) -> None:
+    linux_builder.exclude_libs = ["libcuda.so.1;libnvrtc.so.12"]
+    windows_builder.windows_extra_lib_paths = ["C:/CUDA/bin;"]
+    windows_builder.windows_exclude_libs = "nvcuda.dll"
+    assert macos_builder.wheel_repair_settings() == {}
+    assert linux_builder.wheel_repair_settings() == {
+        "exclude_libs": "libcuda.so.1;libnvrtc.so.12"
+    }
+    assert windows_builder.wheel_repair_settings() == {
+        "windows_extra_lib_paths": "C:/CUDA/bin",
+        "windows_exclude_libs": "nvcuda.dll",
+    }

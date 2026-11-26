@@ -18,13 +18,14 @@ class LinuxBuildPythonInstance(PosixBuildPythonInstance):
     Linux-specific compiler/target triple configuration.
     """
 
-    #: ``--exclude-libs``: libraries ``auditwheel`` must not bundle.
-    exclude_libs: list[str] | str = ""
-
     def __init__(self, *, exclude_libs: list[str] | str = "", **kwargs: Any) -> None:
         """Take ``--exclude-libs``; the rest are the base's."""
         super().__init__(**kwargs)
         self.exclude_libs = exclude_libs
+
+    def wheel_repair_settings(self) -> dict[str, str]:
+        """Return ``--exclude-libs``, which changes what auditwheel bundles."""
+        return {"exclude_libs": ";".join(split_semicolon_list(self.exclude_libs))}
 
     def builds_manylinux(self) -> bool:
         """True when the wheels are repaired and tagged for manylinux."""

@@ -169,6 +169,17 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
         repaired_wheel.replace(output_dir / repaired_wheel.name)
         shutil.rmtree(staging_dir, ignore_errors=True)
 
+    def wheel_repair_settings(self) -> dict[str, str]:
+        """Return ``--lib-paths`` and ``--exclude-libs``, which change what delvewheel bundles."""
+        return {
+            "windows_extra_lib_paths": ";".join(
+                split_semicolon_list(self.windows_extra_lib_paths)
+            ),
+            "windows_exclude_libs": ";".join(
+                split_semicolon_list(self.windows_exclude_libs)
+            ),
+        }
+
     def _no_dll_arguments(self) -> list[str]:
         """Return ``--no-dll`` with the ``--exclude-libs`` value, if one was given."""
         excludes = ";".join(split_semicolon_list(self.windows_exclude_libs))
