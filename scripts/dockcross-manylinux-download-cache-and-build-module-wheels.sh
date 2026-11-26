@@ -85,6 +85,11 @@ while [ $# -gt 0 ]; do
     python_versions+=("$@")
     break
     ;;
+  -D*)
+    # The CI action passes "--cmake_options -DA=1 -DB=2" unquoted.
+    export CMAKE_OPTIONS="${CMAKE_OPTIONS:+${CMAKE_OPTIONS} }$1"
+    shift
+    ;;
   -*)
     echo "Unexpected option: $1."
     usage

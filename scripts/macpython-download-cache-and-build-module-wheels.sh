@@ -39,17 +39,30 @@ usage() {
   exit 2
 }
 
+option_value() {
+  if [ $# -lt 2 ]; then
+    echo "Option $1 needs a value."
+    usage
+  fi
+}
+
 CMAKE_OPTIONS=""
 while [ $# -gt 0 ]; do
   case "$1" in
   -h | --help) usage ;;
   -c | --cmake_options)
+    option_value "$@"
     CMAKE_OPTIONS="$2"
     shift 2
     ;;
   --)
     shift
     break
+    ;;
+  -D*)
+    # The CI action passes "--cmake_options -DA=1 -DB=2" unquoted.
+    CMAKE_OPTIONS="${CMAKE_OPTIONS:+${CMAKE_OPTIONS} }$1"
+    shift
     ;;
   -*)
     echo "Unexpected option: $1."
