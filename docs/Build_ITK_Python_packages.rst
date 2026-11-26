@@ -164,7 +164,7 @@ Key Options
      - Root directory for all build artifacts
    * - ``--manylinux-version``
      - ``$MANYLINUX_VERSION``, else empty
-     - Manylinux compatibility standard (e.g. ``_2_28``, ``_2_34``); empty
+     - Manylinux compatibility standard; only ``_2_28`` is built. Empty
        builds native Linux, and a ``manylinux228-*`` platform env implies
        ``_2_28``
    * - ``--itk-source-dir``

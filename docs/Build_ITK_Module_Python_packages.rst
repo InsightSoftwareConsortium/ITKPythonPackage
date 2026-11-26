@@ -163,7 +163,7 @@ Key environment variables:
      - Root directory for build artifacts
    * - ``MANYLINUX_VERSION``
      - ``_2_28``
-     - Manylinux compatibility standard
+     - Manylinux compatibility standard; the script accepts only ``_2_28``
    * - ``CMAKE_OPTIONS``
      - *(empty)*
      - Extra CMake ``-D`` definitions
@@ -246,18 +246,24 @@ the build script::
 
    export LD_LIBRARY_PATH=/path/to/mylib/lib:$LD_LIBRARY_PATH
 
+A library the wheel must not bundle, such as the CUDA driver, is named with
+``-x`` (``--exclude_libs``); separate several names with ``;``::
+
+   ./dockcross-manylinux-download-cache-and-build-module-wheels.sh -x "libcuda.so.1" cp311
+
 **macOS**: add the directory to ``DYLD_LIBRARY_PATH``::
 
    export DYLD_LIBRARY_PATH=/path/to/mylib/lib:$DYLD_LIBRARY_PATH
 
 **Windows**: pass the library directory via ``--lib-paths`` (or the
-``-setup_options`` parameter of the PowerShell script):
+``-setup_options`` parameter of the PowerShell script), and name a DLL the
+wheel must not bundle with ``--exclude-libs``:
 
 .. code-block:: powershell
 
    .\windows-download-cache-and-build-module-wheels.ps1 `
-     -python_version_minor 10 `
-     -setup_options "--exclude-libs nvcuda.dll"
+     -python_version_minor 11 `
+     -setup_options "--lib-paths C:\CUDA\bin --exclude-libs nvcuda.dll"
 
 
 Output

@@ -298,12 +298,12 @@ not a real flag; do not invent one.
 
 **Platform options**
 
-| Argument                         | Meaning                                         |
-| -------------------------------- | ----------------------------------------------- |
-| `--macosx-deployment-target VER` | macOS floor and wheel tag                       |
-| `--manylinux-version VER`        | `_2_28`, `_2_34`; empty builds native Linux     |
-| `--lib-paths DIRS`               | Windows only; `;`-delimited dirs for delvewheel |
-| `--exclude-libs DLLS`            | Windows only; `;`-delimited DLLs not to bundle  |
+| Argument                         | Meaning                                          |
+| -------------------------------- | ------------------------------------------------ |
+| `--macosx-deployment-target VER` | macOS floor and wheel tag                        |
+| `--manylinux-version VER`        | `_2_28`; empty builds native Linux               |
+| `--lib-paths DIRS`               | Windows only; `;`-delimited dirs for delvewheel  |
+| `--exclude-libs LIBS`            | Windows, Linux; `;`-delimited libs not to bundle |
 
 **Remote modules**
 
