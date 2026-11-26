@@ -273,6 +273,24 @@ def module_source(tmp_path: Path) -> Path:
     return module
 
 
+def test_a_new_module_itk_dir_changes_the_fingerprint(
+    monkeypatch: pytest.MonkeyPatch,
+    linux_builder: LinuxBuildPythonInstance,
+    tmp_path: Path,
+    ipp_dir: Path,
+    itk_source: Path,
+    module_source: Path,
+) -> None:
+    _wire_run(
+        monkeypatch, linux_builder, tmp_path, ipp_dir, itk_source, module=module_source
+    )
+    linux_builder.module_itk_dir = "build"
+    build = linux_builder.build_inputs()
+    linux_builder.module_itk_dir = "install"
+    install = linux_builder.build_inputs()
+    assert build["fingerprint"] != install["fingerprint"]
+
+
 def test_module_state_follows_commits_and_uncommitted_edits(
     module_source: Path,
 ) -> None:
