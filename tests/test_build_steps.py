@@ -155,7 +155,7 @@ def test_skip_steps_renames_only_the_named_steps_in_place() -> None:
 def test_a_module_build_keeps_its_own_step_report(
     linux_builder: LinuxBuildPythonInstance,
 ) -> None:
-    """A module's inputs differ from ITK's, so a shared report reran every step."""
+    """A module's inputs differ from ITK's, so each needs its own report."""
     builder = _configure(linux_builder)
     builder.dist_dir = Path("dist")
     assert builder.build_report_path().name == "build_log_manylinux228-py311.json"

@@ -202,7 +202,7 @@ Key options:
 | `--use-compiler-cache`           | sccache on Windows, ccache elsewhere (`--use-ccache`)  | (flag)                        |
 | `--no-dead-strip`                | Linux, macOS: keep unreferenced code (default: strip)  | (flag)                        |
 | `--lib-paths`                    | Windows only: `;`-delimited dirs for delvewheel        | `C:\deps\bin`                 |
-| `--exclude-libs`                 | Windows only: `;`-delimited DLLs delvewheel must skip  | `nvcuda.dll`                  |
+| `--exclude-libs`                 | Windows, Linux: `;`-delimited libraries not to bundle  | `nvcuda.dll`, `libcuda.so.1`  |
 | `--no-build-itk-tarball-cache`   | Skip tarball generation (default)                      | (flag)                        |
 | `--no-skip-itk-build`            | Don't skip ITK build step (default                     | (flag)                        |
 | `--no-skip-itk-wheel-build`      | Don't skip the ITK wheel build step (default)          | (flag)                        |
@@ -353,7 +353,7 @@ Key environment variables:
 | `ITK_SOURCE_DIR`           | `<build-root>/ITKPythonPackage-build/ITK`                         | Path to local ITK source (skips git clone)                                       |
 | `ITK_PACKAGE_VERSION`      | derived from git                                                  | PEP 440 version of the wheels                                                    |
 | `TARGET_ARCH`              | host architecture                                                 | `x64` or `aarch64`                                                               |
-| `MANYLINUX_VERSION`        | `_2_28`                                                           | Manylinux standard to target                                                     |
+| `MANYLINUX_VERSION`        | `_2_28`                                                           | Manylinux standard to target; only `_2_28` is built                              |
 | `IMAGE_TAG`                | `20260203-3dfb3ff` (dockcross) or `2025.08.12-1` (quay manylinux) | Container image tag; the default depends on `CONTAINER_SOURCE`                   |
 | `CONTAINER_DNS`            | unset (container runtime default)                                 | DNS servers for the build container, space- or comma-separated; this script only |
 | `USE_COMPILER_CACHE`       | `0` (`USE_CCACHE` also accepted)                                  | Compile through ccache in the container                                          |
