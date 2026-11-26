@@ -64,7 +64,8 @@ def uncommitted_changes(
     """Return a hash of the uncommitted changes in the repository at *directory*.
 
     It covers the changes to tracked files and the untracked files git does
-    not ignore, except those under a top-level name in *skip*.
+    not ignore, except those under a top-level name in *skip* and those in a
+    CMake build tree, a directory holding ``CMakeCache.txt``.
     """
     diff = subprocess.run(
         [git, "diff", "HEAD", "--binary"],
@@ -81,12 +82,43 @@ def uncommitted_changes(
         capture_output=True,
         check=True,
     )
-    for name in sorted(untracked.stdout.decode().split("\0")):
-        if name and name.split("/")[0] not in skip:
-            digest.update(name.encode() + b"\0")
-            with (Path(directory) / name).open("rb") as f:
-                digest.update(hashlib.file_digest(f, "sha256").digest())
+    names = sorted(os.fsdecode(n) for n in untracked.stdout.split(b"\0") if n)
+    build_trees = tuple(
+        name.removesuffix("CMakeCache.txt")
+        for name in names
+        if name.endswith("/CMakeCache.txt")
+    )
+    for name in names:
+        if name.split("/")[0] in skip or name.startswith(build_trees):
+            continue
+        digest.update(os.fsencode(name) + b"\0")
+        digest.update(_untracked_digest(Path(directory) / name, git, env))
     return digest.hexdigest()
+
+
+def _untracked_digest(path: Path, git: str, env: Mapping[str, str]) -> bytes:
+    """Return what identifies the content of the untracked *path*."""
+    if path.is_symlink():
+        return os.fsencode(path.readlink())
+    if path.is_dir():
+        # git lists a nested repository as one entry, "<name>/".
+        head = subprocess.run(
+            [git, "rev-parse", "--verify", "HEAD"],
+            cwd=path,
+            env=env,
+            capture_output=True,
+            check=False,
+        )
+        try:
+            changes = uncommitted_changes(path, git, env)
+        except subprocess.CalledProcessError as error:
+            changes = type(error).__name__
+        return head.stdout + changes.encode()
+    try:
+        with path.open("rb") as f:
+            return hashlib.file_digest(f, "sha256").digest()
+    except OSError as error:
+        return type(error).__name__.encode()
 
 
 def resolved_itk_commit(itk_source_dir: Path, fallback: str, git: str = "git") -> str:
