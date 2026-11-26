@@ -305,6 +305,16 @@ def default_build_dir_root(ipp_dir: Path, os_name: OS) -> Path:
     return ipp_dir.parent / "ITKPythonPackage-build"
 
 
+def split_cmake_options(text: str, os_name: OS) -> list[str]:
+    """Split ``CMAKE_OPTIONS`` as a shell would, keeping Windows paths' backslashes."""
+    lexer = shlex.shlex(text, posix=True)
+    lexer.whitespace_split = True
+    lexer.commenters = ""
+    if os_name is OS.WINDOWS:
+        lexer.escape = ""
+    return list(lexer)
+
+
 def build_argument_parser(os_name: OS, ipp_dir: Path) -> argparse.ArgumentParser:
     """Return the command line parser; defaults come from the environment."""
     remote_module_build_dict = remotemodulebuildandtestaction()
@@ -358,14 +368,10 @@ def build_argument_parser(os_name: OS, ipp_dir: Path) -> argparse.ArgumentParser
             "may be repeated"
         ),
     )
-    _cmake_options_default = remote_module_build_dict["CMAKE_OPTIONS"]
-    if os_name is OS.WINDOWS:
-        # shlex takes a backslash for an escape; keep those of Windows paths.
-        _cmake_options_default = _cmake_options_default.replace("\\", "\\\\")
     parser.add_argument(
         "cmake_options",
         nargs="*",
-        default=shlex.split(_cmake_options_default) if _cmake_options_default else [],
+        default=split_cmake_options(remote_module_build_dict["CMAKE_OPTIONS"], os_name),
         help="Extra options to pass to CMake, e.g. -DBUILD_SHARED_LIBS:BOOL=OFF.\n"
         "   These will override defaults if duplicated",
     )
