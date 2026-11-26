@@ -449,6 +449,10 @@ class BuildPythonInstanceBase(ABC):
         dependency_build.itk_module_deps = None  # Prevent recursion
         dependency_build.run()
 
+    def wheel_repair_settings(self) -> dict[str, str]:
+        """Return the platform's wheel repair options, which change the wheels."""
+        return {}
+
     def build_inputs(self) -> dict[str, str]:
         """Return the ITK commit, package version, and fingerprint of this build."""
         cfg = self.config.to_environment()
@@ -461,13 +465,7 @@ class BuildPythonInstanceBase(ABC):
             settings.update({f"{group}:{k}": str(v) for k, v in definitions.items()})
         for key in ("USE_CCACHE", "MANYLINUX_VERSION", "CONTAINER_SOURCE"):
             settings[key] = cfg.get(key, "")
-        # The platform builders' wheel repair options.
-        for option in (
-            "windows_extra_lib_paths",
-            "windows_exclude_libs",
-            "exclude_libs",
-        ):
-            settings[option] = str(getattr(self, option, ""))
+        settings.update(self.wheel_repair_settings())
         git = str(self.config.git_executable)
         module_state = None
         if self.module_source_dir is not None:

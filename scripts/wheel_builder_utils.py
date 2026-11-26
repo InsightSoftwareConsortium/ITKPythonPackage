@@ -553,3 +553,9 @@ def get_default_platform_build(default_python_version: str = "py311") -> str:
         if sys.platform.startswith(platform_prefix):
             return f"{pixi_os}-{default_python_version}"
     return f"unknown-{default_python_version}"
+
+
+def split_semicolon_list(value: Sequence[str] | str) -> list[str]:
+    """Return the names in a ``;``-delimited option, given as a string or argparse list."""
+    joined = value if isinstance(value, str) else ";".join(value)
+    return [name.strip() for name in joined.split(";") if name.strip()]

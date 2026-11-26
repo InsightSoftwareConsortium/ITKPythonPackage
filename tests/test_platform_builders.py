@@ -605,6 +605,13 @@ def test_windows_lib_paths_are_split_on_semicolons(
     assert not any(len(e) == 1 for e in entries)
 
 
+def test_windows_lib_paths_given_as_a_string_keep_whole_directories(
+    windows_builder: WindowsBuildPythonInstance,
+) -> None:
+    windows_builder.windows_extra_lib_paths = "C:/CUDA/bin"
+    assert windows_builder._delvewheel_lib_paths().split(";")[0] == "C:/CUDA/bin"
+
+
 def test_ingested_remote_modules_are_enabled_and_can_be_overridden(
     linux_builder: LinuxBuildPythonInstance,
 ) -> None:
@@ -842,3 +849,21 @@ def test_every_itk_wheel_configure_names_its_wheel_profile(
     assert len(calls) == 1
     assert "cmake.define.ITKPythonPackage_WHEEL_PROFILE:STRING" in calls[0]
     assert builder.wheel_profile.name in calls[0]
+
+
+def test_each_platform_reports_its_own_wheel_repair_settings(
+    linux_builder: LinuxBuildPythonInstance,
+    macos_builder: MacOSBuildPythonInstance,
+    windows_builder: WindowsBuildPythonInstance,
+) -> None:
+    linux_builder.exclude_libs = ["libcuda.so.1;libnvrtc.so.12"]
+    windows_builder.windows_extra_lib_paths = ["C:/CUDA/bin;"]
+    windows_builder.windows_exclude_libs = "nvcuda.dll"
+    assert macos_builder.wheel_repair_settings() == {}
+    assert linux_builder.wheel_repair_settings() == {
+        "exclude_libs": "libcuda.so.1;libnvrtc.so.12"
+    }
+    assert windows_builder.wheel_repair_settings() == {
+        "windows_extra_lib_paths": "C:/CUDA/bin",
+        "windows_exclude_libs": "nvcuda.dll",
+    }

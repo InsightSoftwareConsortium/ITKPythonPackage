@@ -85,23 +85,27 @@ def macos_builder(tmp_path: Path) -> MacOSBuildPythonInstance:
 @pytest.fixture
 def linux_builder(tmp_path: Path) -> LinuxBuildPythonInstance:
     """A manylinux x86_64 builder."""
-    return _make_builder(
+    builder = _make_builder(
         LinuxBuildPythonInstance,
         tmp_path,
         "manylinux228-py311",
         TargetPlatform(OS.LINUX, Arch.X86_64, "_2_28"),
     )
+    builder.exclude_libs = ""
+    return builder
 
 
 @pytest.fixture
 def linux_aarch64_builder(tmp_path: Path) -> LinuxBuildPythonInstance:
     """A manylinux aarch64 builder, covering the cross-build triple."""
-    return _make_builder(
+    builder = _make_builder(
         LinuxBuildPythonInstance,
         tmp_path,
         "manylinux228-py311",
         TargetPlatform(OS.LINUX, Arch.AARCH64, "_2_28"),
     )
+    builder.exclude_libs = ""
+    return builder
 
 
 @pytest.fixture
