@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.bash import BASH
+
 SCRIPT = (
     Path(__file__).resolve().parent.parent
     / "scripts"
@@ -24,7 +26,7 @@ fi
 """
 
 pytestmark = pytest.mark.skipif(
-    shutil.which("bash") is None
+    not BASH
     or shutil.which("zstd") is None
     or shutil.which("unzstd") is None
     or shutil.which("rsync") is None,
@@ -63,7 +65,7 @@ def test_a_local_archive_is_extracted(tmp_path: Path, symlinked: bool) -> None:
         "TARGET_ARCH": "x64",
     }
     result = subprocess.run(
-        ["bash", str(SCRIPT)],
+        [BASH, str(SCRIPT)],
         cwd=work,
         env=env,
         capture_output=True,

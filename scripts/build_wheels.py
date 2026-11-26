@@ -310,9 +310,14 @@ def build_argument_parser(os_name: OS, ipp_dir: Path) -> argparse.ArgumentParser
     parser = argparse.ArgumentParser(
         description="Driver script to build ITK Python wheels."
     )
+    # The environment guard requires the active pixi environment itself, which
+    # get_default_platform_build renames for manylinux.
+    default_env = os.environ.get("PIXI_ENVIRONMENT_NAME", "")
+    if "-" not in default_env:
+        default_env = get_default_platform_build("py311")
     parser.add_argument(
         "--platform-env",
-        default=get_default_platform_build("py311"),
+        default=default_env,
         help=(
             """A platform environment name or path:
                linux-py311,
@@ -346,10 +351,14 @@ def build_argument_parser(os_name: OS, ipp_dir: Path) -> argparse.ArgumentParser
         nargs=1,
         default="",
         help=(
-            'Windows only: semicolon-delimited DLL names delvewheel must not bundle, e.g. "nvcuda.dll"'
+            "Windows and Linux: semicolon-delimited library names delvewheel or "
+            'auditwheel must not bundle, e.g. "nvcuda.dll" or "libcuda.so.1"'
         ),
     )
     _cmake_options_default = remote_module_build_dict["CMAKE_OPTIONS"]
+    if os_name is OS.WINDOWS:
+        # shlex takes a backslash for an escape; keep those of Windows paths.
+        _cmake_options_default = _cmake_options_default.replace("\\", "\\\\")
     parser.add_argument(
         "cmake_options",
         nargs="*",
@@ -622,7 +631,7 @@ def sync_itk_source_tree(args: argparse.Namespace, ipp_dir: Path) -> None:
     # any other value is used as given, as a cache-restored tree has no repository.
     if derives_package_version(args.itk_package_version):
         args.itk_package_version = compute_itk_package_version(
-            args.itk_source_dir, args.itk_git_tag, os.environ
+            args.itk_source_dir, args.itk_git_tag, itk_git_env(args.itk_source_dir)
         )
 
 
@@ -751,7 +760,9 @@ def make_builder(
     else:
         from linux_build_python_instance import LinuxBuildPythonInstance
 
-        builder_cls = LinuxBuildPythonInstance
+        builder_cls = functools.partial(
+            LinuxBuildPythonInstance, exclude_libs=args.exclude_libs
+        )
     return builder_cls(
         platform_env=args.platform_env,
         build_dir_root=args.build_dir_root,

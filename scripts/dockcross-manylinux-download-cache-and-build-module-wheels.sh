@@ -42,7 +42,7 @@ usage() {
   dockcross-manylinux-download-cache-and-build-module-wheels
     [ -h | --help ]           show usage
     [ -c | --cmake_options ]  space-delimited string containing CMake options to forward to the module (e.g. \"-DBUILD_TESTING=OFF\")
-    [ -x | --exclude_libs ]   accepted for compatibility and ignored; nothing excludes libraries from the repair
+    [ -x | --exclude_libs ]   semicolon-delimited library names auditwheel must not bundle (e.g. \"libcuda.so.1\")
     [ python_version ]        build wheel for a specific python version. (e.g. cp311)"
   exit 2
 }
@@ -73,11 +73,11 @@ while [ $# -gt 0 ]; do
     ;;
   -x | --exclude_libs | -exclude_libs)
     option_value "$@"
-    echo "WARNING: --exclude_libs '$2' is ignored; no library is excluded from the wheel repair."
+    export BUILD_WHEELS_EXTRA_FLAGS="${BUILD_WHEELS_EXTRA_FLAGS} --exclude-libs $2"
     shift 2
     ;;
   --exclude_libs=* | -exclude_libs=*)
-    echo "WARNING: --exclude_libs '${1#*=}' is ignored; no library is excluded from the wheel repair."
+    export BUILD_WHEELS_EXTRA_FLAGS="${BUILD_WHEELS_EXTRA_FLAGS} --exclude-libs ${1#*=}"
     shift
     ;;
   --)
@@ -108,6 +108,11 @@ ITK_GIT_TAG=${ITK_GIT_TAG:=${ITK_PACKAGE_VERSION}}
 # Set default values
 MANYLINUX_VERSION=${MANYLINUX_VERSION:-_2_28}
 TARGET_ARCH=${TARGET_ARCH:-x64}
+# ITKPythonBuilds has caches for manylinux_2_28 only; manylinux2014 is no longer built.
+if [ "${MANYLINUX_VERSION}" != "_2_28" ]; then
+  echo "ERROR: MANYLINUX_VERSION=${MANYLINUX_VERSION} is not built; module wheels are manylinux_2_28 only."
+  exit 1
+fi
 
 ITKPYTHONPACKAGE_ORG=${ITKPYTHONPACKAGE_ORG:-InsightSoftwareConsortium}
 ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG:-main}
@@ -116,7 +121,7 @@ ITKPYTHONPACKAGE_TAG=${ITKPYTHONPACKAGE_TAG:-main}
 # Download and extract cache
 
 echo "Fetching https://raw.githubusercontent.com/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage/${ITKPYTHONPACKAGE_TAG}/scripts/dockcross-manylinux-download-cache.sh"
-curl -L "https://raw.githubusercontent.com/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage/${ITKPYTHONPACKAGE_TAG}/scripts/dockcross-manylinux-download-cache.sh" -O
+curl -fL "https://raw.githubusercontent.com/${ITKPYTHONPACKAGE_ORG}/ITKPythonPackage/${ITKPYTHONPACKAGE_TAG}/scripts/dockcross-manylinux-download-cache.sh" -O || exit 1
 chmod u+x dockcross-manylinux-download-cache.sh
 _download_cmd="ITK_GIT_TAG=${ITK_GIT_TAG} \
     ITK_PACKAGE_VERSION=${ITK_PACKAGE_VERSION} \
@@ -127,7 +132,7 @@ _download_cmd="ITK_GIT_TAG=${ITK_GIT_TAG} \
     bash -x \
     ${download_script_dir}/dockcross-manylinux-download-cache.sh $1"
 echo "Running: ${_download_cmd}"
-eval "${_download_cmd}"
+eval "${_download_cmd}" || exit 1
 
 #NOTE: in this scenario, untarred_ipp_dir is extracted from tarball
 #      during ${download_script_dir}/dockcross-manylinux-download-cache.sh

@@ -9,6 +9,7 @@ module's init lives under that name except while delvewheel patches it.
 from __future__ import annotations
 
 import email.parser
+import re
 import zipfile
 from typing import TYPE_CHECKING
 
@@ -16,12 +17,17 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 ITK_INIT = "itk/__init__.py"
+_CONFIG = re.compile(r"^itk/Configuration/(?P<module>[^/]+)Config\.py$")
 
 
 def module_init_name(wheel: Path) -> str:
     """Return the ``itk/__init_<module>__.py`` member ITK runs for *wheel*."""
     with zipfile.ZipFile(wheel) as zf:
-        metadata = next(n for n in zf.namelist() if n.endswith(".dist-info/METADATA"))
+        names = zf.namelist()
+        modules = sorted(m["module"] for n in names if (m := _CONFIG.match(n)))
+        if modules:
+            return f"itk/__init_{modules[0].lower()}__.py"
+        metadata = next(n for n in names if n.endswith(".dist-info/METADATA"))
         name = email.parser.Parser().parsestr(zf.read(metadata).decode())["Name"]
     module = name.lower().removeprefix("itk-").split("-")[0]
     return f"itk/__init_{module}__.py"

@@ -113,22 +113,23 @@ def test_compute_itk_package_version_keeps_head_on_failed_checkout(
     assert version.startswith("6.0")
 
 
-def test_compute_itk_package_version_raises_when_fetch_fails(tmp_path: Path) -> None:
+def test_compute_itk_package_version_works_offline(tmp_path: Path) -> None:
+    """sync_itk_source accepts a failed fetch when the revision is present."""
+
     def fake_run(
         cmd: Sequence[str | Path],
         cwd: Path | None = None,
         env: Mapping[str, str] | None = None,
         check: bool = False,
     ) -> subprocess.CompletedProcess[str]:
-        if str(cmd[1]) == "rev-parse" and "--git-dir" in [str(c) for c in cmd]:
-            return _completed(0, ".git")
-        return _completed(1, "", "network down")
+        if str(cmd[1]) == "fetch":
+            return _completed(1, "", "network down")
+        if str(cmd[1]) == "describe":
+            return _completed(0, "v6.0.0-0-gabc1234")
+        return _completed(0, ".git")
 
-    with (
-        patch.object(wheel_builder_utils, "run_command", fake_run),
-        pytest.raises(RuntimeError, match="git fetch"),
-    ):
-        compute_itk_package_version(tmp_path, "v6.0.0", {})
+    with patch.object(wheel_builder_utils, "run_command", fake_run):
+        assert compute_itk_package_version(tmp_path, "v6.0.0", {}) == "6.0.0"
 
 
 def test_streamed_output_is_also_returned(capsys: pytest.CaptureFixture[str]) -> None:

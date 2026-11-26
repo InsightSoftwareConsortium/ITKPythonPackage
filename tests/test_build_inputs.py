@@ -53,6 +53,21 @@ def test_a_branch_name_resolves_to_the_commit_it_builds(itk_source: Path) -> Non
     assert resolved_itk_commit(itk_source, "main") == after != before
 
 
+def test_uncommitted_itk_changes_change_the_commit(itk_source: Path) -> None:
+    """A build of edited sources must not reuse the build of the commit."""
+    commit = resolved_itk_commit(itk_source, "main")
+    new_file = itk_source / "itkNew.h"
+    new_file.write_text("// new\n")
+    untracked = resolved_itk_commit(itk_source, "main")
+    _git(itk_source, "add", "itkNew.h")
+    staged = resolved_itk_commit(itk_source, "main")
+    new_file.write_text("// edited\n")
+    edited = resolved_itk_commit(itk_source, "main")
+    assert "+" not in commit
+    assert len({commit, untracked, staged, edited}) == 4
+    assert all(r.startswith(f"{commit}+") for r in (untracked, staged, edited))
+
+
 def test_a_tree_without_a_repository_reports_the_requested_revision(
     tmp_path: Path,
 ) -> None:
@@ -172,6 +187,21 @@ def test_a_new_package_version_runs_every_step_again(
     assert ran == ["01_superbuild", "02_build_itk", "03_build_wheels"]
 
 
+def test_new_wheel_repair_options_run_every_step_again(
+    monkeypatch: pytest.MonkeyPatch,
+    linux_builder: LinuxBuildPythonInstance,
+    tmp_path: Path,
+    ipp_dir: Path,
+    itk_source: Path,
+) -> None:
+    _wire_run(monkeypatch, linux_builder, tmp_path, ipp_dir, itk_source)
+    linux_builder.run()
+    linux_builder.exclude_libs = ["libcuda.so.1"]
+    ran = _wire_run(monkeypatch, linux_builder, tmp_path, ipp_dir, itk_source)
+    linux_builder.run()
+    assert ran == ["01_superbuild", "02_build_itk", "03_build_wheels"]
+
+
 @pytest.fixture
 def module_source(tmp_path: Path) -> Path:
     module = tmp_path / "ITKFoo"
@@ -195,6 +225,13 @@ def test_module_state_follows_commits_and_uncommitted_edits(
     _git(module_source, "commit", "--quiet", "-am", "second")
     committed = module_source_state(module_source)
     assert committed not in (first, edited)
+
+
+def test_a_new_module_file_changes_the_module_state(module_source: Path) -> None:
+    before = module_source_state(module_source)
+    (module_source / "include").mkdir()
+    (module_source / "include" / "itkNew.h").write_text("int a;\n")
+    assert module_source_state(module_source) != before
 
 
 def test_module_state_ignores_what_the_module_build_writes(module_source: Path) -> None:

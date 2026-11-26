@@ -28,6 +28,13 @@ ARCHIVE_EXCLUDES = (
     "*.pdb",
 )
 
+#: Where ``build_tarball`` looks for 7-Zip before ``PATH``.
+SEVEN_ZIP_CANDIDATES = (
+    Path(r"C:\7-Zip\7z.exe"),
+    Path(r"C:\Program Files\7-Zip\7z.exe"),
+    Path(r"C:\Program Files (x86)\7-Zip\7z.exe"),
+)
+
 
 def _archive_excluded(relative: PurePath) -> bool:
     """Return True when *relative* matches an ``ARCHIVE_EXCLUDES`` pattern."""
@@ -81,6 +88,10 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
 
     def post_build_fixup(self) -> None:
         """Repair wheels with ``delvewheel``, including oneTBB library paths."""
+        self.fixup_wheels(self._delvewheel_lib_paths())
+
+    def _delvewheel_lib_paths(self) -> str:
+        """Return the ``--lib-paths`` directories and oneTBB's, semicolon-delimited."""
         # append the oneTBB-prefix\\bin directory for fixing wheels built with local oneTBB
         search_lib_paths = (
             [
@@ -92,8 +103,7 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             else []
         )
         search_lib_paths.append(str(self._tbb_prefix / "bin"))
-        search_lib_paths_str: str = ";".join(map(str, search_lib_paths))
-        self.fixup_wheels(search_lib_paths_str)
+        return ";".join(map(str, search_lib_paths))
 
     def fixup_wheels(self, lib_paths: str = "") -> None:
         """Repair the ``itk_core`` wheels, which link oneTBB."""
@@ -104,7 +114,9 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
 
     def fixup_module_wheel(self, filepath: str) -> None:
         """Repair a remote module's wheel into the module's ``dist/``."""
-        self.fixup_wheel(filepath, remote_module_wheel=True)
+        self.fixup_wheel(
+            filepath, self._delvewheel_lib_paths(), remote_module_wheel=True
+        )
 
     def fixup_wheel(
         self, filepath: str, lib_paths: str = "", remote_module_wheel: bool = False
@@ -186,14 +198,8 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
             self.ipp_dir,
         ]
 
-        seven_zip_candidates = [
-            Path(r"C:\\7-Zip\\7z.exe"),
-            Path(r"C:\\Program Files\\7-Zip\\7z.exe"),
-            Path(r"C:\\Program Files (x86)\\7-Zip\\7z.exe"),
-        ]
-
         seven_zip = None
-        for cand in seven_zip_candidates:
+        for cand in SEVEN_ZIP_CANDIDATES:
             if cand.exists():
                 seven_zip = cand
                 break
@@ -204,6 +210,8 @@ class WindowsBuildPythonInstance(BuildPythonInstanceBase):
                 seven_zip = Path(found)
 
         if seven_zip is not None:
+            # "7z a" adds to an existing archive, keeping files since deleted.
+            out_zip.unlink(missing_ok=True)
             # No -r: it would match build/ recursively and sweep in a module's tree.
             cmd = [
                 str(seven_zip),

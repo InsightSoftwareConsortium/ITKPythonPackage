@@ -7,9 +7,11 @@ from pathlib import Path
 
 import pytest
 
+from tests.bash import BASH
+
 SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 
-pytestmark = pytest.mark.skipif(shutil.which("bash") is None, reason="needs bash")
+pytestmark = pytest.mark.skipif(not BASH, reason="needs bash")
 
 # Records each argument on its own line. Asked for the dockcross runner
 # (``run --rm <image>``), it prints a runner that records its arguments too.
@@ -42,10 +44,11 @@ def _run(tmp_path: Path, arch: str, cmake_options: str) -> list[str]:
         "MODULE_DEPS_DIR": str(tmp_path / "deps"),
         "CMAKE_OPTIONS": cmake_options,
     }
-    if "CONTAINER_DNS" in os.environ:
-        env["CONTAINER_DNS"] = os.environ["CONTAINER_DNS"]
+    for name in ("CONTAINER_DNS", "LD_LIBRARY_PATH"):
+        if name in os.environ:
+            env[name] = os.environ[name]
     result = subprocess.run(
-        ["bash", str(ipp / "scripts" / "dockcross-manylinux-build-module-wheels.sh")],
+        [BASH, str(ipp / "scripts" / "dockcross-manylinux-build-module-wheels.sh")],
         env=env,
         capture_output=True,
         text=True,
@@ -83,3 +86,15 @@ def test_host_networking_without_container_dns(tmp_path: Path, arch: str) -> Non
     args = " ".join(_run(tmp_path, arch, ""))
     assert "--network=host" in args
     assert "--dns" not in args
+
+
+@pytest.mark.skipif(os.name == "nt", reason="a drive letter's colon splits the path")
+@pytest.mark.parametrize("arch", ["x64", "aarch64"])
+def test_ld_library_path_reaches_the_container(
+    tmp_path: Path, arch: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    libs = tmp_path / "cuda-lib64"
+    libs.mkdir()
+    monkeypatch.setenv("LD_LIBRARY_PATH", str(libs))
+    args = " ".join(_run(tmp_path, arch, ""))
+    assert "-e LD_LIBRARY_PATH=/usr/lib64/cuda-lib64:" in args

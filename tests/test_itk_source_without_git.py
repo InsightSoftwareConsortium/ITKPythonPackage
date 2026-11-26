@@ -1,5 +1,6 @@
 """A cache-restored ITK tree has no .git and must not abort the build."""
 
+import argparse
 import subprocess
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -175,3 +176,15 @@ def test_version_derivation_explains_a_cache_tree(
     monkeypatch.setattr(wheel_builder_utils, "run_command", not_a_repository)
     with pytest.raises(RuntimeError, match="Pass --itk-package-version"):
         wheel_builder_utils.compute_itk_package_version(tmp_path, "v6.0.0", {})
+
+
+def test_version_derivation_ignores_an_enclosing_repository(tmp_path: Path) -> None:
+    """A cache-restored tree inside another checkout must not take its version."""
+    subprocess.run(["git", "init", "--quiet", str(tmp_path)], check=True)
+    itk = tmp_path / "restored" / "ITK"
+    itk.mkdir(parents=True)
+    args = argparse.Namespace(
+        itk_source_dir=itk, itk_git_tag="v6.0.0", itk_package_version="gitauto"
+    )
+    with pytest.raises(RuntimeError, match="Pass --itk-package-version"):
+        build_wheels.sync_itk_source_tree(args, tmp_path)

@@ -163,6 +163,10 @@ if [[ -n ${LD_LIBRARY_PATH} ]]; then
   done
 fi
 export LD_LIBRARY_PATH="${DOCKER_LD_LIBRARY_PATH}"
+# auditwheel in the container finds the libraries of mounted directories here.
+if [[ -n ${LD_LIBRARY_PATH} ]]; then
+  DOCKER_ARGS+=" -e LD_LIBRARY_PATH=${LD_LIBRARY_PATH} "
+fi
 
 # To build tarballs in manylinux, use 'export BUILD_WHEELS_EXTRA_FLAGS=" --build-itk-tarball-cache "'
 BUILD_WHEELS_EXTRA_FLAGS=${BUILD_WHEELS_EXTRA_FLAGS:=""} # No tarball by default

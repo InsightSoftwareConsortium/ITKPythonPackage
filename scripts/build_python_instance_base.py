@@ -291,6 +291,11 @@ class BuildPythonInstanceBase(ABC):
                 cache_exe,
                 compiler_cache_max_size(cache_tool, os.environ),
             )
+        elif not self.skip_itk_build:
+            # A reused ITK build tree keeps the launcher an earlier build cached.
+            self.cmake_compiler_configurations.update(
+                compiler_cache_definitions("", "")
+            )
 
         user_defs = self.cmake_cmdline_definitions
         flag_defs = self.compiler_flag_definitions(user_defs, compile_roots)
@@ -406,7 +411,7 @@ class BuildPythonInstanceBase(ABC):
         python_package_build_steps = self.build_step_table()
 
         self.dist_dir.mkdir(parents=True, exist_ok=True)
-        build_report_fn: Path = self.dist_dir / f"build_log_{self.platform_env}.json"
+        build_report_fn: Path = self.build_report_path()
         build_manager: BuildManager = BuildManager(
             build_report_fn,
             list(python_package_build_steps.keys()),
@@ -430,6 +435,13 @@ class BuildPythonInstanceBase(ABC):
             for cmd in cache_after:
                 self.echo_check_call(cmd, use_pixi_env=False)
 
+    def build_report_path(self) -> Path:
+        """Return the step report; each module's is apart from the ITK build's."""
+        name = f"build_log_{self.platform_env}"
+        if self.module_source_dir is not None:
+            name += f"_{Path(self.module_source_dir).name}"
+        return self.dist_dir / f"{name}.json"
+
     def build_dependency_module(self, module_source_dir: Path) -> None:
         """Build the wheel of a dependency module with a copy of this builder."""
         dependency_build = self.clone()
@@ -449,10 +461,18 @@ class BuildPythonInstanceBase(ABC):
             settings.update({f"{group}:{k}": str(v) for k, v in definitions.items()})
         for key in ("USE_CCACHE", "MANYLINUX_VERSION", "CONTAINER_SOURCE"):
             settings[key] = cfg.get(key, "")
+        # The platform builders' wheel repair options.
+        for option in (
+            "windows_extra_lib_paths",
+            "windows_exclude_libs",
+            "exclude_libs",
+        ):
+            settings[option] = str(getattr(self, option, ""))
         git = str(self.config.git_executable)
         module_state = None
         if self.module_source_dir is not None:
             settings["itk_module_deps"] = str(self.itk_module_deps or "")
+            settings["module_itk_dir"] = self.module_itk_dir
             module_state = module_source_state(Path(self.module_source_dir), git)
         return build_inputs(
             itk_commit=resolved_itk_commit(

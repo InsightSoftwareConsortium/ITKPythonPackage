@@ -1,8 +1,9 @@
-import shutil
 import subprocess
 from pathlib import Path
 
 import pytest
+
+from tests.bash import BASH
 
 HELPER = Path(__file__).resolve().parent.parent / "scripts" / "require_env_vars.sh"
 
@@ -10,7 +11,7 @@ HELPER = Path(__file__).resolve().parent.parent / "scripts" / "require_env_vars.
 def _run(env: dict[str, str], *names: str) -> subprocess.CompletedProcess[str]:
     script = f'source "{HELPER}"; require_env_vars {" ".join(names)}; echo reached'
     return subprocess.run(
-        ["bash", "-c", script],
+        [BASH, "-c", script],
         env={"PATH": "/usr/bin:/bin", **env},
         capture_output=True,
         text=True,
@@ -18,7 +19,7 @@ def _run(env: dict[str, str], *names: str) -> subprocess.CompletedProcess[str]:
     )
 
 
-@pytest.mark.skipif(shutil.which("bash") is None, reason="needs bash")
+@pytest.mark.skipif(not BASH, reason="needs bash")
 def test_every_missing_variable_is_reported_before_exiting() -> None:
     result = _run({"SET": "1", "EMPTY": ""}, "SET", "EMPTY", "UNSET")
     assert result.returncode == 1
@@ -29,7 +30,7 @@ def test_every_missing_variable_is_reported_before_exiting() -> None:
     ]
 
 
-@pytest.mark.skipif(shutil.which("bash") is None, reason="needs bash")
+@pytest.mark.skipif(not BASH, reason="needs bash")
 def test_set_variables_pass() -> None:
     result = _run({"A": "1", "B": "2"}, "A", "B")
     assert result.returncode == 0

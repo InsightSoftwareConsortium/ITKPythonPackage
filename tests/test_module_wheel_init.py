@@ -20,11 +20,17 @@ def _wheel(path: Path, name: str, members: dict[str, str]) -> Path:
     return path
 
 
-def test_the_init_name_comes_from_the_distribution_name(tmp_path: Path) -> None:
+def test_the_init_name_falls_back_to_the_distribution_name(tmp_path: Path) -> None:
     wheel = _wheel(tmp_path / "w.whl", "itk-RTK", {})
     assert module_init_name(wheel) == "itk/__init_rtk__.py"
     wheel = _wheel(tmp_path / "x.whl", "itk-foo-bar", {})
     assert module_init_name(wheel) == "itk/__init_foo__.py"
+
+
+def test_the_init_name_comes_from_the_wrapped_module(tmp_path: Path) -> None:
+    config = {"itk/Configuration/VkFFTBackendConfig.py": "depends = ()\n"}
+    wheel = _wheel(tmp_path / "w.whl", "itk-vkfft", config)
+    assert module_init_name(wheel) == "itk/__init_vkfftbackend__.py"
 
 
 def test_a_rename_moves_the_member_and_its_record_line(tmp_path: Path) -> None:

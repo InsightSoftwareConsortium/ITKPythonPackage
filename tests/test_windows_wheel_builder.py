@@ -118,6 +118,17 @@ def test_a_module_wheel_never_ships_itk_init(
         assert "itk/__init_biocell__.py," in record
 
 
+def test_a_module_wheel_is_repaired_with_lib_paths_and_onetbb(
+    windows_builder: WindowsBuildPythonInstance,
+) -> None:
+    """delvewheel looks for a module's DLLs where it looks for itk-core's."""
+    windows_builder.windows_extra_lib_paths = ["C:/CUDA/bin"]
+    with patch.object(windows_builder, "fixup_wheel") as fixup:
+        windows_builder.fixup_module_wheel("module.whl")
+    tbb_bin = str(windows_builder.build_dir_root / "build" / "oneTBB-prefix" / "bin")
+    assert fixup.call_args.args[1] == f"C:/CUDA/bin;{tbb_bin}"
+
+
 def test_non_remote_repaired_wheel_lands_in_the_build_dist(
     tmp_path: Path, windows_builder: WindowsBuildPythonInstance
 ) -> None:
@@ -252,6 +263,15 @@ def test_seven_zip_archives_absolute_roots_not_bare_names(
     assert str(windows_builder.ipp_dir) in cmd
 
 
+def test_seven_zip_starts_a_new_archive(
+    tmp_path: Path, windows_builder: WindowsBuildPythonInstance
+) -> None:
+    stale = windows_builder.build_dir_root / "ITKPythonBuilds-windows.zip"
+    stale.write_text("an archive from an earlier build")
+    _run_build_tarball(windows_builder, tmp_path)
+    assert not stale.exists()
+
+
 def test_zip_fallback_archives_the_seven_zip_roots(
     tmp_path: Path, windows_builder: WindowsBuildPythonInstance
 ) -> None:
@@ -274,6 +294,7 @@ def test_zip_fallback_archives_the_seven_zip_roots(
         path.write_text("x")
 
     with (
+        patch("windows_build_python_instance.SEVEN_ZIP_CANDIDATES", ()),
         patch("windows_build_python_instance.shutil.which", return_value=None),
         patch.object(windows_builder, "echo_check_call") as call,
     ):

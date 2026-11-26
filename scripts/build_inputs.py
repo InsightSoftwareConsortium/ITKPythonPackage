@@ -51,11 +51,50 @@ def build_fingerprint(ipp_dir: Path, settings: Mapping[str, str]) -> str:
     return digest.hexdigest()
 
 
+#: What `uncommitted_changes` returns for a tree without changes.
+NO_CHANGES: str = hashlib.sha256().hexdigest()
+
+
+def uncommitted_changes(
+    directory: Path,
+    git: str,
+    env: Mapping[str, str],
+    skip: frozenset[str] = frozenset(),
+) -> str:
+    """Return a hash of the uncommitted changes in the repository at *directory*.
+
+    It covers the changes to tracked files and the untracked files git does
+    not ignore, except those under a top-level name in *skip*.
+    """
+    diff = subprocess.run(
+        [git, "diff", "HEAD", "--binary"],
+        cwd=directory,
+        env=env,
+        capture_output=True,
+        check=True,
+    )
+    digest = hashlib.sha256(diff.stdout)
+    untracked = subprocess.run(
+        [git, "ls-files", "--others", "--exclude-standard", "-z"],
+        cwd=directory,
+        env=env,
+        capture_output=True,
+        check=True,
+    )
+    for name in sorted(untracked.stdout.decode().split("\0")):
+        if name and name.split("/")[0] not in skip:
+            digest.update(name.encode() + b"\0")
+            with (Path(directory) / name).open("rb") as f:
+                digest.update(hashlib.file_digest(f, "sha256").digest())
+    return digest.hexdigest()
+
+
 def resolved_itk_commit(itk_source_dir: Path, fallback: str, git: str = "git") -> str:
     """Return the commit checked out in *itk_source_dir*, else *fallback*.
 
     A branch name is not enough: the same name builds a new commit each day.
     A tree restored from a build cache has no repository, hence the fallback.
+    Uncommitted changes add ``+<hash>``, as they change what is built.
     """
     env = os.environ.copy()
     # A cache-restored tree must not report an enclosing repository's commit.
@@ -71,7 +110,14 @@ def resolved_itk_commit(itk_source_dir: Path, fallback: str, git: str = "git") -
         )
     except OSError:
         return fallback
-    return result.stdout.strip() if result.returncode == 0 else fallback
+    if result.returncode != 0:
+        return fallback
+    commit = result.stdout.strip()
+    try:
+        changes = uncommitted_changes(itk_source_dir, git, env)
+    except (OSError, subprocess.CalledProcessError):
+        return commit
+    return commit if changes == NO_CHANGES else f"{commit}+{changes}"
 
 
 #: Names a module build writes into, or that hold caches, inside a module tree.
@@ -105,14 +151,7 @@ def module_source_state(module_dir: Path, git: str = "git") -> str:
             check=False,
         )
         if head.returncode == 0:
-            diff = subprocess.run(
-                [git, "diff", "HEAD", "--binary"],
-                cwd=module_dir,
-                env=env,
-                capture_output=True,
-                check=True,
-            )
-            changes = hashlib.sha256(diff.stdout).hexdigest()
+            changes = uncommitted_changes(module_dir, git, env, MODULE_STATE_SKIP)
             return f"{head.stdout.decode().strip()}+{changes}"
     except (OSError, subprocess.CalledProcessError):
         pass

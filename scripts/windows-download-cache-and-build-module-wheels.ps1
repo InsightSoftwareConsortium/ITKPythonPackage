@@ -293,7 +293,8 @@ if ($setup_options.Length -gt 0) {
 
 if ($cmake_options.Length -gt 0) {
   $buildArgs += @("--")
-  $buildArgs += $cmake_options.Split(" ")
+  # The CI action quotes each option ("-DA=1" "-DB=2"); the quotes are not part of it.
+  $buildArgs += $cmake_options.Split(" ", [StringSplitOptions]::RemoveEmptyEntries) | ForEach-Object { $_.Trim('"') }
 }
 
 echo "Building target module..."

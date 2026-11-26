@@ -51,6 +51,10 @@ while [ $# -gt 0 ]; do
     shift
     break
     ;;
+  -*)
+    echo "Unexpected option: $1."
+    usage
+    ;;
   *)
     break
     ;;
@@ -185,5 +189,5 @@ for py_indicator in "$@"; do
     --no-use-ccache \
     --skip-itk-build \
     --skip-itk-wheel-build \
-    ${CMAKE_OPTIONS:+-- ${CMAKE_OPTIONS}}
+    ${CMAKE_OPTIONS:+-- ${CMAKE_OPTIONS}} || exit
 done
