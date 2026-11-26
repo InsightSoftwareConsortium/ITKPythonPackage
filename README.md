@@ -386,19 +386,17 @@ To see how to build ITK Python Build Caches, see this section:
 
 #### GitHub Compatible Caches
 
-To build the caches compatible with GitHub Actions CI and the ITKPythonBuilds repository. You can run:
-
-On Linux and macOS systems
+`release-wheels` builds the caches compatible with GitHub Actions CI and the
+ITKPythonBuilds repository alongside the wheels: it passes
+`--build-itk-tarball-cache` to `build_wheels.py` for every target.
 
 ```bash
-bash scripts/make_tarballs.sh  # py311 (optionally add specific version of Python)
+pixi run release-wheels v6.0b03
 ```
 
-On Windows systems
-
-```powershell
-.\scripts\make_windows_zip.ps1 # py311 (optionally add specific version of Python)
-```
+POSIX builds write `dist/ITKPythonBuilds-<platform>-<arch>.tar.zst` under the
+build root (`scripts/wheel_packaging.py`); Windows writes
+`ITKPythonBuilds-windows.zip` in the build root.
 
 > [!IMPORTANT]
 > Build caches embed absolute paths. If you extract a tarball to a different
@@ -410,11 +408,14 @@ On Windows systems
 > | macOS              | `/Users/svc-dashboard/D/P/ITKPythonPackage-build` |
 > | Windows            | `C:\BDR`                                          |
 >
-> The scripts above set these for you. **`build_wheels.py` does not**: its
-> default build root is `<repo>/../ITKPythonPackage-build`, which matches the
-> convention only on Windows. A cache built by calling `build_wheels.py`
-> directly therefore needs `--build-dir-root` set to the path in the table, or
-> it will not be usable by the reusable workflow. Check a finished cache with:
+> `release-wheels` uses the manylinux and Windows paths by default. On macOS
+> its build root is `<repo>/../ITKPythonPackage-build`, so clone the
+> repository at `/Users/svc-dashboard/D/P/ITKPythonPackage` or pass
+> `--build-root /Users/svc-dashboard/D/P/ITKPythonPackage-build`.
+> `build_wheels.py` called directly defaults to `C:\BDR` on Windows and to
+> `<repo>/../ITKPythonPackage-build` elsewhere, so a macOS cache built that way
+> needs `--build-dir-root` set to the path in the table, or it will not be
+> usable by the reusable workflow. Check a finished cache with:
 >
 > ```bash
 > tar -xOf <cache>.tar ITKPythonPackage-build/build/ITK-support-bld/CMakeCache.txt \

@@ -297,21 +297,16 @@ artifacts) so that external module builds can skip the costly ITK compilation st
 These are the same caches distributed via `ITKPythonBuilds
 <https://github.com/InsightSoftwareConsortium/ITKPythonBuilds>`_ releases.
 
-By default these scripts build for Python 3.11 but you can optionally add a specific version to build for
-
-Linux / macOS:
+``release-wheels`` builds a cache for every target it builds, by passing
+``--build-itk-tarball-cache`` to ``build_wheels.py``:
 
 .. code-block:: bash
 
-   ITK_GIT_TAG=v6.0b01
-   bash scripts/make_tarballs.sh py311
+   pixi run release-wheels v6.0b01
 
-Windows (PowerShell):
-
-.. code-block:: powershell
-
-   $env:ITK_GIT_TAG = "v6.0b01"
-   .\scripts\make_windows_zip.ps1 py311
+POSIX builds write ``dist/ITKPythonBuilds-<platform>-<arch>.tar.zst`` under the
+build root (``scripts/wheel_packaging.py``); Windows writes
+``ITKPythonBuilds-windows.zip`` in the build root.
 
 Or via ``build_wheels.py`` directly:
 
@@ -331,8 +326,10 @@ Or via ``build_wheels.py`` directly:
    - **macOS**: ``/Users/svc-dashboard/D/P/ITKPythonPackage-build``
    - **Windows**: ``C:\BDR``
 
-   The ``make_tarballs.sh`` and ``make_windows_zip.ps1`` scripts enforce these
-   paths automatically.
+   ``release-wheels`` uses the manylinux and Windows paths by default. On
+   macOS, clone the repository at ``/Users/svc-dashboard/D/P/ITKPythonPackage``
+   or pass ``--build-root /Users/svc-dashboard/D/P/ITKPythonPackage-build``
+   (``--build-dir-root`` for ``build_wheels.py``).
 
 
 Output Artifacts
