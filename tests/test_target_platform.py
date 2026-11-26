@@ -223,17 +223,20 @@ def test_macos_wheel_plat_tag_is_installable_on_arm64() -> None:
 def test_pixi_macos_system_requirement_matches_the_deployment_target() -> None:
     """pixi.toml is the third copy of the macOS version; bind it too.
 
-    ``system-requirements = { macos = "14.0" }`` under
-    ``[feature.macosx-build]`` must agree with
+    The ``macos`` virtual package on the workspace platform that
+    ``[feature.macosx-build]`` uses must agree with
     ``target_platform._MACOSX_DEPLOYMENT_TARGET``, or the cached ITK build
     and the wheel tag disagree.
     """
     pixi_toml = Path(__file__).resolve().parent.parent / "pixi.toml"
     config = tomllib.loads(pixi_toml.read_text())
-    macos_requirement = config["feature"]["macosx-build"]["system-requirements"][
-        "macos"
+    (platform_name,) = config["feature"]["macosx-build"]["platforms"]
+    (platform_entry,) = [
+        entry
+        for entry in config["workspace"]["platforms"]
+        if isinstance(entry, dict) and entry.get("name") == platform_name
     ]
-    assert macos_requirement.replace(".", "_") == _MACOSX_DEPLOYMENT_TARGET
+    assert platform_entry["macos"].replace(".", "_") == _MACOSX_DEPLOYMENT_TARGET
 
 
 @pytest.mark.parametrize(

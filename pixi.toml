@@ -18,11 +18,24 @@ authors = [
 name = "ITKPythonPackage"
 version = "0.1.0"
 channels = ["conda-forge"]
-platforms = ["linux-64", "linux-aarch64", "osx-arm64", "win-64"]
+platforms = [
+  "linux-64",
+  "linux-aarch64",
+  "osx-arm64",
+  "win-64",
+  { name = "linux-64-manylinux228", platform = "linux-64", glibc = "2.28", linux = "5.4" },
+  { name = "linux-aarch64-manylinux228", platform = "linux-aarch64", glibc = "2.28", linux = "5.4" },
+  { name = "osx-arm64-macos14", platform = "osx-arm64", macos = "14.0" },
+]
 
 ########################################
 # Common features used by all envs
 ########################################
+
+# The default environment's platforms; the named entries above are for builds
+[feature.host-platforms]
+platforms = ["linux-64", "linux-aarch64", "osx-arm64", "win-64"]
+
 
 # Build tooling shared by all platforms
 [feature.build-dev-tools]
@@ -83,11 +96,7 @@ texlive-core = "*"        # bibtex, for Doxygen \cite in wrapping docstrings
 wheel = "*"
 
 [feature.manylinux228-build]
-platforms = ["linux-64", "linux-aarch64"]
-
-[feature.manylinux228-build.system-requirements]
-linux = "5.4"
-libc = { family = "glibc", version = "2.28" }
+platforms = ["linux-64-manylinux228", "linux-aarch64-manylinux228"]
 
 [feature.linux-build.activation.env]
 PYTHONNOUSERSITE = "1" # Exclude system .local site packages
@@ -97,8 +106,7 @@ PYTHONNOUSERSITE = "1" # Exclude system .local site packages
 ########################################
 
 [feature.macosx-build]
-platforms = ["osx-arm64"]
-system-requirements = { macos = "14.0" }
+platforms = ["osx-arm64-macos14"]
 
 # delocate is a Python tool; cxx-compiler is the macOS toolchain meta-package
 [feature.macosx-build.pypi-dependencies]
@@ -130,6 +138,7 @@ python = ">=3.11,<3.12"
 # Publishing feature (no compilers needed)
 ########################################
 [feature.publish]
+platforms = ["linux-64", "linux-aarch64", "osx-arm64", "win-64"]
 [feature.publish.dependencies]
 python = ">=3.11"
 gh = "*"
@@ -144,6 +153,7 @@ twine = ">=6.0"
 # Never referenced by any build environment.
 ########################################
 [feature.dev]
+platforms = ["linux-64", "linux-aarch64", "osx-arm64", "win-64"]
 [feature.dev.dependencies]
 python = ">=3.11"
 pytest = ">=8"
@@ -159,6 +169,7 @@ description = "Run the developer unit test suite"
 ########################################
 
 [environments]
+default = ["host-platforms"]
 publish = ["publish"]
 dev = ["py311", "dev"]
 linux-py311 = ["py311", "linux-build", "build-dev-tools", "python-dev-pkgs"]
