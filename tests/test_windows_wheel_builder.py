@@ -210,16 +210,27 @@ def test_repaired_wheel_replaces_the_input_in_place(
 
 
 def _run_build_tarball(
-    windows_builder: WindowsBuildPythonInstance, tmp_path: Path
+    windows_builder: WindowsBuildPythonInstance,
+    tmp_path: Path,
+    status: int = 0,
+    seen: dict[str, bool] | None = None,
 ) -> list[str]:
-    """Drive ``build_tarball`` down the 7-Zip branch and return the command."""
+    """Drive ``build_tarball`` down the 7-Zip branch and return the command.
+
+    The fake 7-Zip writes ``b"7z"`` to the archive. *seen* records whether
+    an archive was already there when it ran.
+    """
+    archive = windows_builder.build_dir_root / "ITKPythonBuilds-windows.zip"
     windows_builder.ipp_dir = tmp_path / "IPP"
     windows_builder.ipp_dir.mkdir(parents=True, exist_ok=True)
     captured: dict[str, list[str]] = {}
 
     def fake_call(cmd: Sequence[object], *args: object, **kwargs: object) -> int:
         captured["cmd"] = [str(c) for c in cmd]
-        return 0
+        if seen is not None:
+            seen["archive_existed"] = archive.exists()
+        archive.write_bytes(b"7z")
+        return status
 
     with (
         patch("windows_build_python_instance.shutil.which", return_value="/fake/7z"),
@@ -268,8 +279,34 @@ def test_seven_zip_starts_a_new_archive(
 ) -> None:
     stale = windows_builder.build_dir_root / "ITKPythonBuilds-windows.zip"
     stale.write_text("an archive from an earlier build")
-    _run_build_tarball(windows_builder, tmp_path)
-    assert not stale.exists()
+    seen: dict[str, bool] = {}
+    _run_build_tarball(windows_builder, tmp_path, seen=seen)
+    assert seen == {"archive_existed": False}
+
+
+def test_seven_zip_reads_files_open_for_writing(
+    tmp_path: Path, windows_builder: WindowsBuildPythonInstance
+) -> None:
+    """``-ssw`` archives a file another process still writes, such as a log."""
+    assert "-ssw" in _run_build_tarball(windows_builder, tmp_path)
+
+
+def test_seven_zip_success_keeps_its_archive(
+    tmp_path: Path, windows_builder: WindowsBuildPythonInstance
+) -> None:
+    _run_build_tarball(windows_builder, tmp_path, status=0)
+    archive = windows_builder.build_dir_root / "ITKPythonBuilds-windows.zip"
+    assert archive.read_bytes() == b"7z"
+
+
+@pytest.mark.parametrize("status", [1, 2])
+def test_seven_zip_warnings_and_errors_use_the_zip_fallback(
+    tmp_path: Path, windows_builder: WindowsBuildPythonInstance, status: int
+) -> None:
+    """A warning can mean a skipped file, so the archive is rebuilt as a zip."""
+    _run_build_tarball(windows_builder, tmp_path, status=status)
+    archive = windows_builder.build_dir_root / "ITKPythonBuilds-windows.zip"
+    assert zipfile.is_zipfile(archive)
 
 
 def test_zip_fallback_archives_the_seven_zip_roots(
