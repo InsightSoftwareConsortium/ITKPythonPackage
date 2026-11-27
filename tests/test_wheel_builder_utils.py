@@ -155,3 +155,20 @@ def test_streamed_output_is_also_returned(capsys: pytest.CaptureFixture[str]) ->
     assert result.returncode == 0
     assert result.stdout.splitlines() == ["line one", "line two"]
     assert "line one\nline two\n" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        ("manylinux228-py311", True),
+        ("macosx-py311", True),
+        ("windows-py311", True),
+        ("linux-py311", True),
+        ("dev", False),
+        ("dev-docs", False),
+        ("pixi-pycharm", False),
+        ("", False),
+    ],
+)
+def test_is_platform_env(name: str, expected: bool) -> None:
+    assert wheel_builder_utils.is_platform_env(name) is expected

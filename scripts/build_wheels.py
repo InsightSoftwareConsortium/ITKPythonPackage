@@ -17,6 +17,7 @@ from wheel_builder_utils import (
     abort_if_wrong_pixi_environment,
     compute_itk_package_version,
     get_default_platform_build,
+    is_platform_env,
     resolve_oci_exe,
     run_command,
     which_required,
@@ -304,6 +305,16 @@ def default_build_dir_root(ipp_dir: Path, os_name: OS) -> Path:
     return ipp_dir.parent / "ITKPythonPackage-build"
 
 
+def split_cmake_options(text: str, os_name: OS) -> list[str]:
+    """Split ``CMAKE_OPTIONS`` as a shell would, keeping Windows paths' backslashes."""
+    lexer = shlex.shlex(text, posix=True)
+    lexer.whitespace_split = True
+    lexer.commenters = ""
+    if os_name is OS.WINDOWS:
+        lexer.escape = ""
+    return list(lexer)
+
+
 def build_argument_parser(os_name: OS, ipp_dir: Path) -> argparse.ArgumentParser:
     """Return the command line parser; defaults come from the environment."""
     remote_module_build_dict = remotemodulebuildandtestaction()
@@ -313,7 +324,7 @@ def build_argument_parser(os_name: OS, ipp_dir: Path) -> argparse.ArgumentParser
     # The environment guard requires the active pixi environment itself, which
     # get_default_platform_build renames for manylinux.
     default_env = os.environ.get("PIXI_ENVIRONMENT_NAME", "")
-    if "-" not in default_env:
+    if not is_platform_env(default_env):
         default_env = get_default_platform_build("py311")
     parser.add_argument(
         "--platform-env",
@@ -340,29 +351,27 @@ def build_argument_parser(os_name: OS, ipp_dir: Path) -> argparse.ArgumentParser
     )
     parser.add_argument(
         "--lib-paths",
-        nargs=1,
-        default="",
+        action="append",
+        default=[],
         help=(
-            "Windows only: semicolon-delimited library directories for delvewheel to include in module wheel"
+            "Windows only: semicolon-delimited library directories for delvewheel "
+            "to include in module wheel; may be repeated"
         ),
     )
     parser.add_argument(
         "--exclude-libs",
-        nargs=1,
-        default="",
+        action="append",
+        default=[],
         help=(
             "Windows and Linux: semicolon-delimited library names delvewheel or "
-            'auditwheel must not bundle, e.g. "nvcuda.dll" or "libcuda.so.1"'
+            'auditwheel must not bundle, e.g. "nvcuda.dll" or "libcuda.so.1"; '
+            "may be repeated"
         ),
     )
-    _cmake_options_default = remote_module_build_dict["CMAKE_OPTIONS"]
-    if os_name is OS.WINDOWS:
-        # shlex takes a backslash for an escape; keep those of Windows paths.
-        _cmake_options_default = _cmake_options_default.replace("\\", "\\\\")
     parser.add_argument(
         "cmake_options",
         nargs="*",
-        default=shlex.split(_cmake_options_default) if _cmake_options_default else [],
+        default=split_cmake_options(remote_module_build_dict["CMAKE_OPTIONS"], os_name),
         help="Extra options to pass to CMake, e.g. -DBUILD_SHARED_LIBS:BOOL=OFF.\n"
         "   These will override defaults if duplicated",
     )
@@ -737,6 +746,11 @@ def configure_linux_target(args: argparse.Namespace) -> TargetPlatform:
     return target
 
 
+def semicolon_joined(values: list[str]) -> list[str]:
+    """Join a repeated option into the one-element list the builders take."""
+    return [";".join(values)] if values else []
+
+
 def make_builder(
     args: argparse.Namespace,
     os_name: OS,
@@ -750,8 +764,8 @@ def make_builder(
 
         builder_cls = functools.partial(
             WindowsBuildPythonInstance,
-            windows_extra_lib_paths=args.lib_paths,
-            windows_exclude_libs=args.exclude_libs,
+            windows_extra_lib_paths=semicolon_joined(args.lib_paths),
+            windows_exclude_libs=semicolon_joined(args.exclude_libs),
         )
     elif os_name is OS.DARWIN:
         from macos_build_python_instance import MacOSBuildPythonInstance
@@ -761,7 +775,7 @@ def make_builder(
         from linux_build_python_instance import LinuxBuildPythonInstance
 
         builder_cls = functools.partial(
-            LinuxBuildPythonInstance, exclude_libs=args.exclude_libs
+            LinuxBuildPythonInstance, exclude_libs=semicolon_joined(args.exclude_libs)
         )
     return builder_cls(
         platform_env=args.platform_env,

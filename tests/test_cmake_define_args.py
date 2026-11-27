@@ -94,6 +94,42 @@ def test_the_default_platform_env_is_the_active_manylinux_environment(
 def test_windows_cmake_options_keep_their_backslashes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("CMAKE_OPTIONS", r'-DA_DIR=C:\deps\a "-DB_DIR=C:\b c"')
+    monkeypatch.setenv(
+        "CMAKE_OPTIONS",
+        r"""-DA_DIR=C:\deps\a "-DB_DIR=C:\b c" '-DC_DIR=C:\c' -DD_DIR=\\server\d\\""",
+    )
     args = build_argument_parser(OS.WINDOWS, Path("IPP")).parse_args([])
-    assert args.cmake_options == [r"-DA_DIR=C:\deps\a", r"-DB_DIR=C:\b c"]
+    assert args.cmake_options == [
+        r"-DA_DIR=C:\deps\a",
+        r"-DB_DIR=C:\b c",
+        r"-DC_DIR=C:\c",
+        "-DD_DIR=\\\\server\\d\\\\",
+    ]
+
+
+def test_posix_cmake_options_keep_shell_escapes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("CMAKE_OPTIONS", r"-DA=x\ y -DB=1")
+    args = build_argument_parser(OS.LINUX, Path("IPP")).parse_args([])
+    assert args.cmake_options == ["-DA=x y", "-DB=1"]
+
+
+def test_repeated_library_options_all_reach_the_builder() -> None:
+    from build_wheels import semicolon_joined
+
+    args = build_argument_parser(OS.LINUX, Path("IPP")).parse_args(
+        ["--exclude-libs", "libcuda.so.1", "--exclude-libs", "libnvrtc.so.12"]
+    )
+    assert semicolon_joined(args.exclude_libs) == ["libcuda.so.1;libnvrtc.so.12"]
+    assert semicolon_joined(args.lib_paths) == []
+
+
+@pytest.mark.parametrize("active", ["dev", "dev-docs", "default", ""])
+def test_an_active_environment_that_builds_nothing_is_not_the_default(
+    monkeypatch: pytest.MonkeyPatch, active: str
+) -> None:
+    monkeypatch.setenv("PIXI_ENVIRONMENT_NAME", active)
+    args = build_argument_parser(OS.LINUX, Path("IPP")).parse_args([])
+    assert args.platform_env != active
+    assert args.platform_env.endswith("-py311")

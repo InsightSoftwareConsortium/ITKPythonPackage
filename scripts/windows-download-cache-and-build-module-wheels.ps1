@@ -65,6 +65,16 @@ param (
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+# Splits on unquoted whitespace and drops the quotes; backslashes stay literal.
+# An unbalanced quote is dropped; the CI action never sends one.
+function Split-Options([string]$text) {
+  $tokens = @()
+  foreach ($m in [regex]::Matches($text, '(?:"[^"]*"|''[^'']*''|[^\s"'']+)+')) {
+    $tokens += [regex]::Replace($m.Value, '"([^"]*)"|''([^'']*)''', '$1$2')
+  }
+  return $tokens
+}
+
 # Validate required inputs
 if (-not $python_version_minor) {
   Write-Error "ERROR: -python_version_minor is required. Example: -python_version_minor 11"
@@ -287,14 +297,11 @@ $buildArgs += @(
   "--skip-itk-wheel-build"
 )
 
-if ($setup_options.Length -gt 0) {
-  $buildArgs += $setup_options.Split(" ")
-}
+$buildArgs += @(Split-Options $setup_options)
 
-if ($cmake_options.Length -gt 0) {
-  $buildArgs += @("--")
-  # The CI action quotes each option ("-DA=1" "-DB=2"); the quotes are not part of it.
-  $buildArgs += $cmake_options.Split(" ", [StringSplitOptions]::RemoveEmptyEntries) | ForEach-Object { $_.Trim('"') }
+$cmakeArgs = @(Split-Options $cmake_options)
+if ($cmakeArgs.Count -gt 0) {
+  $buildArgs += @("--") + $cmakeArgs
 }
 
 echo "Building target module..."

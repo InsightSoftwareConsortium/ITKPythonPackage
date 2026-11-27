@@ -1,7 +1,9 @@
 """A run re-runs its steps when the ITK commit, version, or fingerprint changes."""
 
 import functools
+import os
 import subprocess
+import sys
 from collections import OrderedDict
 from collections.abc import Callable
 from dataclasses import replace
@@ -66,6 +68,62 @@ def test_uncommitted_itk_changes_change_the_commit(itk_source: Path) -> None:
     assert "+" not in commit
     assert len({commit, untracked, staged, edited}) == 4
     assert all(r.startswith(f"{commit}+") for r in (untracked, staged, edited))
+
+
+def test_an_untracked_cmake_build_tree_does_not_change_the_commit(
+    itk_source: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """ITK's .gitignore covers build*/ but not an IDE's cmake-build-*/."""
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", os.devnull)
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+    commit = resolved_itk_commit(itk_source, "main")
+    build_tree = itk_source / "cmake-build-release"
+    build_tree.mkdir()
+    (build_tree / "CMakeCache.txt").write_text("CMAKE_BUILD_TYPE:STRING=Release\n")
+    (build_tree / "itkImage.o").write_bytes(b"\0" * 64)
+    assert resolved_itk_commit(itk_source, "main") == commit
+
+
+def test_an_untracked_nested_repository_changes_the_commit(itk_source: Path) -> None:
+    commit = resolved_itk_commit(itk_source, "main")
+    nested = itk_source / "Modules" / "Remote" / "Foo"
+    nested.mkdir(parents=True)
+    _git(nested, "init", "--quiet", "--initial-branch=main")
+    _git(nested, "config", "user.email", "test@example.com")
+    _git(nested, "config", "user.name", "Test")
+    (nested / "itkFoo.h").write_text("// foo\n")
+    _git(nested, "add", "itkFoo.h")
+    _git(nested, "commit", "--quiet", "-m", "first")
+    with_nested = resolved_itk_commit(itk_source, "main")
+    (nested / "itkFoo.h").write_text("// edited\n")
+    edited = resolved_itk_commit(itk_source, "main")
+    assert with_nested.startswith(f"{commit}+")
+    assert len({commit, with_nested, edited}) == 3
+
+
+def test_an_unreadable_untracked_file_keeps_the_other_changes(
+    itk_source: Path,
+) -> None:
+    commit = resolved_itk_commit(itk_source, "main")
+    (itk_source / "itkNew.h").write_text("// new\n")
+    try:
+        (itk_source / "dangling.h").symlink_to(itk_source / "missing.h")
+    except OSError:
+        pytest.skip("cannot create a symlink here")
+    (itk_source / "unreadable.h").write_text("// secret\n")
+    (itk_source / "unreadable.h").chmod(0)
+    try:
+        changed = resolved_itk_commit(itk_source, "main")
+    finally:
+        (itk_source / "unreadable.h").chmod(0o644)
+    assert changed.startswith(f"{commit}+")
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="file names must be UTF-8 here")
+def test_a_file_name_that_is_not_utf8_changes_the_commit(itk_source: Path) -> None:
+    commit = resolved_itk_commit(itk_source, "main")
+    (itk_source / os.fsdecode(b"\xff.h")).write_text("// latin-1\n")
+    assert resolved_itk_commit(itk_source, "main").startswith(f"{commit}+")
 
 
 def test_a_tree_without_a_repository_reports_the_requested_revision(
@@ -213,6 +271,24 @@ def module_source(tmp_path: Path) -> Path:
     _git(module, "add", "CMakeLists.txt")
     _git(module, "commit", "--quiet", "-m", "first")
     return module
+
+
+def test_a_new_module_itk_dir_changes_the_fingerprint(
+    monkeypatch: pytest.MonkeyPatch,
+    linux_builder: LinuxBuildPythonInstance,
+    tmp_path: Path,
+    ipp_dir: Path,
+    itk_source: Path,
+    module_source: Path,
+) -> None:
+    _wire_run(
+        monkeypatch, linux_builder, tmp_path, ipp_dir, itk_source, module=module_source
+    )
+    linux_builder.module_itk_dir = "build"
+    build = linux_builder.build_inputs()
+    linux_builder.module_itk_dir = "install"
+    install = linux_builder.build_inputs()
+    assert build["fingerprint"] != install["fingerprint"]
 
 
 def test_module_state_follows_commits_and_uncommitted_edits(
